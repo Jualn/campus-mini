@@ -1,21 +1,21 @@
 /* subpkg_community/pages/detail/index.wxss */
 
 page {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .detail-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 /* =====================================================
    顶部导航
    ===================================================== */
 .top-bar {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 0 16rpx 0;
-  box-shadow: 0 1rpx 0 #F1F2F6;
+  box-shadow: 0 1rpx 0 var(--color-border-light);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -38,7 +38,7 @@ page {
 
 .top-bar__back-icon {
   font-size: 52rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   font-weight: 300;
   line-height: 1;
 }
@@ -46,7 +46,7 @@ page {
 .top-bar__title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .top-bar__more {
@@ -59,7 +59,7 @@ page {
 
 .top-bar__more-icon {
   font-size: 28rpx;
-  color: #555;
+  color: var(--color-text-secondary);
   letter-spacing: 2rpx;
 }
 
@@ -67,7 +67,7 @@ page {
    帖子主体
    ===================================================== */
 .post-wrap {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 24rpx 28rpx 0;
   margin-bottom: 16rpx;
 }
@@ -103,14 +103,14 @@ page {
 .author-name {
   font-size: 30rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .author-badge {
   width: 28rpx;
   height: 28rpx;
   border-radius: 50%;
-  background: #007AFF;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,7 +118,7 @@ page {
 
 .author-badge__text {
   font-size: 16rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 700;
 }
 
@@ -131,7 +131,7 @@ page {
 
 .author-handle {
   font-size: 23rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .author-sep {
@@ -141,41 +141,41 @@ page {
 
 .author-time {
   font-size: 23rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .author-ip {
   font-size: 23rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* 关注按钮 */
 .follow-btn {
   padding: 10rpx 24rpx;
   border-radius: 30rpx;
-  border: 1.5rpx solid #007AFF;
+  border: 1.5rpx solid var(--color-primary);
   flex-shrink: 0;
 }
 
 .follow-btn--on {
   border-color: #ddd;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .follow-btn__text {
   font-size: 24rpx;
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .follow-btn--on .follow-btn__text {
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 /* 正文 */
 .post-text {
   font-size: 32rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1.8;
   display: block;
   margin-bottom: 20rpx;
@@ -191,7 +191,7 @@ page {
 
 .topic-tag {
   font-size: 26rpx;
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -201,12 +201,12 @@ page {
   align-items: center;
   gap: 8rpx;
   padding: 16rpx 0;
-  border-top: 1rpx solid #F5F5F5;
+  border-top: 1rpx solid var(--color-border-light);
 }
 
 .post-stats__item {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .post-stats__sep {
@@ -219,7 +219,7 @@ page {
   display: flex;
   align-items: center;
   padding: 16rpx 0 20rpx;
-  border-top: 1rpx solid #F5F5F5;
+  border-top: 1rpx solid var(--color-border-light);
 }
 
 .action-item {
@@ -239,7 +239,7 @@ page {
 
 .action-count {
   font-size: 28rpx;
-  color: #888;
+  color: var(--color-text-secondary);
   min-width: 32rpx;
 }
 
@@ -299,6 +299,6 @@ page {
    评论区
    ===================================================== */
 .comment-wrap {
-  background: #fff;
+  background: var(--color-bg-card);
   /* comment-panel inline 模式自带样式，这里只做容器 */
 }

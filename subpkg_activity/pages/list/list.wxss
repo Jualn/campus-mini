@@ -1,12 +1,12 @@
 /* subpkg_activity/pages/list/index.wxss */
 
 page {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .activity-list-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   padding-bottom: 40rpx;
 }
 
@@ -14,9 +14,9 @@ page {
    顶部导航
    ===================================================== */
 .top-bar {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 0 24rpx 16rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .top-bar__nav {
@@ -37,7 +37,7 @@ page {
 
 .top-bar__back-icon {
   font-size: 52rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   font-weight: 300;
   line-height: 1;
 }
@@ -45,7 +45,7 @@ page {
 .top-bar__title {
   font-size: 34rpx;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -58,7 +58,7 @@ page {
 .search-wrap {
   display: flex;
   align-items: center;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border-radius: 40rpx;
   padding: 0 28rpx;
   height: 72rpx;
@@ -73,12 +73,12 @@ page {
 .search-input {
   flex: 1;
   font-size: 28rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   height: 72rpx;
 }
 
 .search-placeholder {
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 .search-clear {
@@ -93,7 +93,7 @@ page {
 
 .search-clear__icon {
   font-size: 20rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* =====================================================
@@ -102,8 +102,8 @@ page {
 .filter-bar {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-bottom: 1rpx solid #F5F5F5;
+  background: var(--color-bg-card);
+  border-bottom: 1rpx solid var(--color-border-light);
   padding-right: 20rpx;
 }
 
@@ -120,22 +120,22 @@ page {
   align-items: center;
   padding: 10rpx 24rpx;
   border-radius: 30rpx;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .status-tab--active {
-  background: #1a1a1a;
+  background: var(--color-text-primary);
 }
 
 .status-tab__label {
   font-size: 26rpx;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .status-tab--active .status-tab__label {
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
@@ -144,28 +144,28 @@ page {
   align-items: center;
   gap: 6rpx;
   padding: 10rpx 20rpx;
-  border-radius: 20rpx;
-  background: #F4F5F7;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
   flex-shrink: 0;
 }
 
 .scope-filter__text {
   font-size: 24rpx;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .scope-filter__arrow {
   font-size: 22rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
    系列活动
    ===================================================== */
 .series-section {
-  background: #fff;
+  background: var(--color-bg-card);
   margin: 16rpx 20rpx 0;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx 0 20rpx;
 }
 
@@ -176,7 +176,7 @@ page {
 .section-title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .series-scroll {
@@ -191,8 +191,8 @@ page {
   align-items: center;
   gap: 8rpx;
   padding: 10rpx 20rpx;
-  border-radius: 20rpx;
-  background: #F4F5F7;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -201,18 +201,18 @@ page {
   width: 10rpx;
   height: 10rpx;
   border-radius: 50%;
-  background: #007AFF;
+  background: var(--color-primary);
   display: block;
 }
 
 .series-tag__label {
   font-size: 26rpx;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .series-tag__count {
   font-size: 22rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -233,7 +233,7 @@ page {
   align-items: center;
   gap: 6rpx;
   padding: 6rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   backdrop-filter: blur(8px);
 }
 
@@ -269,14 +269,14 @@ page {
   width: 10rpx;
   height: 10rpx;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-bg-card);
   display: block;
   animation: pulse 1.5s infinite;
 }
 
 .status-badge__text {
   font-size: 22rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
@@ -286,7 +286,7 @@ page {
   align-items: center;
   gap: 6rpx;
   padding: 4rpx 14rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
 }
 
 .status-pill--enrolling {
@@ -294,7 +294,7 @@ page {
 }
 
 .status-pill--upcoming {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .status-pill--ongoing {
@@ -302,7 +302,7 @@ page {
 }
 
 .status-pill--ended {
-  background: #F5F5F5;
+  background: var(--color-bg-page);
 }
 
 .status-pill--cancelled {
@@ -314,7 +314,7 @@ page {
 }
 
 .status-pill--unknown {
-  background: #F5F5F5;
+  background: var(--color-bg-page);
 }
 
 .status-pill__dot {
@@ -336,7 +336,7 @@ page {
 }
 
 .status-pill--upcoming .status-pill__text {
-  color: #007AFF;
+  color: var(--color-primary);
 }
 
 .status-pill--ongoing .status-pill__text {
@@ -344,7 +344,7 @@ page {
 }
 
 .status-pill--ended .status-pill__text {
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .status-pill--cancelled .status-pill__text {
@@ -356,7 +356,7 @@ page {
 }
 
 .status-pill--unknown .status-pill__text {
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 @keyframes pulse {
@@ -376,10 +376,10 @@ page {
    ===================================================== */
 .card-img {
   position: relative;
-  border-radius: 24rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
   height: 360rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
 }
 
 .card-img__cover {
@@ -414,10 +414,10 @@ page {
 
 .card-img__series {
   font-size: 22rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   background: rgba(255, 255, 255, 0.2);
   padding: 4rpx 14rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   backdrop-filter: blur(8px);
 }
 
@@ -443,7 +443,7 @@ page {
 .card-img__title {
   font-size: 32rpx;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-text-inverse);
   line-height: 1.4;
 }
 
@@ -461,11 +461,11 @@ page {
    无封面：彩色左边框卡
    ===================================================== */
 .card-flat {
-  background: #fff;
-  border-radius: 20rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   overflow: hidden;
   display: flex;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-card);
 }
 
 /* 左侧彩色竖条 */
@@ -529,8 +529,8 @@ page {
 
 .card-flat__series {
   font-size: 20rpx;
-  color: #007AFF;
-  background: #EBF5FF;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
   padding: 3rpx 10rpx;
   border-radius: 6rpx;
 }
@@ -538,20 +538,20 @@ page {
 /* 截止倒计时红色胶囊 */
 .card-flat__deadline-chip {
   background: #FF3B30;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   padding: 3rpx 12rpx;
 }
 
 .card-flat__deadline-chip-text {
   font-size: 20rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 700;
 }
 
 .card-flat__title {
   font-size: 29rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1.5;
   display: block;
 }
@@ -564,8 +564,8 @@ page {
 
 .card-flat__tag {
   font-size: 21rpx;
-  color: #888;
-  background: #F4F5F7;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-page);
   padding: 3rpx 12rpx;
   border-radius: 6rpx;
 }
@@ -578,7 +578,7 @@ page {
 
 .card-flat__meta-item {
   font-size: 23rpx;
-  color: #888;
+  color: var(--color-text-secondary);
 }
 
 .card-flat__footer {
@@ -586,13 +586,13 @@ page {
   justify-content: space-between;
   align-items: center;
   padding-top: 10rpx;
-  border-top: 1rpx solid #F5F5F5;
+  border-top: 1rpx solid var(--color-border-light);
   margin-top: 4rpx;
 }
 
 .card-flat__organizer {
   font-size: 21rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -601,7 +601,7 @@ page {
 
 .card-flat__date {
   font-size: 21rpx;
-  color: #ccc;
+  color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
 
@@ -610,7 +610,7 @@ page {
    ===================================================== */
 .result-hint {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   padding: 16rpx 24rpx 0;
 }
 
@@ -628,7 +628,7 @@ page {
 
 .empty-text {
   font-size: 28rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 .list-footer {
@@ -639,5 +639,5 @@ page {
 
 .footer-text {
   font-size: 24rpx;
-  color: #ccc;
+  color: var(--color-text-tertiary);
 }

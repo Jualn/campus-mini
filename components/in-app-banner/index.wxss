@@ -4,7 +4,7 @@
   position: fixed;
   left: 20rpx;
   right: 20rpx;
-  background: #1a1a1a;
+  background: var(--color-text-primary);
   border-radius: 20rpx;
   padding: 20rpx 24rpx;
   display: flex;

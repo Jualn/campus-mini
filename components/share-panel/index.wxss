@@ -1,7 +1,7 @@
 /* components/share-panel/index.wxss */
 
 .share-panel {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border-radius: 24rpx 24rpx 0 0;
   overflow: hidden;
   padding-bottom: env(safe-area-inset-bottom);
@@ -11,7 +11,7 @@
    标题
    ===================================================== */
 .share-panel__header {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 28rpx 28rpx 0;
 }
 
@@ -25,7 +25,7 @@
    预览卡片
    ===================================================== */
 .preview-card {
-  background: #fff;
+  background: var(--color-bg-card);
   margin: 16rpx 20rpx;
   border-radius: 20rpx;
   padding: 24rpx;
@@ -50,7 +50,7 @@
 .preview-card__name {
   font-size: 26rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .preview-card__content {
@@ -77,8 +77,8 @@
   display: flex;
   gap: 24rpx;
   padding: 16rpx 0;
-  border-top: 1rpx solid #F5F5F5;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-top: 1rpx solid var(--color-border-light);
+  border-bottom: 1rpx solid var(--color-border-light);
   margin-bottom: 16rpx;
 }
 
@@ -105,7 +105,7 @@
   justify-content: center;
   gap: 60rpx;
   padding: 32rpx 28rpx;
-  background: #fff;
+  background: var(--color-bg-card);
   margin: 0 0 16rpx;
 }
 
@@ -159,7 +159,7 @@
    取消
    ===================================================== */
 .share-cancel {
-  background: #fff;
+  background: var(--color-bg-card);
   height: 96rpx;
   display: flex;
   align-items: center;

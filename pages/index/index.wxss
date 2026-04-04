@@ -1,15 +1,15 @@
 /* ========== 基础 ========== */
 .index-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 /* ========== Header 区（原样保留，只补充） ========== */
 .home-header {
-  background: #fff;
+  background: var(--color-bg-card);
   padding-bottom: 30rpx;
   border-radius: 0 0 40rpx 40rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
 }
 
 /* 搜索区域 */
@@ -24,23 +24,23 @@
 .greet-text {
   font-size: 36rpx;
   font-weight: bold;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   display: block;
 }
 
 .sub-text {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .search-box {
   height: 80rpx;
-  background: #f5f6f9;
+  background: var(--color-bg-input);
   border-radius: 40rpx;
   display: flex;
   align-items: center;
   padding: 0 30rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-size: 28rpx;
 }
 
@@ -56,12 +56,12 @@
   align-items: center;
   font-size: 30rpx;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .more-link {
   font-size: 24rpx;
-  color: #007AFF;
+  color: var(--color-primary);
 }
 
 .exam-scroll {
@@ -183,7 +183,7 @@
 .feed-header {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 0 30rpx;
   margin-top: 16rpx;
   border-radius: 24rpx 24rpx 0 0;
@@ -192,7 +192,7 @@
 
 .feed-tab {
   font-size: 28rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   padding: 28rpx 24rpx;
   position: relative;
 }
@@ -200,7 +200,7 @@
 .feed-tab.active {
   font-size: 30rpx;
   font-weight: bold;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .feed-tab.active::after {
@@ -211,7 +211,7 @@
   transform: translateX(-50%);
   width: 40rpx;
   height: 6rpx;
-  background: #007AFF;
+  background: var(--color-primary);
   border-radius: 3rpx;
 }
 
@@ -220,8 +220,8 @@
 .post-card {
   display: flex;
   padding: 24rpx 30rpx;
-  border-bottom: 1rpx solid #EFF3F4;
-  background: #fff;
+  border-bottom: 1rpx solid var(--color-border);
+  background: var(--color-bg-card);
 }
 
 .post-left {
@@ -262,7 +262,7 @@
   max-width: 320rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #0f1419;
+  color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -304,7 +304,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 16rpx 0 20rpx;
-  border-top: 1rpx solid #F5F5F5;
+  border-top: 1rpx solid var(--color-border-light);
 }
 
 .action-item {
@@ -412,7 +412,7 @@
 
 /* ========== 活动插片 ========== */
 .activity-section {
-  background: #fff;
+  background: var(--color-bg-card);
   margin-bottom: 16rpx;
   padding: 28rpx 0 24rpx;
 }
@@ -427,12 +427,12 @@
 .section-title-text {
   font-size: 30rpx;
   font-weight: bold;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .section-more {
   font-size: 24rpx;
-  color: #007AFF;
+  color: var(--color-primary);
 }
 
 .activity-scroll {
@@ -446,10 +446,10 @@
   flex-direction: column;
   width: 360rpx;
   margin-right: 20rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: #fff;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-md);
   flex-shrink: 0;
 }
 
@@ -465,7 +465,7 @@
 .act-name {
   font-size: 26rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   white-space: normal;
   line-height: 1.4;
 }
@@ -534,7 +534,7 @@
 }
 
 .fab-menu-item__icon-wrap--blue {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .fab-menu-item__icon-wrap--orange {
@@ -548,7 +548,7 @@
 .fab-menu-item__label {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   white-space: nowrap;
 }
 
@@ -558,13 +558,13 @@
   right: 40rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #007AFF;
+  background: var(--color-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 901;
-  box-shadow: 0 8rpx 24rpx rgba(0, 122, 255, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(22, 119, 255, 0.4);
   transition:
     transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
     opacity 0.35s cubic-bezier(0.23, 1, 0.32, 1);
@@ -580,7 +580,7 @@
 
 /* 展开状态：旋转变 ✕，颜色加深 */
 .fab--open {
-  background: #0056CC;
+  background: var(--color-primary-dark);
   transform: rotate(45deg);
 }
 

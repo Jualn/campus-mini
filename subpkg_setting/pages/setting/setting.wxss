@@ -1,19 +1,19 @@
 /* subpkg_setting/pages/setting/index.wxss */
 
-page { background: #F4F5F7; }
+page { background: var(--color-bg-page); }
 
 .setting-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 /* =====================================================
    顶部导航
    ===================================================== */
 .top-bar {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 0 24rpx 0;
-  box-shadow: 0 1rpx 0 #F1F2F6;
+  box-shadow: 0 1rpx 0 var(--color-border-light);
 }
 
 .top-bar__nav {
@@ -34,7 +34,7 @@ page { background: #F4F5F7; }
 
 .top-bar__back-icon {
   font-size: 52rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   font-weight: 300;
   line-height: 1;
 }
@@ -42,7 +42,7 @@ page { background: #F4F5F7; }
 .top-bar__title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -59,7 +59,7 @@ page { background: #F4F5F7; }
 
 .section-label {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   padding: 0 8rpx 12rpx;
   font-weight: 500;
 }
@@ -68,8 +68,8 @@ page { background: #F4F5F7; }
    设置分组
    ===================================================== */
 .setting-group {
-  background: #fff;
-  border-radius: 20rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   overflow: hidden;
   margin-bottom: 32rpx;
 }
@@ -99,15 +99,15 @@ page { background: #F4F5F7; }
 
 .setting-item__title {
   font-size: 30rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
-.setting-item__title--danger { color: #FF3B30; }
+.setting-item__title--danger { color: var(--color-danger); }
 
 .setting-item__desc {
   font-size: 23rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .setting-item__right {
@@ -118,19 +118,19 @@ page { background: #F4F5F7; }
 
 .setting-item__value {
   font-size: 28rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .setting-item__arrow {
   font-size: 36rpx;
-  color: #C7C7CC;
+  color: var(--color-text-tertiary);
 }
 
 .setting-switch { flex-shrink: 0; }
 
 .setting-divider {
   height: 1rpx;
-  background: #F5F5F5;
+  background: var(--color-border-light);
   margin: 0 28rpx;
 }
 
@@ -138,8 +138,8 @@ page { background: #F4F5F7; }
    退出登录
    ===================================================== */
 .logout-btn {
-  background: #fff;
-  border-radius: 20rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   height: 104rpx;
   display: flex;
   align-items: center;
@@ -149,7 +149,7 @@ page { background: #F4F5F7; }
 
 .logout-btn__text {
   font-size: 30rpx;
-  color: #FF3B30;
+  color: var(--color-danger);
   font-weight: 600;
 }
 

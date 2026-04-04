@@ -26,7 +26,7 @@
   height: 90vh;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--color-bg-card);
   border-radius: 24rpx 24rpx 0 0;
   will-change: transform;
   pointer-events: auto;
@@ -55,7 +55,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 24rpx;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid var(--color-border-light);
   flex-shrink: 0;
 }
 
@@ -71,7 +71,7 @@
 .panel__title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .panel__submit {
@@ -82,7 +82,7 @@
 }
 
 .panel__submit--on {
-  background: #007AFF;
+  background: var(--color-primary);
 }
 
 .panel__submit-text {
@@ -114,7 +114,7 @@
   width: 100%;
   min-height: 160rpx;
   font-size: 32rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1.6;
   /* 关键：去掉任何会让光标偏移的 padding/margin */
   padding: 0;

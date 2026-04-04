@@ -1,12 +1,12 @@
 /* subpkg_user/pages/edit-profile/index.wxss */
 
 page {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .edit-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 /* =====================================================
@@ -15,7 +15,7 @@ page {
    padding-top 由 JS 动态注入状态栏高度，整体高度自然撑开
    ===================================================== */
 .nav-bar {
-  background: #fff;
+  background: var(--color-bg-card);
   position: relative;
   display: flex;
   align-items: center;
@@ -25,7 +25,7 @@ page {
   /* 修复：去掉固定 height，改为内容行 min-height，padding-top 由 JS 追加 */
   min-height: 0;
   padding-bottom: 0;
-  box-shadow: 0 1rpx 0 #F1F2F6;
+  box-shadow: 0 1rpx 0 var(--color-border-light);
 }
 
 /* 导航内容行（返回 + 标题 + 占位）统一高度 */
@@ -45,7 +45,7 @@ page {
 
 .nav-back__icon {
   font-size: 52rpx;
-  color: #0f1419;
+  color: var(--color-text-primary);
   font-weight: 300;
   line-height: 1;
   /* 修复：‹ 字符在部分字体里视觉偏上，微调 */
@@ -55,7 +55,7 @@ page {
 .nav-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #0f1419;
+  color: var(--color-text-primary);
   position: absolute;
   left: 50%;
   /* 修复：绝对定位需要指定 top，否则跟随 padding-top 偏移 */
@@ -81,7 +81,7 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 16rpx 40rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -1rpx 0 #F1F2F6;
@@ -92,7 +92,7 @@ page {
 .save-btn {
   width: 100%;
   height: 96rpx;
-  border-radius: 48rpx;
+  border-radius: var(--radius-xl);
   background: #CFD3D8;
   display: flex;
   align-items: center;
@@ -101,13 +101,13 @@ page {
 }
 
 .save-btn--active {
-  background: #0f1419;
+  background: var(--color-text-primary);
 }
 
 .save-btn__text {
   font-size: 32rpx;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text-inverse);
   letter-spacing: 4rpx;
 }
 
@@ -149,7 +149,7 @@ page {
 
 .banner-mask__text {
   font-size: 26rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 500;
 }
 
@@ -177,7 +177,7 @@ page {
   width: 160rpx;
   height: 160rpx;
   border-radius: 50%;
-  border: 6rpx solid #F4F5F7;
+  border: 6rpx solid var(--color-bg-page);
   background: #eee;
   box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.12);
   display: block;
@@ -207,8 +207,8 @@ page {
    表单卡片
    ===================================================== */
 .form-card {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   margin: 0 20rpx;
   overflow: hidden;
   /* 修复：确保在头像层之上不会被压住 */
@@ -244,7 +244,7 @@ page {
   flex-shrink: 0;
   font-size: 30rpx;
   font-weight: 500;
-  color: #0f1419;
+  color: var(--color-text-primary);
   /* 修复：height 和 line-height 都设成 input 的实际高度，
      让文字垂直居中且盒子高度与 input 一致，
      align-items:center 才能真正让两者视觉对齐 */
@@ -298,7 +298,7 @@ page {
 .form-input {
   flex: 1;
   font-size: 30rpx;
-  color: #0f1419;
+  color: var(--color-text-primary);
   height: 44rpx;
   line-height: 44rpx;
   padding: 0;
@@ -308,7 +308,7 @@ page {
 .form-textarea {
   width: 100%;
   font-size: 30rpx;
-  color: #0f1419;
+  color: var(--color-text-primary);
   line-height: 1.65;
   min-height: 80rpx;
   /* 修复：同 input 清零内边距 */
@@ -330,7 +330,7 @@ page {
 
 .form-value {
   font-size: 30rpx;
-  color: #0f1419;
+  color: var(--color-text-primary);
   flex: 1;
 }
 
@@ -349,7 +349,7 @@ page {
 
 .form-divider {
   height: 1rpx;
-  background: #F5F5F5;
+  background: var(--color-border-light);
   margin: 0 30rpx;
 }
 
@@ -371,8 +371,8 @@ page {
   justify-content: center;
   gap: 8rpx;
   padding: 14rpx 20rpx;
-  border-radius: 30rpx;
-  border: 1.5rpx solid #EFF3F4;
+  border-radius: var(--radius-xl);
+  border: 1.5rpx solid var(--color-border);
   background: #F9FAFB;
   /* 修复：等宽排列，防止不同文字长度导致按钮宽度不一 */
   flex: 1;
@@ -380,8 +380,8 @@ page {
 }
 
 .gender-btn--active {
-  border-color: #007AFF;
-  background: #E8F2FF;
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .gender-icon {
@@ -399,7 +399,7 @@ page {
 }
 
 .gender-btn--active .gender-label {
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 600;
 }
 

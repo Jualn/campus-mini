@@ -1,12 +1,12 @@
 /* subpkg_activity/pages/detail/index.wxss */
 
 page {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .detail-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   padding-bottom: 160rpx;
 }
 
@@ -95,7 +95,7 @@ page {
 
 .cover-back__icon {
   font-size: 48rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 300;
   line-height: 1;
   margin-top: -4rpx;
@@ -115,8 +115,8 @@ page {
    信息卡：浮起压住封面底部
    ===================================================== */
 .info-card {
-  background: #fff;
-  border-radius: 36rpx 36rpx 0 0;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   margin-top: -48rpx;
   /* 上移压住封面 */
   padding: 32rpx 28rpx 24rpx;
@@ -150,7 +150,7 @@ page {
   align-items: center;
   gap: 6rpx;
   padding: 6rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
 }
 
 .hero-status--enrolling {
@@ -158,7 +158,7 @@ page {
 }
 
 .hero-status--upcoming {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .hero-status--ongoing {
@@ -166,7 +166,7 @@ page {
 }
 
 .hero-status--ended {
-  background: #F5F5F5;
+  background: var(--color-bg-page);
 }
 
 .hero-status--cancelled {
@@ -178,7 +178,7 @@ page {
 }
 
 .hero-status--unknown {
-  background: #F5F5F5;
+  background: var(--color-bg-page);
 }
 
 .hero-status__dot {
@@ -212,7 +212,7 @@ page {
 }
 
 .hero-status--upcoming .hero-status__text {
-  color: #007AFF;
+  color: var(--color-primary);
 }
 
 .hero-status--ongoing .hero-status__text {
@@ -220,7 +220,7 @@ page {
 }
 
 .hero-status--ended .hero-status__text {
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .hero-status--cancelled .hero-status__text {
@@ -232,33 +232,33 @@ page {
 }
 
 .hero-status--unknown .hero-status__text {
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .info-card__series {
   font-size: 22rpx;
-  color: #007AFF;
-  background: #EBF5FF;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
   padding: 5rpx 14rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
 }
 
 .info-card__type-badge {
   margin-left: auto;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   padding: 5rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
 }
 
 .info-card__type-text {
   font-size: 22rpx;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .info-card__title {
   font-size: 38rpx;
   font-weight: 900;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1.4;
   display: block;
   margin-bottom: 14rpx;
@@ -273,7 +273,7 @@ page {
 
 .info-card__organizer {
   font-size: 24rpx;
-  color: #888;
+  color: var(--color-text-secondary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -282,10 +282,10 @@ page {
 
 .info-card__scope {
   font-size: 23rpx;
-  color: #888;
-  background: #F4F5F7;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-page);
   padding: 4rpx 14rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 
@@ -312,7 +312,7 @@ page {
 .info-stat__value {
   font-size: 34rpx;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1;
 }
 
@@ -322,7 +322,7 @@ page {
 
 .info-stat__label {
   font-size: 22rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .info-stat__sep {
@@ -336,8 +336,8 @@ page {
    通用卡片
    ===================================================== */
 .section-card {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   margin: 20rpx 20rpx 0;
   padding: 32rpx 28rpx;
 }
@@ -345,7 +345,7 @@ page {
 .section-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   display: block;
   margin-bottom: 20rpx;
 }
@@ -359,7 +359,7 @@ page {
 
 .section-disclaimer {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
   display: block;
   margin-bottom: 20rpx;
 }
@@ -393,7 +393,7 @@ page {
 .deadline-value {
   font-size: 30rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .deadline-countdown {
@@ -416,7 +416,7 @@ page {
 
 .deadline-expired-text {
   font-size: 26rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-weight: 600;
 }
 
@@ -452,7 +452,7 @@ page {
 }
 
 .tl-dot--active {
-  background: #007AFF;
+  background: var(--color-primary);
   box-shadow: 0 0 0 6rpx rgba(0, 122, 255, 0.18);
 }
 
@@ -489,13 +489,13 @@ page {
 .tl-label {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .tl-source {
   font-size: 20rpx;
-  color: #999;
-  background: #F4F5F7;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-page);
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
 }
@@ -514,15 +514,15 @@ page {
 .tl-time {
   font-size: 26rpx;
   font-weight: 700;
-  color: #1a1a1a;
-  background: #F4F5F7;
+  color: var(--color-text-primary);
+  background: var(--color-bg-page);
   padding: 2rpx 12rpx;
   border-radius: 8rpx;
 }
 
 .tl-pending {
   font-size: 26rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
   font-style: italic;
 }
 
@@ -559,14 +559,14 @@ page {
 
 .time-row__label {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   display: block;
   margin-bottom: 4rpx;
 }
 
 .time-row__value {
   font-size: 28rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
@@ -583,7 +583,7 @@ page {
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .reward-item:last-child {
@@ -594,7 +594,7 @@ page {
 .reward-level {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .reward-right {
@@ -605,7 +605,7 @@ page {
 
 .reward-count {
   font-size: 26rpx;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .reward-prize {
@@ -616,7 +616,7 @@ page {
 
 .reward-note {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -655,7 +655,7 @@ page {
 .join-label {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .join-qrcode {
@@ -683,7 +683,7 @@ page {
 
 .join-value {
   font-size: 28rpx;
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 600;
   display: block;
   margin-top: 4rpx;
@@ -691,7 +691,7 @@ page {
 
 .join-note {
   font-size: 23rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   display: block;
   margin-top: 6rpx;
   line-height: 1.5;
@@ -699,17 +699,17 @@ page {
 
 .join-copy {
   font-size: 26rpx;
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 600;
   flex-shrink: 0;
   padding: 8rpx 20rpx;
-  background: #EBF5FF;
-  border-radius: 20rpx;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
 }
 
 .join-arrow {
   font-size: 36rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
 
@@ -742,8 +742,8 @@ page {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--color-text-primary);
+  color: var(--color-text-inverse);
   font-size: 28rpx;
   font-weight: 700;
   display: flex;
@@ -768,12 +768,12 @@ page {
 .contact-name {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .contact-role {
   font-size: 22rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   background: #EBEBEB;
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
@@ -782,7 +782,7 @@ page {
 .contact-phone,
 .contact-qq {
   font-size: 26rpx;
-  color: #555;
+  color: var(--color-text-secondary);
   display: block;
 }
 
@@ -795,13 +795,13 @@ page {
 
 .contact-btn {
   padding: 8rpx 20rpx;
-  background: #EBF5FF;
-  border-radius: 20rpx;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
 }
 
 .contact-btn__text {
   font-size: 24rpx;
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -818,7 +818,7 @@ page {
   align-items: center;
   gap: 16rpx;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .attachment-item:last-child {
@@ -838,21 +838,21 @@ page {
 .attachment-name {
   font-size: 28rpx;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   display: block;
 }
 
 .attachment-note {
   font-size: 23rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   display: block;
   margin-top: 4rpx;
 }
 
 .attachment-type-badge {
   font-size: 20rpx;
-  color: #999;
-  background: #F4F5F7;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-page);
   padding: 4rpx 12rpx;
   border-radius: 6rpx;
   flex-shrink: 0;
@@ -877,7 +877,7 @@ page {
 
 .source-item {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -888,7 +888,7 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 16rpx 30rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -1rpx 0 #F1F2F6;
@@ -904,7 +904,7 @@ page {
 }
 
 .enroll-btn--enrolling {
-  background: #1a1a1a;
+  background: var(--color-text-primary);
 }
 
 .enroll-btn--upcoming,
@@ -924,7 +924,7 @@ page {
 .enroll-btn__text {
   font-size: 32rpx;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text-inverse);
   letter-spacing: 2rpx;
 }
 

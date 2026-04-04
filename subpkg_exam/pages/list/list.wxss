@@ -1,12 +1,12 @@
 /* subpkg_exam/pages/list/index.wxss */
 
 page {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .exam-list-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   padding-bottom: 60rpx;
 }
 
@@ -14,9 +14,9 @@ page {
    顶部
    ===================================================== */
 .top-bar {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 0 30rpx 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .top-bar__nav {
@@ -37,7 +37,7 @@ page {
 
 .top-bar__back-icon {
   font-size: 52rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   font-weight: 300;
   line-height: 1;
 }
@@ -46,7 +46,7 @@ page {
 .top-bar__title {
   font-size: 34rpx;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -60,7 +60,7 @@ page {
 .search-wrap {
   display: flex;
   align-items: center;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border-radius: 40rpx;
   padding: 0 28rpx;
   height: 76rpx;
@@ -74,19 +74,19 @@ page {
 .search-input {
   flex: 1;
   font-size: 28rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   height: 76rpx;
 }
 
 .search-placeholder {
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 .search-clear {
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
-  background: #ccc;
+  background: var(--color-text-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,7 +94,7 @@ page {
 
 .search-clear__icon {
   font-size: 22rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* =====================================================
@@ -106,7 +106,7 @@ page {
 
 .result-hint {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   display: block;
   margin-bottom: 16rpx;
   padding-left: 4rpx;
@@ -126,7 +126,7 @@ page {
 
 .empty-text {
   font-size: 28rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -193,14 +193,14 @@ page {
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-bg-card);
   display: block;
   animation: pulse 1.5s infinite;
 }
 
 .enroll-live__text {
   font-size: 22rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
@@ -219,7 +219,7 @@ page {
 .banner-name {
   font-size: 44rpx;
   font-weight: 900;
-  color: #fff;
+  color: var(--color-text-inverse);
   line-height: 1.2;
 }
 
@@ -266,7 +266,7 @@ page {
 .banner-days {
   font-size: 64rpx;
   font-weight: 900;
-  color: #fff;
+  color: var(--color-text-inverse);
   line-height: 1;
 }
 
@@ -291,14 +291,14 @@ page {
   gap: 8rpx;
   padding: 12rpx 24rpx;
   border-radius: 30rpx;
-  background: #fff;
+  background: var(--color-bg-card);
   white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
 }
 
 .category-tab--active {
-  background: #1a1a1a;
+  background: var(--color-text-primary);
 }
 
 .category-tab__icon {
@@ -307,11 +307,11 @@ page {
 
 .category-tab__label {
   font-size: 26rpx;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .category-tab--active .category-tab__label {
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
@@ -319,8 +319,8 @@ page {
    考试行
    ===================================================== */
 .list-card {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   margin: 16rpx 20rpx 0;
   overflow: hidden;
 }
@@ -330,7 +330,7 @@ page {
   align-items: center;
   padding: 28rpx 28rpx;
   gap: 20rpx;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .exam-row:last-child {
@@ -348,7 +348,7 @@ page {
 }
 
 .exam-row__icon-wrap--blue {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .exam-row__icon-wrap--orange {
@@ -388,18 +388,18 @@ page {
 .exam-row__name {
   font-size: 30rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .exam-row__sub {
   font-size: 24rpx;
-  color: #888;
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
 .exam-row__freq {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* 报名中小角标 */
@@ -416,7 +416,7 @@ page {
 
 .enroll-badge-sm__text {
   font-size: 20rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
   line-height: 1;
 }
@@ -438,7 +438,7 @@ page {
 }
 
 .countdown-pill--blue {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .countdown-pill--orange {
@@ -460,13 +460,13 @@ page {
 .countdown-pill__num {
   font-size: 32rpx;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1;
 }
 
 .countdown-pill__unit {
   font-size: 20rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .exam-row__arrow {
@@ -487,6 +487,6 @@ page {
 
 .footer-line {
   font-size: 22rpx;
-  color: #ccc;
+  color: var(--color-text-tertiary);
   text-align: center;
 }

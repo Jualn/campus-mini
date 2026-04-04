@@ -32,8 +32,8 @@ page {
   right: 0;
   bottom: 0;
   height: 92vh;
-  background: #fff;
-  border-radius: 24rpx 24rpx 0 0;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   z-index: 11;
   display: flex;
   flex-direction: column;
@@ -72,7 +72,7 @@ page {
   align-items: center;
   justify-content: space-between;
   padding: 16rpx 24rpx 16rpx;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid var(--color-border-light);
   flex-shrink: 0;
 }
 
@@ -82,13 +82,13 @@ page {
 
 .panel__cancel-text {
   font-size: 30rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .panel__title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .panel__submit {
@@ -99,13 +99,13 @@ page {
 }
 
 .panel__submit--on {
-  background: #007AFF;
+  background: var(--color-primary);
 }
 
 .panel__submit-text {
   font-size: 28rpx;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* =====================================================
@@ -125,12 +125,12 @@ page {
   width: 100%;
   min-height: 200rpx;
   font-size: 32rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1.75;
 }
 
 .content-placeholder {
-  color: #bbb;
+  color: var(--color-text-tertiary);
   font-size: 32rpx;
 }
 
@@ -138,7 +138,7 @@ page {
   display: block;
   text-align: right;
   font-size: 22rpx;
-  color: #ccc;
+  color: var(--color-text-tertiary);
   margin-top: 8rpx;
 }
 
@@ -187,7 +187,7 @@ page {
 
 .image-item__del-icon {
   font-size: 20rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* 添加图片按钮 */
@@ -210,12 +210,12 @@ page {
 
 .image-add__text {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 .image-add__count {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -232,14 +232,14 @@ page {
   display: flex;
   align-items: center;
   gap: 6rpx;
-  background: #EBF5FF;
+  background: var(--color-primary-light);
   border-radius: 30rpx;
   padding: 8rpx 16rpx;
 }
 
 .topic-chip__text {
   font-size: 26rpx;
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -255,7 +255,7 @@ page {
 
 .topic-chip__del-icon {
   font-size: 18rpx;
-  color: #007AFF;
+  color: var(--color-primary);
 }
 
 .bottom-pad {
@@ -270,9 +270,9 @@ page {
   align-items: center;
   justify-content: space-between;
   padding: 12rpx 20rpx;
-  border-top: 1rpx solid #F5F5F5;
+  border-top: 1rpx solid var(--color-border-light);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--color-bg-card);
 }
 
 .toolbar-left {
@@ -294,13 +294,13 @@ page {
   width: auto;
   padding: 0 16rpx;
   gap: 6rpx;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border-radius: 30rpx;
 }
 
 .toolbar-btn__icon {
   font-size: 36rpx;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .toolbar-btn--text .toolbar-btn__icon {
@@ -309,7 +309,7 @@ page {
 
 .toolbar-btn__label {
   font-size: 24rpx;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 /* =====================================================
@@ -337,7 +337,7 @@ page {
   position: absolute;
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 16rpx 20rpx;
   display: flex;
   align-items: center;
@@ -349,7 +349,7 @@ page {
   flex: 1;
   display: flex;
   align-items: center;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border-radius: 40rpx;
   padding: 0 24rpx;
   height: 72rpx;
@@ -358,30 +358,30 @@ page {
 
 .topic-modal__hash {
   font-size: 30rpx;
-  color: #007AFF;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
 .topic-modal__input {
   flex: 1;
   font-size: 28rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   height: 72rpx;
 }
 
 .topic-modal__ph {
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 .topic-modal__confirm {
   padding: 12rpx 28rpx;
-  background: #007AFF;
+  background: var(--color-primary);
   border-radius: 30rpx;
   flex-shrink: 0;
 }
 
 .topic-modal__confirm-text {
   font-size: 28rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }

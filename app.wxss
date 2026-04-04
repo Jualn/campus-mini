@@ -344,8 +344,8 @@ page {
 
 
 /* ============================================================
-      6. 暗色模式预留（可按需启用）
-      ============================================================ */
+   6. 暗色模式预留（可按需启用）
+   ============================================================ */
 /* 小程序支持时可逐步启用，先保留变量映射 */
 @media (prefers-color-scheme: dark) {
   page {
@@ -362,4 +362,198 @@ page {
 
     --shadow-card: none;
   }
+}
+
+
+/* ============================================================
+   7. 页面与布局助手
+   ============================================================ */
+
+/* 整页容器 */
+.pg-container {
+  min-height: 100vh;
+  background: var(--color-bg-page);
+}
+
+.pg-container--white {
+  background: var(--color-bg-card);
+}
+
+/* 标准顶部导航条 */
+.std-topbar {
+  background: var(--color-bg-card);
+  padding: 0 24rpx;
+  box-shadow: 0 1rpx 0 var(--color-border-light);
+}
+
+.std-topbar__nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+}
+
+.std-topbar__back {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.std-topbar__back-icon {
+  font-size: 52rpx;
+  color: var(--color-text-primary);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.std-topbar__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.std-topbar__placeholder {
+  width: 72rpx;
+}
+
+/* Section 标题行 */
+.section-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--page-padding);
+}
+
+.section-hd__title {
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.section-hd__more {
+  font-size: var(--font-sm);
+  color: var(--color-primary);
+}
+
+/* 空态（通用） */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 60rpx;
+  gap: 20rpx;
+}
+
+.empty-state__icon {
+  font-size: 80rpx;
+}
+
+.empty-state__title {
+  font-size: 32rpx;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.empty-state__desc {
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* 列表底部 */
+.g-list-footer {
+  padding: 48rpx 0 120rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.g-list-footer__text {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+/* 安全距离 */
+.safe-bottom {
+  height: env(safe-area-inset-bottom);
+}
+
+.safe-bottom-lg {
+  height: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+/* 红点/角标 */
+.g-badge {
+  background: var(--color-danger);
+  border-radius: var(--radius-full);
+  min-width: 36rpx;
+  height: 36rpx;
+  padding: 0 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.g-badge__text {
+  font-size: 18rpx;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-inverse);
+  line-height: 1;
+}
+
+/* 通用搜索框 */
+.g-search-box {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-full);
+  padding: 0 28rpx;
+  height: 76rpx;
+}
+
+.g-search-box__icon {
+  font-size: 28rpx;
+}
+
+.g-search-box__placeholder {
+  font-size: 28rpx;
+  color: var(--color-text-tertiary);
+}
+
+/* 胶囊分类 Tab */
+.g-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 24rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-card);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.g-tab--active {
+  background: var(--color-text-primary);
+}
+
+.g-tab__label {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}
+
+.g-tab--active .g-tab__label {
+  color: var(--color-text-inverse);
+  font-weight: var(--weight-bold);
 }

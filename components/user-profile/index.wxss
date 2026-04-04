@@ -50,7 +50,7 @@
 /* 个人信息主体 */
 .profile-body {
   padding: 0 30rpx 24rpx;
-  background: #fff;
+  background: var(--color-bg-card);
   border-bottom: 1rpx solid #F1F2F6;
 }
 
@@ -95,7 +95,7 @@
 
 .btn-icon__more {
   font-size: 30rpx;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   letter-spacing: 2rpx;
   line-height: 1;
 }
@@ -113,13 +113,13 @@
 .btn-text {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .btn-fill {
   height: 64rpx;
   padding: 0 36rpx;
-  background: #1a1a1a;
+  background: var(--color-text-primary);
   border-radius: 40rpx;
   display: flex;
   align-items: center;
@@ -127,7 +127,7 @@
 }
 
 .btn-fill--grey {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border: 1.5rpx solid #CFD3D8;
 }
 
@@ -138,7 +138,7 @@
 }
 
 .btn-fill--grey .btn-fill__text {
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .name-line {
@@ -151,14 +151,14 @@
 .profile-name {
   font-size: 40rpx;
   font-weight: 800;
-  color: #0f1419;
+  color: var(--color-text-primary);
 }
 
 .verified {
   width: 38rpx;
   height: 38rpx;
   border-radius: 50%;
-  background: #007AFF;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,7 +179,7 @@
 
 .profile-bio {
   font-size: 30rpx;
-  color: #0f1419;
+  color: var(--color-text-primary);
   line-height: 1.6;
   display: block;
   margin-bottom: 18rpx;
@@ -210,7 +210,7 @@
 .stats-num {
   font-size: 28rpx;
   font-weight: 800;
-  color: #0f1419;
+  color: var(--color-text-primary);
 }
 
 .stats-label {
@@ -221,8 +221,8 @@
 /* Tab */
 .tab-bar {
   display: flex;
-  border-bottom: 1rpx solid #EFF3F4;
-  background: #fff;
+  border-bottom: 1rpx solid var(--color-border);
+  background: var(--color-bg-card);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -244,7 +244,7 @@
 
 .tab-item--active .tab-text {
   font-weight: 700;
-  color: #0f1419;
+  color: var(--color-text-primary);
 }
 
 .tab-item--active::after {
@@ -255,6 +255,6 @@
   transform: translateX(-50%);
   width: 60rpx;
   height: 6rpx;
-  background: #007AFF;
+  background: var(--color-primary);
   border-radius: 3rpx;
 }

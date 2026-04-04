@@ -1,21 +1,21 @@
 /* pages/message/index.wxss */
 
 page {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .message-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 /* =====================================================
    顶部导航
    ===================================================== */
 .top-bar {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 0 28rpx 0;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .top-bar__nav {
@@ -28,18 +28,18 @@ page {
 .top-bar__title {
   font-size: 40rpx;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .top-bar__read-all {
   padding: 8rpx 20rpx;
-  background: #EAF2FB;
+  background: var(--color-primary-light);
   border-radius: 20rpx;
 }
 
 .top-bar__read-all-text {
   font-size: 24rpx;
-  color: #1B68C0;
+  color: var(--color-primary-dark);
 }
 
 /* =====================================================
@@ -47,7 +47,7 @@ page {
    ===================================================== */
 .msg-tabs {
   display: flex;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid var(--color-border-light);
   margin: 0 -28rpx;
   padding: 0 28rpx;
 }
@@ -67,18 +67,18 @@ page {
   left: 28rpx;
   right: 28rpx;
   height: 4rpx;
-  background: #1a1a1a;
+  background: var(--color-text-primary);
   border-radius: 2rpx;
 }
 
 .msg-tab__text {
   font-size: 30rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-weight: 500;
 }
 
 .msg-tab--active .msg-tab__text {
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   font-weight: 700;
 }
 
@@ -107,8 +107,8 @@ page {
   white-space: nowrap;
   padding: 20rpx 28rpx 12rpx;
   gap: 12rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #F5F5F5;
+  background: var(--color-bg-card);
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .filter-tab {
@@ -117,13 +117,13 @@ page {
   gap: 6rpx;
   padding: 8rpx 20rpx;
   border-radius: 30rpx;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .filter-tab--active {
-  background: #1a1a1a;
+  background: var(--color-text-primary);
 }
 
 .filter-tab__icon {
@@ -132,7 +132,7 @@ page {
 
 .filter-tab__label {
   font-size: 24rpx;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .filter-tab--active .filter-tab__label {
@@ -168,8 +168,8 @@ page {
    消息卡片 — 通用
    ===================================================== */
 .msg-card {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   margin-bottom: 16rpx;
   overflow: hidden;
   position: relative;
@@ -218,7 +218,7 @@ page {
 }
 
 .msg-icon-wrap--system {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .msg-icon-wrap--activity {
@@ -256,7 +256,7 @@ page {
 }
 
 .msg-type-tag--system {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .msg-type-tag--activity {
@@ -295,7 +295,7 @@ page {
 .msg-card__title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1.4;
   display: block;
   margin-bottom: 6rpx;
@@ -303,7 +303,7 @@ page {
 
 .msg-card__desc {
   font-size: 24rpx;
-  color: #777;
+  color: var(--color-text-secondary);
   line-height: 1.6;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -320,14 +320,14 @@ page {
 }
 
 .msg-card__action {
-  background: #EAF2FB;
+  background: var(--color-primary-light);
   border-radius: 12rpx;
   padding: 6rpx 18rpx;
 }
 
 .msg-card__action-text {
   font-size: 22rpx;
-  color: #1B68C0;
+  color: var(--color-primary-dark);
   font-weight: 600;
 }
 
@@ -348,7 +348,7 @@ page {
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 24rpx 16rpx;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .grouped-header__left {
@@ -371,11 +371,11 @@ page {
 .grouped-header__title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .grouped-count {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border-radius: 12rpx;
   padding: 4rpx 14rpx;
 }
@@ -396,7 +396,7 @@ page {
   align-items: center;
   gap: 16rpx;
   padding: 20rpx 24rpx;
-  border-top: 1rpx solid #F8F8F8;
+  border-top: 1rpx solid var(--color-border-light);
 }
 
 /* 头像圆 */
@@ -420,7 +420,7 @@ page {
 .interact-row__text {
   flex: 1;
   font-size: 24rpx;
-  color: #555;
+  color: var(--color-text-secondary);
   line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -440,7 +440,7 @@ page {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
   border-radius: 40rpx;
   padding: 0 28rpx;
   height: 72rpx;
@@ -460,8 +460,8 @@ page {
    私信列表
    ===================================================== */
 .dm-list {
-  background: #fff;
-  border-radius: 24rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
   margin: 16rpx 20rpx 0;
   overflow: hidden;
 }
@@ -471,7 +471,7 @@ page {
   align-items: center;
   gap: 20rpx;
   padding: 24rpx 28rpx;
-  border-bottom: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .dm-item:last-child {
@@ -530,7 +530,7 @@ page {
 .dm-item__name {
   font-size: 28rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .dm-item__time {
@@ -540,7 +540,7 @@ page {
 
 .dm-item__preview {
   font-size: 26rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -565,12 +565,12 @@ page {
 .dm-empty__title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .dm-empty__desc {
   font-size: 26rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   text-align: center;
   line-height: 1.6;
 }
@@ -592,5 +592,5 @@ page {
 
 .empty-text {
   font-size: 28rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
