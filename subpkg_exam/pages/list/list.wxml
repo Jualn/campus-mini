@@ -1,0 +1,126 @@
+<!-- subpkg_exam/pages/list/index.wxml -->
+<view class="exam-list-page">
+
+  <!-- 顶部 -->
+  <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="top-bar__nav">
+      <view class="top-bar__back" bindtap="onBack">
+        <text class="top-bar__back-icon">‹</text>
+      </view>
+      <text class="top-bar__title">考试信息</text>
+      <view class="top-bar__placeholder" />
+    </view>
+    <view class="search-wrap">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜索考试名称" placeholder-class="search-placeholder" value="{{keyword}}"
+        bindinput="onSearch" />
+      <view wx:if="{{keyword}}" class="search-clear" catchtap="onClearSearch">
+        <text class="search-clear__icon">✕</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索结果 -->
+  <block wx:if="{{keyword}}">
+    <view class="result-wrap">
+      <text class="result-hint">找到 {{searchResult.length}} 个结果</text>
+      <block wx:if="{{searchResult.length}}">
+        <view class="list-card">
+          <view wx:for="{{searchResult}}" wx:key="id" class="exam-row" bindtap="goDetail" data-id="{{item.id}}">
+            <view class="exam-row__icon-wrap exam-row__icon-wrap--{{item.color}}">
+              <text class="exam-row__icon">{{item.icon}}</text>
+            </view>
+            <view class="exam-row__body">
+              <text class="exam-row__name">{{item.name}}</text>
+              <text class="exam-row__sub">{{item.tagline}}</text>
+            </view>
+            <text class="exam-row__arrow">›</text>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="empty-wrap">
+        <text class="empty-icon">🔍</text>
+        <text class="empty-text">没有找到相关考试</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 正常列表 -->
+  <block wx:else>
+
+    <!-- Banner：最近一个要开考的 -->
+    <view wx:if="{{hotExam.id}}" class="banner-card banner-card--{{hotExam.color}}" bindtap="goDetail"
+      data-id="{{hotExam.id}}">
+      <view class="banner-left">
+        <view class="banner-tag-row">
+          <text class="banner-tag">最近开考</text>
+          <view class="enroll-live" wx:if="{{hotExam.enrollStatus==='open'}}">
+            <text class="enroll-live__dot" />
+            <text class="enroll-live__text">报名进行中</text>
+          </view>
+        </view>
+        <text class="banner-name">{{hotExam.name}}</text>
+        <text class="banner-tagline">{{hotExam.tagline}}</text>
+        <view class="banner-date-row">
+          <text class="banner-date" wx:if="{{hotExam.examDate}}">
+            📅 {{hotExam.examDate}}
+          </text>
+          <text class="banner-date banner-date--pending" wx:else>
+            📅 日期待官方公告
+          </text>
+        </view>
+      </view>
+      <view class="banner-right">
+        <text class="banner-big-icon">{{hotExam.icon}}</text>
+        <view class="banner-countdown" wx:if="{{hotExam.daysLeft > 0}}">
+          <text class="banner-days">{{hotExam.daysLeft}}</text>
+          <text class="banner-days-unit">天后开考</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分类 Tab -->
+    <scroll-view class="category-scroll" scroll-x enable-flex>
+      <view wx:for="{{categories}}" wx:key="id"
+        class="category-tab {{activeCategory===item.id?'category-tab--active':''}}" bindtap="onSwitchCategory"
+        data-id="{{item.id}}">
+        <text class="category-tab__icon">{{item.icon}}</text>
+        <text class="category-tab__label">{{item.label}}</text>
+      </view>
+    </scroll-view>
+
+    <!-- 列表 -->
+    <view class="list-card">
+      <view wx:for="{{filteredExams}}" wx:key="id" class="exam-row" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="exam-row__icon-wrap exam-row__icon-wrap--{{item.color}}">
+          <text class="exam-row__icon">{{item.icon}}</text>
+        </view>
+        <view class="exam-row__body">
+          <view class="exam-row__name-line">
+            <text class="exam-row__name">{{item.name}}</text>
+            <view class="enroll-badge-sm" wx:if="{{item.enrollStatus==='open'}}">
+              <text class="enroll-badge-sm__text">报名中</text>
+            </view>
+          </view>
+          <text class="exam-row__sub">{{item.tagline}}</text>
+          <text class="exam-row__freq">{{item.frequency}}</text>
+        </view>
+        <view class="exam-row__right">
+          <view class="countdown-pill countdown-pill--{{item.color}}" wx:if="{{item.daysLeft > 0 && item.examDate}}">
+            <text class="countdown-pill__num">{{item.daysLeft}}</text>
+            <text class="countdown-pill__unit">天</text>
+          </view>
+          <text class="exam-row__arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部免责 -->
+    <view class="list-footer">
+      <text class="footer-line">以上信息整理自官方渠道，仅供参考</text>
+      <text class="footer-line">具体时间及规则以官方当年公告为准</text>
+    </view>
+
+  </block>
+
+</view>

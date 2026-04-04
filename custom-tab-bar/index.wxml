@@ -1,0 +1,23 @@
+<!-- custom-tab-bar/index.wxml -->
+<view class="tab-bar-wrap">
+  <view class="tab-bar {{isTabBarVisible ? '' : 'tab-bar--hidden'}}">
+
+    <block wx:for="{{tabList}}" wx:key="url">
+      <view class="tab-item {{index === selected ? 'tab-item--active' : ''}}" data-index="{{index}}"
+        bindtap="handleTabTap" hover-class="tab-item--press" hover-stay-time="100">
+        <!-- 图标 + 徽标 -->
+        <view class="tab-icon-wrap">
+          <image class="tab-icon" src="{{index === selected ? item.iconActive : item.icon}}" mode="aspectFit" />
+          <view wx:if="{{item.badge > 0}}" class="badge">
+            <text class="badge-text">{{item.badge > 99 ? '99+' : item.badge}}</text>
+          </view>
+        </view>
+
+        <!-- 文字 -->
+        <text class="tab-label {{index === selected ? 'tab-label--active' : ''}}">{{item.text}}</text>
+
+      </view>
+    </block>
+
+  </view>
+</view>

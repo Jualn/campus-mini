@@ -1,0 +1,260 @@
+/* components/user-profile/index.wxss */
+
+/* 横幅 */
+.banner-wrap {
+  position: relative;
+  width: 100%;
+  height: 420rpx;
+  background: linear-gradient(180deg, #c7d2fe 0%, #e0e7ff 35%, #f1f5ff 70%, #ffffff 100%);
+  overflow: visible;
+}
+
+.banner-img {
+  width: 100%;
+  height: 420rpx;
+  display: block;
+  border-bottom-left-radius: 12rpx;
+  border-bottom-right-radius: 12rpx;
+}
+
+/* 返回按钮（别人主页，左侧） */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 20rpx 16rpx;
+  z-index: 10;
+}
+
+.top-bar__back {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-bar__icon {
+  font-size: 44rpx;
+  color: #fff;
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* 个人信息主体 */
+.profile-body {
+  padding: 0 30rpx 24rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #F1F2F6;
+}
+
+.avatar-action-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: -80rpx;
+  margin-bottom: 16rpx;
+}
+
+.profile-avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  border: 6rpx solid #fff;
+  background: #eee;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.action-btns {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding-bottom: 10rpx;
+}
+
+.btn-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  border: 1.5rpx solid #CFD3D8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon__text {
+  font-size: 34rpx;
+}
+
+.btn-icon__more {
+  font-size: 30rpx;
+  color: #1a1a1a;
+  letter-spacing: 2rpx;
+  line-height: 1;
+}
+
+.btn-outline {
+  height: 64rpx;
+  padding: 0 30rpx;
+  border: 1.5rpx solid #CFD3D8;
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.btn-fill {
+  height: 64rpx;
+  padding: 0 36rpx;
+  background: #1a1a1a;
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-fill--grey {
+  background: #F4F5F7;
+  border: 1.5rpx solid #CFD3D8;
+}
+
+.btn-fill__text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
+.btn-fill--grey .btn-fill__text {
+  color: #1a1a1a;
+}
+
+.name-line {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 4rpx;
+}
+
+.profile-name {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #0f1419;
+}
+
+.verified {
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  background: #007AFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verified__icon {
+  font-size: 22rpx;
+  color: #fff;
+  font-weight: 700;
+}
+
+.profile-handle {
+  font-size: 26rpx;
+  color: #536471;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.profile-bio {
+  font-size: 30rpx;
+  color: #0f1419;
+  line-height: 1.6;
+  display: block;
+  margin-bottom: 18rpx;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.meta-item {
+  font-size: 24rpx;
+  color: #536471;
+}
+
+.stats-row {
+  display: flex;
+  gap: 32rpx;
+}
+
+.stats-item {
+  display: flex;
+  align-items: baseline;
+}
+
+.stats-num {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #0f1419;
+}
+
+.stats-label {
+  font-size: 26rpx;
+  color: #536471;
+}
+
+/* Tab */
+.tab-bar {
+  display: flex;
+  border-bottom: 1rpx solid #EFF3F4;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28rpx 0;
+  position: relative;
+}
+
+.tab-text {
+  font-size: 28rpx;
+  color: #536471;
+}
+
+.tab-item--active .tab-text {
+  font-weight: 700;
+  color: #0f1419;
+}
+
+.tab-item--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rpx;
+  height: 6rpx;
+  background: #007AFF;
+  border-radius: 3rpx;
+}

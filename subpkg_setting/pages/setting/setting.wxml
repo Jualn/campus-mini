@@ -1,0 +1,220 @@
+<!-- subpkg_setting/pages/setting/index.wxml -->
+<view class="setting-page">
+
+  <!-- 顶部导航 -->
+  <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="top-bar__nav">
+      <view class="top-bar__back" bindtap="onBack">
+        <text class="top-bar__back-icon">‹</text>
+      </view>
+      <text class="top-bar__title">设置</text>
+      <view class="top-bar__placeholder" />
+    </view>
+  </view>
+
+  <view class="setting-body">
+
+    <!-- ===== 通知设置 ===== -->
+    <view class="section-label">通知设置</view>
+    <view class="setting-group">
+
+      <view class="setting-item">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">🎉</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">活动提醒</text>
+            <text class="setting-item__desc">报名截止、活动开始前提醒</text>
+          </view>
+        </view>
+        <switch class="setting-switch" checked="{{notify.activity}}" bindchange="onNotifyChange" data-key="activity"
+          color="#007AFF" />
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">📖</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">考试提醒</text>
+            <text class="setting-item__desc">报名开始、考试倒计时提醒</text>
+          </view>
+        </view>
+        <switch class="setting-switch" checked="{{notify.exam}}" bindchange="onNotifyChange" data-key="exam"
+          color="#007AFF" />
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">❤️</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">互动消息</text>
+            <text class="setting-item__desc">点赞、评论、关注通知</text>
+          </view>
+        </view>
+        <switch class="setting-switch" checked="{{notify.interaction}}" bindchange="onNotifyChange"
+          data-key="interaction" color="#007AFF" />
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">📢</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">系统公告</text>
+            <text class="setting-item__desc">平台通知、功能更新</text>
+          </view>
+        </view>
+        <switch class="setting-switch" checked="{{notify.system}}" bindchange="onNotifyChange" data-key="system"
+          color="#007AFF" />
+      </view>
+
+    </view>
+
+    <!-- ===== 隐私设置 ===== -->
+    <view class="section-label">隐私设置</view>
+    <view class="setting-group">
+
+      <view class="setting-item" bindtap="onPickPostVisibility">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">👁</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">谁可以看我的帖子</text>
+          </view>
+        </view>
+        <view class="setting-item__right">
+          <text class="setting-item__value">{{privacy.postVisibilityLabel}}</text>
+          <text class="setting-item__arrow">›</text>
+        </view>
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">💬</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">允许私信</text>
+            <text class="setting-item__desc">关闭后其他人无法向你发送私信</text>
+          </view>
+        </view>
+        <switch class="setting-switch" checked="{{privacy.allowDm}}" bindchange="onPrivacyChange" data-key="allowDm"
+          color="#007AFF" />
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">👤</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">允许被搜索到</text>
+            <text class="setting-item__desc">关闭后其他人无法通过ID搜索到你</text>
+          </view>
+        </view>
+        <switch class="setting-switch" checked="{{privacy.searchable}}" bindchange="onPrivacyChange"
+          data-key="searchable" color="#007AFF" />
+      </view>
+
+    </view>
+
+    <!-- ===== 账号与安全 ===== -->
+    <view class="section-label">账号与安全</view>
+    <view class="setting-group">
+
+      <view class="setting-item" bindtap="onGoEditProfile">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">✏️</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">编辑资料</text>
+          </view>
+        </view>
+        <text class="setting-item__arrow">›</text>
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item" bindtap="onGoBindPhone">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">📱</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">绑定手机号</text>
+          </view>
+        </view>
+        <view class="setting-item__right">
+          <text class="setting-item__value">{{account.phone || '未绑定'}}</text>
+          <text class="setting-item__arrow">›</text>
+        </view>
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item setting-item--danger" bindtap="onDeactivate">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">⚠️</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title setting-item__title--danger">注销账号</text>
+          </view>
+        </view>
+        <text class="setting-item__arrow">›</text>
+      </view>
+
+    </view>
+
+    <!-- ===== 关于与反馈 ===== -->
+    <view class="section-label">关于与反馈</view>
+    <view class="setting-group">
+
+      <view class="setting-item" bindtap="onGoFeedback">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">💡</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">意见反馈</text>
+          </view>
+        </view>
+        <text class="setting-item__arrow">›</text>
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item" bindtap="onGoAgreement">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">📄</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">用户协议</text>
+          </view>
+        </view>
+        <text class="setting-item__arrow">›</text>
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item" bindtap="onGoPrivacyPolicy">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">🔒</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">隐私政策</text>
+          </view>
+        </view>
+        <text class="setting-item__arrow">›</text>
+      </view>
+      <view class="setting-divider" />
+
+      <view class="setting-item">
+        <view class="setting-item__left">
+          <text class="setting-item__icon">🚀</text>
+          <view class="setting-item__text">
+            <text class="setting-item__title">当前版本</text>
+          </view>
+        </view>
+        <view class="setting-item__right">
+          <text class="setting-item__value">v{{version}}</text>
+        </view>
+      </view>
+
+    </view>
+
+    <!-- 退出登录 -->
+    <view class="logout-btn" bindtap="onLogout">
+      <text class="logout-btn__text">退出登录</text>
+    </view>
+
+    <view class="bottom-safe" />
+
+  </view>
+
+</view>

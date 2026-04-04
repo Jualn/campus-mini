@@ -1,0 +1,387 @@
+/* subpkg_community/pages/post-edit/index.wxss */
+
+/* 页面背景透明，透出下层首页 */
+page {
+  background: transparent;
+}
+
+/* =====================================================
+   背景遮罩
+   ===================================================== */
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 10;
+  transition: background 0.3s ease;
+}
+
+.backdrop--show {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* =====================================================
+   底部面板
+   ===================================================== */
+.panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 92vh;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+
+  /* 初始态：在屏幕下方 */
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+/* 弹起动画 */
+.panel--show {
+  transform: translateY(0);
+}
+
+/* 收起动画 */
+.panel--hide {
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* 拖拽指示条 */
+.panel__handle {
+  width: 64rpx;
+  height: 8rpx;
+  background: #E0E0E0;
+  border-radius: 4rpx;
+  margin: 16rpx auto 0;
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   顶部导航
+   ===================================================== */
+.panel__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 24rpx 16rpx;
+  border-bottom: 1rpx solid #F5F5F5;
+  flex-shrink: 0;
+}
+
+.panel__cancel {
+  padding: 10rpx 8rpx;
+}
+
+.panel__cancel-text {
+  font-size: 30rpx;
+  color: #999;
+}
+
+.panel__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.panel__submit {
+  padding: 12rpx 32rpx;
+  border-radius: 30rpx;
+  background: #D0D0D0;
+  transition: background 0.2s;
+}
+
+.panel__submit--on {
+  background: #007AFF;
+}
+
+.panel__submit-text {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* =====================================================
+   可滚动内容区
+   ===================================================== */
+.panel__body {
+  flex: 1;
+}
+
+/* 正文输入 */
+.content-area {
+  padding: 24rpx 28rpx 0;
+  position: relative;
+}
+
+.content-input {
+  width: 100%;
+  min-height: 200rpx;
+  font-size: 32rpx;
+  color: #1a1a1a;
+  line-height: 1.75;
+}
+
+.content-placeholder {
+  color: #bbb;
+  font-size: 32rpx;
+}
+
+.content-count {
+  display: block;
+  text-align: right;
+  font-size: 22rpx;
+  color: #ccc;
+  margin-top: 8rpx;
+}
+
+/* =====================================================
+   图片区
+   ===================================================== */
+.image-area {
+  padding: 16rpx 28rpx;
+}
+
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.image-item {
+  position: relative;
+  width: calc((100% - 24rpx) / 3);
+  aspect-ratio: 1;
+  border-radius: 12rpx;
+  overflow: visible;
+}
+
+.image-item__img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+  display: block;
+}
+
+/* 删除按钮 */
+.image-item__del {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.image-item__del-icon {
+  font-size: 20rpx;
+  color: #fff;
+}
+
+/* 添加图片按钮 */
+.image-add {
+  width: calc((100% - 24rpx) / 3);
+  aspect-ratio: 1;
+  border-radius: 12rpx;
+  border: 2rpx dashed #D0D0D0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  background: #F8F9FA;
+}
+
+.image-add__icon {
+  font-size: 40rpx;
+}
+
+.image-add__text {
+  font-size: 22rpx;
+  color: #bbb;
+}
+
+.image-add__count {
+  font-size: 22rpx;
+  color: #bbb;
+}
+
+/* =====================================================
+   话题标签
+   ===================================================== */
+.topics-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 0 28rpx 16rpx;
+}
+
+.topic-chip {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: #EBF5FF;
+  border-radius: 30rpx;
+  padding: 8rpx 16rpx;
+}
+
+.topic-chip__text {
+  font-size: 26rpx;
+  color: #007AFF;
+  font-weight: 500;
+}
+
+.topic-chip__del {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topic-chip__del-icon {
+  font-size: 18rpx;
+  color: #007AFF;
+}
+
+.bottom-pad {
+  height: 20rpx;
+}
+
+/* =====================================================
+   底部工具栏
+   ===================================================== */
+.panel__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 20rpx;
+  border-top: 1rpx solid #F5F5F5;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.toolbar-btn {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+}
+
+.toolbar-btn--text {
+  width: auto;
+  padding: 0 16rpx;
+  gap: 6rpx;
+  background: #F4F5F7;
+  border-radius: 30rpx;
+}
+
+.toolbar-btn__icon {
+  font-size: 36rpx;
+  color: #555;
+}
+
+.toolbar-btn--text .toolbar-btn__icon {
+  font-size: 28rpx;
+}
+
+.toolbar-btn__label {
+  font-size: 24rpx;
+  color: #555;
+}
+
+/* =====================================================
+   话题输入弹窗
+   ===================================================== */
+.topic-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+.topic-modal__mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.topic-modal__box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 16rpx 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.topic-modal__input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #F4F5F7;
+  border-radius: 40rpx;
+  padding: 0 24rpx;
+  height: 72rpx;
+  gap: 8rpx;
+}
+
+.topic-modal__hash {
+  font-size: 30rpx;
+  color: #007AFF;
+  font-weight: 700;
+}
+
+.topic-modal__input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #1a1a1a;
+  height: 72rpx;
+}
+
+.topic-modal__ph {
+  color: #bbb;
+}
+
+.topic-modal__confirm {
+  padding: 12rpx 28rpx;
+  background: #007AFF;
+  border-radius: 30rpx;
+  flex-shrink: 0;
+}
+
+.topic-modal__confirm-text {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 600;
+}

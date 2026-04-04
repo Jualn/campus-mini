@@ -1,0 +1,328 @@
+<!--
+  comment-panel 组件
+  支持两种模式：
+    mode="sheet"  → 弹出式半屏（用于 Feed 页点击评论按钮）
+    mode="inline" → 嵌入式（用于帖子详情页、活动详情页）
+-->
+<view class="cp-root">
+
+  <!-- ========== SHEET 模式：遮罩 + 半屏容器 ========== -->
+  <block wx:if="{{mode === 'sheet'}}">
+    <view class="cp-sheet-mask" style="opacity: {{maskOpacity}}; transition: {{maskTransition}};" catch:tap="onClose" />
+    <view class="cp-sheet-content"
+      style="transform: translateY({{sheetTranslateY}}px); transition: {{sheetTransition}};">
+
+      <!-- 拖拽指示条：绑定 touch 事件实现下划关闭 -->
+      <view class="cp-sheet__handle-area" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
+        catchtouchmove="onHandleTouchMove">
+        <view class="cp-sheet__handle" />
+      </view>
+      <!-- 标题栏 -->
+      <view class="cp-sheet__header" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
+        catchtouchmove="onHandleTouchMove">
+        <text class="cp-sheet__title">评论</text>
+        <text class="cp-sheet__count" wx:if="{{totalCount > 0}}">{{totalCount}}</text>
+        <view class="cp-sheet__close" bindtap="onClose">
+          <text class="cp-icon cp-icon--close">✕</text>
+        </view>
+      
+      </view>
+
+      <!-- 评论列表 scroll -->
+      <scroll-view class="cp-scroll" scroll-y enhanced bounces="{{false}}" show-scrollbar="{{false}}"
+        upper-threshold="15" bindscrolltoupper="onScrollToUpper" bindscrolltolower="onScrollToLower"
+        bindscroll="onScroll" bindtouchmove="onListTouchMove" bindtouchstart="onListTouchStart"
+        bindtouchend="onListTouchEnd">
+        
+        <view class="cp-list">
+          <!-- 初始加载骨架 -->
+          <block wx:if="{{firstLoading}}">
+            <view wx:for="{{[1,2,3]}}" wx:key="*this" class="cp-skeleton">
+              <view class="cp-skeleton__avatar" />
+              <view class="cp-skeleton__body">
+                <view class="cp-skeleton__line cp-skeleton__line--short" />
+                <view class="cp-skeleton__line" />
+                <view class="cp-skeleton__line cp-skeleton__line--medium" />
+              </view>
+            </view>
+          </block>
+
+          <!-- 评论列表 -->
+          <block wx:if="{{!firstLoading}}">
+            <block wx:if="{{commentList.length === 0}}">
+              <view class="cp-empty">
+                <text class="cp-empty__icon">💬</text>
+                <text class="cp-empty__text">暂无评论，来说点什么吧</text>
+              </view>
+            </block>
+
+            <block wx:else>
+              <view wx:for="{{commentList}}" wx:key="commentId" wx:for-item="comment" class="cp-comment">
+                <template is="commentItem" data="{{comment, mode}}" />
+              </view>
+
+              <!-- 加载更多 -->
+              <view class="cp-loadmore" wx:if="{{hasMoreComments}}">
+                <view class="cp-loadmore__btn" bindtap="loadMoreComments" wx:if="{{!loadingMore}}">
+                  <text>查看更多评论</text>
+                </view>
+                <view class="cp-loadmore__loading" wx:else>
+                  <view class="cp-spinner" />
+                  <text>加载中…</text>
+                </view>
+              </view>
+              <view class="cp-nomore" wx:if="{{!hasMoreComments && commentList.length > 0}}">
+                <text>共 {{totalCount}} 条评论</text>
+              </view>
+            </block>
+          </block>
+        </view>
+
+      </scroll-view>
+      <!-- </view> -->
+
+      <!-- ✅ 输入栏 + Banner：独立 fixed，只有这两个随键盘上移 -->
+      <!-- ✅ 只在 sheetVisible 时显示，面板关闭后消失 -->
+      <!-- <block wx:if="{{sheetVisible}}"> -->
+      <view class="cp-bottom-bar" style="padding-bottom: {{keyboardBottom}}px;">
+        <!-- 回复 Banner -->
+        <view class="cp-reply-banner" wx:if="{{replyTarget.nickName}}">
+          <text class="cp-reply-banner__text">回复 <text class="cp-reply-banner__name">@{{replyTarget.nickName}}</text>
+          </text>
+          <view class="cp-reply-banner__cancel" bindtap="cancelReply">✕</view>
+        </view>
+
+        <!-- 输入栏 -->
+        <view class="cp-inputbar" catchtouchmove="noop">
+          <view class="cp-inputbar__avatar cp-avatar cp-avatar--sm" style="background:{{selfAvatarBg}}">
+            <image wx:if="{{selfAvatarUrl}}" class="cp-avatar__img" src="{{selfAvatarUrl}}" mode="aspectFill" />
+            <text wx:else class="cp-avatar__char">{{selfAvatarChar}}</text>
+          </view>
+          <view class="cp-inputbar__wrap {{inputFocused ? 'cp-inputbar__wrap--focus' : ''}}">
+            <textarea class="cp-inputbar__input" value="{{inputValue}}"
+              placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : '说点什么…'}}"
+              placeholder-style="cp-inputbar__placeholder" maxlength="500" auto-height cursor-spacing="0"
+              focus="{{inputAutoFocus}}" show-confirm-bar="{{false}}" adjust-position="{{false}}"
+              bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur" />
+          </view>
+          <view class="cp-inputbar__send {{canSend ? '' : 'cp-inputbar__send--disabled'}}" bindtap="onSend">
+            <text class="cp-icon cp-icon--send">▶</text>
+          </view>
+        </view>
+      </view>
+      <!-- </block> -->
+
+    </view>
+  </block>
+
+  <!-- ========== INLINE 模式：直接嵌入 ========== -->
+  <block wx:if="{{mode === 'inline'}}">
+    <view class="cp-inline">
+      <!-- 标题栏 -->
+      <view class="cp-inline__header">
+        <text class="cp-inline__title">{{inlineTitle || '评论'}}</text>
+        <text class="cp-inline__count" wx:if="{{totalCount > 0}}">{{totalCount}}</text>
+      </view>
+
+      <!-- 评论列表 -->
+      <view class="cp-list cp-list--inline">
+        <!-- 初始加载骨架 -->
+        <block wx:if="{{firstLoading}}">
+          <view wx:for="{{[1,2,3]}}" wx:key="*this" class="cp-skeleton">
+            <view class="cp-skeleton__avatar" />
+            <view class="cp-skeleton__body">
+              <view class="cp-skeleton__line cp-skeleton__line--short" />
+              <view class="cp-skeleton__line" />
+              <view class="cp-skeleton__line cp-skeleton__line--medium" />
+            </view>
+          </view>
+        </block>
+
+        <block wx:if="{{!firstLoading}}">
+          <block wx:if="{{commentList.length === 0}}">
+            <view class="cp-empty">
+              <text class="cp-empty__icon">💬</text>
+              <text class="cp-empty__text">暂无评论，来说点什么吧</text>
+            </view>
+          </block>
+
+          <block wx:else>
+            <view wx:for="{{commentList}}" wx:key="commentId" wx:for-item="comment" class="cp-comment">
+              <template is="commentItem" data="{{comment, mode}}" />
+            </view>
+
+            <view class="cp-loadmore" wx:if="{{hasMoreComments}}">
+              <view class="cp-loadmore__btn" bindtap="loadMoreComments" wx:if="{{!loadingMore}}">
+                <text>查看更多评论</text>
+              </view>
+              <view class="cp-loadmore__loading" wx:else>
+                <view class="cp-spinner" />
+                <text>加载中…</text>
+              </view>
+            </view>
+            <view class="cp-nomore" wx:if="{{!hasMoreComments && commentList.length > 0}}">
+              <text>共 {{totalCount}} 条评论</text>
+            </view>
+          </block>
+        </block>
+      </view>
+
+      <view class="cp-bottom-bar cp-bottom-bar--inline" style="bottom: {{keyboardBottom}}px;" catchtouchmove="noop">
+        <!-- 图片预览 -->
+        <view class="cp-imgpreview" wx:if="{{previewImage}}">
+          <view class="cp-imgpreview__item">
+            <image class="cp-imgpreview__img" src="{{previewImage}}" mode="aspectFill" />
+            <view class="cp-imgpreview__remove" bindtap="removeImage">✕</view>
+          </view>
+        </view>
+
+        <!-- Inline 回复 Banner -->
+        <view class="cp-reply-banner" wx:if="{{replyTarget.nickName}}">
+          <text class="cp-reply-banner__text">回复 <text class="cp-reply-banner__name">@{{replyTarget.nickName}}</text>
+          </text>
+          <view class="cp-reply-banner__cancel" bindtap="cancelReply">✕</view>
+        </view>
+
+        <!-- Inline 输入栏（固定底部） -->
+        <view class="cp-inputbar ">
+          <view class="cp-inputbar__avatar cp-avatar cp-avatar--sm" style="background:{{selfAvatarBg}}">
+            <image wx:if="{{selfAvatarUrl}}" class="cp-avatar__img" src="{{selfAvatarUrl}}" mode="aspectFill" />
+            <text wx:else class="cp-avatar__char">{{selfAvatarChar}}</text>
+          </view>
+          <view class="cp-inputbar__wrap {{inputFocused ? 'cp-inputbar__wrap--focus' : ''}}">
+            <textarea class="cp-inputbar__input" value="{{inputValue}}"
+              placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : '说点什么…'}}"
+              placeholder-class="cp-inputbar__placeholder" maxlength="500" auto-height cursor-spacing="0"
+              focus="{{inputAutoFocus}}" show-confirm-bar="{{false}}" adjust-position="{{false}}"
+              bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur" />
+            <!-- 配图按钮（一级评论可用，回复时禁用） -->
+            <view class="cp-inputbar__imgbtn {{replyTarget.nickName ? 'cp-inputbar__imgbtn--disabled' : ''}}"
+              bindtap="onChooseImage">
+              <text class="cp-icon cp-icon--img">🖼</text>
+            </view>
+          </view>
+          <view class="cp-inputbar__send {{canSend || previewImage ? '' : 'cp-inputbar__send--disabled'}}"
+            bindtap="onSend">
+            <text class="cp-icon cp-icon--send">▶</text>
+          </view>
+        </view>
+
+      </view>
+
+    </view>
+  </block>
+
+</view>
+
+<!-- =================== 一级评论模板 =================== -->
+<template name="commentItem">
+  <view class="cp-comment__body">
+    <!-- 头像 -->
+    <view class="cp-avatar cp-avatar--sm" bind:tap="goToUser" data-user-id="{{comment.userId}}"
+      style="background:{{comment._avatarBg}}">
+      <image wx:if="{{comment.avatarUrl}}" class="cp-avatar__img" src="{{comment.avatarUrl}}" mode="aspectFill" />
+      <text wx:else class="cp-avatar__char">{{comment._avatarChar}}</text>
+    </view>
+    <!-- 主体 -->
+    <view class="cp-comment__main">
+      <text class="cp-comment__name">{{comment.nickName}}</text>
+      <text class="cp-comment__text" user-select="true">{{comment.content}}</text>
+      <!-- 配图 -->
+      <view class="cp-comment__img-wrap" wx:if="{{comment.imageUrl}}">
+        <image class="cp-comment__img" src="{{comment.imageUrl}}" mode="widthFix" bindtap="onPreviewImage"
+          data-url="{{comment.imageUrl}}" />
+      </view>
+      <!-- 操作栏 -->
+      <view class="cp-comment__footer">
+        <text class="cp-comment__time">{{comment.createTime}}</text>
+        <view class="cp-action {{comment.isLiked ? 'cp-action--liked' : ''}}" bindtap="onCommentLike"
+          data-comment-id="{{comment.commentId}}" data-is-liked="{{comment.isLiked}}">
+          <view class="cp-action-icon {{comment.isLiked ? 'liked' : ''}}">
+            <image class="icon like-off" src="/images/like.svg" />
+            <image class="icon like-on" src="/images/like-fill.svg" />
+          </view>
+          <text class="cp-action__count" wx:if="{{comment.likeCount > 0}}">{{comment.likeCount}}</text>
+        </view>
+        <view class="cp-action" bindtap="onReplyTap" data-comment-id="{{comment.commentId}}"
+          data-nick-name="{{comment.nickName}}" data-user-id="{{comment.userId}}">
+          <image class="cp-action-icon" src="/images/comment.svg" />
+          <text class="cp-action__text">回复</text>
+        </view>
+      </view>
+
+      <!-- ======= 二级评论区域 ======= -->
+      <view class="cp-replies"
+        wx:if="{{comment.replyCount > 0 || (comment.replyList && comment.replyList.length > 0)}}">
+
+        <!-- 收起状态：显示预览 + 展开按钮 -->
+        <block wx:if="{{!comment.repliesExpanded}}">
+          <view wx:for="{{comment.replyPreview}}" wx:key="replyId" wx:for-item="reply" class="cp-reply">
+            <template is="replyItem" data="{{reply, commentId: comment.commentId}}" />
+          </view>
+
+          <!-- 还有未展开的回复 -->
+          <view class="cp-replies__expand" wx:if="{{comment.replyCount > comment.replyPreview.length}}"
+            bindtap="onExpandReplies" data-comment-id="{{comment.commentId}}">
+            <text class="cp-replies__expand-text">展开 {{comment.replyCount - comment.replyPreview.length}} 条回复</text>
+            <text class="cp-replies__expand-arrow">▾</text>
+          </view>
+        </block>
+
+        <!-- 展开状态：显示已加载回复 + 加载更多 -->
+        <block wx:if="{{comment.repliesExpanded}}">
+          <view wx:for="{{comment.replyList}}" wx:key="replyId" wx:for-item="reply" class="cp-reply">
+            <template is="replyItem" data="{{reply, commentId: comment.commentId}}" />
+          </view>
+
+          <!-- 还有更多 -->
+          <view class="cp-replies__more" wx:if="{{comment.hasMoreReplies}}">
+            <view class="cp-replies__more-btn" bindtap="onLoadMoreReplies" data-comment-id="{{comment.commentId}}"
+              wx:if="{{!comment.loadingReplies}}">
+              <text>查看更多回复（还有 {{comment.remainReplies}} 条）</text>
+            </view>
+            <view class="cp-replies__more-loading" wx:else>
+              <view class="cp-spinner cp-spinner--sm" />
+              <text>加载中…</text>
+            </view>
+          </view>
+        </block>
+
+      </view>
+    </view>
+  </view>
+</template>
+
+<!-- =================== 二级回复模板 =================== -->
+<template name="replyItem">
+  <view class="cp-reply__body">
+    <view class="cp-avatar cp-avatar--xs" style="background:{{reply._avatarBg}}">
+      <image wx:if="{{reply.avatarUrl}}" class="cp-avatar__img" src="{{reply.avatarUrl}}" mode="aspectFill" />
+      <text wx:else class="cp-avatar__char">{{reply._avatarChar}}</text>
+    </view>
+    <view class="cp-reply__main">
+      <view class="cp-reply__header">
+        <text class="cp-reply__name">{{reply.nickName}}</text>
+        <text class="cp-reply__to" wx:if="{{reply.replyToName}}">回复 <text
+            class="cp-reply__to-name">@{{reply.replyToName}}</text>
+        </text>
+      </view>
+      <text class="cp-reply__text" user-select="true">{{reply.content}}</text>
+      <view class="cp-reply__footer">
+        <text class="cp-reply__time">{{reply.createTime}}</text>
+        <view class="cp-action cp-action--sm {{reply.isLiked ? 'cp-action--liked' : ''}}" bindtap="onReplyLike"
+          data-comment-id="{{commentId}}" data-reply-id="{{reply.replyId}}" data-is-liked="{{reply.isLiked}}">
+          <view class="cp-action-icon {{reply.isLiked ? 'liked' : ''}}">
+            <image class="icon like-off" src="/images/like.svg" />
+            <image class="icon like-on" src="/images/like-fill.svg" />
+          </view>
+          <text class="cp-action__count" wx:if="{{reply.likeCount > 0}}">{{reply.likeCount}}</text>
+        </view>
+        <view class="cp-action cp-action--sm" bindtap="onReplyTap" data-comment-id="{{commentId}}"
+          data-nick-name="{{reply.nickName}}" data-user-id="{{reply.userId}}">
+          <image class="cp-action-icon" src="/images/comment.svg" />
+          <text class="cp-action__text">回复</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>

@@ -1,0 +1,12 @@
+<view class="grid-container grid-{{images.length > 9 ? 9 : images.length}}">
+  <block wx:for="{{images}}" wx:key="index">
+    <image 
+      class="grid-item item-{{index}}" 
+      src="{{item}}" 
+      mode="{{images.length === 1 ? 'widthFix' : 'aspectFill'}}" 
+      lazy-load
+      catchtap="onPreview" 
+      data-current="{{item}}"
+    />
+  </block>
+</view>

@@ -1,0 +1,159 @@
+<!-- subpkg_exam/pages/detail/index.wxml -->
+<view class="detail-page">
+
+  <!-- Hero -->
+  <view class="hero hero--{{exam.color}}" style="padding-top:{{statusBarHeight}}px;">
+    <view class="hero-nav">
+      <view class="hero-back" bindtap="onBack">
+        <text class="hero-back__icon">‹</text>
+      </view>
+      <view class="hero-collect {{collected?'hero-collect--on':''}}" bindtap="onToggleCollect">
+        <text class="hero-collect__icon">{{collected?'⭐':'☆'}}</text>
+      </view>
+    </view>
+    <view class="hero-body">
+      <text class="hero-icon">{{exam.icon}}</text>
+      <text class="hero-name">{{exam.name}}</text>
+      <text class="hero-tagline">{{exam.tagline}}</text>
+      <text class="hero-organizer">主办：{{exam.organizer}}</text>
+    </view>
+    <!-- 报名状态提示 -->
+    <view class="hero-status">
+      <view class="status-pill status-pill--open" wx:if="{{exam.enrollStatus==='open'}}">
+        <text class="status-pill__dot" />
+        <text class="status-pill__text">报名进行中</text>
+      </view>
+      <view class="status-pill status-pill--upcoming" wx:elif="{{exam.enrollStatus==='upcoming'}}">
+        <text class="status-pill__text">报名尚未开始</text>
+      </view>
+      <view class="status-pill status-pill--closed" wx:elif="{{exam.enrollStatus==='closed'}}">
+        <text class="status-pill__text">本期报名已结束</text>
+      </view>
+      <!-- 倒计时 -->
+      <view class="hero-countdown" wx:if="{{exam.daysLeft > 0 && exam.currentTerm.examDate}}">
+        <text class="hero-countdown__num">{{exam.daysLeft}}</text>
+        <text class="hero-countdown__label">天后开考</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 本期时间 -->
+  <view class="section-card">
+    <text class="section-title">📅 本期时间安排</text>
+
+    <!-- 考试规律 -->
+    <view class="freq-tip">
+      <text class="freq-tip__icon">🔁</text>
+      <text class="freq-tip__text">{{exam.frequency}}</text>
+    </view>
+
+    <!-- 动态时间线 -->
+    <view class="timeline">
+      <view wx:for="{{exam.timeline}}" wx:key="label"
+        class="tl-item {{index === exam.timeline.length - 1 ? 'tl-item--last' : ''}}">
+        <!-- 状态圆点 -->
+        <view class="tl-dot tl-dot--{{item.status}}" />
+        <!-- 连接线（最后一项不显示） -->
+        <view class="tl-line" wx:if="{{index < exam.timeline.length - 1}}" />
+
+        <view class="tl-content">
+          <!-- 标签行：名称 + 来源角标 -->
+          <view class="tl-header">
+            <text class="tl-label">{{item.label}}</text>
+            <text class="tl-source">{{item.source}}</text>
+          </view>
+
+          <!-- 有日期：显示日期，有时分一起显示 -->
+          <view wx:if="{{item.date}}" class="tl-datetime">
+            <text class="tl-date">{{item.date}}</text>
+            <text class="tl-time" wx:if="{{item.time}}">{{item.time}}</text>
+          </view>
+
+          <!-- 无日期：显示待通知状态 -->
+          <text wx:else class="tl-pending">待通知</text>
+
+          <!-- 备注（往年规律 / 补充说明） -->
+          <text class="tl-note" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 时间来源说明 -->
+    <view class="source-tip" wx:if="{{exam.timeSource}}">
+      <text class="source-tip__icon">ℹ️</text>
+      <text class="source-tip__text">{{exam.timeSource}}</text>
+    </view>
+  </view>
+
+  <!-- 基本信息 -->
+  <view class="section-card">
+    <text class="section-title">📋 基本信息</text>
+    <view class="info-list">
+      <view wx:for="{{exam.info}}" wx:key="label" class="info-row">
+        <text class="info-label">{{item.label}}</text>
+        <view class="info-value-wrap">
+          <text class="info-value">{{item.value}}</text>
+          <text class="info-note" wx:if="{{item.note}}">仅供参考</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 考试内容概况 -->
+  <view class="section-card" wx:if="{{exam.subjects.length}}">
+    <text class="section-title">📝 考试内容</text>
+    <text class="section-disclaimer">以下信息来源于官方大纲，具体以当年考纲为准</text>
+    <view class="subject-list">
+      <view wx:for="{{exam.subjects}}" wx:key="name" class="subject-item">
+        <view class="subject-left">
+          <text class="subject-name">{{item.name}}</text>
+          <text class="subject-desc" wx:if="{{item.desc}}">{{item.desc}}</text>
+        </view>
+        <text class="subject-score" wx:if="{{item.score}}">{{item.score}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 须知 -->
+  <view class="section-card" wx:if="{{exam.mustKnow.length}}">
+    <text class="section-title">⚠️ 考试须知</text>
+    <text class="section-disclaimer">以下为官方硬性规定，请以当年官方考生手册为准</text>
+    <view class="mustknow-list">
+      <view wx:for="{{exam.mustKnow}}" wx:key="*this" class="mustknow-item">
+        <text class="mustknow-dot">·</text>
+        <text class="mustknow-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 官方资源出口 -->
+  <view class="section-card">
+    <text class="section-title">🔗 官方资源</text>
+    <text class="section-disclaimer">以下链接均为官方网站，在微信内置浏览器中打开</text>
+    <view class="link-list">
+      <view wx:for="{{exam.links}}" wx:key="label" class="link-item {{item.primary?'link-item--primary':''}}"
+        bindtap="onOpenLink" data-url="{{item.url}}" data-label="{{item.label}}">
+        <view class="link-left">
+          <text class="link-icon">{{item.icon}}</text>
+          <view class="link-text">
+            <text class="link-label">{{item.label}}</text>
+            <text class="link-desc">{{item.desc}}</text>
+          </view>
+        </view>
+        <text class="link-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-safe" />
+
+  <!-- 底部报名按钮 -->
+  <view class="bottom-bar">
+    <view class="enroll-btn enroll-btn--{{exam.enrollStatus}} enroll-btn--{{exam.color}}" bindtap="onEnroll">
+      <view class="enroll-btn__text">
+        {{exam.enrollStatus==='open'?'前往官网报名':exam.enrollStatus==='upcoming'?'报名尚未开始':'本期报名已结束'}}
+      </view>
+    </view>
+  </view>
+
+</view>

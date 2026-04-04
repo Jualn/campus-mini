@@ -1,0 +1,31 @@
+/* pages/user/index.wxss */
+page {
+  background: #fff;
+}
+
+.page {
+  min-height: 100vh;
+  background: #fff;
+}
+
+.list-footer {
+  padding: 50rpx 0 120rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.footer-text {
+  font-size: 24rpx;
+  color: #CFD3D8;
+}
+
+.popup-touch-blocker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* 只覆盖遮罩区域（上方 30vh），面板区域由组件自己处理 */
+  height: 20vh;
+  z-index: 800;  /* 在 page-container（900）下���一层，但在页面内容上面 */
+  background: transparent;
+}

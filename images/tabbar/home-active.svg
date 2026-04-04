@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .roof {
+        fill: none;
+        stroke: #1677FF;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-miterlimit: 10;
+      }
+      .wall {
+        fill: #DDEEFF;
+        stroke: #1677FF;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-miterlimit: 10;
+      }
+      .door {
+        fill: #1677FF;
+        stroke: none;
+      }
+    </style>
+  </defs>
+  <!-- 屋顶箭头 -->
+  <polyline class="roof" points="4.14 11.41 12 4.48 19.92 11.41"/>
+  <!-- 墙体（填充浅蓝） -->
+  <polygon class="wall" points="5.57 10.18 5.57 19.46 18.33 19.46 18.33 10.27 12 4.48"/>
+  <!-- 门（蓝色实心） -->
+  <path class="door" d="M9.16,19.31V15.12A2.82,2.82,0,0,1,12,12.3h0a2.81,2.81,0,0,1,2.81,2.82v4.19Z"/>
+</svg>

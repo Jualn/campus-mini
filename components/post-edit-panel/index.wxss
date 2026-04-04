@@ -1,0 +1,244 @@
+/* components/post-edit-panel/index.wxss */
+
+/* ── 根容器：全屏覆盖，隔离事件 ────────── */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  /* 不设背景色，让 .mask 单独控制遮罩 */
+  pointer-events: none;
+  /* 根容器本身不拦截，子元素各自处理 */
+}
+
+/* ── 遮罩 ───────────────────────────────── */
+.mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  will-change: transform;
+  pointer-events: auto;
+}
+
+/* ── 拖拽条 ────────────────────────────── */
+.panel__handle-area {
+  width: 100%;
+  min-height: 48rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.panel__handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: #e4e6eb;
+}
+
+/* ── 顶部栏 ────────────────────────────── */
+.panel__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  border-bottom: 1rpx solid #F5F5F5;
+  flex-shrink: 0;
+}
+
+.panel__cancel {
+  padding: 8rpx;
+}
+
+.panel__cancel-text {
+  font-size: 30rpx;
+  color: #999;
+}
+
+.panel__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.panel__submit {
+  padding: 12rpx 32rpx;
+  border-radius: 30rpx;
+  background: #D0D0D0;
+  transition: background 0.2s;
+}
+
+.panel__submit--on {
+  background: #007AFF;
+}
+
+.panel__submit-text {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ── 内容区 ────────────────────────────── */
+.panel__body {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  /* 修复某些机型 flex 子项不收缩导致 scroll-view 撑不开的问题 */
+}
+
+/* ── 正文输入 ───────────────────────────── */
+.content-area {
+  padding: 28rpx 28rpx 0;
+  /* 不设 position relative，避免 count 覆盖 textarea */
+}
+
+.content-input {
+  /*
+   * width: 100% 在小程序 textarea 里要配合 box-sizing 才准确，
+   * 这里直接撑满父容器即可，不额外设 padding。
+   * placeholder 对齐：不设 line-height（让系统默认），font-size 与 ph 一致。
+   */
+  width: 100%;
+  min-height: 160rpx;
+  font-size: 32rpx;
+  color: #1a1a1a;
+  line-height: 1.6;
+  /* 关键：去掉任何会让光标偏移的 padding/margin */
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* placeholder 样式必须与 .content-input 的 font-size / line-height 完全一致，
+   否则光标与 placeholder 文字会错位 */
+.content-ph {
+  color: #bbb;
+  font-size: 32rpx;
+  line-height: 1.6;
+}
+
+/* 字数独立在 textarea 下方，绝对不会盖住输入内容 */
+.content-count {
+  display: block;
+  text-align: right;
+  font-size: 22rpx;
+  color: #ccc;
+  margin-top: 8rpx;
+  padding-right: 4rpx;
+}
+
+/* ── 图片区 ────────────────────────────── */
+.image-area {
+  padding: 20rpx 28rpx 0;
+}
+
+/*
+ * 用 display:grid 三列等宽，彻底避免 flex+margin 的子像素换行问题。
+ * grid 会把每个子元素严格限制在列宽内，不会因为浮点误差挤到下一行。
+ */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10rpx;
+}
+
+.image-item {
+  position: relative;
+  width: 100%;
+  /* padding-top: 100% 让格子变正方形（相对于自身宽度） */
+  padding-top: 100%;
+  height: 0;
+  border-radius: 12rpx;
+  overflow: visible;
+  /* del 角标需要溢出 */
+}
+
+/* 图片本体：绝对定位铺满 padding-top 撑出的空间 */
+.image-item__img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+  display: block;
+}
+
+.image-item__del {
+  position: absolute;
+  top: -12rpx;
+  right: -12rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.image-item__del-icon {
+  font-size: 20rpx;
+  color: #fff;
+  line-height: 1;
+}
+
+/* 添加按钮：复用 .image-item 尺寸，内容居中 */
+.image-add {
+  border-radius: 12rpx;
+  border: 2rpx dashed #D0D0D0;
+  background: #F8F9FA;
+  /* 内容居中：绝对定位一个 flex 容器铺满 */
+  overflow: hidden;
+}
+
+/* 添加按钮内部用绝对定位居中 */
+.image-add::after {
+  content: '';
+  /* 不能用伪元素放文字，用 wxml 里的两个 text 即可，
+     这里只做背景装饰无内容 */
+}
+
+/* 添加按钮的图标和提示文字：
+   因为 .image-item 本身是 padding-top hack，内容需绝对定位居中 */
+.image-add .image-add__icon,
+.image-add .image-add__hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.image-add__icon {
+  top: 30%;
+  font-size: 44rpx;
+  color: #bbb;
+  line-height: 1;
+}
+
+.image-add__hint {
+  bottom: 22%;
+  font-size: 22rpx;
+  color: #bbb;
+  white-space: nowrap;
+}
+
+/* ── 底部间距 ───────────────────────────── */
+.body-pad {
+  height: 32rpx;
+  flex-shrink: 0;
+}

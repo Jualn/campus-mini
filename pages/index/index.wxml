@@ -1,0 +1,131 @@
+<view class="index-page" style="margin-top:{{navHeight}}px;">
+
+  <view class="home-header">
+
+    <view class="search-section">
+      <view class="user-greet">
+        <text class="greet-text">你好，同学</text>
+        <text class="sub-text">今天也是努力的一天</text>
+      </view>
+      <view class="search-box" bindtap="toSearch">
+        <icon type="search" size="16" color="#999"></icon>
+        <text>搜索动态、资料或活动</text>
+      </view>
+    </view>
+
+    <!-- 考试卡片 -->
+    <view class="exam-section">
+      <view class="section-title">
+        <text>备考看板</text>
+        <text class="more-link" bind:tap="goToExamList">更多考试 ></text>
+      </view>
+      <scroll-view scroll-x class="exam-scroll" enable-flex>
+        <view class="exam-card {{exam.color}}" wx:for="{{examList}}" wx:key="id" wx:for-item="exam"
+          data-id="{{exam.id}}" bind:tap="goToExamDetail">
+          <view class="exam-name">{{exam.name}}</view>
+          <view class="exam-date">{{exam.date}}</view>
+          <view class="exam-countdown">
+            还剩 <text class="days">{{exam.days}}</text> 天
+          </view>
+          <view class="card-bg-icon">{{exam.icon}}</view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 快捷导航 -->
+    <view class="quick-nav">
+      <view class="nav-item" bindtap="goToActivityList">
+        <view class="nav-icon act">📅</view>
+        <text>校园活动</text>
+      </view>
+      <view class="nav-item" bindtap="goToExamList">
+        <view class="nav-icon exam">📝</view>
+        <text>考试资讯</text>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- Feed 标题栏 + Tab 切换 -->
+  <view class="feed-header">
+    <view class="feed-tab active">全站动态</view>
+    <!-- <view class="feed-tab">关注</view> -->
+    <!-- <view class="feed-tab-line"></view> -->
+  </view>
+
+  <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
+
+    <post-card post="{{post}}" bind:posttap="onPostTap" bind:user="onPostUser" bind:like="onPostLike"
+      bind:comment="onOpenComment" bind:share="onOpenShare" bind:more="onPostMore" />
+    <!--  活动插片 -->
+    <view class="activity-section" wx:if="{{index === 2}}">
+      <view class="section-header">
+        <text class="section-title-text">🎉 校园热门活动</text>
+        <text class="section-more">查看全部 ›</text>
+      </view>
+      <scroll-view scroll-x class="activity-scroll" enable-flex>
+        <view class="activity-card" wx:for="{{activities}}" wx:key="id" wx:for-item="act">
+          <image src="{{act.poster}}" mode="aspectFill" class="act-poster" />
+          <view class="act-info">
+            <text class="act-name">{{act.title}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </block>
+
+  <!-- 底部加载状态 -->
+  <view class="list-footer">
+    <text class="footer-text">— 已经到底啦 —</text>
+  </view>
+
+</view>
+
+<!-- ✅ 弹窗打开时的全屏触摸拦截层，放在 page-container 外面 -->
+<view wx:if="{{showPopup}}" style="{{popupType==='post-edit'?'height:10vh;':'height:20vh;'}}"
+  class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
+
+<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" position="bottom"
+  close-on-slide-down="{{false}}" z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave"
+  bind:afterleave="onPopupAfterLeave" bind:clickoverlay="onOverlayTap">
+  <!-- 评论区弹窗 -->
+  <comment-panel wx:if="{{popupType === 'comment'}}" mode="sheet" target-id="{{currentPostId}}" target-type="post"
+    total-count="{{currentCommentCount}}" visible="{{showPopup}}" bind:close="onCommentClose"
+    bind:count-change="onCommentCountChange" />
+  <!-- post发布弹窗 -->
+  <post-edit-panel wx:elif="{{popupType==='post-edit'}}" bind:submit="onPostSubmit" bind:close="onPostEditClose" />
+  <!-- share弹窗 -->
+  <share-panel wx:elif="{{popupType==='share'}}" post="{{currentPost}}" bind:close="onShareClose"
+    bind:share="onShareReady" bind:updateShareImage="onUpdateShareImage" />
+</page-container>
+
+<!-- FAB + 展开菜单 -->
+<!-- fab-wrap 只做逻辑容器，不参与动画，避免 fixed 子元素不撑高父容器的问题 -->
+<view class="fab-wrap">
+
+  <!-- 展开菜单遮罩 -->
+  <view class="fab-mask {{fabOpen ? 'fab-mask--show' : ''}}" catchtap="onCloseFab" />
+
+  <!-- 展开的选项 -->
+  <view class="fab-menu {{fabOpen ? 'fab-menu--show' : ''}}" style="bottom:{{fabMenuBottom}}px;">
+    <view class="fab-menu-item" wx:if="{{canPublishActivity}}" catchtap="onPublishActivity">
+      <view class="fab-menu-item__icon-wrap fab-menu-item__icon-wrap--orange">
+        <text class="fab-menu-item__icon">🎉</text>
+      </view>
+      <text class="fab-menu-item__label">发布活动</text>
+    </view>
+    <view class="fab-menu-item" catchtap="onPublishPost">
+      <view class="fab-menu-item__icon-wrap fab-menu-item__icon-wrap--blue">
+        <text class="fab-menu-item__icon">✏️</text>
+      </view>
+      <text class="fab-menu-item__label">发帖子</text>
+    </view>
+  </view>
+
+  <!-- FAB 主按钮：动画直接写在按钮自身，不依赖父容器高度 -->
+  <view class="fab {{fabOpen ? 'fab--open' : ''}} {{tabBarHidden ? 'fab--hidden' : ''}}" catchtap="onTapFab"
+    style="bottom:{{fabBottomDock}}px;">
+    <text class="fab__icon">{{fabOpen ? '✕' : '+'}}</text>
+  </view>
+
+</view>

@@ -1,0 +1,305 @@
+<!-- subpkg_activity/pages/detail/index.wxml -->
+<view class="detail-page">
+
+  <!-- 封面区：固定比例，返回按钮浮在上面 -->
+  <view class="cover-section">
+    <!-- 有封面图 -->
+    <image wx:if="{{activity.cover}}" class="cover-img" src="{{activity.cover}}" mode="aspectFill" />
+    <!-- 无封面：按类型渐变兜底 -->
+    <view wx:else class="cover-placeholder cover-placeholder--{{activity.typeColor}}">
+      <text class="cover-placeholder__icon">{{activity.typeIcon}}</text>
+    </view>
+    <!-- 顶部渐变遮罩（让返回按钮更清晰） -->
+    <view class="cover-top-mask" style="padding-top:{{statusBarHeight}}px;">
+      <view class="cover-back" bindtap="onBack">
+        <text class="cover-back__icon">‹</text>
+      </view>
+    </view>
+    <!-- 底部渐变遮罩 -->
+    <view class="cover-bottom-mask" />
+  </view>
+
+  <!-- 信息卡：margin-top负值压住封面底部，形成层叠 -->
+  <view class="info-card">
+    <!-- 状态 + 系列标签行 -->
+    <view class="info-card__tags">
+      <view class="hero-status hero-status--{{activity.status}}">
+        <text class="hero-status__dot" wx:if="{{activity.status==='enrolling'}}" />
+        <text class="hero-status__text">{{activity.statusLabel}}</text>
+      </view>
+      <text class="info-card__series" wx:if="{{activity.series_name}}">{{activity.series_name}}</text>
+      <view class="info-card__type-badge">
+        <text class="info-card__type-text">{{activity.type}}</text>
+      </view>
+    </view>
+
+    <!-- 标题 -->
+    <text class="info-card__title">{{activity.title}}</text>
+
+    <!-- 主办方 + 范围 -->
+    <view class="info-card__meta">
+      <text class="info-card__organizer">{{activity.organizer}}</text>
+      <text class="info-card__scope">{{activity.scope}}</text>
+    </view>
+
+    <!-- 分隔线 -->
+    <view class="info-card__divider" />
+
+    <!-- 关键数据三格：报名截止 / 活动时间 / 人数 -->
+    <view class="info-card__stats">
+      <view class="info-stat" wx:if="{{activity.enroll_deadline}}">
+        <text class="info-stat__value info-stat__value--deadline">
+          {{activity.daysToDeadline >= 0 ? activity.daysToDeadline + '天' : '已截止'}}
+        </text>
+        <text class="info-stat__label">报名截止</text>
+      </view>
+      <view class="info-stat__sep" wx:if="{{activity.enroll_deadline && activity.start_time}}" />
+      <view class="info-stat" wx:if="{{activity.start_time}}">
+        <text class="info-stat__value">{{activity.startDateShort}}</text>
+        <text class="info-stat__label">活动开始</text>
+      </view>
+      <view class="info-stat__sep" wx:if="{{activity.start_time && activity.max_participants}}" />
+      <view class="info-stat" wx:if="{{activity.max_participants}}">
+        <text class="info-stat__value">{{activity.max_participants}}</text>
+        <text class="info-stat__label">人数限制</text>
+      </view>
+      <!-- 三项都没有时显示发布时间 -->
+      <view class="info-stat"
+        wx:if="{{!activity.enroll_deadline && !activity.start_time && !activity.max_participants}}">
+        <text class="info-stat__value">{{activity.published_at}}</text>
+        <text class="info-stat__label">发布时间</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 关键时间卡片（最突出） -->
+  <view class="section-card" wx:if="{{activity.enroll_deadline || activity.start_time}}">
+    <text class="section-title">⏰ 重要时间</text>
+
+    <!-- 报名截止（最重要，单独突出） -->
+    <view class="deadline-block" wx:if="{{activity.enroll_deadline}}">
+      <view class="deadline-left">
+        <text class="deadline-label">报名截止</text>
+        <text class="deadline-value">{{activity.enroll_deadline}}</text>
+      </view>
+      <view class="deadline-countdown" wx:if="{{activity.daysToDeadline !== null && activity.daysToDeadline >= 0}}">
+        <text class="deadline-days">{{activity.daysToDeadline}}</text>
+        <text class="deadline-days-unit">天后截止</text>
+      </view>
+      <view class="deadline-expired" wx:elif="{{activity.daysToDeadline < 0}}">
+        <text class="deadline-expired-text">已截止</text>
+      </view>
+    </view>
+
+    <!-- 其他时间线 -->
+    <view class="timeline" wx:if="{{activity.timeline && activity.timeline.length}}">
+      <view wx:for="{{activity.timeline}}" wx:key="label"
+        class="tl-item {{index===activity.timeline.length-1?'tl-item--last':''}}">
+        <view class="tl-dot tl-dot--{{item.status}}" />
+        <view class="tl-line" wx:if="{{index<activity.timeline.length-1}}" />
+        <view class="tl-content">
+          <view class="tl-header">
+            <text class="tl-label">{{item.label}}</text>
+            <text class="tl-source" wx:if="{{item.source}}">{{item.source}}</text>
+          </view>
+          <view class="tl-datetime" wx:if="{{item.date}}">
+            <text class="tl-date">{{item.date}}</text>
+            <text class="tl-time" wx:if="{{item.time}}">{{item.time}}</text>
+          </view>
+          <text class="tl-pending" wx:else>待通知</text>
+          <text class="tl-note" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 活动时间 + 地点 -->
+    <view class="time-rows">
+      <view class="time-row" wx:if="{{activity.start_time}}">
+        <text class="time-row__icon">📅</text>
+        <view class="time-row__body">
+          <text class="time-row__label">活动时间</text>
+          <text class="time-row__value">
+            {{activity.start_time}}{{activity.end_time ? ' — ' + activity.end_time : ''}}
+          </text>
+        </view>
+      </view>
+      <view class="time-row" wx:if="{{activity.location}}">
+        <text class="time-row__icon">📍</text>
+        <view class="time-row__body">
+          <text class="time-row__label">活动地点</text>
+          <text class="time-row__value">{{activity.location}}</text>
+        </view>
+      </view>
+      <view class="time-row" wx:if="{{activity.max_participants}}">
+        <text class="time-row__icon">👥</text>
+        <view class="time-row__body">
+          <text class="time-row__label">人数限制</text>
+          <text class="time-row__value">{{activity.max_participants}}人</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 活动介绍 -->
+  <view class="section-card" wx:if="{{activity.description}}">
+    <text class="section-title">📋 活动介绍</text>
+    <text class="section-desc">{{activity.description}}</text>
+  </view>
+
+  <!-- 奖项/激励 -->
+  <view class="section-card" wx:if="{{activity.rewards && activity.rewards.length}}">
+    <text class="section-title">🏆 奖项设置</text>
+    <view class="reward-list">
+      <view wx:for="{{activity.rewards}}" wx:key="level" class="reward-item">
+        <text class="reward-level">{{item.level}}</text>
+        <view class="reward-right">
+          <text class="reward-count" wx:if="{{item.count}}">{{item.count}}名</text>
+          <text class="reward-prize" wx:if="{{item.prize}}">{{item.prize}}</text>
+          <text class="reward-note" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 报名方式 -->
+  <view class="section-card" wx:if="{{activity.join_methods && activity.join_methods.length}}">
+    <text class="section-title">📝 报名方式</text>
+    <view class="join-list">
+
+      <block wx:for="{{activity.join_methods}}" wx:key="type">
+
+        <!-- 二维码 -->
+        <view class="join-item join-item--qrcode" wx:if="{{item.type==='qrcode'}}">
+          <view class="join-label-row">
+            <text class="join-icon">📷</text>
+            <text class="join-label">{{item.label}}</text>
+          </view>
+          <image class="join-qrcode" src="{{item.image_url}}" mode="aspectFit" show-menu-by-longpress="{{true}}" />
+          <text class="join-note" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+
+        <!-- QQ群 -->
+        <view class="join-item" wx:elif="{{item.type==='qq'}}" bindtap="onCopy" data-text="{{item.group_id}}"
+          data-label="QQ群号">
+          <view class="join-left">
+            <text class="join-icon">💬</text>
+            <view class="join-text">
+              <text class="join-label">{{item.label}}</text>
+              <text class="join-value">群号：{{item.group_id}}</text>
+              <text class="join-note" wx:if="{{item.note}}">{{item.note}}</text>
+            </view>
+          </view>
+          <text class="join-copy">复制</text>
+        </view>
+
+        <!-- 邮件 -->
+        <view class="join-item" wx:elif="{{item.type==='email'}}" bindtap="onCopy" data-text="{{item.email}}"
+          data-label="邮箱">
+          <view class="join-left">
+            <text class="join-icon">📧</text>
+            <view class="join-text">
+              <text class="join-label">{{item.label}}</text>
+              <text class="join-value">{{item.email}}</text>
+              <text class="join-note" wx:if="{{item.note}}">{{item.note}}</text>
+            </view>
+          </view>
+          <text class="join-copy">复制</text>
+        </view>
+
+        <!-- 链接/表单 -->
+        <view class="join-item" wx:elif="{{item.type==='link'}}" bindtap="onOpenLink" data-url="{{item.url}}"
+          data-label="{{item.label}}">
+          <view class="join-left">
+            <text class="join-icon">🔗</text>
+            <view class="join-text">
+              <text class="join-label">{{item.label}}</text>
+              <text class="join-note" wx:if="{{item.note}}">{{item.note}}</text>
+            </view>
+          </view>
+          <text class="join-arrow">›</text>
+        </view>
+
+        <!-- 公众号 -->
+        <view class="join-item" wx:elif="{{item.type==='wechat'}}">
+          <view class="join-left">
+            <text class="join-icon">💚</text>
+            <view class="join-text">
+              <text class="join-label">{{item.label}}</text>
+              <text class="join-value">{{item.account}}</text>
+              <text class="join-note" wx:if="{{item.note}}">{{item.note}}</text>
+            </view>
+          </view>
+        </view>
+
+      </block>
+
+    </view>
+  </view>
+
+  <!-- 联系人 -->
+  <view class="section-card" wx:if="{{activity.contacts && activity.contacts.length}}">
+    <text class="section-title">👤 联系人</text>
+    <view class="contact-list">
+      <view wx:for="{{activity.contacts}}" wx:key="name" class="contact-item">
+        <view class="contact-left">
+          <text class="contact-avatar">{{item.name[0]}}</text>
+          <view class="contact-info">
+            <view class="contact-name-row">
+              <text class="contact-name">{{item.name}}</text>
+              <text class="contact-role" wx:if="{{item.role}}">{{item.role}}</text>
+            </view>
+            <text class="contact-phone" wx:if="{{item.phone}}">{{item.phone}}</text>
+            <text class="contact-qq" wx:if="{{item.qq}}">QQ：{{item.qq}}</text>
+          </view>
+        </view>
+        <view class="contact-actions">
+          <view class="contact-btn" bindtap="onCopy" data-text="{{item.phone}}" data-label="手机号" wx:if="{{item.phone}}">
+            <text class="contact-btn__text">复制</text>
+          </view>
+          <view class="contact-btn" bindtap="onCopy" data-text="{{item.qq}}" data-label="QQ号" wx:if="{{item.qq}}">
+            <text class="contact-btn__text">复制QQ</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 附件 -->
+  <view class="section-card" wx:if="{{activity.attachments && activity.attachments.length}}">
+    <text class="section-title">📎 相关文件</text>
+    <text class="section-disclaimer">以下文件为活动原始通知，可查看完整内容</text>
+    <view class="attachment-list">
+      <view wx:for="{{activity.attachments}}" wx:key="name" class="attachment-item" bindtap="onOpenAttachment"
+        data-url="{{item.url}}" data-type="{{item.type}}" data-name="{{item.name}}">
+        <text class="attachment-icon">
+          {{item.type==='pdf'?'📄':item.type==='image'?'🖼':item.type==='doc'?'📝':'📁'}}
+        </text>
+        <view class="attachment-body">
+          <text class="attachment-name">{{item.name}}</text>
+          <text class="attachment-note" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+        <text class="attachment-type-badge">{{item.type.toUpperCase()}}</text>
+        <text class="attachment-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 来源信息 -->
+  <view class="source-card">
+    <text class="source-item" wx:if="{{activity.source}}">文件编号：{{activity.source}}</text>
+    <text class="source-item">发布方：{{activity.published_by || activity.organizer}}</text>
+    <text class="source-item">发布时间：{{activity.published_at}}</text>
+  </view>
+
+  <view class="bottom-safe" />
+
+  <!-- 底部报名按钮（仅报名中显示） -->
+  <view class="bottom-bar" wx:if="{{activity.join_methods && activity.join_methods.length}}">
+    <view class="enroll-btn enroll-btn--{{activity.status}}" bindtap="onScrollToJoin">
+      <text class="enroll-btn__text">
+        {{activity.status==='enrolling'?'查看报名方式':activity.status==='upcoming'?'报名已截止':activity.status==='ongoing'?'活动进行中':activity.status==='ended'?'活动已结束':'查看详情'}}
+      </text>
+    </view>
+  </view>
+
+</view>

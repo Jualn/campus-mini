@@ -1,0 +1,94 @@
+<!-- subpkg_community/pages/detail/index.wxml -->
+<view class="detail-page" style="padding-bottom:{{bottomPad}}px;">
+
+  <!-- 顶部导航 -->
+  <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="top-bar__nav">
+      <view class="top-bar__back" bindtap="onBack">
+        <text class="top-bar__back-icon">‹</text>
+      </view>
+      <text class="top-bar__title">动态</text>
+      <view class="top-bar__more" catchtap="onMore">
+        <text class="top-bar__more-icon">•••</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ===== 帖子主体 ===== -->
+  <view class="post-wrap">
+
+    <!-- 作者信息 -->
+    <view class="author-row">
+      <image class="author-avatar" src="{{post.avatar}}" mode="aspectFill" catchtap="goToUser"
+        data-id="{{post.userId}}" />
+      <view class="author-info">
+        <view class="author-name-row">
+          <text class="author-name">{{post.nickname}}</text>
+          <view class="author-badge" wx:if="{{post.verified}}">
+            <text class="author-badge__text">✓</text>
+          </view>
+        </view>
+        <view class="author-meta">
+          <text class="author-handle" wx:if="{{post.handle}}">@{{post.handle}}</text>
+          <text class="author-sep" wx:if="{{post.handle}}">·</text>
+          <text class="author-time">{{post.createdAtText}}</text>
+          <text class="author-sep" wx:if="{{post.ipLocation}}">·</text>
+          <text class="author-ip" wx:if="{{post.ipLocation}}">{{post.ipLocation}}</text>
+        </view>
+      </view>
+      <!-- 关注按钮（非本人） -->
+      <view wx:if="{{!post.isSelf}}" class="follow-btn {{post.isFollowing?'follow-btn--on':''}}"
+        catchtap="onToggleFollow">
+        <text class="follow-btn__text">{{post.isFollowing ? '已关注' : '+ 关注'}}</text>
+      </view>
+    </view>
+
+    <!-- 正文 -->
+    <text class="post-text" user-select="true">{{post.content}}</text>
+
+    <!-- 图片（复用 grid-image 组件） -->
+    <grid-image images="{{post.images || []}}" />
+
+    <!-- 话题标签 -->
+    <view class="post-topics" wx:if="{{post.topics && post.topics.length}}">
+      <text wx:for="{{post.topics}}" wx:key="*this" class="topic-tag" catchtap="onTapTopic" data-topic="{{item}}">#{{item}}</text>
+    </view>
+
+    <!-- 数据统计 -->
+    <view class="post-stats">
+      <text class="post-stats__item" wx:if="{{post.viewCount}}">{{post.viewCount}} 浏览</text>
+      <text class="post-stats__sep" wx:if="{{post.viewCount}}">·</text>
+      <text class="post-stats__item">{{post.likeCount}} 点赞</text>
+      <text class="post-stats__sep">·</text>
+      <text class="post-stats__item">{{post.commentCount}} 评论</text>
+    </view>
+
+    <!-- 操作栏 -->
+    <view class="post-actions">
+      <view class="action-item" catchtap="onLike">
+        <view class="action-icon {{post.isLiked ? 'liked' : ''}}">
+          <image class="icon like-off" src="/images/like.svg" />
+          <image class="icon like-on" src="/images/like-fill.svg" />
+        </view>
+        <text class="action-count {{post.isLiked?'action-label--liked':''}}">{{post.likeCount || '点赞'}}
+        </text>
+      </view>
+      <view class="action-item" catchtap="onComment">
+        <image class="action-icon" src="/images/comment.svg"/>
+        <text class="action-count">{{post.commentCount || '评论'}}</text>
+      </view>
+      <view class="action-item" catchtap="onShare">
+        <image class="action-icon" src="/images/share.svg"/>
+        <text class="action-count">分享</text>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- ===== 评论区：comment-panel inline 模式 ===== -->
+  <view class="comment-wrap">
+    <comment-panel id="post-detail-comment-panel" mode="inline" target-id="{{currentPostId}}" target-type="post" total-count="{{currentCommentCount}}"
+      bind:count-change="onCommentCountChange" /> 
+  </view>
+
+</view>

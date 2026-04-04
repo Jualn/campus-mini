@@ -1,0 +1,52 @@
+.grid-container {
+  display: grid;
+  gap: 8rpx;
+  margin-top: 12rpx;
+  width: 100%;
+}
+
+/* --- 修复单张图片显示问题 --- */
+.grid-1 {
+  display: block; /* 单图时不使用 grid，避免高度塌陷 */
+}
+
+.grid-1 .grid-item {
+  width: 100%;        /* 单图不铺满全屏更像 X/朋友圈风格 */
+  border-radius: 12rpx;
+  display: block;     /* 消除 inline-block 的间隙 */
+  background: #f0f0f0;
+}
+
+/* --- 多图宫格逻辑 --- */
+.grid-2, .grid-3, .grid-4, .grid-5, .grid-6, .grid-7, .grid-8, .grid-9 {
+  display: grid;
+}
+
+.grid-2 {
+  grid-template-columns: 1fr 1fr;
+  height: 320rpx;
+}
+
+.grid-3 {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 160rpx 160rpx;
+  height: 328rpx;
+}
+.grid-3 .item-0 { grid-row: span 2; }
+
+.grid-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 200rpx 200rpx;
+}
+
+.grid-5, .grid-6, .grid-7, .grid-8, .grid-9 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 220rpx;
+}
+
+/* 通用项样式：仅在多图模式下生效 height: 100% */
+.grid-container:not(.grid-1) .grid-item {
+  width: 100%;
+  height: 100%;
+  border-radius: 4rpx;
+}

@@ -1,0 +1,111 @@
+<!-- subpkg_community/pages/post-edit/index.wxml -->
+
+<!-- 背景遮罩（点击关闭） -->
+<view class="backdrop {{ready ? 'backdrop--show' : ''}}" catchtap="onClose" />
+
+<!-- 发布面板（从底部弹起） -->
+<view class="panel {{ready ? 'panel--show' : ''}} {{closing ? 'panel--hide' : ''}}">
+
+  <!-- 拖拽指示条 -->
+  <view class="panel__handle" />
+
+  <!-- 顶部栏 -->
+  <view class="panel__nav">
+    <view class="panel__cancel" catchtap="onClose">
+      <text class="panel__cancel-text">取消</text>
+    </view>
+    <text class="panel__title">发帖子</text>
+    <view class="panel__submit {{canSubmit ? 'panel__submit--on' : ''}}" catchtap="onSubmit">
+      <text class="panel__submit-text">发布</text>
+    </view>
+  </view>
+
+  <!-- 可滚动内容区 -->
+  <scroll-view class="panel__body" scroll-y enhanced bounces="{{false}}" show-scrollbar="{{false}}"
+    style="height:{{bodyHeight}}px;">
+
+    <!-- 正文输入 -->
+    <view class="content-area">
+      <textarea class="content-input" value="{{content}}" placeholder="分享你的想法..."
+        placeholder-class="content-placeholder" maxlength="1000" auto-height show-confirm-bar="{{false}}"
+        adjust-position="{{false}}" cursor-spacing="20" bindinput="onContentInput" focus="{{autoFocus}}" />
+      <!-- 字数 -->
+      <text class="content-count" wx:if="{{content.length > 0}}">
+        {{content.length}}/1000
+      </text>
+    </view>
+
+    <!-- 图片区 -->
+    <view class="image-area" wx:if="{{images.length || images.length < 9}}">
+      <view class="image-grid">
+        <!-- 已选图片 -->
+        <view wx:for="{{images}}" wx:key="*this" class="image-item">
+          <image class="image-item__img" src="{{item}}" mode="aspectFill" />
+          <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}">
+            <text class="image-item__del-icon">✕</text>
+          </view>
+        </view>
+        <!-- 添加按钮 -->
+        <view class="image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}">
+          <text class="image-add__icon">🖼</text>
+          <text class="image-add__text" wx:if="{{images.length === 0}}">添加图片</text>
+          <text class="image-add__count" wx:else>{{images.length}}/9</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 话题标签 -->
+    <view class="topics-area" wx:if="{{topics.length}}">
+      <view wx:for="{{topics}}" wx:key="*this" class="topic-chip">
+        <text class="topic-chip__text"># {{item}}</text>
+        <view class="topic-chip__del" catchtap="onRemoveTopic" data-index="{{index}}">
+          <text class="topic-chip__del-icon">✕</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-pad" />
+
+  </scroll-view>
+
+  <!-- 底部工具栏 -->
+  <view class="panel__toolbar" style="padding-bottom:{{keyboardHeight > 0 ? 0 : safeBottom}}px;">
+    <!-- 左侧工具 -->
+    <view class="toolbar-left">
+      <!-- 图片 -->
+      <view class="toolbar-btn" catchtap="onAddImage">
+        <text class="toolbar-btn__icon">🖼</text>
+      </view>
+      <!-- 话题 -->
+      <view class="toolbar-btn" catchtap="onAddTopic">
+        <text class="toolbar-btn__icon">#</text>
+      </view>
+      <!-- 可见范围 -->
+      <view class="toolbar-btn toolbar-btn--text" catchtap="onPickVisibility">
+        <text class="toolbar-btn__icon">👁</text>
+        <text class="toolbar-btn__label">{{visibilityLabel}}</text>
+      </view>
+    </view>
+    <!-- 右侧：收起键盘 -->
+    <view class="toolbar-btn" wx:if="{{keyboardHeight > 0}}" catchtap="onHideKeyboard">
+      <text class="toolbar-btn__icon">⌨️</text>
+    </view>
+  </view>
+
+</view>
+
+<!-- 话题输入弹窗 -->
+<view class="topic-modal" wx:if="{{showTopicInput}}">
+  <view class="topic-modal__mask" catchtap="onCloseTopicInput" />
+  <view class="topic-modal__box" style="bottom:{{keyboardHeight > 0 ? keyboardHeight : safeBottom}}px;">
+    <view class="topic-modal__input-wrap">
+      <text class="topic-modal__hash">#</text>
+      <input class="topic-modal__input" value="{{topicInput}}" placeholder="输入话题" placeholder-class="topic-modal__ph"
+        maxlength="20" focus="{{true}}" confirm-type="done" adjust-position="{{false}}" bindinput="onTopicInput"
+        bindconfirm="onConfirmTopic" />
+    </view>
+    <view class="topic-modal__confirm" catchtap="onConfirmTopic">
+      <text class="topic-modal__confirm-text">添加</text>
+    </view>
+  </view>
+</view>

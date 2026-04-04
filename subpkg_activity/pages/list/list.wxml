@@ -1,0 +1,192 @@
+<!-- subpkg_activity/pages/list/index.wxml -->
+<view class="activity-list-page">
+
+  <!-- 顶部导航 -->
+  <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="top-bar__nav">
+      <view class="top-bar__back" bindtap="onBack">
+        <text class="top-bar__back-icon">‹</text>
+      </view>
+      <text class="top-bar__title">校园活动</text>
+      <view class="top-bar__placeholder" />
+    </view>
+    <!-- 搜索框 -->
+    <view class="search-wrap">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜索活动名称" placeholder-class="search-placeholder" value="{{keyword}}"
+        bindinput="onSearch" />
+      <view wx:if="{{keyword}}" class="search-clear" catchtap="onClearSearch">
+        <text class="search-clear__icon">✕</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar" wx:if="{{!keyword}}">
+    <!-- 状态 Tab -->
+    <scroll-view class="status-scroll" scroll-x enable-flex>
+      <view wx:for="{{statusTabs}}" wx:key="id" class="status-tab {{activeStatus===item.id?'status-tab--active':''}}"
+        bindtap="onSwitchStatus" data-id="{{item.id}}">
+        <text class="status-tab__label">{{item.label}}</text>
+      </view>
+    </scroll-view>
+    <!-- 范围筛选 -->
+    <view class="scope-filter" bindtap="onShowScopeFilter">
+      <text class="scope-filter__text">{{activeScope || '全部范围'}}</text>
+      <text class="scope-filter__arrow">⌄</text>
+    </view>
+  </view>
+
+  <!-- 搜索结果 -->
+  <block wx:if="{{keyword}}">
+    <view class="result-hint">找到 {{searchResult.length}} 个活动</view>
+    <view wx:if="{{searchResult.length}}" class="list-wrap">
+      <view wx:for="{{searchResult}}" wx:key="id" class="activity-card" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="card-cover-wrap" wx:if="{{item.cover}}">
+          <image class="card-cover" src="{{item.cover}}" mode="aspectFill" />
+          <view class="card-status-badge card-status-badge--{{item.status}}">
+            <text class="card-status-badge__dot" wx:if="{{item.status==='enrolling'}}" />
+            <text class="card-status-badge__text">{{item.statusLabel}}</text>
+          </view>
+        </view>
+        <view class="card-body">
+          <view class="card-top-row" wx:if="{{!item.cover}}">
+            <view class="card-status-pill card-status-pill--{{item.status}}">
+              <text class="card-status-pill__dot" wx:if="{{item.status==='enrolling'}}" />
+              <text class="card-status-pill__text">{{item.statusLabel}}</text>
+            </view>
+            <text class="card-series" wx:if="{{item.series_name}}">{{item.series_name}}</text>
+          </view>
+          <text class="card-title">{{item.title}}</text>
+          <view class="card-tags">
+            <text class="card-tag card-tag--type">{{item.type}}</text>
+            <text class="card-tag card-tag--scope">{{item.scope}}</text>
+          </view>
+          <view class="card-meta">
+            <view class="card-meta-item" wx:if="{{item.enroll_deadline}}">
+              <text class="card-meta-icon">⏰</text>
+              <text class="card-meta-text">报名截止 {{item.enroll_deadline}}</text>
+            </view>
+          </view>
+          <view class="card-footer">
+            <text class="card-organizer">{{item.organizer}}</text>
+            <text class="card-date">{{item.published_at}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-wrap">
+      <text class="empty-icon">🔍</text>
+      <text class="empty-text">没有找到相关活动</text>
+    </view>
+  </block>
+
+  <!-- 正常列表 -->
+  <block wx:else>
+    <!-- 系列活动入口 -->
+    <view class="series-section" wx:if="{{seriesList.length}}">
+      <view class="section-header">
+        <text class="section-title">📦 系列活动</text>
+      </view>
+      <scroll-view class="series-scroll" scroll-x enable-flex>
+        <view wx:for="{{seriesList}}" wx:key="series_id" class="series-tag" bindtap="onFilterSeries"
+          data-id="{{item.series_id}}">
+          <text class="series-tag__dot" />
+          <text class="series-tag__label">{{item.series_name}}</text>
+          <text class="series-tag__count">{{item.count}}个</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 活动卡片列表 -->
+    <view class="list-wrap" wx:if="{{filteredList.length}}">
+      <view wx:for="{{filteredList}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
+        <!-- 有封面：大图卡 -->
+        <view class="card-img" wx:if="{{item.cover}}">
+          <image class="card-img__cover" src="{{item.cover}}" mode="aspectFill" />
+          <!-- 渐变遮罩 + 信息 -->
+          <view class="card-img__overlay">
+            <view class="card-img__top">
+              <view class="status-badge status-badge--{{item.status}}">
+                <text class="status-badge__dot" wx:if="{{item.status==='enrolling'}}" />
+                <text class="status-badge__text">{{item.statusLabel}}</text>
+              </view>
+              <text class="card-img__series" wx:if="{{item.series_name}}">{{item.series_name}}</text>
+            </view>
+            <view class="card-img__bottom">
+              <view class="card-img__tags">
+                <text class="card-img__tag">{{item.type}}</text>
+                <text class="card-img__tag">{{item.scope}}</text>
+              </view>
+              <text class="card-img__title">{{item.title}}</text>
+              <view class="card-img__meta" wx:if="{{item.enroll_deadline}}">
+                <text class="card-img__meta-text card-img__meta-urgent"
+                  wx:if="{{item.daysToDeadline >= 0 && item.daysToDeadline <= 3}}">
+                  ⏰ 报名截止 还剩{{item.daysToDeadline}}天
+                </text>
+                <text class="card-img__meta-text" wx:else>⏰ 报名截止 {{item.enroll_deadline}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 无封面：彩色边框卡 -->
+        <view class="card-flat card-flat--{{item.typeColor}}" wx:else>
+          <!-- 左侧彩色竖条 + 类型图标 -->
+          <view class="card-flat__side">
+            <text class="card-flat__icon">{{item.typeIcon}}</text>
+          </view>
+          <view class="card-flat__body">
+            <!-- 顶部状态 + 系列 -->
+            <view class="card-flat__top">
+              <view class="status-pill status-pill--{{item.status}}">
+                <text class="status-pill__dot" wx:if="{{item.status==='enrolling'}}" />
+                <text class="status-pill__text">{{item.statusLabel}}</text>
+              </view>
+              <text class="card-flat__series" wx:if="{{item.series_name}}">{{item.series_name}}</text>
+              <view class="card-flat__deadline-chip"
+                wx:if="{{item.daysToDeadline !== null && item.daysToDeadline >= 0 && item.daysToDeadline <= 3}}">
+                <text class="card-flat__deadline-chip-text">还剩{{item.daysToDeadline}}天</text>
+              </view>
+            </view>
+            <!-- 标题 -->
+            <text class="card-flat__title">{{item.title}}</text>
+            <!-- 标签 -->
+            <view class="card-flat__tags">
+              <text class="card-flat__tag">{{item.type}}</text>
+              <text class="card-flat__tag">{{item.scope}}</text>
+            </view>
+            <!-- 关键信息 -->
+            <view class="card-flat__meta">
+              <text class="card-flat__meta-item" wx:if="{{item.enroll_deadline}}">
+                ⏰ {{item.enroll_deadline}}
+              </text>
+              <text class="card-flat__meta-item" wx:if="{{item.location}}">
+                📍 {{item.location}}
+              </text>
+              <text class="card-flat__meta-item" wx:if="{{item.max_participants}}">
+                👥 限{{item.max_participants}}人
+              </text>
+            </view>
+            <!-- 底部 -->
+            <view class="card-flat__footer">
+              <text class="card-flat__organizer">{{item.organizer}}</text>
+              <text class="card-flat__date">{{item.published_at}}</text>
+            </view>
+          </view>
+        </view>
+
+      </view>
+    </view>
+
+    <view wx:else class="empty-wrap">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无活动</text>
+    </view>
+
+    <view class="list-footer">
+      <text class="footer-text">— 已经到底啦 —</text>
+    </view>
+  </block>
+
+</view>

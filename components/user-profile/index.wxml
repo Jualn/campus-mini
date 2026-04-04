@@ -1,0 +1,86 @@
+<!-- components/user-profile/index.wxml -->
+<view class="profile-wrap">
+
+  <!-- 横幅 -->
+  <view class="banner-wrap">
+    <image class="banner-img" src="{{userInfo.bannerUrl}}" mode="aspectFill" />
+    <!-- 别人主页才显示返回按钮，放左侧远离胶囊 -->
+    <view class="top-bar" style="padding-top:{{statusBarHeight}}px;" wx:if="{{!isSelf}}">
+      <view class="top-bar__back" bindtap="onBack">
+        <text class="top-bar__icon">‹</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 个人信息 -->
+  <view class="profile-body">
+
+    <!-- 头像 + 操作按钮行 -->
+    <view class="avatar-action-row">
+      <image class="profile-avatar" src="{{userInfo.avatar}}" mode="aspectFill" />
+      <view class="action-btns">
+        <!-- 自己：设置 + 编辑资料 -->
+        <block wx:if="{{isSelf}}">
+          <view class="btn-icon" bindtap="onGoSetting">
+            <text class="btn-icon__text">⚙️</text>
+          </view>
+          <view class="btn-outline" bindtap="onEditProfile">
+            <text class="btn-text">编辑资料</text>
+          </view>
+        </block>
+        <!-- 别人：··· + 关注 -->
+        <block wx:else>
+          <view class="btn-icon" bindtap="onMore">
+            <text class="btn-icon__more">···</text>
+          </view>
+          <view class="btn-fill {{isFollowing ? 'btn-fill--grey' : ''}}" bindtap="onToggleFollow">
+            <text class="btn-fill__text">{{isFollowing ? '已关注' : '关注'}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 名字 + 认证 -->
+    <view class="name-line">
+      <text class="profile-name">{{userInfo.nickname}}</text>
+      <view class="verified" wx:if="{{userInfo.verified}}">
+        <text class="verified__icon">✓</text>
+      </view>
+    </view>
+    <!-- <text class="profile-handle">@{{userInfo.handle}}</text> -->
+    <text class="profile-bio" wx:if="{{userInfo.bio}}">{{userInfo.bio}}</text>
+
+    <!-- 元信息 -->
+    <view class="meta-row">
+      <text class="meta-item" wx:if="{{userInfo.joinYear}}">📅 {{userInfo.joinYear}}年加入</text>
+    </view>
+
+    <!-- 关注统计 -->
+    <!-- <view class="stats-row">
+      <view class="stats-item" bindtap="onGoFollowing">
+        <text class="stats-num">{{userInfo.followingCount}}</text>
+        <text class="stats-label"> 关注</text>
+      </view>
+      <view class="stats-item" bindtap="onGoFollower">
+        <text class="stats-num">{{userInfo.followerCount}}</text>
+        <text class="stats-label"> 关注者</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-num">{{userInfo.likeCount}}</text>
+        <text class="stats-label"> 获赞</text>
+      </view>
+    </view> -->
+
+  </view>
+
+  <!-- Tab -->
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab==='posts'?'tab-item--active':''}}" bindtap="onSwitchTab" data-tab="posts">
+      <text class="tab-text">动态</text>
+    </view>
+    <view class="tab-item {{activeTab==='likes'?'tab-item--active':''}}" bindtap="onSwitchTab" data-tab="likes">
+      <text class="tab-text">点赞</text>
+    </view>
+  </view>
+
+</view>

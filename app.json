@@ -1,0 +1,70 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/me/me",
+    "pages/message/message"
+  ],
+  "subPackages": [
+    {
+      "root": "subpkg_exam",
+      "pages": [
+        "pages/detail/detail",
+        "pages/list/list"
+      ]
+    },
+    {
+      "root": "subpkg_activity",
+      "pages": [
+        "pages/detail/detail",
+        "pages/list/list"
+      ]
+    },{
+      "root": "subpkg_community",
+      "pages": [
+        "pages/detail/detail",
+        "pages/post-edit/post-edit"
+      ]
+    },
+    {
+      "root": "subpkg_user",
+      "pages": [
+        "pages/user/user",
+        "pages/edit-profile/edit-profile"
+      ]
+    },
+    {
+      "root": "subpkg_setting",
+      "pages": [
+        "pages/setting/setting"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/index/index":{
+      "network": "all",
+      "packages": ["subpkg_community"]
+    }
+  },
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationStyle": "custom"
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "tabBar": {
+    "custom": true,
+    "color": "#9EAFC2",
+    "selectedColor": "#1677FF",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index"
+      },
+      {
+        "pagePath": "pages/message/message"
+      },
+      {
+        "pagePath": "pages/me/me"
+      }
+    ]
+  }
+}

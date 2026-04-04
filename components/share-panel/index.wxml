@@ -1,0 +1,59 @@
+<!-- components/share-panel/index.wxml -->
+<view class="share-panel">
+
+  <!-- 标题 -->
+  <view class="share-panel__header">
+    <text class="share-panel__title">分享</text>
+  </view>
+
+  <!-- 帖子预览卡 -->
+  <view class="preview-card">
+    <view class="preview-card__author">
+      <image class="preview-card__avatar" src="{{post.avatar}}" mode="aspectFill" />
+      <text class="preview-card__name">{{post.nickname}}</text>
+    </view>
+    <text class="preview-card__content">{{previewContent}}</text>
+    <image wx:if="{{post.images && post.images.length}}" class="preview-card__img" src="{{post.images[0]}}"
+      mode="aspectFill" />
+    <view class="preview-card__stats">
+      <text class="preview-card__stat">❤️ {{post.likeCount || 0}} 点赞</text>
+      <text class="preview-card__stat">💬 {{post.commentCount || 0}} 评论</text>
+    </view>
+    <view class="preview-card__brand">
+      <text class="preview-card__brand-text">🎓 校园圈</text>
+    </view>
+  </view>
+
+  <!-- 分享选项 -->
+  <view class="share-options">
+
+    <!-- 发给朋友 -->
+    <view class="share-option">
+      <button class="share-option__btn" open-type="share" hover-class="none" bind:tap="onTapShareFriend">
+        <view class="share-option__icon-wrap share-option__icon-wrap--green">
+          <text class="share-option__icon">💬</text>
+        </view>
+      </button>
+      <text class="share-option__label">发给朋友</text>
+    </view>
+
+    <!-- 复制文字 -->
+    <view class="share-option" catchtap="onCopyText">
+      <view class="share-option__icon-wrap share-option__icon-wrap--blue">
+        <text class="share-option__icon">📋</text>
+      </view>
+      <text class="share-option__label">复制文字</text>
+    </view>
+
+  </view>
+
+  <!-- 取消 -->
+  <view class="share-cancel" catchtap="onClose">
+    <text class="share-cancel__text">取消</text>
+  </view>
+
+  <!-- 离屏 canvas（绘制分享封面图，不可见） -->
+  <canvas type="2d" id="share-canvas" class="share-canvas"
+    style="width: {{canvasW}}px; height: {{canvasH}}px;" />
+
+</view>

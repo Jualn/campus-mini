@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "grid-image": "/components/grid-image/grid-image",
+    "comment-panel": "/components/comment-panel/index",
+    "post-card": "/components/post-card/index",
+    "post-edit-panel": "/components/post-edit-panel/index",
+    "share-panel":"/components/share-panel/index"
+  },
+  "enablePullDownRefresh": true
+}

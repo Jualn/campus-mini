@@ -1,0 +1,75 @@
+<!-- components/post-card/index.wxml -->
+<view class="post-card" catchtap="onTapCard">
+  <view class="post-left">
+    <view class="post-avatar" style="background:{{_avatarBg}}" catch:tap="onTapAvatar">
+      <image wx:if="{{_avatarUrl}}" class="post-avatar__img" src="{{_avatarUrl}}" mode="aspectFill" />
+      <text wx:else class="post-avatar__char">{{_avatarChar}}</text>
+    </view>
+  </view>
+  <view class="post-right">
+    <view class="post-top-row">
+      <view class="post-user">
+        <text class="post-nickname">{{post.nickname}}</text>
+        <text class="post-time">· {{post.createdAt}}</text>
+      </view>
+      <view class="post-more" catchtap="onMoreTap">
+        <text class="more-dot">•••</text>
+      </view>
+    </view>
+
+    <view class="post-body">
+      <text class="post-text">{{post.content}}</text>
+    </view>
+
+    <grid-image images="{{post.images  || []}}" />
+
+    <!-- 操作栏 -->
+    <view class="post-actions">
+      <!-- 评论 -->
+      <view class="action-item" catchtap="onComment">
+        <image class="action-icon" src="/images/comment.svg" mode="aspectFit" />
+        <text class="action-count">{{post.commentCount}}</text>
+      </view>
+      <!-- 点赞 -->
+      <view class="action-item" catchtap="onLike">
+        <view class="action-icon {{post.isLiked ? 'liked' : ''}}">
+          <image class="icon like-off" src="/images/like.svg" />
+          <image class="icon like-on" src="/images/like-fill.svg" />
+        </view>
+        <text class="action-count {{post.isLiked ? 'action-count--liked' : ''}}">{{post.likeCount}}</text>
+      </view>
+      <!-- 分享 -->
+      <view class="action-item" catchtap="onShare">
+        <image class="action-icon" src="/images/share.svg" mode="aspectFit" />
+      </view>
+    </view>
+
+    <!-- 分享面板 -->
+    <view wx:if="{{showSharePanel}}" class="share-mask" catchtouchmove="noop">
+      <view class="share-panel" catch:touchmove="noop">
+        <view class="share-header">
+          <text class="share-title">分享预览</text>
+          <text class="share-close" catchtap="onCloseShare">✕</text>
+        </view>
+
+        <canvas type="2d" id="shareCanvas" canvas-id="shareCanvas" class="share-canvas"
+          style="width:{{canvasWidth}}rpx;height:{{canvasHeight}}rpx;"></canvas>
+
+        <view class="share-actions">
+          <button class="share-btn" size="mini" loading="{{shareGenerating}}" bindtap="onGenerateShareImage">
+            {{shareGenerating ? '生成中…' : '生成预览图'}}
+          </button>
+          <button class="share-btn" size="mini" open-type="share">直接转发</button>
+        </view>
+
+        <view class="share-quick">
+          <button size="mini" bindtap="onQuickCopy">复制链接</button>
+          <button size="mini" bindtap="onQuickDislike">不感兴趣</button>
+          <button size="mini" bindtap="onQuickReport">举报</button>
+        </view>
+
+      </view>
+    </view>
+
+  </view>
+</view>

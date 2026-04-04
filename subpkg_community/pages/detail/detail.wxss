@@ -1,0 +1,304 @@
+/* subpkg_community/pages/detail/index.wxss */
+
+page {
+  background: #F4F5F7;
+}
+
+.detail-page {
+  min-height: 100vh;
+  background: #F4F5F7;
+}
+
+/* =====================================================
+   顶部导航
+   ===================================================== */
+.top-bar {
+  background: #fff;
+  padding: 0 16rpx 0;
+  box-shadow: 0 1rpx 0 #F1F2F6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.top-bar__nav {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.top-bar__back {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-bar__back-icon {
+  font-size: 52rpx;
+  color: #1a1a1a;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.top-bar__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.top-bar__more {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-bar__more-icon {
+  font-size: 28rpx;
+  color: #555;
+  letter-spacing: 2rpx;
+}
+
+/* =====================================================
+   帖子主体
+   ===================================================== */
+.post-wrap {
+  background: #fff;
+  padding: 24rpx 28rpx 0;
+  margin-bottom: 16rpx;
+}
+
+/* 作者行 */
+.author-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.author-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #eee;
+  flex-shrink: 0;
+}
+
+.author-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.author-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 6rpx;
+}
+
+.author-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.author-badge {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  background: #007AFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.author-badge__text {
+  font-size: 16rpx;
+  color: #fff;
+  font-weight: 700;
+}
+
+.author-meta {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  flex-wrap: wrap;
+}
+
+.author-handle {
+  font-size: 23rpx;
+  color: #999;
+}
+
+.author-sep {
+  font-size: 23rpx;
+  color: #ddd;
+}
+
+.author-time {
+  font-size: 23rpx;
+  color: #999;
+}
+
+.author-ip {
+  font-size: 23rpx;
+  color: #bbb;
+}
+
+/* 关注按钮 */
+.follow-btn {
+  padding: 10rpx 24rpx;
+  border-radius: 30rpx;
+  border: 1.5rpx solid #007AFF;
+  flex-shrink: 0;
+}
+
+.follow-btn--on {
+  border-color: #ddd;
+  background: #F4F5F7;
+}
+
+.follow-btn__text {
+  font-size: 24rpx;
+  color: #007AFF;
+  font-weight: 600;
+}
+
+.follow-btn--on .follow-btn__text {
+  color: #999;
+}
+
+/* 正文 */
+.post-text {
+  font-size: 32rpx;
+  color: #1a1a1a;
+  line-height: 1.8;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+/* 话题 */
+.post-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin: 16rpx 0;
+}
+
+.topic-tag {
+  font-size: 26rpx;
+  color: #007AFF;
+  font-weight: 500;
+}
+
+/* 数据统计 */
+.post-stats {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx 0;
+  border-top: 1rpx solid #F5F5F5;
+}
+
+.post-stats__item {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.post-stats__sep {
+  font-size: 24rpx;
+  color: #ddd;
+}
+
+/* 操作栏 */
+.post-actions {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0 20rpx;
+  border-top: 1rpx solid #F5F5F5;
+}
+
+.action-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.action-icon {
+  width: 48rpx;
+  height: 48rpx;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.action-count {
+  font-size: 28rpx;
+  color: #888;
+  min-width: 32rpx;
+}
+
+.action-label--liked {
+  color: #FF3B30;
+}
+
+.action-label--collected {
+  color: #FF9500;
+}
+
+/* 点赞图标动画 */
+.icon {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transition: all 0.25s ease;
+}
+
+.like-off {
+  opacity: 1;
+}
+
+.like-on {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.liked .like-off {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.liked .like-on {
+  opacity: 1;
+  transform: scale(1);
+  animation: likePop 0.3s ease;
+}
+
+@keyframes likePop {
+  0% {
+    transform: scale(0.6);
+  }
+
+  60% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =====================================================
+   评论区
+   ===================================================== */
+.comment-wrap {
+  background: #fff;
+  /* comment-panel inline 模式自带样式，这里只做容器 */
+}

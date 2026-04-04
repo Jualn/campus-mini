@@ -1,0 +1,801 @@
+/* ============================================
+   comment-panel 组件样式
+   设计语言：Facebook/微信融合风格，干净清晰
+   ============================================ */
+
+/* ---- CSS 变量 ---- */
+.cp-root {
+  --cp-primary: #1877f2;
+  --cp-primary-light: #e7f3ff;
+  --cp-like: #e0245e;
+  --cp-bg: #f0f2f5;
+  --cp-surface: #ffffff;
+  --cp-border: #e4e6eb;
+  --cp-text: #1c1e21;
+  --cp-text-sub: #65676b;
+  --cp-text-light: #8a8d91;
+  --cp-reply-bg: #f0f2f58c;
+  --cp-radius: 12rpx;
+  --cp-radius-lg: 24rpx;
+  --cp-sheet-radius: 40rpx;
+}
+
+/* ============================================
+   SHEET 模式
+   ============================================ */
+
+.cp-sheet-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+/*
+ * cp-sheet-content：撑满 page-container 给出的区域，
+ * 使用 flex 列布局，将 scroll 区域撑开到最大，
+ * 底部留出输入栏高度。
+ */
+.cp-sheet-content {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--cp-surface);
+  border-radius: var(--cp-sheet-radius) var(--cp-sheet-radius) 0 0;
+  will-change: transform;
+  /* GPU 加速，更丝滑 */
+  height: 80vh;
+  pointer-events: auto;
+}
+
+/* handle 触控区域放大 */
+.cp-sheet__handle-area {
+  width: 100%;
+  min-height: 48rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cp-sheet__handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: var(--cp-border);
+  pointer-events: none;
+  /* 事件由 handle-area 接管 */
+}
+
+/* 面板头部 */
+.cp-sheet__header {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 32rpx 20rpx;
+  border-bottom: 1rpx solid var(--cp-border);
+  flex-shrink: 0;
+}
+
+.cp-sheet__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--cp-text);
+}
+
+.cp-sheet__count {
+  font-size: 28rpx;
+  color: var(--cp-text-sub);
+  margin-left: 12rpx;
+  flex: 1;
+}
+
+.cp-sheet__close {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--cp-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-sheet__close:active {
+  background: var(--cp-border);
+}
+
+/* scroll 区域 */
+.cp-scroll {
+  flex: 1;
+  min-height: 0;
+  /* flex 子项必须加，否则不会收缩 */
+}
+
+/* ============================================
+   INLINE 模式
+   ============================================ */
+.cp-inline {
+  background: var(--cp-surface);
+}
+
+.cp-inline__header {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 32rpx 20rpx;
+  border-bottom: 1rpx solid var(--cp-border);
+  gap: 12rpx;
+}
+
+.cp-inline__title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--cp-text);
+}
+
+.cp-inline__count {
+  font-size: 26rpx;
+  color: var(--cp-text-sub);
+}
+
+/* ============================================
+   评论列表
+   ============================================ */
+.cp-list {
+  padding-bottom: 140rpx;
+}
+
+.cp-list--inline {
+  padding-bottom: 160rpx;
+}
+
+/* 单条一级评论 */
+.cp-comment {
+  border-bottom: 1rpx solid var(--cp-border);
+  padding: 24rpx 32rpx;
+}
+
+.cp-comment__body {
+  display: flex;
+  gap: 20rpx;
+}
+
+.cp-comment__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-comment__name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--cp-text);
+  display: block;
+}
+
+.cp-comment__text {
+  font-size: 28rpx;
+  color: var(--cp-text);
+  line-height: 1.6;
+  margin-top: 6rpx;
+  display: block;
+  word-break: break-all;
+}
+
+.cp-comment__img-wrap {
+  margin-top: 16rpx;
+  border-radius: var(--cp-radius);
+  overflow: hidden;
+  max-width: 360rpx;
+}
+
+.cp-comment__img {
+  width: 100%;
+  border-radius: var(--cp-radius);
+  display: block;
+}
+
+.cp-comment__footer {
+  display: flex;
+  align-items: center;
+  gap: 32rpx;
+  margin-top: 12rpx;
+}
+
+.cp-comment__time {
+  font-size: 22rpx;
+  color: var(--cp-text-light);
+}
+
+/* ============================================
+   二级回复区域
+   ============================================ */
+.cp-replies {
+  margin-top: 16rpx;
+  background: var(--cp-reply-bg);
+  border-radius: var(--cp-radius);
+  overflow: hidden;
+}
+
+.cp-reply {
+  padding: 16rpx 20rpx;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.cp-reply:last-child {
+  border-bottom: none;
+}
+
+.cp-reply__body {
+  display: flex;
+  gap: 16rpx;
+}
+
+.cp-reply__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-reply__header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.cp-reply__name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--cp-text);
+}
+
+.cp-reply__to {
+  font-size: 24rpx;
+  color: var(--cp-text-sub);
+}
+
+.cp-reply__to-name {
+  font-size: 24rpx;
+  color: var(--cp-primary);
+  font-weight: 500;
+}
+
+.cp-reply__text {
+  font-size: 26rpx;
+  color: var(--cp-text);
+  line-height: 1.55;
+  margin-top: 4rpx;
+  display: block;
+  word-break: break-all;
+}
+
+.cp-reply__footer {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin-top: 8rpx;
+}
+
+.cp-reply__time {
+  font-size: 20rpx;
+  color: var(--cp-text-light);
+}
+
+/* 展开/收起按钮 */
+.cp-replies__expand {
+  padding: 14rpx 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.cp-replies__expand:active {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.cp-replies__expand-text {
+  font-size: 24rpx;
+  color: var(--cp-primary);
+  font-weight: 500;
+}
+
+.cp-replies__expand-arrow {
+  font-size: 22rpx;
+  color: var(--cp-primary);
+}
+
+/* 加载更多回复 */
+.cp-replies__more {
+  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.cp-replies__more-btn {
+  padding: 14rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--cp-text-sub);
+}
+
+.cp-replies__more-btn:active {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.cp-replies__more-loading {
+  padding: 14rpx 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 24rpx;
+  color: var(--cp-text-light);
+}
+
+/* ============================================
+   操作按钮（点赞/回复）
+   ============================================ */
+.cp-action {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 0;
+}
+
+.cp-action:active {
+  opacity: 0.6;
+}
+
+.cp-action-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.cp-action--sm .cp-action__icon,
+.cp-action--sm .cp-action__text,
+.cp-action--sm .cp-action__count {
+  font-size: 22rpx;
+}
+
+.cp-action__icon {
+  font-size: 26rpx;
+}
+
+.cp-action__count {
+  font-size: 24rpx;
+  color: var(--cp-text-sub);
+}
+
+.cp-action__text {
+  font-size: 24rpx;
+  color: var(--cp-text-sub);
+}
+
+.cp-action--liked .cp-action__count {
+  color: var(--cp-like);
+}
+
+/* 点赞图标动画 */
+.icon {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  transition: all 0.25s ease;
+}
+
+.like-off {
+  opacity: 1;
+}
+
+.like-on {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.liked .like-off {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.liked .like-on {
+  opacity: 1;
+  transform: scale(1);
+  animation: likePop 0.3s ease;
+}
+
+@keyframes likePop {
+  0% {
+    transform: scale(0.6);
+  }
+
+  60% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ============================================
+   头像
+   ============================================ */
+.cp-inputbar__avatar.cp-avatar.cp-avatar--sm {
+  width: 72rpx;
+  /* 微信按钮约 32px = 64rpx */
+  height: 72rpx;
+  flex-shrink: 0;
+  margin-bottom: 4rpx;
+  /* 与 textarea 底部视觉对��� */
+}
+
+.cp-avatar__img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+}
+
+.cp-avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #667eea;
+}
+
+.cp-avatar--sm {
+  width: 64rpx;
+  height: 64rpx;
+}
+
+.cp-avatar--xs {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.cp-avatar__char {
+  color: #fff;
+  font-weight: 700;
+  font-size: 26rpx;
+}
+
+.cp-avatar--xs .cp-avatar__char {
+  font-size: 20rpx;
+}
+
+/* ============================================
+   加载更多（一级评论）
+   ============================================ */
+.cp-loadmore {
+  padding: 28rpx 32rpx;
+  display: flex;
+  justify-content: center;
+  border-bottom: 1rpx solid var(--cp-border);
+}
+
+.cp-loadmore__btn {
+  font-size: 28rpx;
+  color: var(--cp-primary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.cp-loadmore__btn:active {
+  opacity: 0.6;
+}
+
+.cp-loadmore__loading {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 26rpx;
+  color: var(--cp-text-light);
+}
+
+.cp-nomore {
+  padding: 32rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--cp-text-light);
+}
+
+/* ============================================
+   空状态
+   ============================================ */
+.cp-empty {
+  padding: 80rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.cp-empty__icon {
+  font-size: 80rpx;
+  opacity: 0.4;
+}
+
+.cp-empty__text {
+  font-size: 28rpx;
+  color: var(--cp-text-sub);
+}
+
+/* ============================================
+   回复 Banner
+   ============================================ */
+.cp-reply-banner {
+  background: var(--cp-primary-light);
+  padding: 14rpx 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  border-top: 1rpx solid var(--cp-border);
+  flex-shrink: 0;
+}
+
+.cp-reply-banner__text {
+  flex: 1;
+  font-size: 26rpx;
+  color: var(--cp-text-sub);
+}
+
+.cp-reply-banner__name {
+  color: var(--cp-primary);
+  font-weight: 500;
+}
+
+.cp-reply-banner__cancel {
+  font-size: 28rpx;
+  color: var(--cp-text-light);
+  padding: 8rpx;
+}
+
+.cp-reply-banner__cancel:active {
+  color: var(--cp-text);
+}
+
+/* ✅ 输入栏 + Banner 的独立 fixed 容器 */
+.cp-bottom-bar {
+  flex-shrink: 0;
+  position: relative;
+  /* ❌ 去掉 position: fixed */
+  left: 0;
+  right: 0;
+  z-index: 902;
+  background: var(--cp-surface);
+  /* ✅ bottom 由 JS style 写入，这里不写 bottom */
+  /* ✅ 键盘收起时的安全区由 JS 的默认值 = safeBottom 保证，见下方 JS */
+  transition: bottom 0.25s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   输入栏
+   ============================================ */
+.cp-inputbar {
+  display: flex;
+  align-items: flex-end;
+  padding: 12rpx 20rpx;
+  /* ✅ 底部安全区 */
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  gap: 16rpx;
+  background: var(--cp-surface);
+  border-top: 1rpx solid var(--cp-border);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.cp-bottom-bar--inline {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.cp-inputbar__wrap {
+  flex: 1;
+  min-width: 0;
+  /* ✅ 关键：防止 flex 子项撑破父容器 */
+  background: var(--cp-bg);
+  border-radius: 30rpx;
+  display: flex;
+  align-items: flex-end;
+  padding: 14rpx 20rpx;
+  gap: 16rpx;
+  border: 1rpx solid transparent;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.cp-inputbar__wrap--focus {
+  border-color: var(--cp-primary);
+  background: var(--cp-surface);
+}
+
+.cp-inputbar__input {
+  flex: 1;
+  width: 100%;
+  font-size: 30rpx;
+  color: var(--cp-text);
+  background: transparent;
+  border: none;
+  outline: none;
+  line-height: normal;
+}
+
+.cp-inputbar__placeholder {
+  color: var(--cp-text-light);
+  font-size: 30rpx;
+}
+
+.cp-inputbar__imgbtn {
+  font-size: 36rpx;
+  padding: 4rpx;
+}
+
+.cp-inputbar__imgbtn:active {
+  opacity: 0.6;
+}
+
+.cp-inputbar__imgbtn--disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.cp-inputbar__send {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: var(--cp-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* ✅ 确保发送按钮不被压缩 */
+  transition: opacity 0.15s;
+  margin-bottom: 4rpx;
+  box-sizing: border-box;
+}
+
+.cp-inputbar__send:active {
+  opacity: 0.8;
+}
+
+.cp-inputbar__send--disabled {
+  background: #c0ccda;
+}
+
+/* ============================================
+   图片预览条
+   ============================================ */
+.cp-imgpreview {
+  padding: 12rpx 32rpx;
+  display: flex;
+  gap: 16rpx;
+  background: var(--cp-surface);
+  border-top: 1rpx solid var(--cp-border);
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+.cp-imgpreview__item {
+  position: relative;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: var(--cp-radius);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cp-imgpreview__img {
+  width: 100%;
+  height: 100%;
+}
+
+.cp-imgpreview__remove {
+  position: absolute;
+  top: 4rpx;
+  right: 4rpx;
+  width: 36rpx;
+  height: 36rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #fff;
+}
+
+/* ============================================
+   Spinner
+   ============================================ */
+.cp-spinner {
+  width: 36rpx;
+  height: 36rpx;
+  border: 4rpx solid var(--cp-border);
+  border-top-color: var(--cp-primary);
+  border-radius: 50%;
+  animation: cpSpin 0.6s linear infinite;
+}
+
+.cp-spinner--sm {
+  width: 26rpx;
+  height: 26rpx;
+  border-width: 3rpx;
+}
+
+@keyframes cpSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   骨架屏
+   ============================================ */
+.cp-skeleton {
+  display: flex;
+  gap: 20rpx;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid var(--cp-border);
+}
+
+.cp-skeleton__avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f2f5 25%, #e4e6eb 50%, #f0f2f5 75%);
+  background-size: 400% 100%;
+  animation: cpShimmer 1.4s infinite;
+  flex-shrink: 0;
+}
+
+.cp-skeleton__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding-top: 8rpx;
+}
+
+.cp-skeleton__line {
+  height: 24rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, #f0f2f5 25%, #e4e6eb 50%, #f0f2f5 75%);
+  background-size: 400% 100%;
+  animation: cpShimmer 1.4s infinite;
+}
+
+.cp-skeleton__line--short {
+  width: 40%;
+}
+
+.cp-skeleton__line--medium {
+  width: 65%;
+}
+
+@keyframes cpShimmer {
+  to {
+    background-position: -400% 0;
+  }
+}
+
+/* 图标辅助 */
+.cp-icon--send {
+  color: #fff;
+  font-size: 28rpx;
+  font-style: normal;
+}
+
+.cp-icon--close {
+  font-size: 24rpx;
+  color: var(--cp-text-sub);
+}

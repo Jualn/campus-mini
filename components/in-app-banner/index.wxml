@@ -1,0 +1,11 @@
+<!-- components/in-app-banner/index.wxml -->
+<view class="banner {{visible?'banner--show':''}}" style="top:{{top}}px;" bindtap="onTap">
+  <text class="banner__icon">{{icon}}</text>
+  <view class="banner__body">
+    <text class="banner__title">{{title}}</text>
+    <text class="banner__content">{{content}}</text>
+  </view>
+  <view class="banner__close" catchtap="onClose">
+    <text class="banner__close-icon">✕</text>
+  </view>
+</view>

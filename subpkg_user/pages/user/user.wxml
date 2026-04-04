@@ -1,0 +1,26 @@
+<!-- pages/user/index.wxml -->
+<view class="page">
+
+  <user-profile is-self="{{false}}" user-info="{{userInfo}}" is-following="{{isFollowing}}" active-tab="{{activeTab}}"
+    status-bar-height="{{statusBarHeight}}" bind:back="onBack" bind:toggleFollow="onToggleFollow" bind:more="onMore"
+    bind:goFollowing="onGoFollowing" bind:goFollower="onGoFollower" bind:switchTab="onSwitchTab" />
+
+  <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
+    <post-card post="{{post}}" bind:tap="onPostTap" bind:like="onPostLike" bind:comment="onOpenComment" />
+  </block>
+
+  <view class="list-footer">
+    <text class="footer-text">— 已经到底啦 —</text>
+  </view>
+
+</view>
+
+<view wx:if="{{showPopup}}" class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
+
+<page-container show="{{showPopup}}" position="bottom" round custom-style="height: 80vh;"
+  overlay-style="background:rgba(0,0,0,0.45);" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave"
+  bind:afterleave="onPopupAfterLeave" bind:clickoverlay="onOverlayTap">
+  <comment-panel wx:if="{{popupType === 'comment'}}" mode="sheet" target-id="{{currentPostId}}" target-type="post"
+    total-count="{{currentCommentCount}}" visible="{{showPopup}}" bind:close="onCommentClose"
+    bind:count-change="onCommentCountChange" />
+</page-container>

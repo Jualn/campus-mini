@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "grid-image": "/components/grid-image/grid-image"
+  }
+}

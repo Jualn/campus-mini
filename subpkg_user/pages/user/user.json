@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "user-profile": "/components/user-profile/index",
+    "post-card": "/components/post-card/index",
+    "comment-panel":"/components/comment-panel/index"
+  }
+}

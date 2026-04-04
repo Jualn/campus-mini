@@ -1,0 +1,63 @@
+<!-- components/post-edit-panel/index.wxml -->
+<!--
+  组件自己全权管理遮罩 + 面板动画，父页面只需控制 show prop。
+  page-container 设 overlay="{{false}}"，由组件内的 .mask 接管遮罩。
+-->
+<view class="root">
+
+  <!-- 遮罩：opacity 跟手，点击关闭 -->
+  <view class="mask" style="opacity: {{maskOpacity}}; transition: {{maskTransition}};" catchtap="onClose" />
+
+  <!-- 面板：translateY 跟手 -->
+  <view class="panel" style="transform: translateY({{sheetTranslateY}}px); transition: {{sheetTransition}};">
+
+    <!-- 拖拽指示条 -->
+    <view class="panel__handle-area" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
+      catchtouchmove="onHandleTouchMove">
+      <view class="panel__handle" />
+    </view>
+
+    <!-- 顶部栏 -->
+    <view class="panel__nav" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
+      catchtouchmove="onHandleTouchMove">
+      <view class="panel__cancel" catchtap="onClose">
+        <text class="panel__cancel-text">取消</text>
+      </view>
+      <text class="panel__title">发帖子</text>
+      <view class="panel__submit {{canSubmit ? 'panel__submit--on' : ''}}" catchtap="onSubmit">
+        <text class="panel__submit-text">发布</text>
+      </view>
+    </view>
+
+    <!-- 内容区 -->
+    <scroll-view class="panel__body" scroll-y enhanced bounces="{{false}}" show-scrollbar="{{false}}" catch:touchmove="noop">
+
+      <!-- 正文输入 -->
+      <view class="content-area">
+        <textarea class="content-input" value="{{content}}" placeholder="分享你的想法..." placeholder-class="content-ph"
+          maxlength="1000" auto-height show-confirm-bar="{{false}}" adjust-position="{{false}}" cursor-spacing="20"
+          bindinput="onContentInput" focus="{{focused}}" />
+        <text class="content-count" wx:if="{{content.length > 0}}">{{content.length}}/1000</text>
+      </view>
+
+      <!-- 图片区 -->
+      <view class="image-area" wx:if="{{images.length > 0 || images.length < 9}}">
+        <view class="image-grid">
+          <view wx:for="{{images}}" wx:key="*this" class="image-item">
+            <image class="image-item__img" src="{{item}}" mode="aspectFill" />
+            <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}">
+              <text class="image-item__del-icon">✕</text>
+            </view>
+          </view>
+          <view class="image-item image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}">
+            <text class="image-add__icon">＋</text>
+            <text class="image-add__hint">{{images.length === 0 ? '添加图片' : images.length + '/9'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="body-pad" />
+    </scroll-view>
+
+  </view>
+</view>

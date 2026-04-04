@@ -1,0 +1,90 @@
+{
+  "libVersion": "3.14.2",
+  "projectname": "jualnCampus",
+  "setting": {
+    "urlCheck": false,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": false,
+    "skylineRenderEnable": false,
+    "preloadBackgroundData": false,
+    "autoAudits": false,
+    "showShadowRootInWxmlPanel": true,
+    "compileHotReLoad": true
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "subpkg_community/pages/post-edit/post-edit",
+          "pathName": "subpkg_community/pages/post-edit/post-edit",
+          "query": "",
+          "scene": null,
+          "launchMode": "default"
+        },
+        {
+          "name": "subpkg_community/pages/detail/detail",
+          "pathName": "subpkg_community/pages/detail/detail",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "subpkg_activity/pages/list/list",
+          "pathName": "subpkg_activity/pages/list/list",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "subpkg_exam/pages/list/list",
+          "pathName": "subpkg_exam/pages/list/list",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "subpkg_user/pages/edit-profile/edit-profile",
+          "pathName": "subpkg_user/pages/edit-profile/edit-profile",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "subpkg_user/pages/user/user",
+          "pathName": "subpkg_user/pages/user/user",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/feed/feed",
+          "pathName": "pages/feed/feed",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/activity-detail/index",
+          "pathName": "pages/activity-detail/index",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/post-detail/index",
+          "pathName": "pages/post-detail/index",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/feed/index",
+          "pathName": "pages/feed/index",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        }
+      ]
+    }
+  }
+}

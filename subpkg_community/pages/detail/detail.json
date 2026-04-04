@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "grid-image": "/components/grid-image/grid-image",
+    "comment-panel": "/components/comment-panel/index"
+  }
+}
