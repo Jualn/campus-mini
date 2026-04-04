@@ -1,21 +1,21 @@
-/* pages/message/index.wxss */
+/* pages/message/message.wxss */
 
 page {
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 .message-page {
   min-height: 100vh;
-  background: #F4F5F7;
+  background: var(--color-bg-page);
 }
 
 /* =====================================================
    顶部导航
    ===================================================== */
 .top-bar {
-  background: #fff;
+  background: var(--color-bg-card);
   padding: 0 28rpx 0;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .top-bar__nav {
@@ -26,20 +26,20 @@ page {
 }
 
 .top-bar__title {
-  font-size: 40rpx;
+  font-size: var(--font-xl);
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .top-bar__read-all {
   padding: 8rpx 20rpx;
-  background: #EAF2FB;
+  background: var(--color-primary-light);
   border-radius: 20rpx;
 }
 
 .top-bar__read-all-text {
-  font-size: 24rpx;
-  color: #1B68C0;
+  font-size: var(--font-sm);
+  color: var(--color-primary);
 }
 
 /* =====================================================
@@ -47,7 +47,7 @@ page {
    ===================================================== */
 .msg-tabs {
   display: flex;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid var(--color-border);
   margin: 0 -28rpx;
   padding: 0 28rpx;
 }
@@ -67,23 +67,23 @@ page {
   left: 28rpx;
   right: 28rpx;
   height: 4rpx;
-  background: #1a1a1a;
+  background: var(--color-primary);
   border-radius: 2rpx;
 }
 
 .msg-tab__text {
-  font-size: 30rpx;
-  color: #999;
+  font-size: var(--font-md);
+  color: var(--color-text-tertiary);
   font-weight: 500;
 }
 
 .msg-tab--active .msg-tab__text {
-  color: #1a1a1a;
-  font-weight: 700;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-bold);
 }
 
 .msg-tab__badge {
-  background: #E24B4A;
+  background: var(--color-danger);
   border-radius: 20rpx;
   min-width: 36rpx;
   height: 36rpx;
@@ -95,8 +95,8 @@ page {
 
 .msg-tab__badge-text {
   font-size: 20rpx;
-  color: #fff;
-  font-weight: 700;
+  color: var(--color-text-inverse);
+  font-weight: var(--weight-bold);
 }
 
 /* =====================================================
@@ -107,8 +107,8 @@ page {
   white-space: nowrap;
   padding: 20rpx 28rpx 12rpx;
   gap: 12rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #F5F5F5;
+  background: var(--color-bg-card);
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .filter-tab {
@@ -116,35 +116,35 @@ page {
   align-items: center;
   gap: 6rpx;
   padding: 8rpx 20rpx;
-  border-radius: 30rpx;
-  background: #F4F5F7;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-page);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .filter-tab--active {
-  background: #1a1a1a;
+  background: var(--color-primary);
 }
 
 .filter-tab__icon {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
 }
 
 .filter-tab__label {
-  font-size: 24rpx;
-  color: #555;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
 }
 
 .filter-tab--active .filter-tab__label {
-  color: #fff;
-  font-weight: 600;
+  color: var(--color-text-inverse);
+  font-weight: var(--weight-bold);
 }
 
 /* =====================================================
    消息列表容器
    ===================================================== */
 .msg-list {
-  padding: 16rpx 20rpx 32rpx;
+  padding: var(--space-sm) 20rpx var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -154,12 +154,12 @@ page {
    分区标签
    ===================================================== */
 .section-label {
-  padding: 16rpx 4rpx 10rpx;
+  padding: var(--space-sm) 4rpx 10rpx;
 }
 
 .section-label__text {
-  font-size: 22rpx;
-  color: #999;
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
   font-weight: 500;
   letter-spacing: 0.05em;
 }
@@ -168,9 +168,9 @@ page {
    消息卡片 — 通用
    ===================================================== */
 .msg-card {
-  background: #fff;
-  border-radius: 24rpx;
-  margin-bottom: 16rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
   overflow: hidden;
   position: relative;
 }
@@ -182,14 +182,14 @@ page {
 /* 紧急卡片：顶部红色细线 */
 .msg-card__urgency-bar {
   height: 6rpx;
-  background: #E24B4A;
+  background: var(--color-danger);
 }
 
 .msg-card__inner {
   display: flex;
   align-items: flex-start;
   gap: 20rpx;
-  padding: 28rpx 24rpx;
+  padding: 28rpx var(--space-md);
   position: relative;
 }
 
@@ -201,7 +201,7 @@ page {
   width: 16rpx;
   height: 16rpx;
   border-radius: 50%;
-  background: #E24B4A;
+  background: var(--color-danger);
 }
 
 /* =====================================================
@@ -210,7 +210,7 @@ page {
 .msg-icon-wrap {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 24rpx;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -218,7 +218,7 @@ page {
 }
 
 .msg-icon-wrap--system {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .msg-icon-wrap--activity {
@@ -251,12 +251,12 @@ page {
   display: inline-flex;
   align-items: center;
   padding: 4rpx 14rpx;
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   margin-bottom: 8rpx;
 }
 
 .msg-type-tag--system {
-  background: #EBF5FF;
+  background: var(--color-primary-light);
 }
 
 .msg-type-tag--activity {
@@ -273,11 +273,11 @@ page {
 
 .msg-type-tag__text {
   font-size: 20rpx;
-  font-weight: 600;
+  font-weight: var(--weight-bold);
 }
 
 .msg-type-tag--system .msg-type-tag__text {
-  color: #1B68C0;
+  color: var(--color-primary);
 }
 
 .msg-type-tag--activity .msg-type-tag__text {
@@ -293,17 +293,17 @@ page {
 }
 
 .msg-card__title {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
   line-height: 1.4;
   display: block;
   margin-bottom: 6rpx;
 }
 
 .msg-card__desc {
-  font-size: 24rpx;
-  color: #777;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
   line-height: 1.6;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -315,25 +315,25 @@ page {
 .msg-card__footer {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-sm);
   margin-top: 12rpx;
 }
 
 .msg-card__action {
-  background: #EAF2FB;
-  border-radius: 12rpx;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-sm);
   padding: 6rpx 18rpx;
 }
 
 .msg-card__action-text {
-  font-size: 22rpx;
-  color: #1B68C0;
-  font-weight: 600;
+  font-size: var(--font-xs);
+  color: var(--color-primary);
+  font-weight: var(--weight-bold);
 }
 
 .msg-card__time {
-  font-size: 22rpx;
-  color: #bbb;
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -347,8 +347,8 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 24rpx 16rpx;
-  border-bottom: 1rpx solid #F5F5F5;
+  padding: 20rpx var(--space-md) var(--space-sm);
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .grouped-header__left {
@@ -361,7 +361,7 @@ page {
 .grouped-header .msg-icon-wrap {
   width: 56rpx;
   height: 56rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm);
 }
 
 .grouped-header .msg-icon {
@@ -369,34 +369,34 @@ page {
 }
 
 .grouped-header__title {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
 }
 
 .grouped-count {
-  background: #F4F5F7;
-  border-radius: 12rpx;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-sm);
   padding: 4rpx 14rpx;
 }
 
 .grouped-count__text {
   font-size: 20rpx;
-  color: #888;
+  color: var(--color-text-secondary);
 }
 
 .grouped-header__time {
-  font-size: 22rpx;
-  color: #bbb;
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
 }
 
 /* 每条互动行 */
 .interact-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding: 20rpx 24rpx;
-  border-top: 1rpx solid #F8F8F8;
+  gap: var(--space-sm);
+  padding: 20rpx var(--space-md);
+  border-top: 1rpx solid var(--color-border-light);
 }
 
 /* 头像圆 */
@@ -404,7 +404,7 @@ page {
   width: 56rpx;
   height: 56rpx;
   border-radius: 50%;
-  background: #E8E8E8;
+  background: var(--color-bg-input);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -412,15 +412,15 @@ page {
 }
 
 .avatar-sm__text {
-  font-size: 22rpx;
-  color: #666;
-  font-weight: 600;
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-bold);
 }
 
 .interact-row__text {
   flex: 1;
-  font-size: 24rpx;
-  color: #555;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
   line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -429,7 +429,7 @@ page {
 
 .interact-row__time {
   font-size: 20rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
 
@@ -440,29 +440,29 @@ page {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: #F4F5F7;
-  border-radius: 40rpx;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-full);
   padding: 0 28rpx;
   height: 72rpx;
   margin: 20rpx 20rpx 0;
 }
 
 .dm-search__icon {
-  font-size: 28rpx;
+  font-size: var(--font-md);
 }
 
 .dm-search__placeholder {
-  font-size: 28rpx;
-  color: #bbb;
+  font-size: var(--font-md);
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
    私信列表
    ===================================================== */
 .dm-list {
-  background: #fff;
-  border-radius: 24rpx;
-  margin: 16rpx 20rpx 0;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  margin: var(--space-sm) 20rpx 0;
   overflow: hidden;
 }
 
@@ -470,8 +470,8 @@ page {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: 24rpx 28rpx;
-  border-bottom: 1rpx solid #F5F5F5;
+  padding: var(--space-md) 28rpx;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .dm-item:last-child {
@@ -491,14 +491,14 @@ page {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background: #eee;
+  background: var(--color-bg-input);
 }
 
 .dm-item__badge {
   position: absolute;
   top: -4rpx;
   right: -4rpx;
-  background: #E24B4A;
+  background: var(--color-danger);
   border-radius: 20rpx;
   min-width: 36rpx;
   height: 36rpx;
@@ -506,13 +506,13 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3rpx solid #fff;
+  border: 3rpx solid var(--color-bg-card);
 }
 
 .dm-item__badge-text {
   font-size: 18rpx;
-  color: #fff;
-  font-weight: 700;
+  color: var(--color-text-inverse);
+  font-weight: var(--weight-bold);
 }
 
 .dm-item__body {
@@ -528,19 +528,19 @@ page {
 }
 
 .dm-item__name {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: var(--font-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
 }
 
 .dm-item__time {
-  font-size: 22rpx;
-  color: #bbb;
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
 }
 
 .dm-item__preview {
-  font-size: 26rpx;
-  color: #999;
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -563,14 +563,14 @@ page {
 }
 
 .dm-empty__title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
 }
 
 .dm-empty__desc {
-  font-size: 26rpx;
-  color: #999;
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
   text-align: center;
   line-height: 1.6;
 }
@@ -583,7 +583,7 @@ page {
   flex-direction: column;
   align-items: center;
   padding: 120rpx 0;
-  gap: 16rpx;
+  gap: var(--space-sm);
 }
 
 .empty-icon {
@@ -591,6 +591,6 @@ page {
 }
 
 .empty-text {
-  font-size: 28rpx;
-  color: #bbb;
+  font-size: var(--font-md);
+  color: var(--color-text-tertiary);
 }

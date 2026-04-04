@@ -1,11 +1,11 @@
-/* pages/me/index.wxss */
+/* pages/me/me.wxss */
 page {
-  background: #fff;
+  background: var(--color-bg-page);
 }
 
 .page {
   min-height: 100vh;
-  background: #fff;
+  background: var(--color-bg-page);
 }
 
 .list-footer {
@@ -15,8 +15,8 @@ page {
 }
 
 .footer-text {
-  font-size: 24rpx;
-  color: #CFD3D8;
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
 }
 
 .popup-touch-blocker {
@@ -24,8 +24,8 @@ page {
   top: 0;
   left: 0;
   right: 0;
-  /* 只覆盖遮罩区域（上方 30vh），面板区域由组件自己处理 */
+  /* 只覆盖遮罩区域（上方 20vh），面板区域由组件自己处理 */
   height: 20vh;
-  z-index: 800;  /* 在 page-container（900）下���一层，但在页面内容上面 */
+  z-index: 800;
   background: transparent;
 }
