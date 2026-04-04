@@ -125,6 +125,7 @@ page {
   --shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4rpx 24rpx rgba(0, 0, 0, 0.08);
   --shadow-card: 0 2rpx 16rpx rgba(22, 119, 255, 0.06);
+  --shadow-primary: 0 8rpx 24rpx rgba(22, 119, 255, 0.4);
 
   /* 过渡 */
   --transition-fast: 0.18s ease;

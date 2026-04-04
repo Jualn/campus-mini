@@ -557,7 +557,7 @@
   align-items: center;
   justify-content: center;
   z-index: 901;
-  box-shadow: 0 8rpx 24rpx rgba(22, 119, 255, 0.4);
+  box-shadow: var(--shadow-primary);
   transition:
     transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
     opacity 0.35s cubic-bezier(0.23, 1, 0.32, 1);
