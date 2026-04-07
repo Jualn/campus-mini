@@ -17,6 +17,9 @@ page {
   background: var(--color-bg-card);
   padding: 0 24rpx 16rpx;
   box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .top-bar__nav {

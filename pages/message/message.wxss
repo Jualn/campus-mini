@@ -16,6 +16,9 @@ page {
   background: var(--color-bg-card);
   padding: 0 28rpx 0;
   box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .top-bar__nav {
@@ -83,7 +86,7 @@ page {
 }
 
 .msg-tab__badge {
-  background: #E24B4A;
+  background: var(--color-danger);
   border-radius: 20rpx;
   min-width: 36rpx;
   height: 36rpx;
@@ -95,7 +98,7 @@ page {
 
 .msg-tab__badge-text {
   font-size: 20rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 700;
 }
 
@@ -136,7 +139,7 @@ page {
 }
 
 .filter-tab--active .filter-tab__label {
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
@@ -159,7 +162,7 @@ page {
 
 .section-label__text {
   font-size: 22rpx;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-weight: 500;
   letter-spacing: 0.05em;
 }
@@ -182,7 +185,7 @@ page {
 /* 紧急卡片：顶部红色细线 */
 .msg-card__urgency-bar {
   height: 6rpx;
-  background: #E24B4A;
+  background: var(--color-danger);
 }
 
 .msg-card__inner {
@@ -201,7 +204,7 @@ page {
   width: 16rpx;
   height: 16rpx;
   border-radius: 50%;
-  background: #E24B4A;
+  background: var(--color-danger);
 }
 
 /* =====================================================
@@ -333,7 +336,7 @@ page {
 
 .msg-card__time {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -382,12 +385,12 @@ page {
 
 .grouped-count__text {
   font-size: 20rpx;
-  color: #888;
+  color: var(--color-text-secondary);
 }
 
 .grouped-header__time {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* 每条互动行 */
@@ -429,7 +432,7 @@ page {
 
 .interact-row__time {
   font-size: 20rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
 
@@ -453,7 +456,7 @@ page {
 
 .dm-search__placeholder {
   font-size: 28rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 /* =====================================================
@@ -498,7 +501,7 @@ page {
   position: absolute;
   top: -4rpx;
   right: -4rpx;
-  background: #E24B4A;
+  background: var(--color-danger);
   border-radius: 20rpx;
   min-width: 36rpx;
   height: 36rpx;
@@ -511,7 +514,7 @@ page {
 
 .dm-item__badge-text {
   font-size: 18rpx;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 700;
 }
 
@@ -535,7 +538,7 @@ page {
 
 .dm-item__time {
   font-size: 22rpx;
-  color: #bbb;
+  color: var(--color-text-tertiary);
 }
 
 .dm-item__preview {

@@ -1,6 +1,6 @@
 <view class="index-page">
 
-  <view class="home-header">
+<view class="home-header {{homeHeaderHidden ? 'home-header--hidden' : ''}}">
 
     <view class="search-section">
       <view class="user-greet" style="margin-top:{{navHeight}}px;">

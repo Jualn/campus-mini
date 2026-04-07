@@ -148,8 +148,12 @@ Page({
     fabBottomDock: 0,
     fabMenuBottom: 0,
 
-    // 新增：同步 tabbar 的可见性状态（可选）
+    // 同步 tabbar 的可见性状态（可选，供 fab 样式联动使用）
     tabBarHidden: false,
+    // 首页 header 与 tabbar 联动隐藏/显示状态（新增）
+    // 通过 _setTabBarHidden() 与 tabBarHidden 同步切换，
+    // 如需单独控制 header 可见性，可在此拆分独立逻辑
+    homeHeaderHidden: false,
 
     currentShareImage: '',
     currentSharePath: '',
@@ -355,14 +359,16 @@ Page({
 
   // ==== 新增：封装方法，统一控制 TabBar 显示/隐藏，避免重复调用 ====
   _setTabBarHidden(hidden) {
-    // hidden: true -> 隐藏 tabbar ; false -> 显示 tabbar
+    // hidden: true -> 隐藏 tabbar 和 home-header；false -> 显示
     const tabBar = typeof this.getTabBar === 'function' && this.getTabBar()
 
     if (!tabBar) {
       // 没有 tabbar （比如子包/调试环境）则跳过
       this._tabBarHidden = !!hidden
       this.setData({
-        tabBarHidden: !!hidden
+        tabBarHidden: !!hidden,
+        // home-header 与 tabbar 联动：同步更新，保证滑动体验一致
+        homeHeaderHidden: !!hidden
       })
       return
     }
@@ -372,9 +378,10 @@ Page({
     this._tabBarHidden = !!hidden
     // toggleTabBarVisibility 参数是 visible(boolean)
     tabBar.toggleVisible(!hidden)
-    // 同步到 data（可供样式或调试使用）
+    // 同步到 data：tabBarHidden 供 FAB 使用，homeHeaderHidden 供 home-header 动画使用
     this.setData({
-      tabBarHidden: !!hidden
+      tabBarHidden: !!hidden,
+      homeHeaderHidden: !!hidden
     })
   },
 
@@ -482,10 +489,13 @@ Page({
   },
 
   onShow() {
-    // ✅ 页面显示时，初始化 tabbar 状态
+    // ✅ 页面显示时，初始化 tabbar 状态，并确保 header 也恢复显示
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().init()
     }
+    // 重置联动状态，保证从其他页面返回时 header 可见
+    // 通过 _setTabBarHidden(false) 统一管理，避免状态分散
+    this._setTabBarHidden(false)
 
     // using the in-memory _currentScrollTop (which was correct at preview time)
     if (this._isPreviewingImage) {

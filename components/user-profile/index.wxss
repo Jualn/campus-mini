@@ -51,7 +51,7 @@
 .profile-body {
   padding: 0 30rpx 24rpx;
   background: var(--color-bg-card);
-  border-bottom: 1rpx solid #F1F2F6;
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .avatar-action-row {
@@ -83,7 +83,7 @@
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
-  border: 1.5rpx solid #CFD3D8;
+  border: 1.5rpx solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,7 +103,7 @@
 .btn-outline {
   height: 64rpx;
   padding: 0 30rpx;
-  border: 1.5rpx solid #CFD3D8;
+  border: 1.5rpx solid var(--color-border);
   border-radius: 40rpx;
   display: flex;
   align-items: center;
@@ -128,7 +128,7 @@
 
 .btn-fill--grey {
   background: var(--color-bg-page);
-  border: 1.5rpx solid #CFD3D8;
+  border: 1.5rpx solid var(--color-border);
 }
 
 .btn-fill__text {
@@ -172,7 +172,7 @@
 
 .profile-handle {
   font-size: 26rpx;
-  color: #536471;
+  color: var(--color-text-secondary);
   display: block;
   margin-bottom: 16rpx;
 }
@@ -194,7 +194,7 @@
 
 .meta-item {
   font-size: 24rpx;
-  color: #536471;
+  color: var(--color-text-secondary);
 }
 
 .stats-row {
@@ -215,7 +215,7 @@
 
 .stats-label {
   font-size: 26rpx;
-  color: #536471;
+  color: var(--color-text-secondary);
 }
 
 /* Tab */
@@ -239,7 +239,7 @@
 
 .tab-text {
   font-size: 28rpx;
-  color: #536471;
+  color: var(--color-text-secondary);
 }
 
 .tab-item--active .tab-text {
