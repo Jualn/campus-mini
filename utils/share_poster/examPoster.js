@@ -23,9 +23,6 @@ const EXAM_BLUE = '#1677ff'; // 考试时间（权威感）
 const EXAM_RED = '#ff4d4f'; // 顶部色条
 
 async function drawExamPoster(scope, examData, onSuccess) {
-  wx.showLoading({
-    title: '绘制中...'
-  });
   try {
     const canvas = await PC.getCanvasNode('#posterCanvas', scope);
     await _draw(canvas, scope, examData, onSuccess);

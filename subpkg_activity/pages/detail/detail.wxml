@@ -143,7 +143,7 @@
   <!-- 活动介绍 -->
   <view class="section-card" wx:if="{{activity.description}}">
     <text class="section-title">📋 活动介绍</text>
-    <text class="section-desc">{{activity.description}}</text>
+    <text class="section-desc" user-select>{{activity.description}}</text>
   </view>
 
   <!-- 奖项/激励 -->
@@ -293,13 +293,27 @@
 
   <view class="bottom-safe" />
 
-  <!-- 底部报名按钮（仅报名中显示） -->
+  <!-- 底部按钮栏 -->
   <view class="bottom-bar" wx:if="{{activity.join_methods && activity.join_methods.length}}">
     <view class="enroll-btn enroll-btn--{{activity.status}}" bindtap="onScrollToJoin">
-      <text class="enroll-btn__text">
-        {{activity.status==='enrolling'?'查看报名方式':activity.status==='upcoming'?'报名已截止':activity.status==='ongoing'?'活动进行中':activity.status==='ended'?'活动已结束':'查看详情'}}
+      <text class="enroll-btn__text">{{activity.status==='enrolling'?'查看报名方式':activity.status==='upcoming'?'报名已截止':activity.status==='ongoing'?'活动进行中':activity.status==='ended'?'活动已结束':'查看详情'}}
       </text>
+    </view>
+    <view class="share-btn" bind:tap="onShareOpen">
+      <text class="share-btn__icon">↑</text>
+      <text class="share-btn__text">分享</text>
     </view>
   </view>
 
 </view>
+
+<view wx:if="{{showPopup}}" class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
+
+<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}"
+  z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave" bind:afterleave="onPopupAfterLeave" bind:clickoverlay="onOverlayTap">
+  <!-- share弹窗 -->
+  <share-panel wx:if="{{popupType==='share'}}" share-path="{{currentSharePath}}"
+    share-image-path="{{currentShareImage}}" bind:close="onShareClose" />
+</page-container>
+
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px;"></canvas>

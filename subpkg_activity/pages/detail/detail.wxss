@@ -444,7 +444,6 @@ page {
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 6rpx;
-  z-index: 1;
 }
 
 .tl-dot--done {
@@ -883,57 +882,96 @@ page {
 /* =====================================================
    底部按钮
    ===================================================== */
-.bottom-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--color-bg-card);
-  padding: 16rpx 30rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -1rpx 0 #F1F2F6;
-}
-
-.enroll-btn {
-  width: 100%;
-  height: 96rpx;
-  border-radius: 48rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.enroll-btn--enrolling {
-  background: var(--color-text-primary);
-}
-
-.enroll-btn--upcoming,
-.enroll-btn--ended,
-.enroll-btn--cancelled {
-  background: #EBEBEB;
-}
-
-.enroll-btn--ongoing {
-  background: linear-gradient(135deg, #FF9500, #FF6B00);
-}
-
-.enroll-btn--preview {
-  background: linear-gradient(135deg, #5856D6, #007AFF);
-}
-
-.enroll-btn__text {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-text-inverse);
-  letter-spacing: 2rpx;
-}
-
-.enroll-btn--upcoming .enroll-btn__text,
-.enroll-btn--ended .enroll-btn__text,
-.enroll-btn--cancelled .enroll-btn__text {
-  color: #aaa;
-}
-
-.bottom-safe {
-  height: 180rpx;
-}
+   .bottom-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 16rpx 30rpx;
+    padding-bottom: calc(20rpx + 16px);
+    padding-bottom: calc(constant(safe-area-inset-bottom) + 16px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+  }
+  
+  /* 分享按钮 */
+  .share-btn {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: 48rpx;
+    background: #F0F0F0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    line-height: 1;
+    gap: 4rpx;
+  }
+  
+  .share-btn::after {
+    border: none;
+  }
+  
+  .share-btn__icon {
+    font-size: 30rpx;
+    color: var(--color-text-primary);
+    line-height: 1;
+  }
+  
+  .share-btn__text {
+    font-size: 20rpx;
+    color: var(--color-text-secondary);
+    line-height: 1;
+  }
+  
+  .enroll-btn {
+    flex: 1;
+    height: 96rpx;
+    border-radius: 48rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .enroll-btn--enrolling {
+    background: var(--color-text-primary);
+  }
+  
+  .enroll-btn--upcoming,
+  .enroll-btn--ended,
+  .enroll-btn--cancelled {
+    background: #EBEBEB;
+  }
+  
+  .enroll-btn--ongoing {
+    background: linear-gradient(135deg, #FF9500, #FF6B00);
+  }
+  
+  .enroll-btn--preview {
+    background: linear-gradient(135deg, #5856D6, #007AFF);
+  }
+  
+  .enroll-btn__text {
+    font-size: 32rpx;
+    font-weight: 700;
+    color: var(--color-text-inverse);
+    letter-spacing: 2rpx;
+    text-align: center;
+    width: 100%;
+  }
+  
+  .enroll-btn--upcoming .enroll-btn__text,
+  .enroll-btn--ended .enroll-btn__text,
+  .enroll-btn--cancelled .enroll-btn__text {
+    color: #aaa;
+  }
+  
+  .bottom-safe {
+    height: 180rpx;
+  }

@@ -563,10 +563,47 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--color-bg-card);
   padding: 16rpx 30rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -1rpx 0 #F1F2F6;
+  padding-bottom: calc(20rpx + 16px);
+  padding-bottom: calc(constant(safe-area-inset-bottom) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+/* 分享按钮 */
+.share-btn {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 48rpx;
+  background: #F0F0F0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  line-height: 1;
+  gap: 4rpx;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.share-btn__icon {
+  font-size: 30rpx;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.share-btn__text {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+  line-height: 1;
 }
 
 .enroll-btn {

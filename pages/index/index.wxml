@@ -96,8 +96,8 @@
   <!-- post发布弹窗 -->
   <post-edit-panel wx:elif="{{popupType==='post-edit'}}" bind:submit="onPostSubmit" bind:close="onPostEditClose" />
   <!-- share弹窗 -->
-  <share-panel wx:elif="{{popupType==='share'}}" share-title="{{currentShareTitle}}" share-path="{{currentSharePath}}"
-    share-image-path="{{_shareImage}}" bind:close="onShareClose" />
+  <share-panel wx:elif="{{popupType==='share'}}" share-path="{{currentSharePath}}"
+    share-image-path="{{currentShareImage}}" bind:close="onShareClose" />
 </page-container>
 
 <!-- FAB + 展开菜单 -->

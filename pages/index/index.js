@@ -151,8 +151,7 @@ Page({
     // 新增：同步 tabbar 的可见性状态（可选）
     tabBarHidden: false,
 
-    _shareImage: '',
-    currentShareTitle: '',
+    currentShareImage: '',
     currentSharePath: '',
   },
   noop() {},
@@ -340,7 +339,7 @@ Page({
     this._setTabBarHidden(true)
     this.setData({
       ...patch,
-      lockScrollTop: scrollTop,
+      lockScrollTop: scrollTop, // 当出现弹窗时锁定页面位置，以免发送滚动
       showPopup: true
     })
   },
@@ -352,6 +351,79 @@ Page({
     if (resetType) patch.popupType = ''
     this._setTabBarHidden(false)
     this.setData(patch)
+  },
+
+  // ==== 新增：封装方法，统一控制 TabBar 显示/隐藏，避免重复调用 ====
+  _setTabBarHidden(hidden) {
+    // hidden: true -> 隐藏 tabbar ; false -> 显示 tabbar
+    const tabBar = typeof this.getTabBar === 'function' && this.getTabBar()
+
+    if (!tabBar) {
+      // 没有 tabbar （比如子包/调试环境）则跳过
+      this._tabBarHidden = !!hidden
+      this.setData({
+        tabBarHidden: !!hidden
+      })
+      return
+    }
+    // 避免重复调用同样的状态
+    if (this._tabBarHidden === !!hidden) return
+
+    this._tabBarHidden = !!hidden
+    // toggleTabBarVisibility 参数是 visible(boolean)
+    tabBar.toggleVisible(!hidden)
+    // 同步到 data（可供样式或调试使用）
+    this.setData({
+      tabBarHidden: !!hidden
+    })
+  },
+
+  /**
+   * 保留当前页面位置，再离开页面前使用，用于恢复离开时的页面所处位置
+   */
+  _saveCurrentScrollTop() {
+    const app = getApp()
+    if (!app.globalData.scrollTops) app.globalData.scrollTops = {}
+    app.globalData.scrollTops['pages/index/index'] = this._currentScrollTop || 0
+  },
+
+  _navigateTo(url) {
+    this._saveCurrentScrollTop()
+    wx.navigateTo({
+      url
+    })
+  },
+
+  /**
+   * 通过滑动位置控制tabbar显示隐藏,上下滑动隐藏/展示 tabbar 的逻辑
+   * @param {number} current 当前滚动位置
+   */
+  _handleTabbarByScroll(current) {
+    // 初始化上次 scrollTop
+    if (typeof this._lastScrollTop === 'undefined' || this._lastScrollTop === null) {
+      this._lastScrollTop = current
+      return
+    }
+
+    const SCROLL_THRESHOLD = 20 // 像素阈值，避免细微抖动触发
+    const delta = current - this._lastScrollTop
+
+    // 更新 last 值供下一次计算
+    this._lastScrollTop = current
+
+    if (Math.abs(delta) < SCROLL_THRESHOLD) return
+
+    // 向下滚动（delta > 0）且滚过一定距离后隐藏 tabbar
+    if (delta > 0 && current > 50) {
+      this._setTabBarHidden(true)
+      return
+    }
+
+    // 向上滚动（delta < 0）时显示 tabbar（无论是否接近顶部）
+    if (delta < 0) {
+      this._setTabBarHidden(false)
+      return
+    }
   },
 
   onLoad() {
@@ -378,7 +450,7 @@ Page({
 
     const fabSize = 50 // FAB 直径约50px
     const fabMenuBottom = fabBottomDock + fabSize + 16 // menu底部 = FAB顶部 + 16px间距
-    
+
     // 获取系统胶囊位置，适配自定义导航栏
     const menuButton = wx.getMenuButtonBoundingClientRect()
     this.setData({
@@ -393,7 +465,13 @@ Page({
     this._loadData()
   },
 
-  onUnload() {},
+  onUnload() {
+    this._saveCurrentScrollTop()
+  },
+
+  onHide() {
+    this._saveCurrentScrollTop()
+  },
 
   onPullDownRefresh() {
     if (this.data.showPopup) {
@@ -436,93 +514,24 @@ Page({
 
   onShareAppMessage() {
     return {
-      imageUrl: this.data._shareImage,
+      imageUrl: this.data.currentShareImage,
       path: this.data.currentSharePath
     }
-  },
-
-  // ==== 新增：封装方法，统一控制 TabBar 显示/隐藏，避免重复调用 ====
-  _setTabBarHidden(hidden) {
-    // hidden: true -> 隐藏 tabbar ; false -> 显示 tabbar
-    const tabBar = typeof this.getTabBar === 'function' && this.getTabBar()
-
-    if (!tabBar) {
-      // 没有 tabbar （比如子包/调试环境）则跳过
-      this._tabBarHidden = !!hidden
-      this.setData({
-        tabBarHidden: !!hidden
-      })
-      return
-    }
-    // 避免重复调用同样的状态
-    if (this._tabBarHidden === !!hidden) return
-
-    this._tabBarHidden = !!hidden
-    // toggleTabBarVisibility 参数是 visible(boolean)
-    tabBar.toggleVisible(!hidden)
-    // 同步到 data（可供样式或调试使用）
-    this.setData({
-      tabBarHidden: !!hidden
-    })
   },
 
   // ✅ 实时追踪滚动位置，避免异步读取的时序问题
   onPageScroll(e) {
     // 弹窗打开时不更新，避免 fixed 定位触发的滚动干扰
-    if (!this.data.showPopup) {
-      this._currentScrollTop = e.scrollTop
-    }
-
-    // --- 新增：上下滑动隐藏/展示 tabbar 的逻辑 ---
     // 不在弹窗打开时切换 tabbar（避免干扰）
     if (this.data.showPopup) return
 
-    // 初始化上次 scrollTop
-    if (typeof this._lastScrollTop === 'undefined' || this._lastScrollTop === null) {
-      this._lastScrollTop = e.scrollTop
-      return
-    }
-
-    const SCROLL_THRESHOLD = 20 // 像素阈值，避免细微抖动触发
-    const current = e.scrollTop
-    const delta = current - this._lastScrollTop
-
-    // 更新 last 值供下一次计算
-    this._lastScrollTop = current
-
-    // 如果移动量小于阈值，忽略
-    if (Math.abs(delta) < SCROLL_THRESHOLD) return
-
-    // 向下滚动（delta > 0）且滚过一定距离后隐藏 tabbar
-    if (delta > 0 && current > 50) {
-      // 隐藏 tabbar
-      this._setTabBarHidden(true)
-      return
-    }
-
-    // 向上滚动（delta < 0）时显示 tabbar（无论是否接近顶部）
-    if (delta < 0) {
-      this._setTabBarHidden(false)
-      return
-    }
+    // 在没有打开弹窗时，执行以下操作
+    this._currentScrollTop = e.scrollTop
+    this._handleTabbarByScroll(e.scrollTop)
   },
 
   notifyPreviewImage() {
     this._isPreviewingImage = true
-  },
-
-  /**
-   * 锁定页面滚动：
-   * 1. 先记录当前 scrollTop
-   * 2. 给 feed-page 加 fixed + top:-scrollTop，视觉位置不变
-   */
-  _lockScroll() {
-    const scrollTop = this._currentScrollTop || 0
-    // 必须一次 setData 同时设置两者，保证原子渲染
-    this.setData({
-      lockScrollTop: scrollTop,
-      showPopup: true,
-    })
   },
 
   // 打开评论弹窗
@@ -541,22 +550,20 @@ Page({
 
   onOpenShare(e) {
     const {
-      shareTitle,
       sharePath,
       shareImage
     } = e.detail
 
     this._openPopup({
       popupType: "share",
-      currentShareTitle: shareTitle,
       currentSharePath: sharePath,
-      _shareImage: shareImage,
+      currentShareImage: shareImage,
     })
   },
 
   onShareImageReady(e) {
     this.setData({
-      _shareImage: e.detail.shareImage
+      currentShareImage: e.detail.shareImage
     })
   },
 
@@ -564,10 +571,8 @@ Page({
     this._closePopup()
   },
 
-  // comment-panel 内部点 ✕ 按钮 → 请求关闭
   onCommentClose() {
     this._closePopup()
-    // page-container 收到 show=false 后会触发 leave 事件
   },
 
   onCommentCountChange(e) {
@@ -605,15 +610,11 @@ Page({
   },
 
   onPostTap(e) {
-    wx.navigateTo({
-      url: `/subpkg_community/pages/detail/detail?postId=${e.detail.postId}`
-    })
+    this._navigateTo(`/subpkg_community/pages/detail/detail?postId=${e.detail.postId}`)
   },
 
   onPostUser(e) {
-    wx.navigateTo({
-      url: `/subpkg_user/pages/user/user?userId=${e.detail.userId}`
-    })
+    this._navigateTo(`/subpkg_user/pages/user/user?userId=${e.detail.userId}`)
   },
 
   onPostLike(e) {
@@ -675,46 +676,27 @@ Page({
     this.setData({
       fabOpen: false
     })
-    wx.navigateTo({
-      url: '/subpkg_activity/pages/publish/index'
-    })
+    this._navigateTo('/subpkg_activity/pages/publish/index')
   },
 
   goToActivityList() {
-    wx.navigateTo({
-      url: `/subpkg_activity/pages/list/list`
-    })
+    this._navigateTo(`/subpkg_activity/pages/list/list`)
   },
 
   goToExamList() {
-    wx.navigateTo({
-      url: `/subpkg_exam/pages/list/list`
-    })
+    this._navigateTo(`/subpkg_exam/pages/list/list`)
   },
 
   goToExamDetail(e) {
-    wx.navigateTo({
-      url: `/subpkg_exam/pages/detail/detail?examId=${e.currentTarget.dataset.id}`,
-    })
+    this._navigateTo(`/subpkg_exam/pages/detail/detail?examId=${e.currentTarget.dataset.id}`)
   },
 
   goToDetail(e) {
     const id = e.currentTarget.dataset.id
-    wx.navigateTo({
-      url: `/subpkg_community/pages/detail/index?id=${id}`
-    })
-  },
-
-  goToUser(e) {
-    const id = e.currentTarget.dataset.id
-    wx.switchTab({
-      url: `/subpkg_user/pages/user/user?userId=${id}`,
-    })
+    this._navigateTo(`/subpkg_community/pages/detail/index?id=${id}`)
   },
 
   goToPost() {
-    wx.navigateTo({
-      url: '/subpkg_community/pages/post-edit/index'
-    })
+    this._navigateTo('/subpkg_community/pages/post-edit/index')
   }
 })

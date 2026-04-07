@@ -17,9 +17,6 @@
 const PC = require('./posterCanvas');
 
 async function drawActivityPoster(scope, activityData, onSuccess) {
-  wx.showLoading({
-    title: '绘制中...'
-  });
   try {
     const canvas = await PC.getCanvasNode('#posterCanvas', scope);
     if (activityData.cover) {

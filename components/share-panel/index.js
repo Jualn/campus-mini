@@ -2,15 +2,10 @@
 Component({
   /**
    * ─── 外部属性 ───────────────────────────────────────────────────
-   * shareTitle      String    分享标题（发给好友时用）
-   * sharePath       String    分享路径（发给好友时用）
-   * shareImagePath  String    canvas 生成的临时图片路径，空则不展示预览区
+   * sharePath       String    分享路径（复制链接是使用）
+   * shareImagePath  String    用来展示 canvas 生成的临时图片的路径，空则不展示预览区
    */
   properties: {
-    shareTitle: {
-      type: String,
-      value: '分享',
-    },
     sharePath: {
       type: String,
       value: '',

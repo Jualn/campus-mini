@@ -20,6 +20,7 @@ const EXAM_DB = {
     name: '英语四级',
     icon: '📖',
     color: 'blue',
+    desc:'',
     organizer: '教育部考试中心',
     tagline: '教育部主办的全国大学英语水平测试',
     frequency: '每年6月、12月各一次，通常3月和9月开放报名',
@@ -145,6 +146,7 @@ const EXAM_DB = {
     icon: '📗',
     color: 'blue',
     organizer: '教育部考试中心',
+    desc:'',
     tagline: '教育部主办的全国大学英语水平测试',
     frequency: '每年6月、12月各一次，通常3月和9月开放报名',
     timeSource: '本期时间仅供参考，请以教育部考试中心当年公告为准！！！',
@@ -261,6 +263,7 @@ const EXAM_DB = {
     name: '普通话水平测试',
     icon: '🗣️',
     color: 'orange',
+    desc:'',
     organizer: '教育部语言文字工作委员会',
     tagline: '教育部语言文字工作委员会组织的普通话等级测试',
     frequency: '各地全年滚动安排，具体场次以当地测试机构通知为准',
@@ -351,6 +354,7 @@ const EXAM_DB = {
     name: '全国计算机等级考试',
     icon: '💻',
     color: 'purple',
+    desc:'',
     organizer: '教育部考试中心',
     tagline: '教育部考试中心主办的计算机应用能力考试',
     frequency: '每年3月和9月各举办一次',
@@ -458,6 +462,7 @@ const EXAM_DB = {
     name: '教师资格证',
     icon: '🏫',
     color: 'green',
+    desc:'',
     organizer: '教育部考试中心',
     tagline: '教育部统一组织的教师职业资格认定考试',
     frequency: '笔试每年3月、11月各一次，面试由各省另行安排',
@@ -573,6 +578,7 @@ const EXAM_DB = {
     icon: '🎓',
     color: 'red',
     organizer: '教育部',
+    desc:'',
     tagline: '教育部主管的全国统一硕士研究生招生考试',
     frequency: '每年12月下旬举行，10月开放网上报名',
     timeSource: '初试时间以教育部公告为准，复试时间以各招生院校通知为准',
@@ -777,20 +783,66 @@ function findExamDate(timeline) {
   )?.date || ''
 }
 
+const {
+  drawExamPoster
+} = require('../../../utils/share_poster/examPoster')
+
 Page({
   data: {
     statusBarHeight: 20,
     exam: {},
     collected: false,
+
+    showPopup: '',
+    popupType: '',
+
+    lockScrollTop: 0,
+
+    currentShareImage: '',
+    currentSharePath: '',
+  },
+  noop() {},
+
+  _openPopup(patch) {
+    const scrollTop = this._currentScrollTop || 0
+    this.setData({
+      ...patch,
+      lockScrollTop: scrollTop, // 当出现弹窗时锁定页面位置，以免发送滚动
+      showPopup: true
+    })
+  },
+
+  _closePopup(resetType = false) {
+    const patch = {
+      showPopup: false
+    }
+    if (resetType) patch.popupType = ''
+    this.setData(patch)
   },
 
   onLoad(options) {
+    this._currentScrollTop = 0
+
     const sys = wx.getWindowInfo()
     this.setData({
       statusBarHeight: sys.statusBarHeight
     })
     this._loadExam(options.examId)
     this._checkCollected(options.examId)
+  },
+
+  onPageScroll(e) {
+    if (this.data.showPopup) return
+
+    // 在没有打开弹窗时，执行以下操作
+    this._currentScrollTop = e.scrollTop
+  },
+
+  onShareAppMessage() {
+    return {
+      imageUrl: this.data.currentShareImage,
+      path: this.data.currentSharePath,
+    }
   },
 
   _loadExam(examId) {
@@ -929,5 +981,54 @@ Page({
 
   onBack() {
     wx.navigateBack()
+  },
+
+  async onShareOpen() {
+    const exam = this.data.exam
+    const sharePath = `/subpkg_exam/pages/detail/detail?examId=${exam.id}`
+    const examData = {
+      name: exam.name,
+      tags: ['测试'],
+      enrollTime: exam.timeline[0].date,
+      examTime: exam.timeline[exam.timeline.length - 2].date,
+      level: '',
+      desc: exam.desc,
+    }
+
+    this._openPopup({
+      popupType: 'share'
+    })
+
+    drawExamPoster(this, examData, (tempFilePath) => {
+      this.setData({
+        currentSharePath: sharePath,
+        currentShareImage: tempFilePath
+      })
+    })
+
+  },
+
+  onShareClose() {
+    this._closePopup()
+  },
+
+  onPopupBeforeLeave() {
+    wx.hideKeyboard()
+  },
+
+  onPopupLeave() {
+    this._closePopup(true)
+  },
+
+  onPopupAfterLeave() {
+    const scrollTop = this.data.lockScrollTop
+    wx.pageScrollTo({
+      scrollTop,
+      duration: 0
+    })
+  },
+
+  onOverlayTap() {
+    this._closePopup()
   },
 })

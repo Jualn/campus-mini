@@ -67,7 +67,7 @@ Component({
       if (!app.globalData) app.globalData = {}
       if (!app.globalData.scrollTops) app.globalData.scrollTops = {}
       app.globalData.scrollTops[currentPage.route] =
-        currentPage.data.__scrollTop__ || 0
+        currentPage.data._currentScrollTop || 0
 
       wx.switchTab({
         url: this.data.tabList[index].url

@@ -123,7 +123,7 @@ const ACTIVITY_DB = {
     enroll_deadline: '2026-03-15 16:00',
     start_time: '2026-03-16',
     end_time: '2026-03-28',
-    location: '',
+    location: '线上',
     max_participants: null,
     timeline: [],
     rewards: [],
@@ -186,8 +186,8 @@ const ACTIVITY_DB = {
     enroll_deadline: '2026-03-21 22:00',
     start_time: '2026-04-05',
     end_time: '2026-04-10',
-    location: '',
-    max_participants: null,
+    location: '该结束了贷款购买收到了',
+    max_participants: 100,
     timeline: [{
         label: '报名与作品提交',
         date: '2026-03-31',
@@ -392,18 +392,62 @@ const ACTIVITY_DB = {
 }
 // ──────────────────────────────────────────────────────────
 
+const {drawActivityPoster} = require('../../../utils/share_poster/activityPoster')
+
 Page({
   data: {
     statusBarHeight: 20,
     activity: {},
+
+    showPopup: '',
+    popupType: '',
+
+    lockScrollTop: 0,
+
+    currentShareImage: '',
+    currentSharePath: '',
+  },
+  noop() {},
+
+  _openPopup(patch) {
+    const scrollTop = this._currentScrollTop || 0
+    this.setData({
+      ...patch,
+      lockScrollTop: scrollTop, // 当出现弹窗时锁定页面位置，以免发送滚动
+      showPopup: true
+    })
+  },
+
+  _closePopup(resetType = false) {
+    const patch = {
+      showPopup: false
+    }
+    if (resetType) patch.popupType = ''
+    this.setData(patch)
   },
 
   onLoad(options) {
+    this._currentScrollTop = 0
+
     const sys = wx.getWindowInfo()
     this.setData({
       statusBarHeight: sys.statusBarHeight
     })
     this._loadActivity(options.id)
+  },
+
+  onPageScroll(e) {
+    if (this.data.showPopup) return
+
+    // 在没有打开弹窗时，执行以下操作
+    this._currentScrollTop = e.scrollTop
+  },
+
+  onShareAppMessage(){
+    return{
+      imageUrl:this.data.currentShareImage,
+      path:this.data.currentSharePath,
+    }
   },
 
   _loadActivity(id) {
@@ -546,5 +590,53 @@ Page({
 
   onBack() {
     wx.navigateBack()
+  },
+
+  async onShareOpen() {
+    const activity = this.data.activity
+    const sharePath = `/subpkg_activity/pages/detail/detail?activityId=${activity.id}`
+    const activityData = {
+      title: activity.title,
+      time: activity.start_time,
+      location: activity.location,
+      maxPeople: activity.max_participants,
+      cover: activity.cover
+    }
+
+    this._openPopup({
+      popupType: 'share'
+    })
+
+    drawActivityPoster(this, activityData, (tempFilePath) => {
+      this.setData({
+        currentSharePath: sharePath,
+        currentShareImage: tempFilePath
+      })
+    })
+
+  },
+
+  onShareClose() {
+    this._closePopup()
+  },
+
+  onPopupBeforeLeave() {
+    wx.hideKeyboard()
+  },
+
+  onPopupLeave() {
+    this._closePopup(true)
+  },
+
+  onPopupAfterLeave() {
+    const scrollTop = this.data.lockScrollTop
+    wx.pageScrollTo({
+      scrollTop,
+      duration: 0
+    })
+  },
+
+  onOverlayTap() {
+    this._closePopup()
   },
 })
