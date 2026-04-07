@@ -1,59 +1,94 @@
-<!-- components/share-panel/index.wxml -->
-<view class="share-panel">
+<!-- share-popup.wxml -->
+<view class="sp-root">
+  <view class="sp-mask" style="opacity: {{maskOpacity}}; transition: {{maskTransition}};"
+    bind:tap="onClose" />
 
-  <!-- 标题 -->
-  <view class="share-panel__header">
-    <text class="share-panel__title">分享</text>
-  </view>
+  <view class="sp-sheet" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
+    catchtouchmove="onHandleTouchMove"
+    style="transform: translateY({{sheetTranslateY}}px); transition: {{sheetTransition}};">
 
-  <!-- 帖子预览卡 -->
-  <view class="preview-card">
-    <view class="preview-card__author">
-      <image class="preview-card__avatar" src="{{post.avatar}}" mode="aspectFill" />
-      <text class="preview-card__name">{{post.nickname}}</text>
-    </view>
-    <text class="preview-card__content">{{previewContent}}</text>
-    <image wx:if="{{post.images && post.images.length}}" class="preview-card__img" src="{{post.images[0]}}"
-      mode="aspectFill" />
-    <view class="preview-card__stats">
-      <text class="preview-card__stat">❤️ {{post.likeCount || 0}} 点赞</text>
-      <text class="preview-card__stat">💬 {{post.commentCount || 0}} 评论</text>
-    </view>
-    <view class="preview-card__brand">
-      <text class="preview-card__brand-text">🎓 校园圈</text>
-    </view>
-  </view>
-
-  <!-- 分享选项 -->
-  <view class="share-options">
-
-    <!-- 发给朋友 -->
-    <view class="share-option">
-      <button class="share-option__btn" open-type="share" hover-class="none" bind:tap="onTapShareFriend">
-        <view class="share-option__icon-wrap share-option__icon-wrap--green">
-          <text class="share-option__icon">💬</text>
-        </view>
-      </button>
-      <text class="share-option__label">发给朋友</text>
+    <!-- 顶部拖拽条 -->
+    <view class="sp-handle-area">
+      <view class="sp-handle" />
     </view>
 
-    <!-- 复制文字 -->
-    <view class="share-option" catchtap="onCopyText">
-      <view class="share-option__icon-wrap share-option__icon-wrap--blue">
-        <text class="share-option__icon">📋</text>
+    <!-- 标题行 -->
+    <view class="sp-header">
+      <view class="sp-header__deco"></view>
+      <text class="sp-header__title">分享给朋友</text>
+      <view class="sp-close tap-active" bindtap="onClose">
+        <text class="sp-close__icon">✕</text>
       </view>
-      <text class="share-option__label">复制文字</text>
     </view>
 
-  </view>
+    <!-- 预览卡片区（canvas 生成的图片） -->
+    <block wx:if="{{shareImagePath}}">
+      <view class="sp-preview-wrap">
+        <view class="sp-preview-card {{imageLoaded ? 'sp-preview-card--loaded' : ''}}">
+          <!-- 光晕装饰 -->
+          <view class="sp-glow sp-glow--tl"></view>
+          <view class="sp-glow sp-glow--br"></view>
 
-  <!-- 取消 -->
-  <view class="share-cancel" catchtap="onClose">
-    <text class="share-cancel__text">取消</text>
-  </view>
+          <!-- 图片 -->
+          <image class="sp-preview-img" src="{{shareImagePath}}" mode="widthFix" binderror="onImageError"
+            bindload="onImageLoad" lazy-load />
 
-  <!-- 离屏 canvas（绘制分享封面图，不可见） -->
-  <canvas type="2d" id="share-canvas" class="share-canvas"
-    style="width: {{canvasW}}px; height: {{canvasH}}px;" />
+          <!-- 加载骨架屏 -->
+          <view class="sp-skeleton {{imageLoaded ? 'sp-skeleton--hide' : ''}}">
+            <view class="sp-skeleton__shimmer"></view>
+          </view>
+        </view>
+
+        <!-- 图片操作 -->
+        <view class="sp-img-actions">
+          <view class="sp-img-btn tap-active" bindtap="onPreviewImage">
+            <text class="sp-img-btn__icon">🔍</text>
+            <text class="sp-img-btn__label">查看大图</text>
+          </view>
+          <view class="sp-img-btn sp-img-btn--accent tap-active" bindtap="onSaveImage">
+            <text class="sp-img-btn__icon">⬇</text>
+            <text class="sp-img-btn__label">保存图片</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 分割线 -->
+    <view class="sp-divider">
+      <view class="sp-divider__line"></view>
+      <text class="sp-divider__text">更多分享方式</text>
+      <view class="sp-divider__line"></view>
+    </view>
+
+    <!-- 分享选项网格 -->
+    <view class="sp-options">
+
+      <!-- 微信好友 -->
+      <button class="sp-option tap-active" open-type="share">
+        <view class="sp-option__icon-wrap sp-option__icon-wrap--green">
+          <image class="sp-option__icon" src="/images/tabbar/user-active.svg" mode="aspectFit" />
+        </view>
+        <text class="sp-option__label">微信好友</text>
+      </button>
+
+      <!-- 复制链接 -->
+      <view class="sp-option tap-active" bindtap="onCopyLink">
+        <view class="sp-option__icon-wrap sp-option__icon-wrap--blue">
+          <text class="sp-option__emoji">🔗</text>
+        </view>
+        <text class="sp-option__label">复制链接</text>
+      </view>
+
+    </view>
+
+    <!-- 底部取消 -->
+    <view class="sp-cancel tap-active" bindtap="onClose">
+      <text class="sp-cancel__text">取消</text>
+    </view>
+
+    <!-- 安全区 -->
+    <view class="safe-bottom"></view>
+
+  </view>
 
 </view>

@@ -1,9 +1,9 @@
-<view class="index-page" style="margin-top:{{navHeight}}px;">
+<view class="index-page">
 
   <view class="home-header">
 
     <view class="search-section">
-      <view class="user-greet">
+      <view class="user-greet" style="margin-top:{{navHeight}}px;">
         <text class="greet-text">你好，同学</text>
         <text class="sub-text">今天也是努力的一天</text>
       </view>
@@ -56,7 +56,8 @@
   <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
 
     <post-card post="{{post}}" bind:posttap="onPostTap" bind:user="onPostUser" bind:like="onPostLike"
-      bind:comment="onOpenComment" bind:share="onOpenShare" bind:more="onPostMore" />
+      bind:comment="onOpenComment" bind:share="onOpenShare" bind:shareImageReady="onShareImageReady"
+      bind:more="onPostMore" />
     <!--  活动插片 -->
     <view class="activity-section" wx:if="{{index === 2}}">
       <view class="section-header">
@@ -85,9 +86,9 @@
 <view wx:if="{{showPopup}}" style="{{popupType==='post-edit'?'height:10vh;':'height:20vh;'}}"
   class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
 
-<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" position="bottom"
-  close-on-slide-down="{{false}}" z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave"
-  bind:afterleave="onPopupAfterLeave" bind:clickoverlay="onOverlayTap">
+<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}"
+  z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave" bind:afterleave="onPopupAfterLeave"
+  bind:clickoverlay="onOverlayTap">
   <!-- 评论区弹窗 -->
   <comment-panel wx:if="{{popupType === 'comment'}}" mode="sheet" target-id="{{currentPostId}}" target-type="post"
     total-count="{{currentCommentCount}}" visible="{{showPopup}}" bind:close="onCommentClose"
@@ -95,8 +96,8 @@
   <!-- post发布弹窗 -->
   <post-edit-panel wx:elif="{{popupType==='post-edit'}}" bind:submit="onPostSubmit" bind:close="onPostEditClose" />
   <!-- share弹窗 -->
-  <share-panel wx:elif="{{popupType==='share'}}" post="{{currentPost}}" bind:close="onShareClose"
-    bind:share="onShareReady" bind:updateShareImage="onUpdateShareImage" />
+  <share-panel wx:elif="{{popupType==='share'}}" share-title="{{currentShareTitle}}" share-path="{{currentSharePath}}"
+    share-image-path="{{_shareImage}}" bind:close="onShareClose" />
 </page-container>
 
 <!-- FAB + 展开菜单 -->

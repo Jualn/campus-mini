@@ -113,16 +113,16 @@ function findExamDate(timeline) {
   return ''
 }
 
-function calcDaysLeft(dateStr) {
+function calcDaysLeft(dateStr, nowTs = Date.now()) {
   if (!dateStr) return 0
-  const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000)
+  const target = new Date(dateStr).getTime()
+  if (Number.isNaN(target)) return 0
+  const diff = Math.ceil((target - nowTs) / 86400000)
   return diff > 0 ? diff : 0
 }
 
 Page({
   data: {
-    __scrollTop__: 0, // 用于记录当前滚动位置（内部字段）
-
     statusBarHeight: 20,
     navHeight: 64,
 
@@ -134,8 +134,6 @@ Page({
     popupType: '', // 'comment' | 'share' | ...
     currentPostId: '',
     currentCommentCount: 0,
-    currentPost: {},
-    shareImagePath: '',
 
     activePostId: '',
     activePostCommentCount: 0,
@@ -152,18 +150,24 @@ Page({
 
     // 新增：同步 tabbar 的可见性状态（可选）
     tabBarHidden: false,
+
+    _shareImage: '',
+    currentShareTitle: '',
+    currentSharePath: '',
   },
   noop() {},
 
   _loadExamCountdown() {
     const app = getApp()
+    const nowTs = Date.now()
+
     app.getExamTimelines((timelines) => {
       const examList = MOCK_EXAMS
         .map(e => {
           const tl = timelines[e.id] || []
           // timeline 有数据用动态，没有用静态兜底
-          const examDate = tl.length ? findExamDate(tl) : e.examDate
-          const daysLeft = calcDaysLeft(examDate)
+          const examDate = tl.length ? findExamDate(tl) : (e.currentTerm?.examDate || '')
+          const daysLeft = calcDaysLeft(examDate, nowTs)
           return {
             id: e.id,
             name: e.name, // 来自本地静态
@@ -176,7 +180,6 @@ Page({
         .filter(e => e.days > 0)
         .sort((a, b) => a.days - b.days)
         .slice(0, 5)
-
 
       this.setData({
         examList
@@ -324,48 +327,35 @@ Page({
         poster: "/images/1760004163342.jpg"
       }
     ];
-    const mockExamList = [{
-        id: 1,
-        name: "四六级笔试",
-        date: "2024-06-15",
-        days: 102,
-        color: "blue",
-        icon: "📖"
-      },
-      {
-        id: 2,
-        name: "教师资格证",
-        date: "2024-03-09",
-        days: 4,
-        color: "orange",
-        icon: "👨‍🏫"
-      },
-      {
-        id: 3,
-        name: "普通话考试",
-        date: "2024-03-09",
-        days: 46,
-        color: "orange",
-        icon: "👨‍🏫"
-      },
-      {
-        id: 4,
-        name: "研究生考试",
-        date: "2024-12-21",
-        days: 290,
-        color: "purple",
-        icon: "🎓"
-      }
-    ];
+
     this.setData({
       posts: mockPosts,
       activities: mockActs,
-    });
-    this._loadExamCountdown();
+    })
+    this._loadExamCountdown()
+  },
+
+  _openPopup(patch) {
+    const scrollTop = this._currentScrollTop || 0
+    this._setTabBarHidden(true)
+    this.setData({
+      ...patch,
+      lockScrollTop: scrollTop,
+      showPopup: true
+    })
+  },
+
+  _closePopup(resetType = false) {
+    const patch = {
+      showPopup: false
+    }
+    if (resetType) patch.popupType = ''
+    this._setTabBarHidden(false)
+    this.setData(patch)
   },
 
   onLoad() {
-    this._currentScrollTop = 0;
+    this._currentScrollTop = 0
 
     // 初始化用于判断滚动方向的上一次位置和 tabbar 状态
     this._lastScrollTop = 0
@@ -388,26 +378,22 @@ Page({
 
     const fabSize = 50 // FAB 直径约50px
     const fabMenuBottom = fabBottomDock + fabSize + 16 // menu底部 = FAB顶部 + 16px间距
-
+    
+    // 获取系统胶囊位置，适配自定义导航栏
+    const menuButton = wx.getMenuButtonBoundingClientRect()
     this.setData({
       fabBottomDock,
       fabMenuBottom,
-      canPublishActivity: '',
+      canPublishActivity: false,
+
+      statusBarHeight: sys.statusBarHeight,
+      navHeight: menuButton.bottom + 10,
     })
 
-    this._loadData();
-    // 获取系统胶囊位置，适配自定义导航栏
-    const menuButton = wx.getMenuButtonBoundingClientRect();
-    const systemInfo = wx.getWindowInfo();
-    this.setData({
-      statusBarHeight: systemInfo.statusBarHeight,
-      navHeight: menuButton.bottom + 10
-    });
+    this._loadData()
   },
 
-  onUnload() {
-
-  },
+  onUnload() {},
 
   onPullDownRefresh() {
     if (this.data.showPopup) {
@@ -425,26 +411,33 @@ Page({
 
     // using the in-memory _currentScrollTop (which was correct at preview time)
     if (this._isPreviewingImage) {
-      this._isPreviewingImage = false;
-      const top = this._currentScrollTop || 0;
+      this._isPreviewingImage = false
+      const top = this._currentScrollTop || 0
       // Delay slightly to let the page fully re-paint after preview closes
       setTimeout(() => {
         wx.pageScrollTo({
           scrollTop: top,
           duration: 0
-        });
-      }, 50);
-      return; // skip globalData restoration below
+        })
+      }, 50)
+      return // skip globalData restoration below
     }
 
     // ✅ 恢复离开时的滚动位置
     const app = getApp()
     const savedTop = app.globalData.scrollTops && app.globalData.scrollTops['pages/index/index']
-    if (savedTop) {
+    if (typeof savedTop === 'number') {
       wx.pageScrollTo({
         scrollTop: savedTop,
         duration: 0 // 无动画，瞬间恢复
       })
+    }
+  },
+
+  onShareAppMessage() {
+    return {
+      imageUrl: this.data._shareImage,
+      path: this.data.currentSharePath
     }
   },
 
@@ -466,7 +459,7 @@ Page({
 
     this._tabBarHidden = !!hidden
     // toggleTabBarVisibility 参数是 visible(boolean)
-    this.getTabBar().toggleVisible(!hidden)
+    tabBar.toggleVisible(!hidden)
     // 同步到 data（可供样式或调试使用）
     this.setData({
       tabBarHidden: !!hidden
@@ -477,11 +470,8 @@ Page({
   onPageScroll(e) {
     // 弹窗打开时不更新，避免 fixed 定位触发的滚动干扰
     if (!this.data.showPopup) {
-      this._currentScrollTop = e.scrollTop;
+      this._currentScrollTop = e.scrollTop
     }
-
-    // ✅ 实时记录滚动位置到页面 data，供 tabbar 读取
-    this.data.__scrollTop__ = e.scrollTop // 用 this.data 直接赋值避免频繁 setData
 
     // --- 新增：上下滑动隐藏/展示 tabbar 的逻辑 ---
     // 不在弹窗打开时切换 tabbar（避免干扰）
@@ -518,7 +508,7 @@ Page({
   },
 
   notifyPreviewImage() {
-    this._isPreviewingImage = true;
+    this._isPreviewingImage = true
   },
 
   /**
@@ -527,139 +517,91 @@ Page({
    * 2. 给 feed-page 加 fixed + top:-scrollTop，视觉位置不变
    */
   _lockScroll() {
-    const scrollTop = this._currentScrollTop || 0;
+    const scrollTop = this._currentScrollTop || 0
     // 必须一次 setData 同时设置两者，保证原子渲染
     this.setData({
       lockScrollTop: scrollTop,
       showPopup: true,
-    });
+    })
   },
 
   // 打开评论弹窗
   onOpenComment(e) {
-    // ✅ 隐藏 tabbar
-    this._setTabBarHidden(true)
-
     const {
       postId,
       commentCount
     } = e.detail
     wx.hideKeyboard()
-    // ✅ 弹窗出现时停止监听下拉刷新
-    this._pullDownRefreshEnabled = true
-    // 先记录 scrollTop，再开弹窗
-    this.setData({
+    this._openPopup({
       currentPostId: postId,
       currentCommentCount: commentCount,
       popupType: 'comment',
     })
-    this._lockScroll()
   },
 
   onOpenShare(e) {
-    this._setTabBarHidden(true)
-
     const {
-      post
+      shareTitle,
+      sharePath,
+      shareImage
     } = e.detail
-    console.log(post)
-    wx.hideKeyboard()
 
-    this.setData({
-      currentPost: post,
-      popupType: 'share',
+    this._openPopup({
+      popupType: "share",
+      currentShareTitle: shareTitle,
+      currentSharePath: sharePath,
+      _shareImage: shareImage,
     })
-
-    this._lockScroll()
   },
 
-  // share-panel 触发
-  onUpdateShareImage(e) {
+  onShareImageReady(e) {
     this.setData({
-      shareImagePath: e.detail.imageUrl
+      _shareImage: e.detail.shareImage
     })
   },
 
   onShareClose() {
-    this._setTabBarHidden(false)
-    this.setData({
-      showPopup: false
-    })
-  },
-
-  onShareAppMessage() {
-    const {
-      currentPost,
-      shareImagePath
-    } = this.data
-    console.log(shareImagePath)
-    return {
-      title: `${currentPost.nickname}：${currentPost.content?.slice(0, 40) || ''}`,
-      path: `/subpkg_community/pages/detail/detail?id=${currentPost.id}`,
-      imageUrl: shareImagePath,
-    }
+    this._closePopup()
   },
 
   // comment-panel 内部点 ✕ 按钮 → 请求关闭
   onCommentClose() {
-    this._setTabBarHidden(false)
-    this.setData({
-      showPopup: false
-    })
+    this._closePopup()
     // page-container 收到 show=false 后会触发 leave 事件
   },
-  // 评论数同步
+
   onCommentCountChange(e) {
     const {
       count
     } = e.detail
-    const idx = this.data.posts.findIndex(p => p.postId === this.data.activePostId)
-    if (idx !== -1) {
-      this.setData({
-        [`posts[${idx}].commentCount`]: count
-      })
-    }
-    this.setData({
+    const idx = this.data.posts.findIndex(p => p.id === this.data.activePostId)
+    const patch = {
       activePostCommentCount: count
-    })
+    }
+    if (idx !== -1) {
+      patch[`posts[${idx}].commentCount`] = count
+    }
+    this.setData(patch)
   },
 
-  /**
-   * 下滑手势触发前：如果输入框正在聚焦（键盘弹起中），
-   * 先收键盘，阻止本次关闭，让用户再滑一次才关闭面板。
-   * 这样避免键盘收起和面板关闭同时发生导致的闪烁。
-   */
   onPopupBeforeLeave() {
-    // page-container 暂不支持 beforeleave 阻断，这里做键盘收起兜底
     wx.hideKeyboard()
   },
 
-  // page-container 关闭动画结束后触发（用户手势下滑 或 组件触发 close）
   onPopupLeave() {
-    this._setTabBarHidden(false)
-    // 只清状态，不做 pageScrollTo
-    this.setData({
-      showPopup: false,
-      popupType: ''
-    });
+    this._closePopup(true)
   },
 
   onPopupAfterLeave() {
-    // ✅ 在这里恢复滚动，此时 page-container 动画已完全结束
-    const scrollTop = this.data.lockScrollTop;
+    const scrollTop = this.data.lockScrollTop
     wx.pageScrollTo({
       scrollTop,
       duration: 0
-    });
+    })
   },
 
-  // 点遮罩：先触发收起动画（把 show 置 false），
-  // page-container 动画结束后会触发 leave → onPopupLeave 清空状态
   onOverlayTap() {
-    this._setTabBarHidden(false)
-    this.setData({
-      showPopup: false
-    })
+    this._closePopup()
   },
 
   onPostTap(e) {
@@ -674,7 +616,6 @@ Page({
     })
   },
 
-  // 点赞
   onPostLike(e) {
     const {
       postId,
@@ -690,17 +631,11 @@ Page({
   },
 
   onPostEditClose() {
-    this._setTabBarHidden(false)
-    this.setData({
-      showPopup: false
-    })
+    this._closePopup()
   },
 
-  onPostSubmit(e) {
-    // 发布成功，关闭弹窗并刷新列表
-    this.onClosePopup()
-    // 真实场景：在列表头部插入新帖子
-    // this.setData({ posts: [e.detail, ...this.data.posts] })
+  onPostSubmit() {
+    this._closePopup(true)
     wx.showToast({
       title: '发布成功',
       icon: 'success'
@@ -712,12 +647,10 @@ Page({
       canPublishActivity,
       fabOpen
     } = this.data
-    // 普通用户直接跳发帖，不展开菜单
     if (!canPublishActivity) {
       this.onPublishPost()
       return
     }
-    // 高权限用户展开/收起菜单
     this.setData({
       fabOpen: !fabOpen
     })
@@ -730,17 +663,12 @@ Page({
   },
 
   onPublishPost() {
-    this._setTabBarHidden(true)
     wx.hideKeyboard()
-    // ✅ 弹窗出现时停止监听下拉刷新
-    this._pullDownRefreshEnabled = true
 
-    this.setData({
+    this._openPopup({
       fabOpen: false,
       popupType: 'post-edit'
     })
-
-    this._lockScroll()
   },
 
   onPublishActivity() {
@@ -771,22 +699,22 @@ Page({
   },
 
   goToDetail(e) {
-    const id = e.currentTarget.dataset.id;
+    const id = e.currentTarget.dataset.id
     wx.navigateTo({
       url: `/subpkg_community/pages/detail/index?id=${id}`
-    });
+    })
   },
 
   goToUser(e) {
-    const id = e.currentTarget.dataset.id;
+    const id = e.currentTarget.dataset.id
     wx.switchTab({
       url: `/subpkg_user/pages/user/user?userId=${id}`,
-    });
+    })
   },
 
   goToPost() {
     wx.navigateTo({
       url: '/subpkg_community/pages/post-edit/index'
-    });
+    })
   }
-});
+})

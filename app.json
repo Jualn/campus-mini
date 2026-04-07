@@ -2,7 +2,8 @@
   "pages": [
     "pages/index/index",
     "pages/me/me",
-    "pages/message/message"
+    "pages/message/message",
+    "pages/test/test"
   ],
   "subPackages": [
     {
@@ -64,6 +65,9 @@
       },
       {
         "pagePath": "pages/me/me"
+      },
+      {
+        "pagePath": "pages/test/test"
       }
     ]
   }

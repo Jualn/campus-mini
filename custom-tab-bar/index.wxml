@@ -4,7 +4,7 @@
 
     <block wx:for="{{tabList}}" wx:key="url">
       <view class="tab-item {{index === selected ? 'tab-item--active' : ''}}" data-index="{{index}}"
-        bindtap="handleTabTap" hover-class="tab-item--press" hover-stay-time="100">
+        bindtap="handleTabTap">
         <!-- 图标 + 徽标 -->
         <view class="tab-icon-wrap">
           <image class="tab-icon" src="{{index === selected ? item.iconActive : item.icon}}" mode="aspectFit" />

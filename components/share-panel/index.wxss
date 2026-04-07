@@ -1,183 +1,391 @@
-/* components/share-panel/index.wxss */
-
-.share-panel {
-  background: var(--color-bg-page);
-  border-radius: 24rpx 24rpx 0 0;
-  overflow: hidden;
-  padding-bottom: env(safe-area-inset-bottom);
+/* share-popup.wxss */
+.sp-root{}
+/* ─── 遮罩 ─── */
+.sp-mask {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.48);
+  inset: 0;
+  pointer-events: auto;
 }
 
-/* =====================================================
-   标题
-   ===================================================== */
-.share-panel__header {
-  background: var(--color-bg-card);
-  padding: 28rpx 28rpx 0;
-}
-
-.share-panel__title {
-  font-size: 28rpx;
-  color: #999;
-  font-weight: 500;
-}
-
-/* =====================================================
-   预览卡片
-   ===================================================== */
-.preview-card {
-  background: var(--color-bg-card);
-  margin: 16rpx 20rpx;
-  border-radius: 20rpx;
-  padding: 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
-}
-
-.preview-card__author {
+/* ─── 底部面板 ─── */
+.sp-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
+  flex-direction: column;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.94);
+  /* 磨砂玻璃 */
+  backdrop-filter: blur(40rpx) saturate(1.8);
+  -webkit-backdrop-filter: blur(40rpx) saturate(1.8);
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 0 0 0;
+  /* 顶部柔光描边 */
+  box-shadow:
+    0 -1rpx 0 rgba(255, 255, 255, 0.9),
+    0 -24rpx 80rpx rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  will-change: transform;
+  /* GPU 加速，更丝滑 */
+  pointer-events: auto;
 }
 
-.preview-card__avatar {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  background: #eee;
+.sp-handle-area {
+  width: 100%;
+  min-height: 48rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   flex-shrink: 0;
 }
 
-.preview-card__name {
-  font-size: 26rpx;
-  font-weight: 700;
-  color: var(--color-text-primary);
+.sp-handle {
+  width: 80rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 0, 0, 0.14);
 }
 
-.preview-card__content {
-  font-size: 28rpx;
-  color: #2C2C2C;
-  line-height: 1.7;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-  display: block;
-  margin-bottom: 16rpx;
+/* ─── 拖拽条 ─── */
+.sp-drag-bar {
+  width: 80rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 0, 0, 0.14);
+  margin: 20rpx auto 0;
 }
 
-.preview-card__img {
-  width: 100%;
-  height: 240rpx;
-  border-radius: 12rpx;
-  display: block;
-  margin-bottom: 16rpx;
-}
-
-.preview-card__stats {
-  display: flex;
-  gap: 24rpx;
-  padding: 16rpx 0;
-  border-top: 1rpx solid var(--color-border-light);
-  border-bottom: 1rpx solid var(--color-border-light);
-  margin-bottom: 16rpx;
-}
-
-.preview-card__stat {
-  font-size: 24rpx;
-  color: #888;
-}
-
-.preview-card__brand {
+/* ─── 头部 ─── */
+.sp-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 36rpx 20rpx;
+  position: relative;
 }
 
-.preview-card__brand-text {
-  font-size: 23rpx;
-  color: #bbb;
+.sp-header__deco {
+  width: 56rpx;
 }
 
-/* =====================================================
-   分享选项
-   ===================================================== */
-.share-options {
+.sp-header__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 1rpx;
+}
+
+.sp-close {
+  width: 56rpx;
+  height: 56rpx;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 60rpx;
-  padding: 32rpx 28rpx;
-  background: var(--color-bg-card);
-  margin: 0 0 16rpx;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 999rpx;
 }
 
-.share-option {
+.sp-close__icon {
+  font-size: 22rpx;
+  color: #999;
+  line-height: 1;
+}
+
+/* ─── 预览卡片区 ─── */
+.sp-preview-wrap {
+  padding: 0 36rpx 20rpx;
+}
+
+.sp-preview-card {
+  position: relative;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: #f0f2f5;
+  box-shadow:
+    0 8rpx 40rpx rgba(22, 119, 255, 0.10),
+    0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  transform: scale(0.97) translateY(8rpx);
+  transition: opacity 0.36s ease, transform 0.36s ease;
+}
+
+.sp-preview-card--loaded {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* 光晕装饰 */
+.sp-glow {
+  position: absolute;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 999rpx;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sp-glow--tl {
+  top: -60rpx;
+  left: -60rpx;
+  background: radial-gradient(circle, rgba(22, 119, 255, 0.18) 0%, transparent 70%);
+}
+
+.sp-glow--br {
+  bottom: -60rpx;
+  right: -60rpx;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+}
+
+.sp-preview-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  position: relative;
+  z-index: 2;
+}
+
+/* 骨架屏 */
+.sp-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  background: #eef0f3;
+  transition: opacity 0.3s ease;
+}
+
+.sp-skeleton--hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sp-skeleton__shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.55) 50%,
+      transparent 70%);
+  background-size: 300% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+/* 图片操作按钮组 */
+.sp-img-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.sp-img-btn {
+  flex: 1;
+  height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sp-img-btn--accent {
+  background: var(--color-primary-light);
+}
+
+.sp-img-btn__icon {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.sp-img-btn__label {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-bold);
+}
+
+.sp-img-btn--accent .sp-img-btn__label {
+  color: var(--color-primary);
+}
+
+/* ─── 分割线 ─── */
+.sp-divider {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 16rpx 36rpx;
+}
+
+.sp-divider__line {
+  flex: 1;
+  height: 1rpx;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.sp-divider__text {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  letter-spacing: 1rpx;
+}
+
+/* ─── 选项网格 ─── */
+.sp-options {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  padding: 8rpx 16rpx 8rpx;
+}
+
+.sp-option {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-}
-
-/* button 去掉默认样式 */
-.share-option__btn {
+  padding: 24rpx 8rpx;
   background: transparent;
-  padding: 0;
-  margin: 0;
+  /* 覆盖全局 button 重置 */
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  line-height: inherit;
   border: none;
-  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.share-option__btn::after {
+.sp-option::after {
   border: none;
 }
 
-.share-option__icon-wrap {
-  width: 100rpx;
-  height: 100rpx;
+/* 图标容器 */
+.sp-option__icon-wrap {
+  width: 96rpx;
+  height: 96rpx;
   border-radius: 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  /* 内嵌光泽 */
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.6), 0 4rpx 16rpx rgba(0, 0, 0, 0.10);
 }
 
-.share-option__icon-wrap--green {
-  background: linear-gradient(135deg, #43e97b, #38f9d7);
+.sp-option__icon-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+  pointer-events: none;
 }
 
-.share-option__icon-wrap--blue {
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
+.sp-option__icon-wrap--green {
+  background: linear-gradient(145deg, #2dc653, #07c160);
 }
 
-.share-option__icon {
-  font-size: 44rpx;
+.sp-option__icon-wrap--blue {
+  background: linear-gradient(145deg, #3b8cff, var(--color-primary));
 }
 
-.share-option__label {
-  font-size: 24rpx;
-  color: #555;
+.sp-option__icon {
+  width: 52rpx;
+  height: 52rpx;
 }
 
-/* =====================================================
-   取消
-   ===================================================== */
-.share-cancel {
-  background: var(--color-bg-card);
+.sp-option__emoji {
+  font-size: 42rpx;
+  line-height: 1;
+}
+
+.sp-option__label {
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.5rpx;
+}
+
+/* ─── 取消按钮 ─── */
+.sp-cancel {
+  margin: 8rpx 36rpx 20rpx;
   height: 96rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-xl);
 }
 
-.share-cancel__text {
-  font-size: 30rpx;
-  color: #555;
-  font-weight: 500;
+.sp-cancel__text {
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-bold);
+  letter-spacing: 2rpx;
 }
 
-/* =====================================================
-   离屏 canvas（不可见）
-   ===================================================== */
-.share-canvas {
-  position: fixed;
-  left: -9999px;
-  top: -9999px;
-  opacity: 0;
+/* ─── 深色模式 ─── */
+@media (prefers-color-scheme: dark) {
+  .sp-sheet {
+    background: rgba(23, 26, 33, 0.96);
+  }
+
+  .sp-header__title {
+    color: #f3f4f6;
+  }
+
+  .sp-close {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .sp-close__icon {
+    color: #8b93a1;
+  }
+
+  .sp-preview-card {
+    background: #1f2430;
+  }
+
+  .sp-skeleton {
+    background: #252a36;
+  }
+
+  .sp-img-btn {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .sp-img-btn--accent {
+    background: rgba(22, 119, 255, 0.18);
+  }
+
+  .sp-img-btn__label {
+    color: var(--color-text-secondary);
+  }
+
+  .sp-divider__line {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .sp-option__label {
+    color: var(--color-text-secondary);
+  }
+
+  .sp-cancel {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .sp-cancel__text {
+    color: var(--color-text-secondary);
+  }
 }

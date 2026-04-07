@@ -355,10 +355,6 @@
 .liked .liked-icon {
   opacity: 1;
   transform: scale(1.1);
-}
-
-.liked .liked-icon {
-  opacity: 1;
   animation: likePop 0.3s;
 }
 
@@ -400,14 +396,6 @@
   z-index: 800;
   /* 在 page-container（900）下���一层，但在页面内容上面 */
   background: transparent;
-}
-
-/* 舍弃，view 头像往下一条线 */
-.thread-line {
-  flex: 1;
-  width: 4rpx;
-  background: #E1E8ED;
-  margin: 10rpx 0;
 }
 
 /* ========== 活动插片 ========== */

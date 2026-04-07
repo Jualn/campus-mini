@@ -57,7 +57,7 @@ image {
 
 input,
 textarea {
-  -webkit-appearance: none;
+  appearance: none;
   outline: none;
   font-size: var(--font-md);
   line-height: 1.4;

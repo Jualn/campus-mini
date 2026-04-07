@@ -24,7 +24,7 @@
   border-radius: 100rpx;
 
   /* 安卓基础背景 */
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.85);
   /* iOS 毛玻璃，安卓静默降级 */
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
@@ -59,11 +59,6 @@
 
 .tab-item--active {
   background: var(--color-primary-light);
-}
-
-.tab-item--press {
-  background: rgba(22, 119, 255, 0.14);
-  transform: scale(0.94);
 }
 
 /* ===================== 图标容器 ===================== */

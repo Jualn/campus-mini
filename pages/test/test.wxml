@@ -1,0 +1,4 @@
+<view class="canvas-container">
+  <canvas type="2d" id="posterCanvas" style="margin-top: 200px; margin-left: 70px; width: 500rpx; height: 400rpx;"></canvas>
+</view>
+<button type="primary" bindtap="onTapShare" style="margin-top: 20px;">生成分享卡片</button>

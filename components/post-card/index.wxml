@@ -44,32 +44,7 @@
       </view>
     </view>
 
-    <!-- 分享面板 -->
-    <view wx:if="{{showSharePanel}}" class="share-mask" catchtouchmove="noop">
-      <view class="share-panel" catch:touchmove="noop">
-        <view class="share-header">
-          <text class="share-title">分享预览</text>
-          <text class="share-close" catchtap="onCloseShare">✕</text>
-        </view>
-
-        <canvas type="2d" id="shareCanvas" canvas-id="shareCanvas" class="share-canvas"
-          style="width:{{canvasWidth}}rpx;height:{{canvasHeight}}rpx;"></canvas>
-
-        <view class="share-actions">
-          <button class="share-btn" size="mini" loading="{{shareGenerating}}" bindtap="onGenerateShareImage">
-            {{shareGenerating ? '生成中…' : '生成预览图'}}
-          </button>
-          <button class="share-btn" size="mini" open-type="share">直接转发</button>
-        </view>
-
-        <view class="share-quick">
-          <button size="mini" bindtap="onQuickCopy">复制链接</button>
-          <button size="mini" bindtap="onQuickDislike">不感兴趣</button>
-          <button size="mini" bindtap="onQuickReport">举报</button>
-        </view>
-
-      </view>
-    </view>
-
   </view>
 </view>
+
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px;"></canvas>

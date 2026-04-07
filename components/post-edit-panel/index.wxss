@@ -26,7 +26,15 @@
   height: 90vh;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg-card);
+  background: rgba(255, 255, 255, 0.94);
+  /* 磨砂玻璃 */
+  backdrop-filter: blur(40rpx) saturate(1.8);
+  -webkit-backdrop-filter: blur(40rpx) saturate(1.8);
+  padding: 0 0 0;
+  /* 顶部柔光描边 */
+  box-shadow:
+    0 -1rpx 0 rgba(255, 255, 255, 0.9),
+    0 -24rpx 80rpx rgba(0, 0, 0, 0.12);
   border-radius: 24rpx 24rpx 0 0;
   will-change: transform;
   pointer-events: auto;

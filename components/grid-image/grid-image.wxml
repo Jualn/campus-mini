@@ -1,4 +1,4 @@
-<view class="grid-container grid-{{images.length > 9 ? 9 : images.length}}">
+<view class="grid-container grid-{{images.length > 9 ? 9 : images.length}}" wx:if="{{images.length != 0}}">
   <block wx:for="{{images}}" wx:key="index">
     <image 
       class="grid-item item-{{index}}" 

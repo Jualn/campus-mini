@@ -17,13 +17,17 @@ Component({
         url: '/pages/message/message',
         icon: '/images/tabbar/message.svg',
         iconActive: '/images/tabbar/message-active.svg',
-        badge: 0
+        badge: 10
       },
       {
         text: '我的',
         url: '/pages/me/me',
         icon: '/images/tabbar/user.svg',
         iconActive: '/images/tabbar/user-active.svg'
+      },
+      {
+        text: '测试',
+        url: '/pages/test/test'
       }
     ]
   },
