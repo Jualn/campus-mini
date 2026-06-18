@@ -1,0 +1,5 @@
+miniprogram_npm/
+node_modules/
+.miniprogram-ci/
+project.private.config.json
+*.md

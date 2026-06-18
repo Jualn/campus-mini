@@ -1,0 +1,106 @@
+<!--subpkg_community/pages/search-result/search-result.wxml-->
+<view class="search-result-page">
+  <view class="search-top" style="padding-top: {{statusBarHeight}}px;">
+    <view class="search-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
+      <view class="search-nav__back" bindtap="onBack">
+        <text class="search-nav__back-icon">‹</text>
+      </view>
+
+      <text class="search-nav__title">搜索结果</text>
+    </view>
+
+    <view class="search-bar-wrap">
+      <view class="search-bar">
+        <view class="search-bar__icon-wrap">
+          <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
+        </view>
+        <input class="search-bar__input" placeholder="搜索动态、活动或考试" placeholder-class="search-bar__placeholder"
+          value="{{keyword}}" focus="{{inputFocus}}" confirm-type="search" bindinput="onInput"
+          bindconfirm="onConfirm" />
+        <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClear">
+          <text class="search-bar__clear-icon">✕</text>
+        </view>
+      </view>
+    </view>
+
+    <scroll-view scroll-x enable-flex class="tab-scroll">
+      <view wx:for="{{tabs}}" wx:key="id" class="tab-item {{activeTab === item.id ? 'tab-item--active' : ''}}"
+        bindtap="onSwitchTab" data-id="{{item.id}}">
+        <text class="tab-item__label">{{item.label}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="result-content">
+    <block wx:if="{{!keyword}}">
+      <view class="result-empty">
+        <view class="result-empty__visual">
+          <image class="result-empty__svg" src="/images/icons/search.svg" mode="aspectFit" />
+        </view>
+        <text class="result-empty__title">输入关键词开始搜索</text>
+        <text class="result-empty__desc">可以搜索动态、活动或考试信息</text>
+      </view>
+    </block>
+
+    <block wx:else>
+      <!-- 综合：默认展示动态 post-card -->
+      <block wx:if="{{activeTab === 'all'}}">
+
+        <view wx:if="{{postList.length}}" class="post-result-list">
+          <block wx:for="{{postList}}" wx:key="id" wx:for-item="post">
+            <post-card post="{{post}}" />
+          </block>
+        </view>
+
+        <view wx:elif="{{!loading && loaded}}" class="result-empty">
+          <view class="result-empty__visual">
+            <image class="result-empty__svg" src="/images/icons/search.svg" mode="aspectFit" />
+          </view>
+          <text class="result-empty__title">没有找到相关动态</text>
+          <text class="result-empty__desc">换个关键词试试</text>
+        </view>
+      </block>
+
+      <!-- 活动 -->
+      <block wx:elif="{{activeTab === 'activity'}}">
+
+        <view wx:if="{{activityList.length}}" class="activity-result-list">
+          <block wx:for="{{activityList}}" wx:key="id" wx:for-item="activity">
+            <activity-card activity="{{activity}}" />
+          </block>
+        </view>
+
+        <view wx:elif="{{!loading && loaded}}" class="result-empty">
+          <text class="result-empty__icon">🎉</text>
+          <text class="result-empty__title">没有找到相关活动</text>
+          <text class="result-empty__desc">试试搜索活动名称、类型或主办方</text>
+        </view>
+      </block>
+
+      <!-- 考试：先占位 -->
+      <block wx:elif="{{activeTab === 'exam'}}">
+
+        <view class="result-empty">
+          <text class="result-empty__icon">📝</text>
+          <text class="result-empty__title">考试搜索暂未接入</text>
+          <text class="result-empty__desc">等考试接口完成后接入 searchExams 即可</text>
+        </view>
+      </block>
+
+      <view wx:if="{{loading}}" class="list-state">
+        <text class="list-state__text">加载中...</text>
+      </view>
+
+      <view wx:if="{{!loading && activeTab === 'all' && postList.length && !postHasMore}}" class="list-state">
+        <text class="list-state__text">— 已经到底啦 —</text>
+      </view>
+
+      <view wx:if="{{!loading && activeTab === 'activity' && activityList.length && !activityHasMore}}"
+        class="list-state">
+        <text class="list-state__text">— 已经到底啦 —</text>
+      </view>
+    </block>
+  </view>
+</view>
+
+<in-app-banner/>

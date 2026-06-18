@@ -1,0 +1,107 @@
+<!--components/report-panel/index.wxml-->
+<wxs module="drag" src="../../utils/drag.wxs"></wxs>
+
+<view class="rp-root">
+  <!-- 遮罩 -->
+  <view class="rp-mask J-mask" style="opacity:{{maskOpacity}};transition:{{maskTransition}};"
+    catch:touchstart="{{drag.noop}}" catch:touchend="{{drag.handleClose}}" data-panel-h="{{panelHeight}}"
+    catchtouchmove="noop" />
+
+  <!-- 底部弹窗 -->
+  <view class="rp-sheet J-sheet" style="transform: translateY({{sheetTranslateY}}px); transition: {{sheetTransition}};" 
+   bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
+      catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}">
+    <!-- 顶部拖拽条 -->
+    <view class="rp-handle-area">
+      <view class="rp-handle" />
+    </view>
+
+    <!-- 标题 -->
+    <view class="rp-header">
+      <view class="rp-header__main">
+        <text class="rp-header__title">提交举报</text>
+        <text class="rp-header__desc">请选择举报原因，平台会尽快核实处理</text>
+      </view>
+
+      <view class="rp-close tap-active" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
+          catch:touchend="{{drag.handleClose}}" catchtouchmove="noop">
+        <text class="rp-close__icon">✕</text>
+      </view>
+    </view>
+
+    <!-- 提示卡片 -->
+    <view class="rp-notice">
+      <text class="rp-notice__icon">!</text>
+      <text class="rp-notice__text">恶意举报可能影响账号信用，请根据实际情况提交。</text>
+    </view>
+
+    <!-- 举报原因 -->
+    <view class="rp-section">
+      <view class="rp-section__title-row">
+        <text class="rp-section__title">举报原因</text>
+        <text class="rp-section__required">必选</text>
+      </view>
+
+      <block wx:if="{{reasonList.length}}">
+        <view class="rp-reasons">
+          <block wx:for="{{reasonList}}" wx:key="value">
+            <view class="rp-reason {{selectedReason === item.value ? 'rp-reason--active' : ''}} tap-active"
+              data-value="{{item.value}}" bindtap="onSelectReason">
+
+              <view class="rp-reason__icon-wrap">
+                <image class="rp-reason__icon" src="{{item.icon}}" mode="aspectFit" />
+              </view>
+              
+              <view class="rp-reason__content">
+                <text class="rp-reason__title">{{item.label}}</text>
+                <text class="rp-reason__desc">{{item.hint}}</text>
+              </view>
+
+              <view class="rp-reason__radio">
+                <view wx:if="{{selectedReason === item.value}}" class="rp-reason__radio-inner" />
+              </view>
+            </view>
+          </block>
+        </view>
+      </block>
+
+      <block wx:else>
+        <view class="rp-empty">
+          <text class="rp-empty__text">举报原因加载中</text>
+        </view>
+      </block>
+    </view>
+
+    <!-- 补充说明 -->
+    <view class="rp-section rp-section--remark">
+      <view class="rp-section__title-row">
+        <text class="rp-section__title">补充说明</text>
+        <text class="rp-section__optional">选填</text>
+      </view>
+
+      <view class="rp-remark-box">
+        <textarea class="rp-remark" value="{{remark}}" maxlength="{{remarkMaxLength}}"
+          placeholder="{{isOtherSelected ? '建议补充具体问题，方便管理员判断' : '可补充说明具体违规内容，例如位置、行为等'}}"
+          placeholder-class="rp-remark__placeholder" bindinput="onRemarkInput" show-confirm-bar="{{false}}"
+          auto-height="{{false}}" />
+        <view class="rp-count">
+          <text>{{remark.length}}/{{remarkMaxLength}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部操作 -->
+    <view class="rp-actions">
+      <view class="rp-cancel tap-active" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
+          catch:touchend="{{drag.handleClose}}" catchtouchmove="noop">
+        <text class="rp-cancel__text">取消</text>
+      </view>
+
+      <view class="rp-submit {{canSubmit && !submitting ? '' : 'rp-submit--disabled'}} tap-active" bindtap="onSubmit">
+        <text class="rp-submit__text">{{submitting ? '提交中...' : '提交举报'}}</text>
+      </view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </view>
+</view>

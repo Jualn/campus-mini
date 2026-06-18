@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .cls-1{fill:#fff1f2;}
+      .cls-2{fill:#fb7185;}
+      .cls-3{fill:#be123c;}
+      .cls-4,.cls-5{fill:none;stroke:#be123c;stroke-miterlimit:10;}
+      .cls-4{stroke-width:0.8px;}
+      .cls-5{stroke-width:0.7px;}
+      .cls-6{font-size:3.1px;fill:#be123c;font-family:ArialRoundedMTBold, Arial Rounded MT Bold;}
+    </style>
+  </defs>
+  <g>
+    <polygon class="cls-2" points="12 4.1 18.7 7 5.3 7 12 4.1"/>
+    <rect class="cls-1" x="6.2" y="7" width="11.6" height="8.2"/>
+    <rect class="cls-2" x="4.7" y="15.2" width="14.6" height="1.5"/>
+    <rect class="cls-2" x="3.8" y="17.2" width="16.4" height="1.4"/>
+    <line class="cls-4" x1="8.1" y1="7.2" x2="8.1" y2="15.1"/>
+    <line class="cls-4" x1="10.7" y1="7.2" x2="10.7" y2="15.1"/>
+    <line class="cls-4" x1="13.3" y1="7.2" x2="13.3" y2="15.1"/>
+    <line class="cls-4" x1="15.9" y1="7.2" x2="15.9" y2="15.1"/>
+    <polygon class="cls-3" points="12 8.6 12.5 9.7 13.7 9.9 12.8 10.7 13 11.9 12 11.3 11 11.9 11.2 10.7 10.3 9.9 11.5 9.7 12 8.6"/>
+    <polygon class="cls-4" points="12 4.1 18.7 7 5.3 7 12 4.1"/>
+    <rect class="cls-4" x="6.2" y="7" width="11.6" height="8.2"/>
+    <text class="cls-6" x="8.9" y="14.2">考</text>
+  </g>
+</svg>

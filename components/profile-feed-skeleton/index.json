@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "post-card-skeleton": "/components/post-card-skeleton/index"
+  }
+}

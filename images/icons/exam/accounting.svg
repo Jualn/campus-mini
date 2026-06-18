@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .cls-1{fill:#fff7e6;}
+      .cls-2{fill:#fbbf24;}
+      .cls-3{fill:#b45309;}
+      .cls-4,.cls-5{fill:none;stroke:#b45309;stroke-miterlimit:10;}
+      .cls-4{stroke-width:0.8px;}
+      .cls-5{stroke-width:0.7px;}
+      .cls-6{font-size:3px;fill:#b45309;font-family:ArialRoundedMTBold, Arial Rounded MT Bold;}
+    </style>
+  </defs>
+  <g>
+    <rect class="cls-1" x="5.2" y="4.2" width="13.6" height="15.3" rx="1.2"/>
+    <rect class="cls-2" x="7.1" y="6.4" width="9.8" height="2"/>
+    <rect class="cls-2" x="7.1" y="10.1" width="3.2" height="3.2"/>
+    <rect class="cls-2" x="11" y="10.1" width="2.3" height="2.3"/>
+    <rect class="cls-2" x="14.1" y="10.1" width="2.3" height="2.3"/>
+    <rect class="cls-2" x="11" y="13.1" width="2.3" height="2.3"/>
+    <rect class="cls-2" x="14.1" y="13.1" width="2.3" height="2.3"/>
+    <path class="cls-4" d="M6.4,4.2H17.6a1.2,1.2,0,0,1,1.2,1.2V18.3a1.2,1.2,0,0,1-1.2,1.2H6.4a1.2,1.2,0,0,1-1.2-1.2V5.4A1.2,1.2,0,0,1,6.4,4.2Z"/>
+    <line class="cls-5" x1="7.1" y1="16.7" x2="16.8" y2="16.7"/>
+    <text class="cls-6" x="7.45" y="12.5">￥</text>
+    <text class="cls-6" x="11.45" y="12">+</text>
+    <text class="cls-6" x="14.45" y="12">-</text>
+    <text class="cls-6" x="11.45" y="15.1">×</text>
+    <text class="cls-6" x="14.35" y="15.1">÷</text>
+  </g>
+</svg>

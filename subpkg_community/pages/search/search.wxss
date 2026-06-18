@@ -1,0 +1,234 @@
+/* subpkg_community/pages/search/search.wxss */
+
+.search-page {
+  min-height: 100vh;
+  background: var(--color-bg-page);
+}
+
+.search-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 14rpx 24rpx 22rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #f2f7ff 100%);
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.search-nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-nav__back {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.search-nav__back-icon {
+  font-size: 44rpx;
+  color: var(--color-text-primary);
+  line-height: 1;
+  margin-top: -12rpx;
+}
+
+.search-nav__title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 30rpx;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.search-bar-wrap {
+  margin-top: 16rpx;
+}
+
+.search-bar {
+  width: 100%;
+  height: 72rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-card);
+  display: flex;
+  align-items: center;
+  padding: 0 20rpx;
+  box-shadow: var(--shadow-sm);
+}
+
+/* SVG 搜索图标容器 */
+.search-bar__icon-wrap {
+  position: relative;
+  z-index: 1;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: var(--radius-full);
+  background: rgba(47, 124, 246, 0.09);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.search-bar__icon {
+  width: 28rpx;
+  height: 28rpx;
+  display: block;
+  opacity: 0.86;
+  flex-shrink: 0;
+}
+
+.search-bar__input {
+  flex: 1;
+  height: 72rpx;
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+}
+
+.search-bar__placeholder {
+  color: var(--color-text-tertiary);
+  font-size: 28rpx;
+}
+
+.search-bar__clear {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-bar__clear-icon {
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--color-bg-input);
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+}
+
+.search-content {
+  padding: 24rpx;
+}
+
+.section-block {
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.section-action {
+  font-size: 24rpx;
+  color: var(--color-primary);
+}
+
+.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.history-chip {
+  padding: 10rpx 22rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-input);
+}
+
+.history-chip:active {
+  opacity: 0.8;
+}
+
+.history-chip__text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.history-empty {
+  border-radius: var(--radius-md);
+  padding: 26rpx;
+  background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+}
+
+.history-empty__text {
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.quick-card {
+  border-radius: var(--radius-md);
+  padding: 22rpx;
+}
+
+.quick-card:active {
+  opacity: 0.88;
+}
+
+.quick-card--post {
+  background: linear-gradient(135deg, #eff6ff 0%, #e5edff 100%);
+}
+
+.quick-card--activity {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+}
+
+.quick-card--exam {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.quick-card__icon {
+  width: 56rpx;
+  height: 56rpx;
+  margin-bottom: 14rpx;
+  flex-shrink: 0;
+}
+
+.quick-card__emoji {
+  font-size: 34rpx;
+}
+
+.quick-card__title {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.quick-card__desc {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}

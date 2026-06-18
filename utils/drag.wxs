@@ -1,0 +1,222 @@
+// ─────────────────────────────────────────────────────────────────────
+// 状态（WXS 模块级变量，每个组件实例独立）
+// ─────────────────────────────────────────────────────────────────────
+var _startY = 0
+var _startX = 0
+var _startTime = 0
+var _panelH = 600
+var _active = false
+var _direction = 0 // 0=未定, 1=向下, -1=向上
+var _atTop = true
+
+function isTrue(v) {
+  return v === true || v === 'true' || v === 1 || v === '1'
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// 拖拽条 / 标题区（catch，完全接管）
+// ─────────────────────────────────────────────────────────────────────
+function handleStart(e, ins) {
+  _startY = e.touches[0].clientY
+  _startX = e.touches[0].clientX
+  _startTime = e.timeStamp
+  _panelH = e.currentTarget.dataset.panelH || 600
+  _active = true
+  _direction = 0
+
+  ins.selectComponent('.J-sheet').setStyle({
+    transition: 'none'
+  })
+  ins.selectComponent('.J-mask').setStyle({
+    transition: 'none'
+  })
+}
+
+function handleMove(e, ins) {
+  if (!_active) return
+  var dy = e.touches[0].clientY - _startY
+  if (dy <= 0) return
+
+  var damp = dy * (1 - dy / (dy + 400))
+  var opacity = Math.max(0, 1 - damp / _panelH)
+
+  ins.selectComponent('.J-sheet').setStyle({
+    transform: 'translateY(' + damp + 'px)',
+    transition: 'none',
+  })
+  ins.selectComponent('.J-mask').setStyle({
+    opacity: '' + opacity,
+    transition: 'none',
+  })
+}
+
+function handleEnd(e, ins) {
+  if (!_active) return
+  _active = false
+
+  var dy = e.changedTouches[0].clientY - _startY
+  var elapsed = e.timeStamp - _startTime
+  var velocity = elapsed > 0 ? dy / elapsed : 0
+
+  var sheet = ins.selectComponent('.J-sheet')
+  var mask = ins.selectComponent('.J-mask')
+
+  if (dy > 80 || velocity > 0.4) {
+    // ✅ 直接在 WXS 里做关闭动画，不再交给 JS 做
+    sheet.setStyle({
+      transform: 'translateY(100%)', // 原本 _panelH px
+      transition: 'transform .32s cubic-bezier(0.32,0.72,0,1)',
+      pointerEvents: 'none',
+    })
+    mask.setStyle({
+      opacity: '0',
+      transition: 'opacity .28s ease',
+      pointerEvents: 'none',
+    })
+    ins.callMethod('onWxsDismiss', {}) // JS 只需要延时触发 close 事件
+  } else {
+    // ✅ 直接在 WXS 里做回弹动画
+    sheet.setStyle({
+      transform: 'translateY(0px)',
+      transition: 'transform .35s cubic-bezier(0.32,0.72,0,1)',
+    })
+    mask.setStyle({
+      opacity: '1',
+      transition: 'opacity .35s ease',
+    })
+    // 回弹不需要通知 JS
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// scroll-view 顶部区域（bind 而非 catch）
+// 原理：scroll-view 在 scrollTop=0 向下拉时本身不会滚动
+//       用 bind（非 catch）让 scroll-view 也收到事件
+//       WXS 处理下滑→关闭动画，scroll-view 因在顶部什么也不做
+//       上滑时 WXS 判断方向后忽略，scroll-view 正常滚动
+// ─────────────────────────────────────────────────────────────────────
+function scrollStart(e, ins) {
+  _startY = e.touches[0].clientY
+  _startX = e.touches[0].clientX
+  _startTime = e.timeStamp
+  _panelH = e.currentTarget.dataset.panelH || 600
+  _active = true
+  _direction = 0
+  _atTop = isTrue(e.currentTarget.dataset.atTop)
+
+  ins.selectComponent('.J-sheet').setStyle({
+    transition: 'none'
+  })
+  ins.selectComponent('.J-mask').setStyle({
+    transition: 'none'
+  })
+}
+
+function scrollMove(e, ins) {
+  if (!_active) return
+  if (!_atTop) return
+  var dy = e.touches[0].clientY - _startY
+  var dx = e.touches[0].clientX - _startX
+
+  // 第一次 move 确定方向，之后不再改变
+  if (_direction === 0) {
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 2) {
+      _direction = 2
+      return
+    }
+    _direction = dy > 2 ? 1 : (dy < -2 ? -1 : 0)
+  }
+
+  // 向上滑：完全不处理，让 scroll-view 正常滚
+  if (_direction === -1 || _direction === 2) return
+  // 方向还不确定：等下一帧
+  if (_direction === 0) return
+
+  // 向下滑：接管动画
+  if (dy <= 0) return
+  var damp = dy * (1 - dy / (dy + 400))
+  var opacity = Math.max(0, 1 - damp / _panelH)
+
+  ins.selectComponent('.J-sheet').setStyle({
+    transform: 'translateY(' + damp + 'px)',
+    transition: 'none',
+  })
+  ins.selectComponent('.J-mask').setStyle({
+    opacity: '' + opacity,
+    transition: 'none',
+  })
+}
+
+function scrollEnd(e, ins) {
+  if (!_active) return
+  _active = false
+
+  if (_direction !== 1) {
+    // 向上 / 方向未定：回弹（WXS 内联样式此时未被设置过，无需处理）
+    return
+  }
+
+  var dy = e.changedTouches[0].clientY - _startY
+  var elapsed = e.timeStamp - _startTime
+  var velocity = elapsed > 0 ? dy / elapsed : 0
+
+  var sheet = ins.selectComponent('.J-sheet')
+  var mask = ins.selectComponent('.J-mask')
+
+  if (dy > 80 || velocity > 0.4) {
+    sheet.setStyle({
+      transform: 'translateY(100%)', // 原本 _panelH px
+      transition: 'transform .32s cubic-bezier(0.32,0.72,0,1)',
+      pointerEvents: 'none',
+    })
+    mask.setStyle({
+      opacity: '0',
+      transition: 'opacity .28s ease',
+      pointerEvents: 'none',
+    })
+    ins.callMethod('onWxsDismiss', {})
+  } else {
+    sheet.setStyle({
+      transform: 'translateY(0px)',
+      transition: 'transform .35s cubic-bezier(0.32,0.72,0,1)',
+    })
+    mask.setStyle({
+      opacity: '1',
+      transition: 'opacity .35s ease',
+    })
+  }
+}
+
+// 新增：点击关闭 / mask，直接在渲染线程启动动画
+function handleClose(e, ins) {
+  // 从 dataset 读 panelH，关闭按钮和 mask 上都加 data-panel-h
+  var panelH = e.currentTarget.dataset.panelH || _panelH || 600
+
+
+  ins.selectComponent('.J-sheet').setStyle({
+    transform: 'translateY(100%)', // 原本 panelH px
+    transition: 'transform .32s cubic-bezier(0.32,0.72,0,1)',
+    pointerEvents: 'none', // 立即关掉触摸拦截，动画期间不再吃事件
+  })
+  ins.selectComponent('.J-mask').setStyle({
+    opacity: '0',
+    transition: 'opacity .28s ease',
+    pointerEvents: 'none',
+  })
+
+  // 通知 JS：动画已启动，到时间关闭就行
+  ins.callMethod('onWxsDismiss', {})
+}
+
+function noop() {}
+
+module.exports = {
+  handleStart: handleStart,
+  handleMove: handleMove,
+  handleEnd: handleEnd,
+  scrollStart: scrollStart,
+  scrollMove: scrollMove,
+  scrollEnd: scrollEnd,
+  handleClose: handleClose, // ← 新增
+  noop: noop,
+}

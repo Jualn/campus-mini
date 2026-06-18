@@ -1,0 +1,518 @@
+/* components/report-panel/index.wxss */
+
+/* 
+  说明：
+  - 尽量使用 app.wxss 中的全局 token
+  - 所有 var() 都加了 fallback，即使组件样式隔离导致变量没继承，也能正常显示
+*/
+
+.rp-root {}
+
+/* ─── 遮罩 ─── */
+.rp-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 10, 22, 0.46);
+}
+
+/* ─── 底部面板 ─── */
+.rp-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.94));
+  backdrop-filter: blur(16rpx) saturate(1.25);
+  -webkit-backdrop-filter: blur(16rpx) saturate(1.25);
+  border-radius: var(--radius-xl, 38rpx) var(--radius-xl, 38rpx) 0 0;
+  overflow: hidden;
+  pointer-events: auto;
+  will-change: transform;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    var(--glass-inner, inset 0 1rpx 0 rgba(255, 255, 255, 0.9)),
+    0 -16rpx 44rpx rgba(47, 124, 246, 0.10),
+    0 -6rpx 18rpx rgba(16, 35, 63, 0.06);
+}
+
+/* 顶部柔和高光 */
+.rp-sheet::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24rpx;
+  right: 24rpx;
+  height: 110rpx;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(234, 243, 255, 0.42) 42%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-radius: var(--radius-xl, 38rpx) var(--radius-xl, 38rpx) 0 0;
+  z-index: 1;
+}
+
+/* ─── 拖拽条 ─── */
+.rp-handle-area {
+  width: 100%;
+  min-height: 42rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.rp-handle {
+  width: 84rpx;
+  height: 8rpx;
+  border-radius: var(--radius-full, 999rpx);
+  background: var(--color-border, rgba(47, 124, 246, 0.12));
+}
+
+/* ─── 头部 ─── */
+.rp-header {
+  position: relative;
+  padding: 18rpx 36rpx 16rpx;
+  z-index: 2;
+}
+
+.rp-header__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rp-header__title {
+  font-size: var(--font-lg, 32rpx);
+  font-weight: var(--weight-bold, 700);
+  color: var(--color-text-primary, #10233f);
+  letter-spacing: 1rpx;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.rp-header__desc {
+  margin-top: var(--space-xs, 8rpx);
+  font-size: var(--font-sm, 24rpx);
+  color: var(--color-text-secondary, rgba(16, 35, 63, 0.74));
+  line-height: 1.45;
+  text-align: center;
+}
+
+.rp-close {
+  position: absolute;
+  top: 14rpx;
+  right: 28rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft, rgba(47, 124, 246, 0.08));
+  border: 1rpx solid var(--glass-border, rgba(47, 124, 246, 0.10));
+  border-radius: var(--radius-full, 999rpx);
+  box-shadow: var(--shadow-xs, 0 2rpx 8rpx rgba(47, 124, 246, 0.04));
+}
+
+.rp-close__icon {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, rgba(16, 35, 63, 0.74));
+  line-height: 1;
+}
+
+/* ─── 提示卡片 ─── */
+.rp-notice {
+  margin: 0 28rpx 24rpx;
+  padding: 20rpx 22rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  border-radius: var(--radius-md, 24rpx);
+  background: var(--color-primary-soft, rgba(47, 124, 246, 0.08));
+  border: 1rpx solid var(--glass-border, rgba(47, 124, 246, 0.10));
+  box-shadow: var(--shadow-xs, 0 2rpx 8rpx rgba(47, 124, 246, 0.04));
+  position: relative;
+  z-index: 2;
+}
+
+.rp-notice__icon {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: var(--radius-full, 999rpx);
+  background: var(--color-primary-light, #eaf3ff);
+  color: var(--color-primary, #2f7cf6);
+  font-size: 22rpx;
+  font-weight: var(--weight-bold, 700);
+  line-height: 32rpx;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rp-notice__text {
+  flex: 1;
+  font-size: var(--font-sm, 24rpx);
+  color: var(--color-text-secondary, rgba(16, 35, 63, 0.74));
+  line-height: 1.5;
+}
+
+/* ─── 区块 ─── */
+.rp-section {
+  padding: 0 28rpx;
+  position: relative;
+  z-index: 2;
+}
+
+.rp-section--remark {
+  padding-top: 18rpx;
+}
+
+.rp-section__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm, 16rpx);
+  padding: 0 4rpx;
+}
+
+.rp-section__title {
+  font-size: var(--font-md, 28rpx);
+  font-weight: var(--weight-bold, 700);
+  color: var(--color-text-primary, #10233f);
+}
+
+.rp-section__required {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-primary, #2f7cf6);
+  font-weight: var(--weight-semibold, 600);
+}
+
+.rp-section__optional {
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-tertiary, rgba(16, 35, 63, 0.52));
+}
+
+/* ─── 举报原因 ─── */
+.rp-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.rp-reason {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  min-height: 104rpx;
+  padding: 18rpx 20rpx;
+  border-radius: var(--radius-md, 24rpx);
+  background: var(--glass-bg-soft, rgba(255, 255, 255, 0.9));
+  border: 1rpx solid var(--color-border-light, rgba(47, 124, 246, 0.07));
+  box-shadow: var(--shadow-xs, 0 2rpx 8rpx rgba(47, 124, 246, 0.04));
+  transition: all var(--transition-fast, 0.16s ease);
+}
+
+.rp-reason--active {
+  background: var(--color-primary-soft, rgba(47, 124, 246, 0.08));
+  border-color: rgba(47, 124, 246, 0.28);
+  box-shadow: var(--shadow-sm, 0 6rpx 18rpx rgba(47, 124, 246, 0.06));
+}
+
+.rp-reason__icon-wrap {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 1;
+  font-size: 34rpx;
+  background: var(--color-primary-light, #eaf3ff);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.88);
+}
+
+.rp-reason__icon {
+  width: 64rpx;
+  height: 64rpx;
+  display: block;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.rp-reason__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rp-reason__title {
+  font-size: var(--font-md, 28rpx);
+  color: var(--color-text-primary, #10233f);
+  font-weight: var(--weight-bold, 700);
+  line-height: 1.35;
+}
+
+.rp-reason__desc {
+  margin-top: 6rpx;
+  font-size: var(--font-sm, 24rpx);
+  color: var(--color-text-tertiary, rgba(16, 35, 63, 0.52));
+  line-height: 1.42;
+}
+
+.rp-reason__radio {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: var(--radius-full, 999rpx);
+  border: 2rpx solid rgba(47, 124, 246, 0.22);
+  background: rgba(255, 255, 255, 0.76);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rp-reason--active .rp-reason__radio {
+  border-color: var(--color-primary, #2f7cf6);
+  background: #ffffff;
+}
+
+.rp-reason__radio-inner {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: var(--radius-full, 999rpx);
+  background: linear-gradient(
+    180deg,
+    var(--color-blue-3, #7bb7ff) 0%,
+    var(--color-primary, #2f7cf6) 100%
+  );
+  box-shadow: 0 2rpx 6rpx rgba(47, 124, 246, 0.32);
+}
+
+/* ─── 中间滚动区 ─── */
+.rp-scroll {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.rp-scroll-bottom {
+  height: 22rpx;
+}
+
+/* ─── 补充说明 ─── */
+.rp-remark-box {
+  position: relative;
+  height: 188rpx;
+  border-radius: var(--radius-md, 24rpx);
+  background: var(--glass-bg-soft, rgba(255, 255, 255, 0.9));
+  border: 1rpx solid var(--color-border-light, rgba(47, 124, 246, 0.07));
+  box-shadow: var(--shadow-xs, 0 2rpx 8rpx rgba(47, 124, 246, 0.04));
+  overflow: hidden;
+  transition: all var(--transition-fast, 0.16s ease);
+}
+
+.rp-remark-box--focus {
+  background: var(--glass-bg-strong, #ffffff);
+  border-color: rgba(47, 124, 246, 0.26);
+  box-shadow: var(--shadow-sm, 0 6rpx 18rpx rgba(47, 124, 246, 0.06));
+}
+
+.rp-remark {
+  width: 100%;
+  height: 188rpx;
+  min-height: 188rpx;
+  box-sizing: border-box;
+  padding: 22rpx 24rpx 60rpx;
+  font-size: var(--font-base, 26rpx);
+  color: var(--color-text-primary, #10233f);
+  line-height: 38rpx;
+}
+
+.rp-remark__placeholder {
+  color: var(--color-text-placeholder, rgba(16, 35, 63, 0.36));
+}
+
+.rp-count {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48rpx;
+  box-sizing: border-box;
+  padding: 8rpx 22rpx 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  font-size: var(--font-xs, 22rpx);
+  color: var(--color-text-tertiary, rgba(16, 35, 63, 0.52));
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.86) 42%,
+    rgba(255, 255, 255, 0.96) 100%
+  );
+}
+
+/* ─── 底部操作 ─── */
+.rp-actions {
+  display: flex;
+  gap: 20rpx;
+  padding: 30rpx 28rpx 16rpx;
+  margin-top: 10rpx;
+  position: relative;
+  z-index: 2;
+}
+
+.rp-cancel,
+.rp-submit {
+  flex: 1;
+  height: 92rpx;
+  border-radius: var(--radius-md, 24rpx);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rp-cancel {
+  background: var(--glass-bg-soft, rgba(255, 255, 255, 0.9));
+  border: 1rpx solid var(--color-border-light, rgba(47, 124, 246, 0.07));
+  box-shadow: var(--shadow-xs, 0 2rpx 8rpx rgba(47, 124, 246, 0.04));
+}
+
+.rp-cancel__text {
+  font-size: var(--font-md, 28rpx);
+  color: var(--color-text-secondary, rgba(16, 35, 63, 0.74));
+  font-weight: var(--weight-bold, 700);
+  letter-spacing: 1rpx;
+}
+
+.rp-submit {
+  background: linear-gradient(
+    135deg,
+    var(--color-blue-2, #4aa8ff) 0%,
+    var(--color-primary, #2f7cf6) 52%,
+    var(--color-primary-deep, #1558c8) 100%
+  );
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.32),
+    0 12rpx 28rpx rgba(47, 124, 246, 0.26);
+}
+
+.rp-submit--disabled {
+  opacity: 0.46;
+}
+
+.rp-submit__text {
+  font-size: var(--font-md, 28rpx);
+  color: var(--color-text-inverse, #ffffff);
+  font-weight: var(--weight-bold, 700);
+  letter-spacing: 1rpx;
+  text-align: center;
+}
+
+/* 如果项目全局 .safe-bottom 已经处理了，这里可以删掉 */
+.safe-bottom {
+  height: 18rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: constant(safe-area-inset-bottom);
+}
+
+/* ─── 深色模式 ─── */
+@media (prefers-color-scheme: dark) {
+  .rp-mask {
+    background: rgba(3, 10, 22, 0.58);
+  }
+
+  .rp-sheet {
+    background: rgba(20, 27, 39, 0.9);
+    border-top-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 -1rpx 0 rgba(255, 255, 255, 0.04),
+      0 -18rpx 60rpx rgba(0, 0, 0, 0.32);
+  }
+
+  .rp-sheet::before {
+    background: linear-gradient(
+      180deg,
+      rgba(112, 168, 255, 0.16) 0%,
+      rgba(112, 168, 255, 0.06) 40%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  .rp-header__title,
+  .rp-section__title,
+  .rp-reason__title,
+  .rp-remark,
+  .rp-cancel__text {
+    color: #edf4ff;
+  }
+
+  .rp-header__desc,
+  .rp-section__optional,
+  .rp-reason__desc,
+  .rp-count,
+  .rp-remark__placeholder {
+    color: rgba(220, 232, 255, 0.58);
+  }
+
+  .rp-close,
+  .rp-reason,
+  .rp-remark-box,
+  .rp-cancel {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(120, 170, 255, 0.10);
+    box-shadow: none;
+  }
+
+  .rp-reason__icon-wrap,
+  .rp-notice__icon {
+    background: rgba(47, 124, 246, 0.16);
+  }
+
+  .rp-reason--active {
+    background: rgba(47, 124, 246, 0.18);
+    border-color: rgba(123, 183, 255, 0.34);
+    box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.16);
+  }
+
+  .rp-notice {
+    background: rgba(47, 124, 246, 0.12);
+    border-color: rgba(123, 183, 255, 0.14);
+  }
+
+  .rp-notice__text {
+    color: rgba(232, 241, 255, 0.82);
+  }
+
+  .rp-reason__radio {
+    border-color: rgba(160, 196, 255, 0.24);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .rp-reason--active .rp-reason__radio {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #7bb7ff;
+  }
+
+  .rp-count {
+    background: linear-gradient(
+      180deg,
+      rgba(20, 27, 39, 0) 0%,
+      rgba(20, 27, 39, 0.86) 42%,
+      rgba(20, 27, 39, 0.96) 100%
+    );
+  }
+}

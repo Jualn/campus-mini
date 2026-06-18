@@ -1,0 +1,85 @@
+<!--subpkg_red/pages/index/index.wxml-->
+<view class="container">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="header-content">
+      <text class="header-title">先锋e站</text>
+    </view>
+    <text class="header-subtitle">{{currentMenu.slogan}}</text>
+  </view>
+
+  <!-- 横向分类 -->
+  <scroll-view class="menu-scroll" scroll-x="true" show-scrollbar="false">
+    <view class="menu-tabs">
+      <view
+        class="menu-tab {{activeMenuKey === item.key ? 'active' : ''}}"
+        wx:for="{{menuList}}"
+        wx:key="key"
+        bindtap="switchMenu"
+        data-key="{{item.key}}"
+      >
+        <text class="tab-title">{{item.title}}</text>
+        <view class="tab-indicator" wx:if="{{activeMenuKey === item.key}}"></view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 内容区域 -->
+  <view class="content-area">
+    <view class="section-title-wrap">
+      <text class="section-title">{{currentMenu.title}}</text>
+      <text class="section-desc">{{currentMenu.slogan}}</text>
+    </view>
+
+    <view class="content-list" wx:if="{{currentMenu.items.length}}">
+      <view
+        class="content-item"
+        wx:for="{{currentMenu.items}}"
+        wx:for-item="subItem"
+        wx:key="id"
+        bindtap="onItemClick"
+        data-item="{{subItem}}"
+      >
+        <view class="item-main">
+          <view class="item-left">
+            <view class="item-dot"></view>
+
+            <view class="item-info">
+              <view class="item-title-row">
+                <text class="item-name">{{subItem.name}}</text>
+                <text class="item-tag" wx:if="{{subItem.tag}}">{{subItem.tag}}</text>
+              </view>
+
+              <text class="item-desc" wx:if="{{subItem.desc}}">{{subItem.desc}}</text>
+            </view>
+          </view>
+
+          <text class="item-arrow">›</text>
+        </view>
+
+        <!-- 后续小类扩展区域 -->
+        <view class="child-list" wx:if="{{subItem.children && subItem.children.length}}">
+          <view
+            class="child-chip"
+            wx:for="{{subItem.children}}"
+            wx:for-item="child"
+            wx:key="id"
+            catchtap="onChildItemClick"
+            data-item="{{child}}"
+          >
+            <text class="child-name">{{child.name}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty" wx:else>
+      <text class="empty-text">暂无内容</text>
+    </view>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer">
+    <text class="footer-text">不忘初心 · 牢记使命</text>
+  </view>
+</view>

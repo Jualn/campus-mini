@@ -1,0 +1,78 @@
+<!-- components/profile-feed-skeleton/index.wxml -->
+<view class="profile-feed-skeleton profile-feed-skeleton--{{type}}">
+
+  <!-- Banner：对齐 user-profile 的 420rpx 横幅 -->
+  <view class="banner-wrap">
+    <view class="banner-img skeleton-block"></view>
+
+    <!-- 他人主页：只保留左上返回，不放右侧更多，避免和 user-profile 不一致 -->
+    <view
+      wx:if="{{type === 'user'}}"
+      class="top-bar"
+      style="padding-top: {{statusBarHeight}}px;"
+    >
+      <view class="top-bar__back" bindtap="onBack">
+        <text class="top-bar__icon">‹</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 个人信息主体 -->
+  <view class="profile-body">
+
+    <!-- 头像 + 操作按钮行 -->
+    <view class="avatar-action-row">
+      <view class="profile-avatar skeleton-block skeleton-circle"></view>
+
+      <view class="action-btns">
+        <!-- 自己主页：设置按钮 + 编辑资料按钮 -->
+        <block wx:if="{{type === 'me'}}">
+          <view class="btn-icon__wrap">
+            <view class="btn-icon-dot skeleton-block skeleton-circle"></view>
+          </view>
+          <view class="btn-outline skeleton-block skeleton-pill"></view>
+        </block>
+
+        <!-- 他人主页：更多按钮。当前 user-profile 里的关注按钮是注释状态，所以骨架也不展示关注按钮 -->
+        <block wx:else>
+          <view class="btn-icon-more skeleton-block skeleton-radius-md"></view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 名字 + 认证占位 -->
+    <view class="name-line">
+      <view class="profile-name-skeleton skeleton-block skeleton-radius-sm"></view>
+      <view class="verified-skeleton skeleton-block skeleton-circle"></view>
+    </view>
+
+    <!-- 简介占位 -->
+    <view class="profile-bio-skeleton profile-bio-skeleton--long skeleton-block skeleton-radius-sm"></view>
+    <view class="profile-bio-skeleton profile-bio-skeleton--short skeleton-block skeleton-radius-sm"></view>
+
+    <!-- 元信息：加入年份等 -->
+    <view class="meta-row">
+      <view class="meta-item-skeleton skeleton-block skeleton-radius-sm"></view>
+    </view>
+  </view>
+
+  <!-- Tab：对齐 user-profile，目前只有动态 / 点赞两个 -->
+  <view class="tab-bar">
+    <view class="tab-item">
+      <view class="tab-text-skeleton skeleton-block skeleton-radius-sm"></view>
+      <view class="tab-active-line skeleton-block"></view>
+    </view>
+    <view class="tab-item">
+      <view class="tab-text-skeleton skeleton-block skeleton-radius-sm"></view>
+    </view>
+  </view>
+
+  <!-- 帖子列表骨架 -->
+  <view wx:if="{{showPosts}}" class="feed-skeleton-list">
+    <post-card-skeleton
+      count="{{postCount}}"
+      media-mode="{{mediaMode}}"
+      show-third-line="{{true}}"
+    />
+  </view>
+</view>

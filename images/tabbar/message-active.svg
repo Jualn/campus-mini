@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .bubble {
+        fill: #DDEEFF;
+        stroke: #1677FF;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-miterlimit: 10;
+      }
+      .tail {
+        fill: #1677FF;
+        stroke: none;
+      }
+      .dot {
+        fill: #1677FF;
+        stroke: none;
+      }
+    </style>
+  </defs>
+  <!-- 气泡（浅蓝填充 + 蓝色描边） -->
+  <path class="bubble" d="M5.29,16.74c-4-3.53-2.15-8.43-1.53-9.58A9.19,9.19,0,0,1,12,2.71c5.13,0,9.29,3.72,9.29,8.3S17.11,19.3,12,19.3H5.29Z"/>
+  <!-- 尾巴（蓝色实心） -->
+  <path class="tail" d="M5.29,16.79v4.37l3.21-2.55L5.29,16.79Z"/>
+  <!-- 三个点（蓝色实心） -->
+  <circle class="dot" cx="7.5" cy="11" r="1.25"/>
+  <circle class="dot" cx="12" cy="11" r="1.25"/>
+  <circle class="dot" cx="16.49" cy="11" r="1.25"/>
+</svg>

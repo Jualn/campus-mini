@@ -1,0 +1,89 @@
+<!-- components/activity-card/index.wxml -->
+<view class="activity-card" catchtap="onTapCard">
+  <!-- 有封面：大图卡 -->
+  <view wx:if="{{activity.cover}}" class="activity-card__image">
+    <image class="activity-card__cover" src="{{activity.cover}}" mode="aspectFill" />
+
+    <view class="activity-card__overlay">
+      <view class="activity-card__image-top">
+        <view class="activity-status activity-status--image activity-status--{{_statusClass}}">
+          <text class="activity-status__dot" wx:if="{{activity.status === 'enrolling'}}" />
+          <text class="activity-status__text">{{activity.statusLabel || '未知'}}</text>
+        </view>
+      </view>
+
+      <view class="activity-card__image-bottom">
+        <view class="activity-card__tags activity-card__tags--image">
+          <text class="activity-card__tag activity-card__tag--image" wx:if="{{activity.type}}">{{activity.type}}</text>
+          <block wx:for="{{_scopeList}}" wx:key="index">
+            <text class="activity-card__tag activity-card__tag--image">{{item}}</text>
+          </block>
+        </view>
+
+        <text class="activity-card__image-title">{{activity.title}}</text>
+
+        <view class="activity-card__image-meta" wx:if="{{_deadlineText}}">
+          <text
+            class="activity-card__image-meta-text {{_isDeadlineUrgent ? 'activity-card__image-meta-text--urgent' : ''}}">⏰ {{_deadlineText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无封面：彩色侧边卡 -->
+  <view wx:else class="activity-card__flat activity-card__flat--{{_typeColorClass}}">
+    <view class="activity-card__side">
+      <text class="activity-card__icon">{{activity.typeIcon || ''}}</text>
+    </view>
+
+    <view class="activity-card__body">
+      <view class="activity-card__top">
+        <view class="activity-status activity-status--{{_statusClass}}">
+          <text class="activity-status__dot" wx:if="{{activity.status === 'enrolling'}}" />
+          <text class="activity-status__text">{{activity.statusLabel || '未知'}}</text>
+        </view>
+
+        <view class="activity-card__deadline-chip" wx:if="{{_isDeadlineUrgent}}">
+          <text class="activity-card__deadline-chip-text">还剩{{activity.daysToDeadline}}天</text>
+        </view>
+      </view>
+
+      <text class="activity-card__title">{{activity.title}}</text>
+
+      <view class="activity-card__summary" wx:if="{{activity.summary}}">
+        <text class="activity-card__summary-text">{{activity.summary}}</text>
+      </view>
+
+      <view class="activity-card__tags">
+        <text class="activity-card__tag" wx:if="{{activity.type}}">{{activity.type}}</text>
+        <block wx:for="{{_scopeList}}" wx:key="index">
+          <text class="activity-card__tag">{{item}}</text>
+        </block>
+      </view>
+
+      <view class="activity-card__meta">
+        <view class="activity-card__meta-item" wx:if="{{activity.enroll_deadline}}">
+          <image class="activity-card__meta-item__icon" src="/assets/icons/detail/important_time.svg"
+            mode="aspectFit" />
+          <text class="activity-card__meta-item__text">{{activity.enroll_deadline}}</text>
+        </view>
+
+        <view class="activity-card__meta-item" wx:if="{{activity.location}}">
+          <image class="activity-card__meta-item__icon" src="/assets/icons/detail/location.svg" mode="aspectFit" />
+          <text class="activity-card__meta-item__text"> {{activity.location}}</text>
+        </view>
+
+        <view class="activity-card__meta-item" wx:if="{{activity.max_participants}}">
+          <image class="activity-card__meta-item__icon" src="/assets/icons/detail/participants.svg" mode="aspectFit" />
+          <text class="activity-card__meta-item__text">限{{activity.max_participants}}人</text>
+        </view>
+
+      </view>
+
+      <view class="activity-card__footer">
+        <text class="activity-card__organizer">{{activity.organizer}}</text>
+        <text class="activity-card__date">{{activity.published_at}}</text>
+      </view>
+    </view>
+  </view>
+</view>

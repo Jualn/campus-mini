@@ -1,0 +1,55 @@
+/* styles/skeleton.wxss
+ * 项目级骨架基础样式：颜色、圆角、动画速度统一从这里来。
+ */
+/* styles/skeleton.wxss */
+
+page {
+  --skeleton-base: rgba(28, 45, 68, 0.055);
+  --skeleton-highlight: rgba(28, 45, 68, 0.105);
+  --skeleton-container: rgba(28, 45, 68, 0.035);
+
+  --skeleton-radius-sm: 8rpx;
+  --skeleton-radius-md: 16rpx;
+  --skeleton-radius-lg: 24rpx;
+
+  --skeleton-duration: 1.2s;
+}
+
+.skeleton-block {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(
+    100deg,
+    var(--skeleton-base) 20%,
+    var(--skeleton-highlight) 38%,
+    var(--skeleton-base) 56%
+  );
+  background-size: 220% 100%;
+  animation: skeletonShimmer var(--skeleton-duration) linear infinite;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-radius-sm {
+  border-radius: var(--skeleton-radius-sm);
+}
+
+.skeleton-radius-md {
+  border-radius: var(--skeleton-radius-md);
+}
+
+.skeleton-radius-lg {
+  border-radius: var(--skeleton-radius-lg);
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}

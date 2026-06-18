@@ -1,0 +1,75 @@
+<!-- subpkg_community/pages/search/search.wxml -->
+
+<view class="search-page">
+  <view class="search-top" style="padding-top: {{statusBarHeight}}px;">
+    <view class="search-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
+      <view class="search-nav__back" bindtap="onBack">
+        <text class="search-nav__back-icon">‹</text>
+      </view>
+
+      <text class="search-nav__title">校园搜索</text>
+    </view>
+
+    <view class="search-bar-wrap">
+      <view class="search-bar">
+        <view class="search-bar__icon-wrap">
+          <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
+        </view>
+
+        <input class="search-bar__input" placeholder="搜索动态、活动或考试" placeholder-class="search-bar__placeholder"
+          value="{{keyword}}" focus="{{inputFocus}}" confirm-type="search" bindinput="onInput"
+          bindconfirm="onConfirm" />
+
+        <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClear">
+          <image class="search-bar__clear-icon" src="/assets/icons/common/clear.svg" mode="aspectFit" />
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="search-content">
+    <view class="section-block">
+      <view class="section-head">
+        <text class="section-title">最近搜索</text>
+        <text wx:if="{{historyKeywords.length}}" class="section-action" bindtap="onClearHistory">清空</text>
+      </view>
+
+      <view wx:if="{{historyKeywords.length}}" class="history-list">
+        <view wx:for="{{historyKeywords}}" wx:key="*this" class="history-chip" bindtap="onTapHistory"
+          data-kw="{{item}}">
+          <text class="history-chip__text">{{item}}</text>
+        </view>
+      </view>
+
+      <view wx:else class="history-empty">
+        <text class="history-empty__text">输入关键词开始搜索</text>
+      </view>
+    </view>
+
+    <view class="section-block">
+      <view class="section-head">
+        <text class="section-title">快捷入口</text>
+      </view>
+
+      <view class="quick-grid">
+        <view class="quick-card quick-card--post" bindtap="onTapQuick" data-type="post">
+          <image class="quick-card__icon" src="/assets/icons/common/post.svg" mode="aspectFit" />
+          <text class="quick-card__title">动态广场</text>
+          <text class="quick-card__desc">查看同学最新动态</text>
+        </view>
+
+        <view class="quick-card quick-card--activity" bindtap="onTapQuick" data-type="activity">
+          <image class="quick-card__icon" src="/assets/icons/common/activity.svg" mode="aspectFit" />
+          <text class="quick-card__title">活动日历</text>
+          <text class="quick-card__desc">报名校园热门活动</text>
+        </view>
+
+        <view class="quick-card quick-card--exam" bindtap="onTapQuick" data-type="exam">
+          <image class="quick-card__icon" src="/assets/icons/common/exam.svg" mode="aspectFit" />
+          <text class="quick-card__title">考试信息</text>
+          <text class="quick-card__desc">查看时间线与倒计时</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

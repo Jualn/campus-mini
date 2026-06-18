@@ -1,0 +1,385 @@
+/* components/activity-card/index.wxss */
+
+.activity-card {
+  display: block;
+}
+
+.activity-card:active {
+  opacity: 0.94;
+  transform: scale(0.992);
+}
+
+/* 状态标签 */
+.activity-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5rpx 15rpx;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.activity-status--image {
+  padding: 7rpx 16rpx;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
+}
+
+.activity-status--enrolling {
+  background: rgba(32, 183, 107, 0.11);
+}
+
+.activity-status--upcoming {
+  background: rgba(47, 124, 246, 0.10);
+}
+
+.activity-status--ongoing {
+  background: rgba(255, 159, 47, 0.12);
+}
+
+.activity-status--ended {
+  background: rgba(68, 93, 128, 0.08);
+}
+
+.activity-status--cancelled {
+  background: rgba(255, 77, 79, 0.10);
+}
+
+.activity-status--preview {
+  background: rgba(107, 124, 255, 0.10);
+}
+
+.activity-status--unknown {
+  background: rgba(68, 93, 128, 0.08);
+}
+
+.activity-status--image.activity-status--enrolling,
+.activity-status--image.activity-status--upcoming,
+.activity-status--image.activity-status--ongoing,
+.activity-status--image.activity-status--ended,
+.activity-status--image.activity-status--cancelled,
+.activity-status--image.activity-status--preview,
+.activity-status--image.activity-status--unknown {
+  background: rgba(255, 255, 255, 0.20);
+}
+
+.activity-status__dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  display: block;
+  margin-right: 8rpx;
+  animation: activityPulse 1.5s infinite;
+}
+
+.activity-status--image .activity-status__dot {
+  background: var(--color-text-inverse);
+}
+
+.activity-status__text {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+}
+
+.activity-status--enrolling .activity-status__text {
+  color: var(--color-success);
+}
+
+.activity-status--upcoming .activity-status__text {
+  color: var(--color-primary);
+}
+
+.activity-status--ongoing .activity-status__text {
+  color: var(--color-warning);
+}
+
+.activity-status--ended .activity-status__text,
+.activity-status--unknown .activity-status__text {
+  color: var(--color-text-tertiary);
+}
+
+.activity-status--cancelled .activity-status__text {
+  color: var(--color-danger);
+}
+
+.activity-status--preview .activity-status__text {
+  color: var(--color-purple);
+}
+
+.activity-status--image .activity-status__text {
+  color: var(--color-text-inverse);
+}
+
+/* 有封面：大图卡 */
+.activity-card__image {
+  position: relative;
+  height: 360rpx;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10rpx 28rpx rgba(47, 124, 246, 0.12);
+}
+
+.activity-card__cover {
+  width: 100%;
+  height: 360rpx;
+  display: block;
+}
+
+.activity-card__overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(7, 22, 45, 0.00) 0%,
+      rgba(7, 22, 45, 0.04) 38%,
+      rgba(7, 22, 45, 0.50) 76%,
+      rgba(7, 22, 45, 0.72) 100%
+    );
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22rpx;
+}
+
+.activity-card__image-top {
+  display: flex;
+  align-items: center;
+}
+
+.activity-card__image-bottom {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-card__tags--image {
+  margin-bottom: 10rpx;
+}
+
+.activity-card__image-title {
+  font-size: var(--font-lg);
+  font-weight: var(--weight-heavy);
+  color: var(--color-text-inverse);
+  line-height: 1.42;
+  text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.20);
+}
+
+.activity-card__image-meta {
+  margin-top: 8rpx;
+}
+
+.activity-card__image-meta-text {
+  font-size: var(--font-xs);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.activity-card__image-meta-text--urgent {
+  color: #ffd66b;
+  font-weight: var(--weight-bold);
+}
+
+/* 无封面：玻璃卡 */
+.activity-card__flat {
+  position: relative;
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  border: 1rpx solid rgba(47, 124, 246, 0.08);
+  box-shadow: var(--shadow-card);
+}
+
+.activity-card__side {
+  width: 76rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16rpx 0 16rpx 16rpx;
+  border-radius: 24rpx;
+  padding: 28rpx 0;
+  box-shadow:
+    0 12rpx 28rpx rgba(47, 124, 246, 0.22),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.35);
+}
+
+.activity-card__icon {
+  font-size: 34rpx;
+  line-height: 1;
+}
+
+/* 类型色统一成蓝色系，避免页面花 */
+.activity-card__flat--volunteer .activity-card__side {
+  background: linear-gradient(180deg, #3cc8ff, #2f7cf6);
+}
+
+.activity-card__flat--competition .activity-card__side {
+  background: linear-gradient(180deg, #6aa8ff, #3f6df6);
+}
+
+.activity-card__flat--lecture .activity-card__side {
+  background: linear-gradient(180deg, #4facfe, #00c6ff);
+}
+
+.activity-card__flat--checkin .activity-card__side {
+  background: linear-gradient(180deg, #7bdcff, #3a8bff);
+}
+
+.activity-card__flat--campus .activity-card__side {
+  background: linear-gradient(180deg, #8ab6ff, #5d7cff);
+}
+
+.activity-card__flat--recruit .activity-card__side {
+  background: linear-gradient(180deg, #5f9dff, #3867e8);
+}
+
+.activity-card__flat--default .activity-card__side {
+  background: linear-gradient(180deg, #9fc7ff, #5a86dc);
+}
+
+.activity-card__body {
+  flex: 1;
+  min-width: 0;
+  padding: 24rpx 26rpx 22rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-card__top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10rpx;
+}
+
+.activity-card__top .activity-status {
+  margin-right: 10rpx;
+  margin-bottom: 8rpx;
+}
+
+.activity-card__deadline-chip {
+  background: rgba(255, 77, 79, 0.10);
+  border: 1rpx solid rgba(255, 77, 79, 0.10);
+  border-radius: var(--radius-full);
+  padding: 5rpx 13rpx;
+  margin-bottom: 8rpx;
+}
+
+.activity-card__deadline-chip-text {
+  font-size: var(--font-xs);
+  color: var(--color-danger);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+}
+
+.activity-card__title {
+  font-size: 29rpx;
+  font-weight: var(--weight-heavy);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.activity-card__summary {
+  margin-top: 8rpx;
+}
+
+.activity-card__summary-text {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.activity-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 12rpx;
+}
+
+.activity-card__tags--image {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  margin-top: 0;
+}
+
+.activity-card__tag {
+  font-size: var(--font-xs);
+  color: rgba(31, 83, 153, 0.72);
+  background: rgba(47, 124, 246, 0.08);
+  border: 1rpx solid rgba(47, 124, 246, 0.08);
+  padding: 4rpx 13rpx;
+  border-radius: var(--radius-full);
+  margin-right: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.activity-card__tag--image {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.90);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1rpx solid rgba(255, 255, 255, 0.18);
+  margin-bottom: 0;
+}
+
+.activity-card__meta {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8rpx;
+}
+
+.activity-card__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 4rpx;
+}
+
+.activity-card__meta-item__icon{
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.activity-card__meta-item__text{
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+}
+
+.activity-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12rpx;
+  border-top: 1rpx solid var(--color-border-light);
+  margin-top: 8rpx;
+}
+
+.activity-card__organizer {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-card__date {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+@keyframes activityPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}

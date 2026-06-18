@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    // ── 编译目标 ──────────────────────────────────────────
+    "target": "ES6", // 小程序运行时支持 ES6
+    "module": "CommonJS", // 微信开发者工具使用 CommonJS
+    "lib": ["ES6", "ES2017", "ES2018", "ES2019"], // 按需开启，不要加 DOM（小程序不是浏览器）
+
+    // ── 类型检查 ──────────────────────────────────────────
+    "strict": true, // 开启所有严格检查（推荐）
+    "noImplicitAny": true, // 禁止隐式 any（this.xx 的根本解法）
+    "strictNullChecks": true, // null / undefined 需显式处理
+    "noImplicitThis": true, // 禁止 this 隐式为 any
+    "noUnusedLocals": true, // 未使用的局部变量报错
+    "noUnusedParameters": false, // 未使用参数不报错（小程序生命周期参数多）
+    "noImplicitReturns": true, // 函数所有分支都需要 return
+    "skipLibCheck": true, // 跳过 node_modules 类型检查，加快速度
+
+    // ── 路径 & 输出 ───────────────────────────────────────
+    "paths": {
+      "@/*": ["./*"] // 别名，配合 webpack/小程序分包
+    },
+    "outDir": "./dist", // 编译输出（微信开发者工具会自动处理）
+    "rootDir": ".",
+
+    // ── 模块解析 ──────────────────────────────────────────
+    "moduleResolution": "node", // 使用 node 模块导入解析策略
+    "resolveJsonModule": true, // 允许 import json 文件
+    "esModuleInterop": true, // 兼容 CommonJS 默认导出
+    "allowSyntheticDefaultImports": true,
+
+    // ── 源码映射 ──────────────────────────────────────────
+    "sourceMap": true, // 生成 sourcemap，方便调试
+
+    // ── 类型声明 ──────────────────────────────────────────
+    // TypeScript 把 typeRoots 里的每一项理解为："去这个目录下找子文件夹，每个子文件夹是一个类型包"，
+    // typeRoots 本来就是给自定义类型目录用的，第三方包的类型用 reference 指令在 .d.ts 文件里统一管理更清晰，以后加别的类型也在同一个地方。
+    "typeRoots": [
+      // "./node_modules/@types", 这是 DefinitelyTyped 社区的约定目录，专门存放第三方库的类型包  以后如果用了需要 @types 的包（比如 lodash），再加回来： pnpm add -D @types/lodash
+      "./typings" // 项目自定义类型目录
+    ],
+    // types 是从 typeRoots 里按名字挑, 里面填了node就只加载 @types/node，其他 @types/* 都忽略
+    "types": [] // 只加载上面 typeRoots 中的，不自动引入全局类型,专门给@types用的
+  },
+  // files 是直接指定文件，跳过所有规则,直接告诉 TypeScript："就加载这个文件"。用于类型声明,适用于单独引用一个文件类型
+  // 通过glob 模式包含文件，会递归；可与 exclude 配合使用，项目源码、类型声明文件
+  "include": [
+    "**/*.ts" // 编译所有 .ts 文件
+  ],
+
+  "exclude": [
+    "node_modules",
+    "miniprogram_npm",
+    "dist",
+    "**/*.js" // 不编译已有的 js 文件（渐进迁移时用）
+  ]
+}

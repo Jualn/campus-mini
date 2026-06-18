@@ -1,0 +1,121 @@
+/* components/post-card-skeleton/index.wxss */
+@import "../../styles/skeleton.wxss";
+
+.post-card-skeleton {
+  display: flex;
+  padding: 26rpx 26rpx 22rpx;
+  background: var(--glass-bg-strong);
+  border: 1rpx solid var(--color-border-grey);
+  box-shadow: var(--shadow-card);
+}
+
+.post-skeleton-left {
+  width: 80rpx;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+
+.post-skeleton-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  box-shadow:
+    0 10rpx 22rpx rgba(47, 124, 246, 0.08),
+    0 0 0 4rpx rgba(255, 255, 255, 0.7);
+}
+
+.post-skeleton-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-skeleton-top-row {
+  display: flex;
+  align-items: center;
+  height: 40rpx;
+  margin-bottom: 12rpx;
+}
+
+.post-skeleton-user {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.post-skeleton-nickname {
+  width: 180rpx;
+  height: 28rpx;
+}
+
+.post-skeleton-time {
+  width: 88rpx;
+  height: 22rpx;
+  margin-left: 14rpx;
+}
+
+.post-skeleton-more {
+  width: 42rpx;
+  height: 18rpx;
+  flex-shrink: 0;
+}
+
+.post-skeleton-body {
+  margin: 8rpx 0 20rpx;
+}
+
+.post-skeleton-line {
+  height: 28rpx;
+  margin-bottom: 14rpx;
+}
+
+.post-skeleton-line--long {
+  width: 92%;
+}
+
+.post-skeleton-line--medium {
+  width: 72%;
+}
+
+.post-skeleton-line--short {
+  width: 44%;
+}
+
+.post-skeleton-media {
+  width: 100%;
+  height: 230rpx;
+  margin: 8rpx 0 10rpx;
+}
+
+.post-skeleton-actions {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0 2rpx;
+}
+
+.post-skeleton-action {
+  display: flex;
+  align-items: center;
+  min-width: 120rpx;
+}
+
+.post-skeleton-action--view {
+  min-width: 100rpx;
+}
+
+.post-skeleton-action--share {
+  min-width: unset;
+  margin-left: auto;
+  margin-right: 20rpx;
+}
+
+.post-skeleton-action-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 6rpx;
+  flex-shrink: 0;
+}
+
+.post-skeleton-action-count {
+  width: 34rpx;
+  height: 20rpx;
+}

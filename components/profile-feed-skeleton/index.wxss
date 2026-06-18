@@ -1,0 +1,202 @@
+/* components/profile-feed-skeleton/index.wxss */
+@import "../../styles/skeleton.wxss";
+
+:host {
+  display: block;
+}
+
+.profile-feed-skeleton {
+  min-height: 100vh;
+  background: var(--color-bg-card);
+}
+
+/* Banner */
+.banner-wrap {
+  position: relative;
+  width: 100%;
+  height: 420rpx;
+  background: linear-gradient(180deg, #c7d2fe 0%, #e0e7ff 35%, #f1f5ff 70%, #ffffff 100%);
+  overflow: visible;
+}
+
+.banner-img {
+  width: 100%;
+  height: 420rpx;
+  display: block;
+  border-bottom-left-radius: 12rpx;
+  border-bottom-right-radius: 12rpx;
+}
+
+/* 他人主页返回 */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 20rpx 16rpx;
+  z-index: 10;
+}
+
+.top-bar__back {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-bar__icon {
+  font-size: 44rpx;
+  color: #fff;
+  font-weight: 300;
+  line-height: 1;
+  margin-top: -12rpx;
+}
+
+/* 个人信息主体 */
+.profile-body {
+  padding: 0 30rpx 24rpx;
+  background: var(--color-bg-card);
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.avatar-action-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: -80rpx;
+  margin-bottom: 16rpx;
+}
+
+.profile-avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  border: 6rpx solid #fff;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.action-btns {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding-bottom: 10rpx;
+}
+
+.btn-icon__wrap {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: var(--radius-full);
+  border: 1.5rpx solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon-dot {
+  width: 34rpx;
+  height: 34rpx;
+}
+
+.btn-outline {
+  width: 154rpx;
+  height: 64rpx;
+  border-radius: 40rpx;
+}
+
+.btn-icon-more {
+  width: 64rpx;
+  height: 40rpx;
+}
+
+/* 名字、简介、元信息 */
+.name-line {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 12rpx;
+}
+
+.profile-name-skeleton {
+  width: 220rpx;
+  height: 42rpx;
+}
+
+.verified-skeleton {
+  width: 38rpx;
+  height: 38rpx;
+}
+
+.profile-bio-skeleton {
+  height: 28rpx;
+  margin-bottom: 14rpx;
+}
+
+.profile-bio-skeleton--long {
+  width: 460rpx;
+  max-width: 86%;
+}
+
+.profile-bio-skeleton--short {
+  width: 300rpx;
+  max-width: 58%;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx 24rpx;
+  margin-top: 4rpx;
+  margin-bottom: 20rpx;
+}
+
+.meta-item-skeleton {
+  width: 160rpx;
+  height: 24rpx;
+}
+
+/* Tab */
+.tab-bar {
+  display: flex;
+  border-bottom: 1rpx solid var(--color-border);
+  background: var(--color-bg-card);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.tab-item {
+  flex: 1;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tab-text-skeleton {
+  width: 56rpx;
+  height: 28rpx;
+}
+
+.tab-active-line {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 60rpx;
+  height: 6rpx;
+  transform: translateX(-50%);
+  border-radius: 3rpx;
+}
+
+/* 列表 */
+.feed-skeleton-list {
+  background: var(--color-bg-card);
+}

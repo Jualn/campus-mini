@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #9EAFC2;
+        stroke-width: 1.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-miterlimit: 10;
+      }
+      .cls-dot {
+        fill: #9EAFC2;
+        stroke: none;
+      }
+    </style>
+  </defs>
+  <!-- 气泡轮廓 -->
+  <path class="cls-1" d="M5.29,16.74c-4-3.53-2.15-8.43-1.53-9.58A9.19,9.19,0,0,1,12,2.71c5.13,0,9.29,3.72,9.29,8.3S17.11,19.3,12,19.3"/>
+  <!-- 尾巴 -->
+  <path class="cls-1" d="M5.29,16.79v4.37a0,0,0,0,0,0,0l3.21-2.55"/>
+  <!-- 三个点 -->
+  <circle class="cls-dot" cx="7.5" cy="11" r="1.25"/>
+  <circle class="cls-dot" cx="12" cy="11" r="1.25"/>
+  <circle class="cls-dot" cx="16.49" cy="11" r="1.25"/>
+</svg>

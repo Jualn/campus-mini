@@ -1,0 +1,53 @@
+<!-- components/post-card-skeleton/index.wxml -->
+<block wx:for="{{skeletonList}}" wx:key="index">
+  <view class="post-card-skeleton">
+    <view class="post-skeleton-left">
+      <view class="skeleton-block skeleton-circle post-skeleton-avatar"></view>
+    </view>
+
+    <view class="post-skeleton-right">
+      <view class="post-skeleton-top-row">
+        <view class="post-skeleton-user">
+          <view class="skeleton-block skeleton-radius-sm post-skeleton-nickname"></view>
+          <view class="skeleton-block skeleton-radius-sm post-skeleton-time"></view>
+        </view>
+        <view class="skeleton-block skeleton-radius-sm post-skeleton-more"></view>
+      </view>
+
+      <view class="post-skeleton-body">
+        <view class="skeleton-block skeleton-radius-sm post-skeleton-line post-skeleton-line--long"></view>
+        <view class="skeleton-block skeleton-radius-sm post-skeleton-line post-skeleton-line--medium"></view>
+        <view
+          wx:if="{{showThirdLine}}"
+          class="skeleton-block skeleton-radius-sm post-skeleton-line post-skeleton-line--short"
+        ></view>
+      </view>
+
+      <view
+        wx:if="{{item.showMedia}}"
+        class="skeleton-block skeleton-radius-md post-skeleton-media"
+      ></view>
+
+      <view class="post-skeleton-actions">
+        <view class="post-skeleton-action">
+          <view class="skeleton-block skeleton-circle post-skeleton-action-icon"></view>
+          <view class="skeleton-block skeleton-radius-sm post-skeleton-action-count"></view>
+        </view>
+
+        <view class="post-skeleton-action">
+          <view class="skeleton-block skeleton-circle post-skeleton-action-icon"></view>
+          <view class="skeleton-block skeleton-radius-sm post-skeleton-action-count"></view>
+        </view>
+
+        <view class="post-skeleton-action post-skeleton-action--view">
+          <view class="skeleton-block skeleton-circle post-skeleton-action-icon"></view>
+          <view class="skeleton-block skeleton-radius-sm post-skeleton-action-count"></view>
+        </view>
+
+        <view class="post-skeleton-action post-skeleton-action--share">
+          <view class="skeleton-block skeleton-circle post-skeleton-action-icon"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+</block>

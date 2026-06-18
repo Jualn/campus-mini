@@ -1,0 +1,283 @@
+import { messageService } from '../../services/index';
+import createLogger from '../../utils/logger';
+import type { FilterTab, MessageItem } from '../../types/business';
+import { getCustomTabBar } from '../../utils/tabbar';
+
+const MESSAGE_TAB_INDEX = 1;
+
+const log = createLogger('MessagePage');
+
+let loadingTask: Promise<void> | null = null;
+
+type LoadOptions = Partial<{
+  fromPullDown: boolean;
+  silent: boolean;
+}>;
+
+Page({
+  data: {
+    // pageCopy: messageService.getMessagePageCopy(),
+    statusBarHeight: 20,
+    navTopGap: 8,
+    navHeight: 32,
+    bannerTop: 80,
+
+    /** 加载骨架设置 */
+    isLoading: false,
+    isRefreshing: false,
+    skeletonRows: [1, 2, 3],
+
+    activeFilter: '',
+    filterTabs: [] as FilterTab[],
+    totalCount: 0,
+
+    allMessages: [] as MessageItem[],
+    groupedMessages: [] as MessageItem[],
+    urgentMessages: [] as MessageItem[],
+    olderMessages: [] as MessageItem[],
+    unreadCount: 0,
+  },
+
+  onLoad() {
+    this._initLayout();
+    void this._loadMessages();
+  },
+
+  onShow() {
+    if (typeof this.getTabBar === 'function') {
+      getCustomTabBar(this).init();
+    }
+  },
+
+  onPullDownRefresh() {
+    void this._loadMessages({ fromPullDown: true }).finally(() => {
+      void wx.stopPullDownRefresh();
+    });
+  },
+
+  _initLayout() {
+    const sys = wx.getWindowInfo();
+    const menuBtn =
+      typeof wx.getMenuButtonBoundingClientRect === 'function'
+        ? wx.getMenuButtonBoundingClientRect()
+        : null;
+
+    const statusBarHeight = sys.statusBarHeight || 20;
+    let navTopGap = 8;
+    let navHeight = 32;
+    let bannerTop = 80;
+
+    if (menuBtn?.width) {
+      navTopGap = Math.max(menuBtn.top - statusBarHeight, 6);
+      navHeight = menuBtn.height || navHeight;
+      bannerTop = menuBtn.bottom + 16;
+    }
+
+    this.setData({
+      statusBarHeight,
+      navTopGap,
+      navHeight,
+      bannerTop,
+    });
+  },
+
+  _loadMessages(options: LoadOptions = {}) {
+    if (loadingTask) return loadingTask;
+
+    const showSkeleton = !options.fromPullDown && !this.data.allMessages.length;
+
+    this.setData({
+      isLoading: showSkeleton,
+      isRefreshing: !!options.fromPullDown,
+    });
+
+    loadingTask = messageService
+      .getMessageFeedData()
+      .then((data) => {
+        const allMessages = data.allMessages;
+        const filterTabs = data.filterTabs;
+        const activeFilter = this._resolveActiveFilter(filterTabs);
+        const totalCount = data.totalCount || allMessages.length;
+        const unreadCount =
+          data.unreadCount || allMessages.filter((m: MessageItem) => !m.isRead).length;
+
+        this._commitMessageState({
+          allMessages,
+          filterTabs,
+          activeFilter,
+          totalCount,
+          unreadCount,
+        });
+      })
+      .catch((err: unknown) => {
+        log.error('_loadMessages', '加载消息失败', err);
+        if (!options.silent) {
+          void wx.showToast({ title: '消息加载失败，请稍后重试', icon: 'none' });
+        }
+      })
+      .finally(() => {
+        this.setData({
+          isLoading: false,
+          isRefreshing: false,
+        });
+        loadingTask = null;
+      });
+
+    return loadingTask;
+  },
+
+  _resolveActiveFilter(filterTabs: FilterTab[]) {
+    const currentFilter = this.data.activeFilter;
+    if (filterTabs.some((item) => item.id === currentFilter)) {
+      return currentFilter;
+    }
+
+    return filterTabs[0]?.id ?? '';
+  },
+
+  _commitMessageState(payload: {
+    allMessages: MessageItem[];
+    filterTabs?: FilterTab[];
+    activeFilter?: string;
+    totalCount?: number;
+    unreadCount?: number;
+  }) {
+    const allMessages = payload.allMessages;
+    const filterTabs = payload.filterTabs ?? messageService.getFilterTabs(allMessages);
+    const activeFilter = payload.activeFilter ?? this._resolveActiveFilter(filterTabs);
+    const unreadCount =
+      payload.unreadCount ?? allMessages.filter((m: MessageItem) => !m.isRead).length;
+    const totalCount = payload.totalCount ?? allMessages.length;
+    const sections = messageService.applyMessageFilter(allMessages, activeFilter);
+
+    this.setData({
+      allMessages,
+      filterTabs,
+      activeFilter,
+      totalCount,
+      unreadCount,
+      ...sections,
+    });
+
+    this._syncTabBarBadge(unreadCount);
+  },
+
+  _applyFilter(activeFilter?: string) {
+    const currentFilter = activeFilter ?? this.data.activeFilter;
+    const sections = messageService.applyMessageFilter(this.data.allMessages, currentFilter);
+
+    this.setData({
+      activeFilter: currentFilter,
+      ...sections,
+    });
+  },
+
+  onSwitchFilter(e: WechatMiniprogram.TouchEvent) {
+    const id = String(e.currentTarget.dataset.id ?? 'all');
+    if (!id || id === this.data.activeFilter) return;
+
+    this._applyFilter(id);
+
+    void wx.pageScrollTo({
+      scrollTop: 0,
+      duration: 180,
+    });
+  },
+
+  onTapMessage(e: WechatMiniprogram.TouchEvent) {
+    const id = String(e.currentTarget.dataset.id ?? '');
+    const targetType = String(e.currentTarget.dataset.targetType ?? '');
+    const targetId = String(e.currentTarget.dataset.targetId ?? '');
+
+    if (id) this._markRead(id);
+    this._navigate(targetType, targetId);
+  },
+
+  onTapGroupedMessage(e: WechatMiniprogram.TouchEvent) {
+    const targetType = String(e.currentTarget.dataset.targetType ?? '');
+    const targetId = String(e.currentTarget.dataset.targetId ?? '');
+    this._navigate(targetType, targetId);
+  },
+
+  _markRead(id: string) {
+    const current = this.data.allMessages.find((m: MessageItem) => m.id === id);
+    if (!current || current.isRead) return;
+
+    const previousMessages = this.data.allMessages;
+    const nextMessages = previousMessages.map((m: MessageItem) =>
+      m.id === id ? { ...m, isRead: true } : m,
+    );
+
+    this._commitMessageState({
+      allMessages: nextMessages,
+      activeFilter: this.data.activeFilter,
+    });
+
+    void messageService.markMessageAsRead(id).catch((err: unknown) => {
+      log.error('_markRead', '标记消息已读失败', err);
+      this._commitMessageState({
+        allMessages: previousMessages,
+        activeFilter: this.data.activeFilter,
+      });
+    });
+  },
+
+  onMarkAllRead() {
+    if (!this.data.unreadCount) return;
+
+    const previousMessages = this.data.allMessages;
+    const nextMessages = previousMessages.map((m: MessageItem) => ({ ...m, isRead: true }));
+
+    this._commitMessageState({
+      allMessages: nextMessages,
+      activeFilter: this.data.activeFilter,
+      unreadCount: 0,
+    });
+
+    void messageService
+      .markAllMessagesAsRead()
+      .then(() => {
+        void wx.showToast({ title: '已全部标记已读', icon: 'none' });
+      })
+      .catch((err: unknown) => {
+        log.error('onMarkAllRead', '全部已读失败', err);
+        this._commitMessageState({
+          allMessages: previousMessages,
+          activeFilter: this.data.activeFilter,
+        });
+        void wx.showToast({ title: '操作失败，请稍后重试', icon: 'none' });
+      });
+  },
+
+  _syncTabBarBadge(totalUnread: number) {
+    if (totalUnread > 0) {
+      void wx.setTabBarBadge({
+        index: MESSAGE_TAB_INDEX,
+        text: totalUnread > 99 ? '99+' : String(totalUnread),
+      });
+    } else {
+      void wx.removeTabBarBadge({ index: MESSAGE_TAB_INDEX });
+    }
+  },
+
+  _navigate(targetType: string, targetId: string) {
+    const normalizedType = (targetType || '').toLowerCase();
+    if (!normalizedType || normalizedType === 'none') return;
+
+    if (normalizedType === 'notification_center') {
+      void wx.switchTab({ url: '/pages/message/index' });
+      return;
+    }
+
+    if (!targetId) return;
+
+    const routes: Record<string, string> = {
+      activity: `/subpkg_activity/pages/detail/detail?id=${targetId}`,
+      exam: `/subpkg_exam/pages/detail/detail?examId=${targetId}`,
+      post: `/subpkg_community/pages/detail/detail?id=${targetId}`,
+    };
+
+    const url = routes[normalizedType];
+    if (url) void wx.navigateTo({ url });
+  },
+});
