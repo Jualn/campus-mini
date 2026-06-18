@@ -1,11 +1,34 @@
 <!-- components/in-app-banner/index.wxml -->
-<view class="banner {{visible?'banner--show':''}}" style="top:{{top}}px;" bindtap="onTap">
-  <text class="banner__icon">{{icon}}</text>
-  <view class="banner__body">
-    <text class="banner__title">{{title}}</text>
-    <text class="banner__content">{{content}}</text>
+<view
+  class="banner {{visible ? 'banner--visible' : ''}} {{transitionEnabled ? 'banner--transition' : ''}} {{dragging ? 'banner--dragging' : ''}} {{isAggregate ? 'banner--aggregate' : ''}} {{accentClass}}"
+  style="top:{{topPx}}px; transform: translate3d({{translateX}}px, {{translateY}}px, 0); opacity: {{opacity}};"
+  bindtap="onTap" bindtouchstart="onTouchStart" catchtouchmove="onTouchMove" bindtouchend="onTouchEnd"
+  bindtouchcancel="onTouchCancel">
+  <view class="banner__accent"></view>
+
+  <view class="banner__icon-wrap">
+    <image class="banner__icon" src="{{icon}}" mode="aspectFit" />
   </view>
-  <view class="banner__close" catchtap="onClose">
-    <text class="banner__close-icon">✕</text>
+
+  <view class="banner__body">
+    <view class="banner__meta">
+      <text class="banner__tag">{{tagText}}</text>
+      <text class="banner__count" wx:if="{{notificationCount > 1}}">{{notificationCount}}条</text>
+      <text class="banner__hint-text">刚刚</text>
+    </view>
+
+    <text class="banner__title">{{title}}</text>
+    <text class="banner__content" wx:if="{{content}}">{{content}}</text>
+    <text class="banner__aggregate-tip" wx:if="{{isAggregate}}">点击进入消息中心查看全部</text>
+  </view>
+
+  <view class="banner__close-hit" catchtap="onClose">
+    <view class="banner__close">
+      <text class="banner__close-icon">×</text>
+    </view>
+  </view>
+
+  <view class="banner__progress" wx:if="{{visible && !dragging}}">
+    <view class="banner__progress-inner" style="animation-duration: {{duration}}ms;"></view>
   </view>
 </view>

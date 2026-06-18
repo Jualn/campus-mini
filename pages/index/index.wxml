@@ -1,18 +1,71 @@
 <view class="index-page">
+  <view class="nav-mask {{isScrolled ? 'nav-mask--show' : ''}}" style="height: {{statusBarHeight}}px;">
+  </view>
+  <!--
+    首屏骨架仍保留为首页专属结构，不额外抽 home-feed-skeleton。
+    状态来自 useListLoad：快接口不闪屏，骨架出现后有最短展示时间。
+  -->
+  <block wx:if="{{listLoad.skeletonVisible}}">
+    <view class="skeleton-page" aria-role="status" aria-label="页面内容加载中">
+      <view class="skeleton-header">
+        <view class="skeleton-search-section" style="padding-top: {{statusBarHeight + 20}}px;">
+          <view class="skeleton-block skeleton-radius-md skeleton-greet"></view>
+          <view class="skeleton-block skeleton-radius-sm skeleton-subtitle"></view>
+          <view class="skeleton-search-box">
+            <view class="skeleton-block skeleton-circle skeleton-search-icon"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-search-text"></view>
+          </view>
+        </view>
 
-<view class="home-header {{homeHeaderHidden ? 'home-header--hidden' : ''}}">
+        <view class="skeleton-section-title">
+          <view class="skeleton-block skeleton-radius-sm skeleton-title-main"></view>
+          <view class="skeleton-block skeleton-radius-sm skeleton-title-more"></view>
+        </view>
 
+        <view class="skeleton-exam-list">
+          <view
+            class="skeleton-exam-card"
+            wx:for="{{skeletonExamList}}"
+            wx:key="*this"
+          >
+            <view class="skeleton-block skeleton-radius-sm skeleton-exam-name"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-exam-date"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-exam-countdown"></view>
+          </view>
+        </view>
+
+        <view class="skeleton-quick-nav">
+          <view class="skeleton-quick-item" wx:for="{{skeletonQuickNavList}}" wx:key="*this">
+            <view class="skeleton-block skeleton-radius-lg skeleton-quick-icon"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-quick-label"></view>
+          </view>
+        </view>
+      </view>
+
+      <view class="skeleton-feed-header">
+        <view class="skeleton-block skeleton-radius-sm skeleton-feed-title"></view>
+      </view>
+
+      <post-card-skeleton count="{{5}}" show-media="{{true}}" />
+    </view>
+  </block>
+
+  <view wx:elif="{{listLoad.phase === 'initial'}}" class="initial-load-placeholder"></view>
+
+  <view wx:else class="content-ready">
+  <view class="home-header">
     <view class="search-section">
-      <view class="user-greet" style="margin-top:{{navHeight}}px;">
+      <view class="user-greet" style="margin-top:{{statusBarHeight}}px;">
         <text class="greet-text">你好，同学</text>
         <text class="sub-text">今天也是努力的一天</text>
       </view>
-      <view class="search-box" bindtap="toSearch">
-        <icon type="search" size="16" color="#999"></icon>
-        <text>搜索动态、资料或活动</text>
+      <view class="search-box g-search-box" bindtap="toSearch" hover-class="search-box--hover">
+        <view class="search-box__icon-wrap">
+          <image class="search-box__icon" src="/images/icons/search.svg" mode="aspectFit" />
+        </view>
+        <text class="search-box__placeholder g-search-box__placeholder">搜索动态、资料或活动</text>
       </view>
     </view>
-
     <!-- 考试卡片 -->
     <view class="exam-section">
       <view class="section-title">
@@ -22,91 +75,164 @@
       <scroll-view scroll-x class="exam-scroll" enable-flex>
         <view class="exam-card {{exam.color}}" wx:for="{{examList}}" wx:key="id" wx:for-item="exam"
           data-id="{{exam.id}}" bind:tap="goToExamDetail">
-          <view class="exam-name">{{exam.name}}</view>
+          <text class="exam-name">{{exam.name}}</text>
           <view class="exam-date">{{exam.date}}</view>
           <view class="exam-countdown">
-            还剩 <text class="days">{{exam.days}}</text> 天
+            还剩
+            <text class="days">{{exam.days}}</text>
+            天
           </view>
-          <view class="card-bg-icon">{{exam.icon}}</view>
+          <image class="card-bg-icon" src="{{exam.icon}}" mode="aspectFit" />
         </view>
       </scroll-view>
     </view>
-
     <!-- 快捷导航 -->
     <view class="quick-nav">
       <view class="nav-item" bindtap="goToActivityList">
-        <view class="nav-icon act">📅</view>
+        <view class="nav-icon act">
+          <image src="/images/icons/activity.svg" mode="aspectFit"/>
+        </view>
         <text>校园活动</text>
       </view>
       <view class="nav-item" bindtap="goToExamList">
-        <view class="nav-icon exam">📝</view>
+        <view class="nav-icon exam">
+          <image src="/images/icons/exam.svg" mode="aspectFit" />
+        </view>
         <text>考试资讯</text>
       </view>
     </view>
-
   </view>
-
   <!-- Feed 标题栏 + Tab 切换 -->
-  <view class="feed-header">
-    <view class="feed-tab active">全站动态</view>
-    <!-- <view class="feed-tab">关注</view> -->
-    <!-- <view class="feed-tab-line"></view> -->
+  <view class="feed-header {{homeHeaderHidden ? 'home-header--hidden' : ''}}" style="top: {{statusBarHeight}}px;">
+    <!-- <view class="feed-tab active">全站动态</view> -->
+    <view class="feed-tab active">最新发布</view>
+    <view class="feed-tab-line">
+    </view>
+  </view>
+  <!-- 下拉刷新保留原列表，只给出轻量、非阻塞的进度反馈 -->
+  <view class="refresh-indicator" wx:if="{{listLoad.refreshing}}" aria-role="status" aria-label="正在刷新最新内容">
+    <view class="state-spinner state-spinner--small"></view>
+    <text>正在刷新最新内容</text>
   </view>
 
-  <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
-
-    <post-card post="{{post}}" bind:posttap="onPostTap" bind:user="onPostUser" bind:like="onPostLike"
-      bind:comment="onOpenComment" bind:share="onOpenShare" bind:shareImageReady="onShareImageReady"
-      bind:more="onPostMore" />
-    <!--  活动插片 -->
+  <block wx:if="{{listLoad.initialError && !posts.length}}">
+    <!-- 首次加载失败：页面级错误态，提供明确重试入口 -->
+    <view class="page-state">
+      <view class="page-state__icon page-state__icon--error">!</view>
+      <text class="page-state__title">暂时没能加载内容</text>
+      <text class="page-state__desc">可能是网络开了个小差，检查后再试一次</text>
+      <view
+        class="page-state__action"
+        bindtap="onRetryInitialLoad"
+        hover-class="page-state__action--hover"
+        aria-role="button"
+        aria-label="重新加载页面内容"
+      >
+        重新加载
+      </view>
+    </view>
+  </block>
+  <block wx:elif="{{posts.length}}">
+    <!-- 正常列表 -->
+    <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
+      <post-card post="{{post}}" bind:comment="onOpenComment" bind:view="onPostView" bind:share="onOpenShare"
+        bind:shareImageReady="onShareImageReady" bind:more="onPostCardMore" />
+    <!-- 活动插片
     <view class="activity-section" wx:if="{{index === 2}}">
       <view class="section-header">
         <text class="section-title-text">🎉 校园热门活动</text>
         <text class="section-more">查看全部 ›</text>
       </view>
-      <scroll-view scroll-x class="activity-scroll" enable-flex>
-        <view class="activity-card" wx:for="{{activities}}" wx:key="id" wx:for-item="act">
-          <image src="{{act.poster}}" mode="aspectFill" class="act-poster" />
+      <scroll-view
+        scroll-x
+        class="activity-scroll"
+        enable-flex
+      >
+        <view
+          class="activity-card"
+          wx:for="{{activities}}"
+          wx:key="id"
+          wx:for-item="act"
+        >
+          <image
+            src="{{act.poster}}"
+            mode="aspectFill"
+            class="act-poster" />
           <view class="act-info">
             <text class="act-name">{{act.title}}</text>
           </view>
         </view>
       </scroll-view>
+    </view> -->
+    </block>
+
+    <!-- 分页加载使用列表内追加骨架，避免和首屏骨架割裂 -->
+    <post-card-skeleton
+      wx:if="{{listLoad.loadingMore}}"
+      count="{{2}}"
+      show-media="{{false}}"
+    />
+
+    <!-- 分页状态：失败重试、到底、提示分别呈现，不再只依赖 Toast -->
+    <view class="list-footer">
+      <view class="footer-retry" wx:if="{{listLoad.loadMoreError}}" bindtap="onRetryLoadMore"
+        hover-class="footer-retry--hover" aria-role="button" aria-label="重新加载更多动态">
+        <text class="footer-retry__title">加载失败</text>
+        <text class="footer-retry__action">点此重试</text>
+      </view>
+
+      <view class="footer-end" wx:elif="{{!listLoad.hasMore}}">
+        <view class="footer-end__line"></view>
+        <text class="footer-text">已经看到全部内容了</text>
+        <view class="footer-end__line"></view>
+      </view>
+
+      <text class="footer-text" wx:else>继续上滑，查看更多</text>
     </view>
   </block>
-
-  <!-- 底部加载状态 -->
-  <view class="list-footer">
-    <text class="footer-text">— 已经到底啦 —</text>
+  <block wx:else>
+    <!-- 请求成功但没有内容：区别于加载失败 -->
+    <view class="page-state">
+      <view class="page-state__icon page-state__icon--empty">—</view>
+      <text class="page-state__title">还没有新动态</text>
+      <text class="page-state__desc">分享一点校园见闻，或稍后回来看看</text>
+      <view class="page-state__action page-state__action--secondary" bindtap="onPublishPost"
+        hover-class="page-state__action--hover" aria-role="button" aria-label="发布第一条动态">
+        发布动态
+      </view>
+    </view>
+  </block>
   </view>
-
 </view>
-
-<!-- ✅ 弹窗打开时的全屏触摸拦截层，放在 page-container 外面 -->
-<view wx:if="{{showPopup}}" style="{{popupType==='post-edit'?'height:10vh;':'height:20vh;'}}"
-  class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
-
-<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}"
-  z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave" bind:afterleave="onPopupAfterLeave"
-  bind:clickoverlay="onOverlayTap">
+<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}" z-index="999" bind:leave="onPopupLeave">
   <!-- 评论区弹窗 -->
-  <comment-panel wx:if="{{popupType === 'comment'}}" mode="sheet" target-id="{{currentPostId}}" target-type="post"
-    total-count="{{currentCommentCount}}" visible="{{showPopup}}" bind:close="onCommentClose"
-    bind:count-change="onCommentCountChange" />
+    <comment-panel
+      wx:if="{{popupType==='comment'}}"
+      mode="sheet"
+      target-id="{{commentTargetId}}"
+      target-type="{{commentTargetType}}"
+      total-count="{{commentTotalCount}}"
+      visible="{{showPopup && popupType === 'comment'}}"
+      bind:close="onCommentClose"
+      bind:countchange="onCommentCountChange" 
+      bind:report="onCommentReport" />
   <!-- post发布弹窗 -->
   <post-edit-panel wx:elif="{{popupType==='post-edit'}}" bind:submit="onPostSubmit" bind:close="onPostEditClose" />
   <!-- share弹窗 -->
   <share-panel wx:elif="{{popupType==='share'}}" share-path="{{currentSharePath}}"
     share-image-path="{{currentShareImage}}" bind:close="onShareClose" />
+  <!-- report弹窗 -->
+  <report-panel 
+    wx:elif="{{popupType === 'report'}}" 
+    target-type="{{reportTargetType}}" 
+    target-id="{{reportTargetId}}"
+    bind:close="onCloseReport" />
 </page-container>
-
 <!-- FAB + 展开菜单 -->
 <!-- fab-wrap 只做逻辑容器，不参与动画，避免 fixed 子元素不撑高父容器的问题 -->
-<view class="fab-wrap">
-
+<view class="fab-wrap" wx:if="{{listLoad.phase !== 'initial'}}">
   <!-- 展开菜单遮罩 -->
-  <view class="fab-mask {{fabOpen ? 'fab-mask--show' : ''}}" catchtap="onCloseFab" />
-
+  <view class="fab-mask {{fabOpen ? 'fab-mask--show' : ''}}" catchtap="onCloseFab" catch:touchmove="noop"/>
   <!-- 展开的选项 -->
   <view class="fab-menu {{fabOpen ? 'fab-menu--show' : ''}}" style="bottom:{{fabMenuBottom}}px;">
     <view class="fab-menu-item" wx:if="{{canPublishActivity}}" catchtap="onPublishActivity">
@@ -122,11 +248,11 @@
       <text class="fab-menu-item__label">发帖子</text>
     </view>
   </view>
-
   <!-- FAB 主按钮：动画直接写在按钮自身，不依赖父容器高度 -->
   <view class="fab {{fabOpen ? 'fab--open' : ''}} {{tabBarHidden ? 'fab--hidden' : ''}}" catchtap="onTapFab"
     style="bottom:{{fabBottomDock}}px;">
     <text class="fab__icon">{{fabOpen ? '✕' : '+'}}</text>
   </view>
-
 </view>
+
+<in-app-banner/>

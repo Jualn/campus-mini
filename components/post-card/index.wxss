@@ -2,9 +2,15 @@
 
 .post-card {
   display: flex;
-  padding: 24rpx 30rpx;
-  border-bottom: 1rpx solid var(--color-border);
-  background: var(--color-bg-card);
+  padding: 26rpx 26rpx 22rpx;
+  background: var(--glass-bg-strong);
+  border: 1rpx solid var(--color-border-grey);
+  box-shadow: var(--shadow-card);
+}
+
+.post-card:active {
+  opacity: 0.94;
+  transform: scale(0.992);
 }
 
 .post-left {
@@ -22,6 +28,14 @@
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow:
+    0 10rpx 22rpx rgba(47, 124, 246, 0.15),
+    0 0 0 4rpx rgba(255, 255, 255, 0.82);
+}
+
+.post-avatar:active {
+  opacity: 0.86;
+  transform: scale(0.96);
 }
 
 .post-avatar__img {
@@ -32,7 +46,7 @@
 
 .post-avatar__char {
   color: var(--color-text-inverse);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-size: 28rpx;
 }
 
@@ -50,7 +64,6 @@
 .post-user {
   display: flex;
   align-items: center;
-  gap: 6rpx;
   flex: 1;
   min-width: 0;
 }
@@ -58,7 +71,7 @@
 .post-nickname {
   max-width: 320rpx;
   font-size: 28rpx;
-  font-weight: 700;
+  font-weight: var(--weight-heavy);
   color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -66,64 +79,111 @@
 }
 
 .post-time {
-  font-size: 24rpx;
-  color: var(--color-text-tertiary);
+  margin-left: 8rpx;
+  font-size: var(--font-sm);
+  color: rgba(16, 35, 63, 0.46);
   flex-shrink: 0;
 }
 
 .post-more {
   padding: 0 4rpx 0 16rpx;
+  flex-shrink: 0;
+}
+
+.post-more:active {
+  opacity: 0.6;
 }
 
 .more-dot {
-  font-size: 24rpx;
-  color: var(--color-text-tertiary);
-  letter-spacing: 2rpx;
+  width: 58rpx;
+  height: 58rpx;
+  flex-shrink: 0;
 }
 
 .post-body {
-  margin: 8rpx 0 16rpx;
+  margin: 8rpx 0 20rpx;
 }
 
 .post-text {
-  font-size: 30rpx;
-  color: var(--color-text-primary);
-  line-height: 1.7;
+  font-size: 29rpx;
+  color: #172a46;
+  line-height: 1.68;
   display: -webkit-box;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
   overflow: hidden;
+  word-break: break-word;
+}
+
+.post-text--expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.post-expand {
+  margin-top: 10rpx;
+}
+
+.post-expand__text {
+  font-size: var(--font-sm);
+  color: var(--color-primary);
+  font-weight: var(--weight-semibold);
 }
 
 /* 操作栏 */
 .post-actions {
   display: flex;
   align-items: center;
-  padding: 16rpx 0 4rpx;
+  padding: 16rpx 0 2rpx;
 }
 
 .action-item {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  flex: 1;
-  justify-content: center;
+  min-width: 120rpx;
+}
+
+.action-item:active {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
+.action-item--share {
+  margin-left: auto;
+  margin-right: 20rpx;
+  min-width: unset;
+}
+
+.action-item--view {
+  min-width: 100rpx;
 }
 
 .action-icon {
-  width: 48rpx;
-  height: 48rpx;
+  width: 40rpx;
+  height: 40rpx;
   flex-shrink: 0;
   position: relative;
+  opacity: 0.78;
+  margin-right: 6rpx;
+}
+
+.action-item--share .action-icon {
+  margin-right: 0;
 }
 
 .action-count {
-  font-size: 28rpx;
-  color: var(--color-text-secondary);
-  min-width: 32rpx;
+  font-size: var(--font-sm);
+  color: rgba(16, 35, 63, 0.62);
+  min-width: 28rpx;
 }
 
 .action-count--liked {
   color: var(--color-danger);
+  font-weight: var(--weight-semibold);
+}
+
+.action-count--view {
+  color: var(--color-text-tertiary);
 }
 
 /* 点赞图标动画 */
@@ -133,7 +193,7 @@
   height: 100%;
   left: 0;
   top: 0;
-  transition: all 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .like-off {
@@ -162,7 +222,7 @@
   }
 
   60% {
-    transform: scale(1.2);
+    transform: scale(1.18);
   }
 
   100% {

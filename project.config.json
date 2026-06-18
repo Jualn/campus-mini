@@ -5,14 +5,20 @@
     "minified": true,
     "uglifyFileName": false,
     "enhance": true,
-    "packNpmRelationList": [],
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],
       "outputPath": ""
     },
-    "useCompilerPlugins": false,
-    "minifyWXML": true
+    "useCompilerPlugins": ["typescript"],
+    "minifyWXML": true,
+    "packNpmManually": true,
+    "packNpmRelationList": [
+      {
+        "packageJsonPath": "/package.json",
+        "miniprogramNpmDistDir": "/"
+      }
+    ]
   },
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},

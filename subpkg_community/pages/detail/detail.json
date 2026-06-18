@@ -3,6 +3,8 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "grid-image": "/components/grid-image/grid-image",
-    "comment-panel": "/components/comment-panel/index"
+    "comment-panel": "/components/comment-panel/index",
+    "share-panel": "/components/share-panel/index",
+    "report-panel": "/components/report-panel/index"
   }
 }

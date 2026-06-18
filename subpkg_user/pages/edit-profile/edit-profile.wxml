@@ -14,7 +14,7 @@
   <view class="banner-wrap" bindtap="onChangeBanner">
     <image class="banner-img" src="{{form.bannerUrl}}" mode="aspectFill" />
     <view class="banner-mask">
-      <text class="banner-mask__icon">🖼</text>
+      <image class="banner-mask__icon" src="/assets/icons/profile/change_cover_line.svg" mode="aspectFit" />
       <text class="banner-mask__text">更换封面</text>
     </view>
   </view>
@@ -24,7 +24,7 @@
     <view class="avatar-wrap" bindtap="onChangeAvatar">
       <image class="avatar-img" src="{{form.avatar}}" mode="aspectFill" />
       <view class="avatar-mask">
-        <text class="avatar-mask__icon">📷</text>
+        <image class="avatar-mask__icon" src="/assets/icons/profile/change_avatar_line.svg" mode="aspectFit" />
       </view>
     </view>
   </view>
@@ -54,7 +54,7 @@
     <view class="form-divider" />
 
     <!-- 修复：加 form-right--prefix，替代不兼容的 :has() -->
-    <view class="form-item">
+    <!-- <view class="form-item">
       <text class="form-label">ID</text>
       <view class="form-right form-right--prefix">
         <text class="form-prefix">@</text>
@@ -62,9 +62,9 @@
           maxlength="20" bindinput="onInput" data-field="handle" />
       </view>
     </view>
-    <view class="form-divider" />
+    <view class="form-divider" /> -->
 
-    <view class="form-item" bindtap="onPickSchool">
+    <!-- <view class="form-item" bindtap="onPickSchool">
       <text class="form-label">学校</text>
       <view class="form-right form-right--row">
         <text class="form-value {{form.school ? '' : 'form-value--placeholder'}}">
@@ -73,9 +73,9 @@
         <text class="form-arrow">›</text>
       </view>
     </view>
-    <view class="form-divider" />
+    <view class="form-divider" /> -->
 
-    <view class="form-item">
+    <!-- <view class="form-item">
       <text class="form-label">院系</text>
       <view class="form-right">
         <input class="form-input" value="{{form.dept}}" placeholder="填写院系和年级" placeholder-class="form-placeholder"
@@ -103,7 +103,7 @@
           <text class="gender-label">不公开</text>
         </view>
       </view>
-    </view>
+    </view> -->
 
   </view>
 

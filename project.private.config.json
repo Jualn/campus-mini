@@ -15,11 +15,67 @@
     "miniprogram": {
       "list": [
         {
-          "name": "subpkg_community/pages/post-edit/post-edit",
-          "pathName": "subpkg_community/pages/post-edit/post-edit",
+          "name": "subpkg_red/pages/index/index",
+          "pathName": "subpkg_red/pages/index/index",
           "query": "",
           "scene": null,
           "launchMode": "default"
+        },
+        {
+          "name": "subpkg_setting/pages/setting/setting",
+          "pathName": "subpkg_setting/pages/setting/setting",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/test/test",
+          "pathName": "pages/test/test",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/me/me",
+          "pathName": "pages/me/me",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "subpkg_activity/pages/publish/publish",
+          "pathName": "subpkg_activity/pages/publish/publish",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/message/message",
+          "pathName": "pages/message/message",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "subpkg_community/pages/post-edit/post-edit",
+          "pathName": "subpkg_community/pages/post-edit/post-edit",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "",
+          "pathName": "subpkg_activity/pages/detail/detail",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "subpkg_community/pages/post-edit/post-edit",
+          "pathName": "subpkg_community/pages/post-edit/post-edit",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
         },
         {
           "name": "subpkg_community/pages/detail/detail",
@@ -59,13 +115,6 @@
         {
           "name": "pages/feed/feed",
           "pathName": "pages/feed/feed",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/activity-detail/index",
-          "pathName": "pages/activity-detail/index",
           "query": "",
           "launchMode": "default",
           "scene": null

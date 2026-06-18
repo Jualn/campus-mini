@@ -39,7 +39,7 @@
 }
 
 .tab-bar--hidden {
-  transform: translateY(calc(100% + 40rpx));
+  transform: translateY(calc(100% + 140rpx));
 }
 
 /* ===================== 单个 Tab 项 ===================== */

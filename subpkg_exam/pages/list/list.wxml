@@ -3,19 +3,22 @@
 
   <!-- 顶部 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
-    <view class="top-bar__nav">
+    <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
       <view class="top-bar__back" bindtap="onBack">
         <text class="top-bar__back-icon">‹</text>
       </view>
       <text class="top-bar__title">考试信息</text>
-      <view class="top-bar__placeholder" />
     </view>
-    <view class="search-wrap">
-      <text class="search-icon">🔍</text>
-      <input class="search-input" placeholder="搜索考试名称" placeholder-class="search-placeholder" value="{{keyword}}"
-        bindinput="onSearch" />
-      <view wx:if="{{keyword}}" class="search-clear" catchtap="onClearSearch">
-        <text class="search-clear__icon">✕</text>
+    <view class="search-bar-wrap">
+      <view class="search-bar">
+        <view class="search-bar__icon-wrap">
+          <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
+        </view>
+        <input class="search-bar__input" placeholder="搜索考试名称" placeholder-class="search-bar__placeholder"
+          value="{{keyword}}" bindinput="onSearch" bindconfirm="onSearch" confirm-type="search" />
+        <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClearSearch">
+          <text class="search-bar__clear-icon">✕</text>
+        </view>
       </view>
     </view>
   </view>
@@ -28,7 +31,7 @@
         <view class="list-card">
           <view wx:for="{{searchResult}}" wx:key="id" class="exam-row" bindtap="goDetail" data-id="{{item.id}}">
             <view class="exam-row__icon-wrap exam-row__icon-wrap--{{item.color}}">
-              <text class="exam-row__icon">{{item.icon}}</text>
+              <image class="exam-row__icon" src="{{item.icon}}" mode="aspectFit" />
             </view>
             <view class="exam-row__body">
               <text class="exam-row__name">{{item.name}}</text>
@@ -39,7 +42,7 @@
         </view>
       </block>
       <view wx:else class="empty-wrap">
-        <text class="empty-icon">🔍</text>
+        <image class="empty-icon" src="/assets/icons/common/search.svg" mode="aspectFit" />
         <text class="empty-text">没有找到相关考试</text>
       </view>
     </view>
@@ -47,7 +50,6 @@
 
   <!-- 正常列表 -->
   <block wx:else>
-
     <!-- Banner：最近一个要开考的 -->
     <view wx:if="{{hotExam.id}}" class="banner-card banner-card--{{hotExam.color}}" bindtap="goDetail"
       data-id="{{hotExam.id}}">
@@ -62,16 +64,13 @@
         <text class="banner-name">{{hotExam.name}}</text>
         <text class="banner-tagline">{{hotExam.tagline}}</text>
         <view class="banner-date-row">
-          <text class="banner-date" wx:if="{{hotExam.examDate}}">
-            📅 {{hotExam.examDate}}
-          </text>
-          <text class="banner-date banner-date--pending" wx:else>
-            📅 日期待官方公告
-          </text>
+          <image class="banner-date__icon" src="/assets/icons/detail/exam_time.svg" mode="aspectFit" />
+          <text class="banner-date" wx:if="{{hotExam.examDate}}">{{hotExam.examDate}}</text>
+          <text class="banner-date banner-date--pending" wx:else>日期待官方公告</text>
         </view>
       </view>
       <view class="banner-right">
-        <text class="banner-big-icon">{{hotExam.icon}}</text>
+        <image class="banner-big-icon" src="{{hotExam.icon}}" mode="aspectFit" />
         <view class="banner-countdown" wx:if="{{hotExam.daysLeft > 0}}">
           <text class="banner-days">{{hotExam.daysLeft}}</text>
           <text class="banner-days-unit">天后开考</text>
@@ -80,20 +79,20 @@
     </view>
 
     <!-- 分类 Tab -->
-    <scroll-view class="category-scroll" scroll-x enable-flex>
+    <!-- <scroll-view class="category-scroll" scroll-x enable-flex>
       <view wx:for="{{categories}}" wx:key="id"
         class="category-tab {{activeCategory===item.id?'category-tab--active':''}}" bindtap="onSwitchCategory"
         data-id="{{item.id}}">
         <text class="category-tab__icon">{{item.icon}}</text>
         <text class="category-tab__label">{{item.label}}</text>
       </view>
-    </scroll-view>
+    </scroll-view> -->
 
     <!-- 列表 -->
     <view class="list-card">
       <view wx:for="{{filteredExams}}" wx:key="id" class="exam-row" bindtap="goDetail" data-id="{{item.id}}">
         <view class="exam-row__icon-wrap exam-row__icon-wrap--{{item.color}}">
-          <text class="exam-row__icon">{{item.icon}}</text>
+          <image class="exam-row__icon" src="{{item.icon}}" mode="aspectFit" />
         </view>
         <view class="exam-row__body">
           <view class="exam-row__name-line">
@@ -124,3 +123,5 @@
   </block>
 
 </view>
+
+<in-app-banner />

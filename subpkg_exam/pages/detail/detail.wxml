@@ -7,12 +7,9 @@
       <view class="hero-back" bindtap="onBack">
         <text class="hero-back__icon">‹</text>
       </view>
-      <view class="hero-collect {{collected?'hero-collect--on':''}}" bindtap="onToggleCollect">
-        <text class="hero-collect__icon">{{collected?'⭐':'☆'}}</text>
-      </view>
     </view>
     <view class="hero-body">
-      <text class="hero-icon">{{exam.icon}}</text>
+      <image class="hero-icon" src="{{exam.icon}}" mode="aspectFit" />
       <text class="hero-name">{{exam.name}}</text>
       <text class="hero-tagline">{{exam.tagline}}</text>
       <text class="hero-organizer">主办：{{exam.organizer}}</text>
@@ -39,11 +36,14 @@
 
   <!-- 本期时间 -->
   <view class="section-card">
-    <text class="section-title">📅 本期时间安排</text>
+    <view class="section-title-row">
+      <image class="section-title-icon" src="/assets/icons/detail/exam_time.svg" mode="aspectFit" />
+      <text class="section-title">本期时间安排</text>
+    </view>
 
     <!-- 考试规律 -->
     <view class="freq-tip">
-      <text class="freq-tip__icon">🔁</text>
+      <image class="inline-icon" src="/assets/icons/detail/repeat_rule.svg" mode="aspectFit" />
       <text class="freq-tip__text">{{exam.frequency}}</text>
     </view>
 
@@ -80,14 +80,17 @@
 
     <!-- 时间来源说明 -->
     <view class="source-tip" wx:if="{{exam.timeSource}}">
-      <text class="source-tip__icon">ℹ️</text>
+      <image class="inline-icon" src="/assets/icons/detail/info_source.svg" mode="aspectFit" />
       <text class="source-tip__text">{{exam.timeSource}}</text>
     </view>
   </view>
 
   <!-- 基本信息 -->
   <view class="section-card">
-    <text class="section-title">📋 基本信息</text>
+    <view class="section-title-row">
+      <image class="section-title-icon" src="/assets/icons/detail/basic_info.svg" mode="aspectFit" />
+      <text class="section-title">基本信息</text>
+    </view>
     <view class="info-list">
       <view wx:for="{{exam.info}}" wx:key="label" class="info-row">
         <text class="info-label">{{item.label}}</text>
@@ -101,7 +104,10 @@
 
   <!-- 考试内容概况 -->
   <view class="section-card" wx:if="{{exam.subjects.length}}">
-    <text class="section-title">📝 考试内容</text>
+    <view class="section-title-row">
+      <image class="section-title-icon" src="/assets/icons/detail/exam_content.svg" mode="aspectFit" />
+      <text class="section-title">考试内容</text>
+    </view>
     <text class="section-disclaimer">以下信息来源于官方大纲，具体以当年考纲为准</text>
     <view class="subject-list">
       <view wx:for="{{exam.subjects}}" wx:key="name" class="subject-item">
@@ -116,7 +122,10 @@
 
   <!-- 须知 -->
   <view class="section-card" wx:if="{{exam.mustKnow.length}}">
-    <text class="section-title">⚠️ 考试须知</text>
+    <view class="section-title-row">
+      <image class="section-title-icon" src="/assets/icons/detail/warning.svg" mode="aspectFit" />
+      <text class="section-title">考试须知</text>
+    </view>
     <text class="section-disclaimer">以下为官方硬性规定，请以当年官方考生手册为准</text>
     <view class="mustknow-list">
       <view wx:for="{{exam.mustKnow}}" wx:key="*this" class="mustknow-item">
@@ -128,13 +137,17 @@
 
   <!-- 官方资源出口 -->
   <view class="section-card">
-    <text class="section-title">🔗 官方资源</text>
-    <text class="section-disclaimer">以下链接均为官方网站，在微信内置浏览器中打开</text>
+    <view class="section-title-row">
+      <image class="section-title-icon" src="/assets/icons/detail/official_link.svg" mode="aspectFit" />
+      <text class="section-title">官方资源</text>
+    </view>
+    <text class="section-disclaimer">以下链接均为官方网站，点击复制链接在浏览器中打开</text>
     <view class="link-list">
       <view wx:for="{{exam.links}}" wx:key="label" class="link-item {{item.primary?'link-item--primary':''}}"
         bindtap="onOpenLink" data-url="{{item.url}}" data-label="{{item.label}}">
         <view class="link-left">
-          <text class="link-icon">{{item.icon}}</text>
+          <!-- <text class="link-icon">{{item.icon}}</text> -->
+          <image class="link-icon-img" src="/assets/icons/detail/link_item.svg" mode="aspectFit" />
           <view class="link-text">
             <text class="link-label">{{item.label}}</text>
             <text class="link-desc">{{item.desc}}</text>
@@ -150,12 +163,15 @@
   <!-- 底部报名按钮 -->
   <view class="bottom-bar">
     <view class="enroll-btn enroll-btn--{{exam.enrollStatus}} enroll-btn--{{exam.color}}" bindtap="onEnroll">
-      <text class="enroll-btn__text">{{exam.enrollStatus==='open'?'前往官网报名':exam.enrollStatus==='upcoming'?'报名尚未开始':'本期报名已结束'}}
+      <text
+        class="enroll-btn__text">{{exam.enrollStatus==='open'?'前往官网报名':exam.enrollStatus==='upcoming'?'报名尚未开始':'本期报名已结束'}}
       </text>
     </view>
     <view class="share-btn" bind:tap="onShareOpen">
-      <text class="share-btn__icon">↑</text>
-      <text class="share-btn__text">分享</text>
+      <view class="share-btn" bind:tap="onShareOpen">
+        <image class="share-btn__icon-img" src="/assets/icons/detail/share.svg" mode="aspectFit" />
+        <text class="share-btn__text">分享</text>
+      </view>
     </view>
   </view>
 
@@ -165,10 +181,13 @@
 <view wx:if="{{showPopup}}" class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
 
 <page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}"
-  z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave" bind:afterleave="onPopupAfterLeave" bind:clickoverlay="onOverlayTap">
+  z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave" bind:afterleave="onPopupAfterLeave"
+  bind:clickoverlay="onOverlayTap">
   <!-- share弹窗 -->
   <share-panel wx:if="{{popupType==='share'}}" share-path="{{currentSharePath}}"
     share-image-path="{{currentShareImage}}" bind:close="onShareClose" />
 </page-container>
 
 <canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px;"></canvas>
+
+<in-app-banner />

@@ -25,10 +25,10 @@
    ============================================ */
 
 .cp-sheet-mask {
-  position: absolute;
+  position: fixed;
+  /* absolute 改 fixed 更保险 */
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  pointer-events: auto;
 }
 
 /*
@@ -87,6 +87,13 @@
   flex-shrink: 0;
 }
 
+.cp-sheet__title-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
 .cp-sheet__title {
   font-size: 32rpx;
   font-weight: 700;
@@ -97,7 +104,6 @@
   font-size: 28rpx;
   color: var(--cp-text-sub);
   margin-left: 12rpx;
-  flex: 1;
 }
 
 .cp-sheet__close {
@@ -155,7 +161,7 @@
 }
 
 .cp-list--inline {
-  padding-bottom: 160rpx;
+  padding-bottom: 560rpx;
 }
 
 /* 单条一级评论 */
@@ -260,6 +266,12 @@
 .cp-reply__to {
   font-size: 24rpx;
   color: var(--cp-text-sub);
+}
+
+.cp-reply_to_title {
+  font-size: 24rpx;
+  color: var(--cp-text-sub);
+  padding-right: 8rpx;
 }
 
 .cp-reply__to-name {
@@ -524,8 +536,7 @@
 }
 
 .cp-empty__icon {
-  font-size: 80rpx;
-  opacity: 0.4;
+  flex-shrink: 0;
 }
 
 .cp-empty__text {
@@ -550,6 +561,10 @@
   flex: 1;
   font-size: 26rpx;
   color: var(--cp-text-sub);
+}
+
+.cp-reply-banner_to_title{
+  padding-right: 8rpx;
 }
 
 .cp-reply-banner__name {
@@ -637,6 +652,7 @@
   border: none;
   outline: none;
   line-height: normal;
+  min-height: 50rpx;
 }
 
 .cp-inputbar__placeholder {
@@ -806,4 +822,49 @@
 .cp-icon--close {
   font-size: 24rpx;
   color: var(--cp-text-sub);
+}
+
+.cp-icon--img{
+  width: 54rpx;
+  height: 54rpx;
+  color: #000;
+}
+
+/* ============================================
+   更多操作按钮（··· 触发入口）
+   ============================================ */
+
+/* 一级评论 footer 右侧的 ··· 按钮 */
+.cp-comment__more {
+  margin-left: auto;
+  padding: 6rpx 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--cp-radius);
+}
+
+.cp-comment__more:active {
+  background: var(--cp-bg);
+}
+
+/* 二级回复 footer 右侧的 ··· 按钮 */
+.cp-reply__more {
+  margin-left: auto;
+  padding: 4rpx 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--cp-radius);
+}
+
+.cp-reply__more:active {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* 图标文字（用 emoji 或 iconfont 均可） */
+.cp-more-icon {
+  width: 54rpx;
+  height: 54rpx;
+  flex-shrink: 0;
 }

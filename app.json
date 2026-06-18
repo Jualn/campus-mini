@@ -8,43 +8,48 @@
   "subPackages": [
     {
       "root": "subpkg_exam",
-      "pages": [
-        "pages/detail/detail",
-        "pages/list/list"
-      ]
+      "pages": ["pages/detail/detail", "pages/list/list"]
     },
     {
       "root": "subpkg_activity",
       "pages": [
         "pages/detail/detail",
-        "pages/list/list"
+        "pages/list/list",
+        "pages/publish/publish"
       ]
-    },{
+    },
+    {
       "root": "subpkg_community",
       "pages": [
         "pages/detail/detail",
-        "pages/post-edit/post-edit"
+        "pages/post-edit/post-edit",
+        "pages/search/search",
+        "pages/search-result/search-result"
       ]
     },
     {
       "root": "subpkg_user",
-      "pages": [
-        "pages/user/user",
-        "pages/edit-profile/edit-profile"
-      ]
+      "pages": ["pages/user/user", "pages/edit-profile/edit-profile"]
     },
     {
       "root": "subpkg_setting",
+      "pages": ["pages/setting/setting","pages/service-subscribe-webview/index"]
+    },
+    {
+      "root": "subpkg_red",
       "pages": [
-        "pages/setting/setting"
+        "pages/index/index"
       ]
     }
   ],
   "preloadRule": {
-    "pages/index/index":{
+    "pages/index/index": {
       "network": "all",
       "packages": ["subpkg_community"]
     }
+  },
+  "usingComponents": {
+    "in-app-banner": "/components/in-app-banner/index"
   },
   "window": {
     "navigationBarTextStyle": "black",
@@ -65,9 +70,6 @@
       },
       {
         "pagePath": "pages/me/me"
-      },
-      {
-        "pagePath": "pages/test/test"
       }
     ]
   }

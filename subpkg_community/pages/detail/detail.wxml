@@ -1,4 +1,4 @@
-<!-- subpkg_community/pages/detail/index.wxml -->
+<!-- subpkg_community/pages/detail/detail.wxml -->
 <view class="detail-page" style="padding-bottom:{{bottomPad}}px;">
 
   <!-- 顶部导航 -->
@@ -8,9 +8,8 @@
         <text class="top-bar__back-icon">‹</text>
       </view>
       <text class="top-bar__title">动态</text>
-      <view class="top-bar__more" catchtap="onMore">
-        <text class="top-bar__more-icon">•••</text>
-      </view>
+      <!-- 右侧只保留等宽占位，让标题居中；更多按钮已移到帖子作者行，避免被系统胶囊遮挡 -->
+      <view class="top-bar__placeholder"></view>
     </view>
   </view>
 
@@ -19,8 +18,10 @@
 
     <!-- 作者信息 -->
     <view class="author-row">
-      <image class="author-avatar" src="{{post.avatar}}" mode="aspectFill" catchtap="goToUser"
-        data-id="{{post.userId}}" />
+      <view class="author-avatar" catchtap="goToUser" data-id="{{post.userId}}" style="background:{{post._avatarBg}}">
+        <image wx:if="{{post.avatar}}" class="author-avatar_img" src="{{post.avatar}}" mode="aspectFill" />
+        <text wx:else class="author-avatar__char">{{post._avatarChar}}</text>
+      </view>
       <view class="author-info">
         <view class="author-name-row">
           <text class="author-name">{{post.nickname}}</text>
@@ -29,18 +30,21 @@
           </view>
         </view>
         <view class="author-meta">
-          <text class="author-handle" wx:if="{{post.handle}}">@{{post.handle}}</text>
-          <text class="author-sep" wx:if="{{post.handle}}">·</text>
+          <!-- <text class="author-handle" wx:if="{{post.handle}}">@{{post.handle}}</text> -->
+          <!-- <text class="author-sep" wx:if="{{post.handle}}">·</text> -->
           <text class="author-time">{{post.createdAtText}}</text>
-          <text class="author-sep" wx:if="{{post.ipLocation}}">·</text>
-          <text class="author-ip" wx:if="{{post.ipLocation}}">{{post.ipLocation}}</text>
+          <!-- <text class="author-sep" wx:if="{{post.ipLocation}}">·</text> -->
+          <!-- <text class="author-ip" wx:if="{{post.ipLocation}}">{{post.ipLocation}}</text> -->
         </view>
       </view>
+      <view class="post-more" catchtap="onMore">
+        <image class="post-more__icon" src="/assets/icons/common/more.svg" mode="aspectFit" />
+      </view>
       <!-- 关注按钮（非本人） -->
-      <view wx:if="{{!post.isSelf}}" class="follow-btn {{post.isFollowing?'follow-btn--on':''}}"
+      <!-- <view wx:if="{{!post.isSelf}}" class="follow-btn {{post.isFollowing?'follow-btn--on':''}}"
         catchtap="onToggleFollow">
         <text class="follow-btn__text">{{post.isFollowing ? '已关注' : '+ 关注'}}</text>
-      </view>
+      </view> -->
     </view>
 
     <!-- 正文 -->
@@ -50,9 +54,9 @@
     <grid-image images="{{post.images || []}}" />
 
     <!-- 话题标签 -->
-    <view class="post-topics" wx:if="{{post.topics && post.topics.length}}">
+    <!-- <view class="post-topics" wx:if="{{post.topics && post.topics.length}}">
       <text wx:for="{{post.topics}}" wx:key="*this" class="topic-tag" catchtap="onTapTopic" data-topic="{{item}}">#{{item}}</text>
-    </view>
+    </view> -->
 
     <!-- 数据统计 -->
     <view class="post-stats">
@@ -67,18 +71,18 @@
     <view class="post-actions">
       <view class="action-item" catchtap="onLike">
         <view class="action-icon {{post.isLiked ? 'liked' : ''}}">
-          <image class="icon like-off" src="/images/like.svg" />
-          <image class="icon like-on" src="/images/like-fill.svg" />
+          <image class="icon like-off" src="/images/interact/like.svg" />
+          <image class="icon like-on" src="/images/interact/like-fill.svg" />
         </view>
         <text class="action-count {{post.isLiked?'action-label--liked':''}}">{{post.likeCount || '点赞'}}
         </text>
       </view>
       <view class="action-item" catchtap="onComment">
-        <image class="action-icon" src="/images/comment.svg"/>
+        <image class="action-icon" src="/images/interact/comment.svg" />
         <text class="action-count">{{post.commentCount || '评论'}}</text>
       </view>
       <view class="action-item" catchtap="onShare">
-        <image class="action-icon" src="/images/share.svg"/>
+        <image class="action-icon" src="/images/interact/share.svg" />
         <text class="action-count">分享</text>
       </view>
     </view>
@@ -87,8 +91,22 @@
 
   <!-- ===== 评论区：comment-panel inline 模式 ===== -->
   <view class="comment-wrap">
-    <comment-panel id="post-detail-comment-panel" mode="inline" target-id="{{currentPostId}}" target-type="post" total-count="{{currentCommentCount}}"
-      bind:count-change="onCommentCountChange" /> 
+    <comment-panel id="post-detail-comment-panel" mode="inline" target-id="{{targetId}}" target-type="{{targetType}}"
+      total-count="{{currentCommentCount}}" bind:countchange="onCommentCountChange" bind:report="onCommentReport" />
   </view>
 
 </view>
+
+<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}"
+  z-index="999" bind:leave="onPopupLeave">
+  <!-- share弹窗 -->
+  <share-panel wx:if="{{popupType==='share'}}" share-path="{{currentSharePath}}"
+    share-image-path="{{currentShareImage}}" bind:close="onShareClose" />
+  <!-- report弹窗 -->
+  <report-panel wx:elif="{{popupType === 'report'}}" target-type="{{reportTargetType}}" target-id="{{reportTargetId}}"
+    bind:close="onCloseReport" />
+</page-container>
+
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px;"></canvas>
+
+<in-app-banner />

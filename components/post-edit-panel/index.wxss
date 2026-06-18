@@ -6,16 +6,15 @@
   inset: 0;
   z-index: 999;
   /* 不设背景色，让 .mask 单独控制遮罩 */
-  pointer-events: none;
   /* 根容器本身不拦截，子元素各自处理 */
 }
 
 /* ── 遮罩 ───────────────────────────────── */
 .mask {
-  position: absolute;
+  position: fixed;
+  /* absolute 改 fixed 更保险 */
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  pointer-events: auto;
 }
 
 .panel {
@@ -32,8 +31,7 @@
   -webkit-backdrop-filter: blur(40rpx) saturate(1.8);
   padding: 0 0 0;
   /* 顶部柔光描边 */
-  box-shadow:
-    0 -1rpx 0 rgba(255, 255, 255, 0.9),
+  box-shadow: 0 -1rpx 0 rgba(255, 255, 255, 0.9),
     0 -24rpx 80rpx rgba(0, 0, 0, 0.12);
   border-radius: 24rpx 24rpx 0 0;
   will-change: transform;
@@ -85,7 +83,7 @@
 .panel__submit {
   padding: 12rpx 32rpx;
   border-radius: 30rpx;
-  background: #D0D0D0;
+  background: #d0d0d0;
   transition: background 0.2s;
 }
 
@@ -107,27 +105,43 @@
   /* 修复某些机型 flex 子项不收缩导致 scroll-view 撑不开的问题 */
 }
 
-/* ── 正文输入 ───────────────────────────── */
+/* content-area 不再负责 padding */
 .content-area {
-  padding: 28rpx 28rpx 0;
-  /* 不设 position relative，避免 count 覆盖 textarea */
+  position: relative;
+  min-height: 144rpx;
+  width: 100%;
 }
 
-.content-input {
-  /*
-   * width: 100% 在小程序 textarea 里要配合 box-sizing 才准确，
-   * 这里直接撑满父容器即可，不额外设 padding。
-   * placeholder 对齐：不设 line-height（让系统默认），font-size 与 ph 一致。
-   */
+/* 镜像层：padding / font / line-height 与 textarea 完全镜像 */
+.mirror-text {
+  visibility: hidden;
+  white-space: pre-wrap;
+  word-break: break-all;
+
+  padding: 28rpx 28rpx 45rpx; /* ← 与 textarea 完全一致 */
+  font-size: 32rpx; /* ← 统一用 rpx */
+  line-height: 48rpx; /* ← 统一用 rpx */
+
   width: 100%;
-  min-height: 160rpx;
-  font-size: 32rpx;
-  color: var(--color-text-primary);
-  line-height: 1.6;
-  /* 关键：去掉任何会让光标偏移的 padding/margin */
-  padding: 0;
-  margin: 0;
   box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* textarea：padding / font / line-height 与镜像层完全一致 */
+.content-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  padding: 28rpx 28rpx 45rpx; /* ← 与镜像层完全一致 */
+  font-size: 32rpx; /* ← 统一用 rpx */
+  line-height: 48rpx; /* ← 统一用 rpx */
+
+  box-sizing: border-box;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 /* placeholder 样式必须与 .content-input 的 font-size / line-height 完全一致，
@@ -138,14 +152,20 @@
   line-height: 1.6;
 }
 
-/* 字数独立在 textarea 下方，绝对不会盖住输入内容 */
+.content-count-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .content-count {
-  display: block;
-  text-align: right;
-  font-size: 22rpx;
-  color: #ccc;
-  margin-top: 8rpx;
-  padding-right: 4rpx;
+  font-size: 24rpx;
+  color: #999;
+  /* 如果想悬浮在输入框右下角且不随滚动条走，可以用以下绝对定位： */
+  position: absolute;
+  bottom: 50rpx;
+  right: 35rpx;
+  z-index: 9;
+  background: rgba(255, 255, 255, 0.9); /* 微弱遮罩，增加可读性 */
 }
 
 /* ── 图片区 ────────────────────────────── */
@@ -208,15 +228,15 @@
 /* 添加按钮：复用 .image-item 尺寸，内容居中 */
 .image-add {
   border-radius: 12rpx;
-  border: 2rpx dashed #D0D0D0;
-  background: #F8F9FA;
+  border: 2rpx dashed #d0d0d0;
+  background: #f8f9fa;
   /* 内容居中：绝对定位一个 flex 容器铺满 */
   overflow: hidden;
 }
 
 /* 添加按钮内部用绝对定位居中 */
 .image-add::after {
-  content: '';
+  content: "";
   /* 不能用伪元素放文字，用 wxml 里的两个 text 即可，
      这里只做背景装饰无内容 */
 }

@@ -1,3 +1,5 @@
 {
-  "usingComponents": {}
+  "usingComponents": {
+    "activity-card": "/components/activity-card/index"
+  }
 }

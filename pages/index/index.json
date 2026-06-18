@@ -3,7 +3,10 @@
     "comment-panel": "/components/comment-panel/index",
     "post-card": "/components/post-card/index",
     "post-edit-panel": "/components/post-edit-panel/index",
-    "share-panel":"/components/share-panel/index"
+    "share-panel":"/components/share-panel/index",
+    "report-panel": "/components/report-panel/index",
+    "post-card-skeleton": "/components/post-card-skeleton/index"
   },
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 300
 }

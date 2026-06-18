@@ -1,10 +1,11 @@
 <!-- share-popup.wxml -->
+<wxs module="drag" src="../../utils/drag.wxs"></wxs>
 <view class="sp-root">
-  <view class="sp-mask" style="opacity: {{maskOpacity}}; transition: {{maskTransition}};"
+  <view class="sp-mask J-mask" style="opacity: {{maskOpacity}}; transition: {{maskTransition}};"
     bind:tap="onClose" />
 
-  <view class="sp-sheet" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
-    catchtouchmove="onHandleTouchMove"
+  <view class="sp-sheet J-sheet" bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
+    catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}"
     style="transform: translateY({{sheetTranslateY}}px); transition: {{sheetTransition}};">
 
     <!-- 顶部拖拽条 -->
@@ -16,7 +17,8 @@
     <view class="sp-header">
       <view class="sp-header__deco"></view>
       <text class="sp-header__title">分享给朋友</text>
-      <view class="sp-close tap-active" bindtap="onClose">
+      <view class="sp-close tap-active" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
+        catch:touchend="{{drag.handleClose}}">
         <text class="sp-close__icon">✕</text>
       </view>
     </view>
@@ -72,17 +74,18 @@
       </button>
 
       <!-- 复制链接 -->
-      <view class="sp-option tap-active" bindtap="onCopyLink">
+      <!-- <view class="sp-option tap-active" bindtap="onCopyLink">
         <view class="sp-option__icon-wrap sp-option__icon-wrap--blue">
           <text class="sp-option__emoji">🔗</text>
         </view>
         <text class="sp-option__label">复制链接</text>
-      </view>
+      </view> -->
 
     </view>
 
     <!-- 底部取消 -->
-    <view class="sp-cancel tap-active" bindtap="onClose">
+    <view class="sp-cancel tap-active" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
+        catch:touchend="{{drag.handleClose}}">
       <text class="sp-cancel__text">取消</text>
     </view>
 

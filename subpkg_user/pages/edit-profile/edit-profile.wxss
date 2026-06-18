@@ -143,8 +143,9 @@ page {
 }
 
 .banner-mask__icon {
-  font-size: 52rpx;
-  line-height: 1;
+  width: 84rpx;
+  height: 84rpx;
+  margin-bottom: 8rpx;
 }
 
 .banner-mask__text {
@@ -199,8 +200,8 @@ page {
 }
 
 .avatar-mask__icon {
-  font-size: 44rpx;
-  line-height: 1;
+  width: 68rpx;
+  height: 68rpx;
 }
 
 /* =====================================================

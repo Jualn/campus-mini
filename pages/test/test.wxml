@@ -1,4 +1,557 @@
-<view class="canvas-container">
+<!-- <view class="canvas-container">
   <canvas type="2d" id="posterCanvas" style="margin-top: 200px; margin-left: 70px; width: 500rpx; height: 400rpx;"></canvas>
 </view>
 <button type="primary" bindtap="onTapShare" style="margin-top: 20px;">生成分享卡片</button>
+
+<view style="height: 100rpx;">
+  <textarea style="height: 150rpx;" placeholder="fff">
+
+</textarea>
+</view> -->
+
+<view id="page-root" class="page">
+  <view class="hero glass-card">
+    <view class="hero-top">
+      <view>
+        <view class="hero-title">发布活动</view>
+        <view class="hero-subtitle">上传活动文件，AI 按字段顺序辅助填写</view>
+      </view>
+      <view class="hero-badge">AI</view>
+    </view>
+
+<view wx:if="{{aiStatus.phase === 'filling' && aiStatus.activeLabel}}" class="ai-floating-tip">
+  <view class="ai-floating-dot"></view>
+  <text>AI 正在填写：{{aiStatus.activeLabel}}</text>
+</view>
+
+    <view class="ai-status-card {{aiStatus.phase}}">
+      <view class="ai-status-main">
+        <view class="ai-dot"></view>
+        <view class="ai-text-wrap">
+          <view class="ai-text">{{aiStatus.text}}</view>
+          <view wx:if="{{aiStatus.activeSubText}}" class="ai-sub-text">
+            {{aiStatus.activeSubText}}
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{aiStatus.phase === 'thinking'}}" class="thinking-bar">
+        <view class="thinking-bar-inner"></view>
+      </view>
+
+      <view wx:if="{{aiStatus.phase === 'filling' && aiStatus.activeLabel}}" class="active-fill-tip">
+        当前正在填写：{{aiStatus.activeLabel}}，请暂时不要操作该字段
+      </view>
+
+      <view class="ai-note">
+        AI 填写时会自动跳过你已填写的内容，不会覆盖你的手动输入。
+      </view>
+    </view>
+    
+    <view wx:if="{{!aiFile}}" class="upload-card ai-upload-card" bindtap="chooseAiFile">
+      <view class="upload-icon">＋</view>
+      <view class="upload-title">上传活动文件</view>
+      <view class="upload-desc">仅支持 PDF / DOC / DOCX，最多上传 1 个文件</view>
+    </view>
+
+    <view wx:else class="file-card">
+      <view class="file-badge">{{aiFile.ext}}</view>
+      <view class="file-main">
+        <view class="file-name">{{aiFile.name}}</view>
+        <view class="file-meta">{{aiFile.sizeText}} · 用于 AI 识别活动字段</view>
+        <view class="file-actions">
+          <text bindtap="previewAiFile">预览</text>
+          <text bindtap="chooseAiFile">替换</text>
+          <text class="danger-text" bindtap="removeAiFile">删除</text>
+        </view>
+      </view>
+    </view>
+
+    <button class="primary-btn" bindtap="startAiFill">AI 识别并填写</button>
+  </view>
+
+  <!-- 1 title -->
+  <view id="field-title" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动标题</view>
+        <view class="section-desc">title</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'title' ? 'ai-active' : ''}}">
+      <input
+        value="{{form.title}}"
+        data-field="title"
+        bindinput="onTextInput"
+        disabled="{{aiStatus.activeField === 'title'}}"
+        placeholder="请输入活动标题"
+      />
+    </view>
+  </view>
+
+  <!-- 2 category -->
+  <view id="field-category" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动分类</view>
+        <view class="section-desc">category</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'category' ? 'ai-active' : ''}}">
+      <picker
+        mode="selector"
+        range="{{categoryOptions}}"
+        range-key="label"
+        value="{{categoryIndex}}"
+        bindchange="onCategoryChange"
+        disabled="{{aiStatus.activeField === 'category'}}"
+      >
+        <view class="picker-value">
+          {{categoryOptions[categoryIndex].label}}
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 3 organizer -->
+  <view id="field-organizer" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">主办/承办单位</view>
+        <view class="section-desc">organizer</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'organizer' ? 'ai-active' : ''}}">
+      <input
+        value="{{form.organizer}}"
+        data-field="organizer"
+        bindinput="onTextInput"
+        disabled="{{aiStatus.activeField === 'organizer'}}"
+        placeholder="请输入主办或承办单位"
+      />
+    </view>
+  </view>
+
+  <!-- 4 audience_scope -->
+  <view id="field-audience_scope" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">参与范围</view>
+        <view class="section-desc">audience_scope</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'audience_scope' ? 'ai-active' : ''}}">
+      <view class="label-row">
+        <text class="mini-label">选择范围</text>
+        <text class="field-tip">选择“全院”后无需选择其他学院</text>
+      </view>
+
+      <view class="chip-wrap">
+        <view
+          wx:for="{{audienceOptions}}"
+          wx:key="bit"
+          data-bit="{{item.bit}}"
+          bindtap="onToggleAudience"
+          class="scope-chip {{item.selected ? 'selected' : ''}} {{item.bit === 0 ? 'full' : ''}}"
+        >
+          {{item.label}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 5 start_time -->
+  <view id="field-start_time" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动开始时间</view>
+        <view class="section-desc">start_time</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'start_time' ? 'ai-active' : ''}}">
+      <view class="time-value">{{form.start_time || '请选择活动开始时间'}}</view>
+      <view class="time-picker-row">
+        <picker mode="date" value="{{today}}" data-field="start_time" bindchange="onFormDateChange" disabled="{{aiStatus.activeField === 'start_time'}}">
+          <view class="time-picker-btn">选择日期</view>
+        </picker>
+        <picker mode="time" data-field="start_time" bindchange="onFormTimeChange" disabled="{{aiStatus.activeField === 'start_time'}}">
+          <view class="time-picker-btn">选择时间</view>
+        </picker>
+      </view>
+    </view>
+  </view>
+
+  <!-- 6 end_time -->
+  <view id="field-end_time" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动结束时间</view>
+        <view class="section-desc">end_time</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'end_time' ? 'ai-active' : ''}}">
+      <view class="time-value">{{form.end_time || '请选择活动结束时间'}}</view>
+      <view class="time-picker-row">
+        <picker mode="date" value="{{today}}" data-field="end_time" bindchange="onFormDateChange" disabled="{{aiStatus.activeField === 'end_time'}}">
+          <view class="time-picker-btn">选择日期</view>
+        </picker>
+        <picker mode="time" data-field="end_time" bindchange="onFormTimeChange" disabled="{{aiStatus.activeField === 'end_time'}}">
+          <view class="time-picker-btn">选择时间</view>
+        </picker>
+      </view>
+    </view>
+  </view>
+
+  <!-- 7 enroll_deadline -->
+  <view id="field-enroll_deadline" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">报名截止时间</view>
+        <view class="section-desc">enroll_deadline</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'enroll_deadline' ? 'ai-active' : ''}}">
+      <view class="time-value">{{form.enroll_deadline || '可不填写'}}</view>
+      <view class="time-picker-row">
+        <picker mode="date" value="{{today}}" data-field="enroll_deadline" bindchange="onFormDateChange" disabled="{{aiStatus.activeField === 'enroll_deadline'}}">
+          <view class="time-picker-btn">选择日期</view>
+        </picker>
+        <picker mode="time" data-field="enroll_deadline" bindchange="onFormTimeChange" disabled="{{aiStatus.activeField === 'enroll_deadline'}}">
+          <view class="time-picker-btn">选择时间</view>
+        </picker>
+      </view>
+    </view>
+  </view>
+
+  <!-- 8 max_participants -->
+  <view id="field-max_participants" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">最大参与人数</view>
+        <view class="section-desc">max_participants</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'max_participants' ? 'ai-active' : ''}}">
+      <input
+        type="number"
+        value="{{form.max_participants}}"
+        data-field="max_participants"
+        bindinput="onTextInput"
+        disabled="{{aiStatus.activeField === 'max_participants'}}"
+        placeholder="不填表示不限"
+      />
+    </view>
+  </view>
+
+  <!-- 9 location -->
+  <view id="field-location" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动地点</view>
+        <view class="section-desc">location</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'location' ? 'ai-active' : ''}}">
+      <input
+        value="{{form.location}}"
+        data-field="location"
+        bindinput="onTextInput"
+        disabled="{{aiStatus.activeField === 'location'}}"
+        placeholder="请输入活动地点"
+      />
+    </view>
+  </view>
+
+  <!-- 10 join_method -->
+  <view id="field-join_method" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">参与方式</view>
+        <view class="section-desc">join_method</view>
+      </view>
+    </view>
+
+    <view class="form-item {{aiStatus.activeField === 'join_method' ? 'ai-active' : ''}}">
+      <input
+        value="{{form.join_method}}"
+        data-field="join_method"
+        bindinput="onTextInput"
+        disabled="{{aiStatus.activeField === 'join_method'}}"
+        placeholder="如：扫描下方二维码加群"
+      />
+    </view>
+  </view>
+
+  <!-- qrcode_url，不参与 AI 填写 -->
+  <view class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">报名二维码</view>
+        <view class="section-desc">qrcode_url，由用户上传图片后生成 COS URL</view>
+      </view>
+    </view>
+
+    <view wx:if="{{!qrcodeImage}}" class="upload-card" bindtap="chooseQrcodeImage">
+      <view class="upload-icon">＋</view>
+      <view class="upload-title">上传二维码图片</view>
+      <view class="upload-desc">上传成功后写入 qrcode_url</view>
+    </view>
+
+    <view wx:else class="qrcode-preview-card">
+      <image
+        class="qrcode-img"
+        src="{{qrcodeImage.previewUrl}}"
+        mode="aspectFill"
+        bindtap="previewQrcode"
+      />
+
+      <view class="qrcode-info">
+        <view class="upload-title">二维码已选择</view>
+        <view class="upload-desc">
+          {{qrcodeImage.status === 'uploaded' ? '已上传 COS' : '等待上传 COS'}}
+        </view>
+        <view class="inline-actions">
+          <text bindtap="chooseQrcodeImage">重新选择</text>
+          <text class="danger-text" bindtap="removeQrcode">删除</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 11 contact_info -->
+  <view id="field-contact_info" class="section glass-card {{aiStatus.activeField === 'contact_info' ? 'ai-active-soft' : ''}}">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">联系人</view>
+        <view class="section-desc">contact_info</view>
+      </view>
+      <button class="mini-btn" bindtap="addContact" disabled="{{aiStatus.activeField === 'contact_info'}}">添加</button>
+    </view>
+
+    <view
+      wx:for="{{form.contact_info}}"
+      wx:key="index"
+      id="contact-card-{{index}}"
+      class="contact-card"
+    >
+      <view class="contact-header" data-index="{{index}}" bindtap="toggleContactExpand">
+        <view class="contact-main">
+          <view class="contact-title">联系人 {{index + 1}}</view>
+          <view class="contact-summary">
+            {{item.name || '未填写姓名'}}{{item.phone ? ' · ' + item.phone : ''}}
+          </view>
+        </view>
+
+        <view class="inline-actions">
+          <text>{{item.expanded ? '收起' : '展开'}}</text>
+          <text
+            class="danger-text"
+            data-index="{{index}}"
+            catchtap="removeContact"
+          >
+            删除
+          </text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.expanded}}" class="contact-body">
+        <view class="two-col">
+          <view class="mini-form-item">
+            <text class="mini-label">姓名</text>
+            <input
+              value="{{item.name}}"
+              data-index="{{index}}"
+              data-key="name"
+              bindinput="onContactInput"
+              disabled="{{aiStatus.activeField === 'contact_info'}}"
+              placeholder="联系人姓名"
+            />
+          </view>
+
+          <view class="mini-form-item">
+            <text class="mini-label">电话</text>
+            <input
+              value="{{item.phone}}"
+              data-index="{{index}}"
+              data-key="phone"
+              bindinput="onContactInput"
+              disabled="{{aiStatus.activeField === 'contact_info'}}"
+              placeholder="联系电话"
+            />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{!form.contact_info.length}}" class="empty-card">
+      暂无联系人，可手动添加或等待 AI 自动识别
+    </view>
+  </view>
+
+  <!-- 12 timelineItems -->
+  <view id="field-timelineItems" class="section glass-card {{aiStatus.activeField === 'timelineItems' ? 'ai-active-soft' : ''}}">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动时间线</view>
+        <view class="section-desc">timelineItems</view>
+      </view>
+      <button class="mini-btn" bindtap="addTimelineNode" disabled="{{aiStatus.activeField === 'timelineItems'}}">添加节点</button>
+    </view>
+
+    <view
+      wx:for="{{form.timeline}}"
+      wx:key="index"
+      id="timeline-card-{{index}}"
+      class="timeline-card"
+    >
+      <view class="timeline-header" data-index="{{index}}" bindtap="toggleTimelineExpand">
+        <view class="timeline-dot"></view>
+
+        <view class="timeline-main">
+          <view class="timeline-title">
+            {{item.label || '未命名节点'}}
+          </view>
+          <view class="timeline-summary">
+            {{item.start_time || '未选择时间'}}
+          </view>
+        </view>
+
+        <view class="inline-actions">
+          <text>{{item.expanded ? '收起' : '展开'}}</text>
+          <text
+            class="danger-text"
+            data-index="{{index}}"
+            catchtap="removeTimelineNode"
+          >
+            删除
+          </text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.expanded}}" class="timeline-body">
+        <view class="mini-form-item">
+          <text class="mini-label">节点名称</text>
+          <input
+            value="{{item.label}}"
+            data-index="{{index}}"
+            data-key="label"
+            bindinput="onTimelineInput"
+            disabled="{{aiStatus.activeField === 'timelineItems'}}"
+            placeholder="如：报名截止、初赛、成绩公布"
+          />
+        </view>
+
+        <view class="mini-form-item">
+          <text class="mini-label">补充说明</text>
+          <textarea
+            value="{{item.description}}"
+            data-index="{{index}}"
+            data-key="description"
+            bindinput="onTimelineInput"
+            disabled="{{aiStatus.activeField === 'timelineItems'}}"
+            auto-height
+            maxlength="-1"
+            placeholder="填写节点说明"
+          />
+        </view>
+
+        <view class="mini-form-item">
+          <text class="mini-label">开始时间</text>
+          <view class="time-value small">{{item.start_time || '请选择开始时间'}}</view>
+          <view class="time-picker-row">
+            <picker mode="date" value="{{today}}" data-index="{{index}}" data-key="start_time" bindchange="onTimelineDateChange" disabled="{{aiStatus.activeField === 'timelineItems'}}">
+              <view class="time-picker-btn">选择日期</view>
+            </picker>
+            <picker mode="time" data-index="{{index}}" data-key="start_time" bindchange="onTimelineTimeChange" disabled="{{aiStatus.activeField === 'timelineItems'}}">
+              <view class="time-picker-btn">选择时间</view>
+            </picker>
+          </view>
+        </view>
+
+        <view class="mini-form-item">
+          <text class="mini-label">结束时间</text>
+          <view class="time-value small">{{item.end_time || '单点时间可不填'}}</view>
+          <view class="time-picker-row">
+            <picker mode="date" value="{{today}}" data-index="{{index}}" data-key="end_time" bindchange="onTimelineDateChange" disabled="{{aiStatus.activeField === 'timelineItems'}}">
+              <view class="time-picker-btn">选择日期</view>
+            </picker>
+            <picker mode="time" data-index="{{index}}" data-key="end_time" bindchange="onTimelineTimeChange" disabled="{{aiStatus.activeField === 'timelineItems'}}">
+              <view class="time-picker-btn">选择时间</view>
+            </picker>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{!form.timeline.length}}" class="empty-card">
+      暂无时间节点，可手动添加或等待 AI 自动识别
+    </view>
+  </view>
+
+  <!-- 13 content -->
+  <view id="field-content" class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动详情</view>
+        <view class="section-desc">content，AI 会最后逐段追加</view>
+      </view>
+    </view>
+
+    <view class="form-item content-item {{aiStatus.activeField === 'content' ? 'ai-active' : ''}}">
+      <textarea
+        class="content-textarea"
+        value="{{form.content}}"
+        data-field="content"
+        bindinput="onContentInput"
+        disabled="{{aiStatus.activeField === 'content'}}"
+        auto-height
+        maxlength="-1"
+        placeholder="请输入活动详情，支持长文本"
+      />
+      <!-- 关键：content 尾部锚点 -->
+    <view id="content-tail-anchor" class="content-tail-anchor"></view>
+    </view>
+  </view>
+
+  <!-- 附件上传，不参与 AI 填写 -->
+  <view class="section glass-card">
+    <view class="section-title-row">
+      <view>
+        <view class="section-title">活动附件</view>
+        <view class="section-desc">支持 PDF / DOC / DOCX，最多 1 个，可预览</view>
+      </view>
+    </view>
+
+    <view wx:if="{{!attachmentFile}}" class="upload-card" bindtap="chooseAttachmentFile">
+      <view class="upload-icon">＋</view>
+      <view class="upload-title">上传活动附件</view>
+      <view class="upload-desc">发布后展示给用户查看</view>
+    </view>
+
+    <view wx:else class="file-card">
+      <view class="file-badge">{{attachmentFile.ext}}</view>
+      <view class="file-main">
+        <view class="file-name">{{attachmentFile.name}}</view>
+        <view class="file-meta">
+          {{attachmentFile.sizeText}} · {{attachmentFile.status === 'uploaded' ? '已上传' : '本地已选择，待上传'}}
+        </view>
+        <view class="file-actions">
+          <text bindtap="previewAttachment">预览</text>
+          <text bindtap="chooseAttachmentFile">替换</text>
+          <text class="danger-text" bindtap="removeAttachment">删除</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <button class="submit-btn" bindtap="submitActivity">发布活动</button>
+</view>

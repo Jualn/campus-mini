@@ -1,9 +1,14 @@
 {
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
   "usingComponents": {
     "user-profile": "/components/user-profile/index",
     "post-card": "/components/post-card/index",
-    "comment-panel":"/components/comment-panel/index"
+    "comment-panel": "/components/comment-panel/index",
+    "report-panel": "/components/report-panel/index",
+    "share-panel": "/components/share-panel/index",
+    "profile-feed-skeleton": "/components/profile-feed-skeleton/index",
+    "post-card-skeleton": "/components/post-card-skeleton/index"
   }
 }

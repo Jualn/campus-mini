@@ -3,24 +3,27 @@
   组件自己全权管理遮罩 + 面板动画，父页面只需控制 show prop。
   page-container 设 overlay="{{false}}"，由组件内的 .mask 接管遮罩。
 -->
-<view class="root">
+<wxs module="drag" src="../../utils/drag.wxs"></wxs>
+<view class="root" catch:touchmove="noop">
 
   <!-- 遮罩：opacity 跟手，点击关闭 -->
-  <view class="mask" style="opacity: {{maskOpacity}}; transition: {{maskTransition}};" catchtap="onClose" />
+  <view class="mask J-mask" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
+    catch:touchend="{{drag.handleClose}}" catchtouchmove="noop" />
 
   <!-- 面板：translateY 跟手 -->
-  <view class="panel" style="transform: translateY({{sheetTranslateY}}px); transition: {{sheetTransition}};">
+  <view class="panel J-sheet">
 
     <!-- 拖拽指示条 -->
-    <view class="panel__handle-area" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
-      catchtouchmove="onHandleTouchMove">
+    <view class="panel__handle-area" bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
+      catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}">
       <view class="panel__handle" />
     </view>
 
     <!-- 顶部栏 -->
-    <view class="panel__nav" bindtouchstart="onHandleTouchStart" bindtouchend="onHandleTouchEnd"
-      catchtouchmove="onHandleTouchMove">
-      <view class="panel__cancel" catchtap="onClose">
+    <view class="panel__nav" bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
+      catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}">
+      <view class="panel__cancel" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
+        catch:touchend="{{drag.handleClose}}" catchtouchmove="noop">
         <text class="panel__cancel-text">取消</text>
       </view>
       <text class="panel__title">发帖子</text>
@@ -30,14 +33,23 @@
     </view>
 
     <!-- 内容区 -->
-    <scroll-view class="panel__body" scroll-y enhanced bounces="{{false}}" show-scrollbar="{{false}}" catch:touchmove="noop">
+    <scroll-view class="panel__body" scroll-y enhanced bounces="{{false}}" show-scrollbar="{{false}}"
+      upper-threshold="15" bindtouchstart="{{drag.scrollStart}}" bindtouchmove="{{drag.scrollMove}}"
+      bindtouchend="{{drag.scrollEnd}}" data-panel-h="{{panelHeight}}" data-at-top="{{atScrollTop}}"
+      style="padding-bottom: {{kbHeight}}px;">
 
       <!-- 正文输入 -->
       <view class="content-area">
-        <textarea class="content-input" value="{{content}}" placeholder="分享你的想法..." placeholder-class="content-ph"
-          maxlength="1000" auto-height show-confirm-bar="{{false}}" adjust-position="{{false}}" cursor-spacing="20"
+        <!-- 镜像层：不可见但占空间，驱动容器高度（纯渲染，无 JS） -->
+        <view class="mirror-text">{{mirrorContent}}</view>
+        <textarea class="content-input" placeholder="分享你的想法..." placeholder-class="content-ph"
+          bindkeyboardheightchange="onKeyboardHeightChange" bindfocus="onTextareaFocus" bindblur="onTextareaBlur"
+          maxlength="700" show-confirm-bar="{{false}}" adjust-position="{{false}}" cursor-spacing="20"
           bindinput="onContentInput" focus="{{focused}}" />
-        <text class="content-count" wx:if="{{content.length > 0}}">{{content.length}}/1000</text>
+        <!-- 计数器放在这里，确保它在 input 区域内但不会随文字滚动 -->
+        <view class="content-count-wrapper">
+          <text class="content-count" wx:if="{{contentLength > 0}}">{{contentLength}}/700</text>
+        </view>
       </view>
 
       <!-- 图片区 -->
@@ -56,7 +68,7 @@
         </view>
       </view>
 
-      <view class="body-pad" />
+      <view class="body-pad" catch:touchmove="noop" />
     </scroll-view>
 
   </view>

@@ -17,12 +17,16 @@
 
     <!-- 头像 + 操作按钮行 -->
     <view class="avatar-action-row">
-      <image class="profile-avatar" src="{{userInfo.avatar}}" mode="aspectFill" />
+
+      <view class="profile-avatar" style="background:{{avatarBg}}">
+        <image wx:if="{{userInfo.avatarUrl}}" class="avatar__img" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="avatar__char">{{avatarChar}}</text>
+      </view>
       <view class="action-btns">
         <!-- 自己：设置 + 编辑资料 -->
         <block wx:if="{{isSelf}}">
-          <view class="btn-icon" bindtap="onGoSetting">
-            <text class="btn-icon__text">⚙️</text>
+          <view class="btn-icon__wrap" bindtap="onGoSetting">
+            <image class="btn-icon" src="/images/icons/setting.svg" mode="aspectFit" />
           </view>
           <view class="btn-outline" bindtap="onEditProfile">
             <text class="btn-text">编辑资料</text>
@@ -33,9 +37,9 @@
           <view class="btn-icon" bindtap="onMore">
             <text class="btn-icon__more">···</text>
           </view>
-          <view class="btn-fill {{isFollowing ? 'btn-fill--grey' : ''}}" bindtap="onToggleFollow">
+          <!-- <view class="btn-fill {{isFollowing ? 'btn-fill--grey' : ''}}" bindtap="onToggleFollow">
             <text class="btn-fill__text">{{isFollowing ? '已关注' : '关注'}}</text>
-          </view>
+          </view> -->
         </block>
       </view>
     </view>
@@ -52,7 +56,10 @@
 
     <!-- 元信息 -->
     <view class="meta-row">
-      <text class="meta-item" wx:if="{{userInfo.joinYear}}">📅 {{userInfo.joinYear}}年加入</text>
+      <view class="meta-tag" wx:if="{{userInfo.joinYear}}">
+        <image class="meta-tag__icon" src="/images/icons/join_time_tag.svg" mode="aspectFit" />
+        <text class="meta-tag__text">{{userInfo.joinYear}}加入</text>
+      </view>
     </view>
 
     <!-- 关注统计 -->

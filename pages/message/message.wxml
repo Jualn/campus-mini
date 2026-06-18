@@ -1,218 +1,188 @@
 <!-- pages/message/index.wxml -->
 <view class="message-page">
-
   <!-- 顶部导航 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
-    <view class="top-bar__nav">
-      <text class="top-bar__title">消息</text>
-      <view class="top-bar__actions">
-        <view class="top-bar__read-all" bindtap="onMarkAllRead"
-          wx:if="{{activeTab==='notification' && unreadCount > 0}}">
+    <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; min-height: {{navHeight}}px;">
+      <view class="top-bar__tools" wx:if="{{unreadCount > 0}}">
+        <view class="top-bar__read-all" hover-class="top-bar__read-all--hover" hover-stay-time="80" bindtap="onMarkAllRead">
           <text class="top-bar__read-all-text">全部已读</text>
+        </view>
+      </view>
+
+      <view class="top-bar__title-group">
+        <text class="top-bar__title">消息中心</text>
+        <view class="top-bar__count" wx:if="{{unreadCount > 0}}">
+          <text class="top-bar__count-text">{{unreadCount > 99 ? '99+' : unreadCount}}</text>
         </view>
       </view>
     </view>
 
-    <!-- Tab -->
-    <view class="msg-tabs">
-      <view class="msg-tab {{activeTab==='notification'?'msg-tab--active':''}}" bindtap="onSwitchTab"
-        data-tab="notification">
-        <text class="msg-tab__text">通知</text>
-        <view class="msg-tab__badge" wx:if="{{unreadCount > 0}}">
-          <text class="msg-tab__badge-text">{{unreadCount > 99 ? '99+' : unreadCount}}</text>
+    <view class="message-summary">
+      <view class="message-summary__main">
+        <text class="message-summary__title">{{unreadCount > 0 ? '还有 ' + unreadCount + ' 条消息待处理' : '当前没有未读消息'}}</text>
+        <text class="message-summary__desc">{{isRefreshing ? '正在同步最新消息…' : (totalCount > 0 ? '共 ' + totalCount + ' 条消息，点击消息后自动标记已读' : '新消息会在这里集中展示')}}</text>
+      </view>
+      <view class="message-summary__status {{unreadCount > 0 ? 'message-summary__status--active' : ''}}">
+        <text class="message-summary__status-text">{{unreadCount > 0 ? '未读' : '已清空'}}</text>
+      </view>
+    </view>
+
+    <!-- 分类筛选 -->
+    <scroll-view class="filter-scroll" scroll-x enhanced show-scrollbar="{{false}}" scroll-with-animation>
+      <view class="filter-tabs">
+        <view
+          wx:for="{{filterTabs}}"
+          wx:key="id"
+          class="filter-tab {{activeFilter===item.id?'filter-tab--active':''}}"
+          hover-class="filter-tab--hover"
+          hover-stay-time="80"
+          bindtap="onSwitchFilter"
+          data-id="{{item.id}}"
+        >
+          <!-- <image class="message-icon" src="{{item.icon}}" mode="aspectFit" /> -->
+          <image class="filter-tab__icon" src="{{item.icon}}" mode="aspectFit" />
+          <text class="filter-tab__label">{{item.label}}</text>
+          <view class="filter-tab__badge" wx:if="{{item.count > 0}}">
+            <text class="filter-tab__badge-text">{{item.count > 99 ? '99+' : item.count}}</text>
+          </view>
         </view>
       </view>
-      <view class="msg-tab {{activeTab==='dm'?'msg-tab--active':''}}" bindtap="onSwitchTab" data-tab="dm">
-        <text class="msg-tab__text">私信</text>
-        <view class="msg-tab__badge" wx:if="{{dmUnreadCount > 0}}">
-          <text class="msg-tab__badge-text">{{dmUnreadCount > 99 ? '99+' : dmUnreadCount}}</text>
-        </view>
+    </scroll-view>
+  </view>
+
+  <!-- 首屏骨架屏 -->
+  <view class="skeleton-list" wx:if="{{isLoading && !allMessages.length}}">
+    <view wx:for="{{skeletonRows}}" wx:key="*this" class="skeleton-card">
+      <view class="skeleton-card__icon"></view>
+      <view class="skeleton-card__body">
+        <view class="skeleton-line skeleton-line--sm"></view>
+        <view class="skeleton-line skeleton-line--lg"></view>
+        <view class="skeleton-line skeleton-line--md"></view>
       </view>
     </view>
   </view>
 
-  <!-- ========== 通知 Tab ========== -->
-  <block wx:if="{{activeTab==='notification'}}">
-
-    <!-- 分类筛选 -->
-    <scroll-view class="filter-scroll" scroll-x enable-flex>
-      <view wx:for="{{filterTabs}}" wx:key="id" class="filter-tab {{activeFilter===item.id?'filter-tab--active':''}}"
-        bindtap="onSwitchFilter" data-id="{{item.id}}">
-        <text class="filter-tab__icon">{{item.icon}}</text>
-        <text class="filter-tab__label">{{item.label}}</text>
+  <!-- 消息列表 -->
+  <view class="msg-list" wx:elif="{{groupedMessages.length}}">
+    <!-- 待处理分区：未读或紧急 -->
+    <block wx:if="{{urgentMessages.length}}">
+      <view class="section-label">
+        <text class="section-label__text">待处理</text>
+        <text class="section-label__count">{{urgentMessages.length}} 条</text>
       </view>
-    </scroll-view>
-
-    <!-- 消息列表 -->
-    <view class="msg-list" wx:if="{{groupedMessages.length}}">
-
-      <!-- 待处理分区（有未读或紧急） -->
-      <view wx:if="{{urgentMessages.length}}">
-        <view class="section-label">
-          <text class="section-label__text">待处理</text>
-        </view>
-        <view wx:for="{{urgentMessages}}" wx:key="id">
-          <!-- 分组互动卡 -->
-          <block wx:if="{{item._isGroup}}">
-            <view class="msg-card msg-card--grouped" bindtap="onTapGroupedMessage"
-              data-target-type="{{item.targetType}}" data-target-id="{{item.targetId}}">
-              <view class="grouped-header">
-                <view class="grouped-header__left">
-                  <view class="msg-icon-wrap msg-icon-wrap--{{item.type}}">
-                    <text class="msg-icon">{{item.icon}}</text>
-                  </view>
-                  <text class="grouped-header__title">{{item.groupTitle}}</text>
-                  <view class="grouped-count">
-                    <text class="grouped-count__text">{{item._grouped.length}}条</text>
-                  </view>
-                </view>
-                <text class="grouped-header__time">{{item.timeRange}}</text>
-              </view>
-              <view wx:for="{{item._grouped}}" wx:key="id" wx:for-item="sub" class="interact-row" bindtap="onTapMessage"
-                catch:tap="onTapMessage" data-id="{{sub.id}}" data-target-type="{{sub.targetType}}"
-                data-target-id="{{sub.targetId}}">
-                <view class="avatar-sm">
-                  <text class="avatar-sm__text">{{sub.senderInitial}}</text>
-                </view>
-                <text class="interact-row__text">{{sub.shortContent}}</text>
-                <text class="interact-row__time">{{sub.timeAgo}}</text>
-              </view>
-            </view>
-          </block>
-
-          <!-- 单条卡片 -->
-          <block wx:else>
-            <view class="msg-card {{item.isUrgent?'msg-card--urgent':''}} {{item.isRead?'':'msg-card--unread'}}"
-              bindtap="onTapMessage" data-id="{{item.id}}" data-target-type="{{item.targetType}}"
-              data-target-id="{{item.targetId}}">
-              <view class="msg-card__urgency-bar" wx:if="{{item.isUrgent}}"></view>
-              <view class="msg-card__inner">
-                <view class="msg-icon-wrap msg-icon-wrap--{{item.type}}">
-                  <text class="msg-icon">{{item.icon}}</text>
-                </view>
-                <view class="msg-card__body">
-                  <view class="msg-type-tag msg-type-tag--{{item.type}}">
-                    <text class="msg-type-tag__text">{{item.typeLabel}}</text>
-                  </view>
-                  <text class="msg-card__title">{{item.shortTitle}}</text>
-                  <text class="msg-card__desc">{{item.shortContent}}</text>
-                  <view class="msg-card__footer">
-                    <view class="msg-card__action" wx:if="{{item.actionLabel}}">
-                      <text class="msg-card__action-text">{{item.actionLabel}} →</text>
-                    </view>
-                    <text class="msg-card__time">{{item.timeAgo}}</text>
-                  </view>
-                </view>
-                <view class="msg-card__dot" wx:if="{{!item.isRead}}"></view>
-              </view>
-            </view>
-          </block>
-        </view>
+      <view wx:for="{{urgentMessages}}" wx:key="id" class="msg-list__item">
+        <template is="messageCard" data="{{item: item}}" />
       </view>
+    </block>
 
-      <!-- 更早分区 -->
-      <view wx:if="{{olderMessages.length}}">
-        <view class="section-label" wx:if="{{urgentMessages.length}}">
-          <text class="section-label__text">更早</text>
-        </view>
-        <view wx:for="{{olderMessages}}" wx:key="id">
-
-          <!-- 分组互动卡 -->
-          <block wx:if="{{item._isGroup}}">
-            <view class="msg-card msg-card--grouped" bindtap="onTapGroupedMessage"
-              data-target-type="{{item.targetType}}" data-target-id="{{item.targetId}}">
-              <view class="grouped-header">
-                <view class="grouped-header__left">
-                  <view class="msg-icon-wrap msg-icon-wrap--{{item.type}}">
-                    <text class="msg-icon">{{item.icon}}</text>
-                  </view>
-                  <text class="grouped-header__title">{{item.groupTitle}}</text>
-                  <view class="grouped-count">
-                    <text class="grouped-count__text">{{item._grouped.length}}条</text>
-                  </view>
-                </view>
-                <text class="grouped-header__time">{{item.timeRange}}</text>
-              </view>
-              <view wx:for="{{item._grouped}}" wx:key="id" wx:for-item="sub" class="interact-row" bindtap="onTapMessage"
-                catch:tap="onTapMessage" data-id="{{sub.id}}" data-target-type="{{sub.targetType}}"
-                data-target-id="{{sub.targetId}}">
-                <view class="avatar-sm">
-                  <text class="avatar-sm__text">{{sub.senderInitial}}</text>
-                </view>
-                <text class="interact-row__text">{{sub.shortContent}}</text>
-                <text class="interact-row__time">{{sub.timeAgo}}</text>
-              </view>
-            </view>
-          </block>
-
-          <!-- 单条卡片 -->
-          <block wx:else>
-            <view class="msg-card {{item.isRead?'':'msg-card--unread'}}" bindtap="onTapMessage" data-id="{{item.id}}"
-              data-target-type="{{item.targetType}}" data-target-id="{{item.targetId}}">
-              <view class="msg-card__inner">
-                <view class="msg-icon-wrap msg-icon-wrap--{{item.type}}">
-                  <text class="msg-icon">{{item.icon}}</text>
-                </view>
-                <view class="msg-card__body">
-                  <view class="msg-type-tag msg-type-tag--{{item.type}}">
-                    <text class="msg-type-tag__text">{{item.typeLabel}}</text>
-                  </view>
-                  <text class="msg-card__title">{{item.shortTitle}}</text>
-                  <text class="msg-card__desc">{{item.shortContent}}</text>
-                  <text class="msg-card__time" style="margin-top:8rpx;">{{item.timeAgo}}</text>
-                </view>
-                <view class="msg-card__dot" wx:if="{{!item.isRead}}"></view>
-              </view>
-            </view>
-          </block>
-
-        </view>
+    <!-- 更早 / 全部消息 -->
+    <block wx:if="{{olderMessages.length}}">
+      <view class="section-label">
+        <text class="section-label__text">{{urgentMessages.length ? '更早' : '全部消息'}}</text>
+        <text class="section-label__count">{{olderMessages.length}} 条</text>
       </view>
-
-    </view>
-
-    <view wx:else class="empty-wrap">
-      <text class="empty-icon">🔔</text>
-      <text class="empty-text">暂无通知</text>
-    </view>
-
-  </block>
-
-  <!-- ========== 私信 Tab ========== -->
-  <block wx:elif="{{activeTab==='dm'}}">
-
-    <view class="dm-search" bindtap="onSearchDm">
-      <text class="dm-search__icon">🔍</text>
-      <text class="dm-search__placeholder">搜索</text>
-    </view>
-
-    <view class="dm-list" wx:if="{{dmList.length}}">
-      <view wx:for="{{dmList}}" wx:key="id" class="dm-item {{item.unread?'dm-item--unread':''}}" bindtap="goChat"
-        data-id="{{item.userId}}">
-        <view class="dm-item__avatar-wrap">
-          <image class="dm-item__avatar" src="{{item.avatar}}" mode="aspectFill" />
-          <view class="dm-item__badge" wx:if="{{item.unread > 0}}">
-            <text class="dm-item__badge-text">{{item.unread > 99 ? '99+' : item.unread}}</text>
-          </view>
-        </view>
-        <view class="dm-item__body">
-          <view class="dm-item__top">
-            <text class="dm-item__name">{{item.nickname}}</text>
-            <text class="dm-item__time">{{item.timeAgo}}</text>
-          </view>
-          <text class="dm-item__preview">{{item.lastMessage}}</text>
-        </view>
+      <view wx:for="{{olderMessages}}" wx:key="id" class="msg-list__item">
+        <template is="messageCard" data="{{item: item}}" />
       </view>
+    </block>
+  </view>
+
+  <!-- 空态 -->
+  <view wx:else class="empty-wrap">
+    <view class="empty-icon-wrap">
+      <!-- <text class="empty-icon">🔔</text> -->
+      <image class="empty-icon" src="/assets/icons/common/notification_empty.svg" mode="aspectFit" />
     </view>
+    <text class="empty-title">{{allMessages.length ? '当前分类暂无消息' : '暂无通知'}}</text>
+    <text class="empty-desc">{{allMessages.length ? '可以切换上方分类查看其他消息' : '新消息将在这里显示'}}</text>
+  </view>
 
-    <view wx:else class="dm-empty">
-      <text class="dm-empty__icon">💬</text>
-      <text class="dm-empty__title">私信功能即将上线</text>
-      <text class="dm-empty__desc">上线后可以与同学直接发消息</text>
-    </view>
-
-  </block>
-
-  <in-app-banner top="{{bannerTop}}" />
-
+  <in-app-banner />
+  <!-- <in-app-banner preview-mode preview-variant="normal" duration="3000" /> -->
+  <!-- <in-app-banner preview-mode preview-variant="aggregate" /> -->
 </view>
+
+<!-- 消息卡片模板：分组互动卡 + 单条消息卡统一收口 -->
+<template name="messageCard">
+  <block wx:if="{{item._isGroup}}">
+    <view
+      class="msg-card msg-card--grouped"
+      hover-class="msg-card--hover"
+      hover-stay-time="80"
+      bindtap="onTapGroupedMessage"
+      data-target-type="{{item.targetType}}"
+      data-target-id="{{item.targetId}}"
+    >
+      <view class="grouped-header">
+        <view class="grouped-header__left">
+          <view class="msg-icon-wrap msg-icon-wrap--{{item.type}}">
+            <image class="msg-icon" src="{{item.icon}}" mode="aspectFit" />
+          </view>
+          <view class="grouped-header__body">
+            <text class="grouped-header__title">{{item.groupTitle}}</text>
+            <text class="grouped-header__sub">集中展示，减少消息打扰</text>
+          </view>
+        </view>
+        <view class="grouped-header__right">
+          <view class="grouped-count">
+            <text class="grouped-count__text">{{item._grouped.length}}条</text>
+          </view>
+          <text class="grouped-header__time">{{item.timeRange}}</text>
+        </view>
+      </view>
+
+      <view
+        wx:for="{{item._grouped}}"
+        wx:key="id"
+        wx:for-item="sub"
+        class="interact-row"
+        catchtap="onTapMessage"
+        data-id="{{sub.id}}"
+        data-target-type="{{sub.targetType}}"
+        data-target-id="{{sub.targetId}}"
+      >
+        <view class="avatar-sm">
+          <text class="avatar-sm__text">{{sub.senderInitial}}</text>
+        </view>
+        <text class="interact-row__text">{{sub.shortContent}}</text>
+        <text class="interact-row__time">{{sub.timeAgo}}</text>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view
+      class="msg-card {{item.isUrgent?'msg-card--urgent':''}} {{item.isRead?'':'msg-card--unread'}}"
+      hover-class="msg-card--hover"
+      hover-stay-time="80"
+      bindtap="onTapMessage"
+      data-id="{{item.id}}"
+      data-target-type="{{item.targetType}}"
+      data-target-id="{{item.targetId}}"
+    >
+      <view class="msg-card__urgency-bar" wx:if="{{item.isUrgent}}"></view>
+      <view class="msg-card__inner">
+        <view class="msg-icon-wrap msg-icon-wrap--{{item.type}}">
+          <image class="msg-icon" src="{{item.icon}}" mode="aspectFit" />
+        </view>
+        <view class="msg-card__body">
+          <view class="msg-card__meta">
+            <view class="msg-type-tag msg-type-tag--{{item.type}}">
+              <text class="msg-type-tag__text">{{item.typeLabel}}</text>
+            </view>
+            <text class="msg-card__time">{{item.timeAgo}}</text>
+          </view>
+          <text class="msg-card__title">{{item.shortTitle}}</text>
+          <text class="msg-card__desc">{{item.shortContent}}</text>
+          <view class="msg-card__footer" wx:if="{{item.actionLabel}}">
+            <view class="msg-card__action">
+              <text class="msg-card__action-text">{{item.actionLabel}}</text>
+              <text class="msg-card__action-arrow">→</text>
+            </view>
+          </view>
+        </view>
+        <view class="msg-card__dot" wx:if="{{!item.isRead}}"></view>
+      </view>
+    </view>
+  </block>
+</template>

@@ -1,26 +1,137 @@
 <!-- pages/user/index.wxml -->
 <view class="page">
 
-  <user-profile is-self="{{false}}" user-info="{{userInfo}}" is-following="{{isFollowing}}" active-tab="{{activeTab}}"
-    status-bar-height="{{statusBarHeight}}" bind:back="onBack" bind:toggleFollow="onToggleFollow" bind:more="onMore"
-    bind:goFollowing="onGoFollowing" bind:goFollower="onGoFollower" bind:switchTab="onSwitchTab" />
-
-  <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
-    <post-card post="{{post}}" bind:tap="onPostTap" bind:like="onPostLike" bind:comment="onOpenComment" />
+  <!-- 初始加载：他人主页整体骨架，保留返回能力 -->
+  <block wx:if="{{listLoad.phase === 'initial'}}">
+    <profile-feed-skeleton
+      wx:if="{{listLoad.skeletonVisible}}"
+      type="user"
+      status-bar-height="{{statusBarHeight}}"
+      post-count="{{3}}"
+      media-mode="auto"
+      bind:back="onBack"
+    />
   </block>
 
-  <view class="list-footer">
-    <text class="footer-text">— 已经到底啦 —</text>
+  <!-- 首屏失败 -->
+  <view wx:elif="{{listLoad.initialError}}" class="state-wrap">
+    <text class="state-title">加载失败</text>
+    <text class="state-desc">用户主页加载失败，请稍后重试</text>
+    <view class="state-btn" bindtap="retryInitial">重新加载</view>
   </view>
+
+  <block wx:else>
+    <user-profile
+      is-self="{{false}}"
+      user-info="{{userInfo}}"
+      is-following="{{isFollowing}}"
+      active-tab="{{activeTab}}"
+      status-bar-height="{{statusBarHeight}}"
+      bind:back="onBack"
+      bind:more="onMore"
+      bind:switchtab="onSwitchTab"
+    />
+
+    <!-- likes tab 首次加载 -->
+    <post-card-skeleton
+      wx:if="{{activeTab === 'likes' && likesLoading}}"
+      count="{{2}}"
+      media-mode="auto"
+      show-third-line="{{true}}"
+    />
+
+    <!-- likes tab 加载失败 -->
+    <view
+      wx:elif="{{activeTab === 'likes' && likesError}}"
+      class="state-wrap state-wrap--list"
+    >
+      <text class="state-title">加载失败</text>
+      <text class="state-desc">点赞列表加载失败</text>
+      <view class="state-btn" bindtap="retryLikes">重试</view>
+    </view>
+
+    <!-- 列表内容 -->
+    <block wx:elif="{{posts.length > 0}}">
+      <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
+        <post-card
+          post="{{post}}"
+          bind:comment="onOpenComment"
+          bind:view="onPostView"
+          bind:share="onOpenShare"
+          bind:shareImageReady="onShareImageReady"
+          bind:more="onPostCardMore"
+        />
+      </block>
+    </block>
+
+    <!-- 空态 -->
+    <view wx:else class="empty-wrap">
+      <text class="empty-title">
+        {{activeTab === 'posts' ? 'TA 还没有发布动态' : 'TA 还没有点赞内容'}}
+      </text>
+    </view>
+
+    <!-- 分页加载 -->
+    <post-card-skeleton
+      wx:if="{{listLoad.loadingMore}}"
+      count="{{2}}"
+      media-mode="auto"
+    />
+
+    <!-- 分页失败 -->
+    <view
+      wx:if="{{listLoad.loadMoreError}}"
+      class="list-footer list-footer--retry"
+      bindtap="retryLoadMore"
+    >
+      <text class="footer-text">加载失败，点击重试</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view
+      wx:if="{{!listLoad.loadingMore && !listLoad.loadMoreError && !listLoad.hasMore && posts.length > 0}}"
+      class="list-footer"
+    >
+      <text class="footer-text">— 已经到底啦 —</text>
+    </view>
+  </block>
 
 </view>
 
-<view wx:if="{{showPopup}}" class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
+<page-container
+  show="{{showPopup}}"
+  position="bottom"
+  round
+  overlay="{{false}}"
+  close-on-slide-down="{{false}}"
+  z-index="999"
+  bind:leave="onPopupLeave"
+>
+  <comment-panel
+    wx:if="{{popupType==='comment'}}"
+    mode="sheet"
+    target-id="{{commentTargetId}}"
+    target-type="{{commentTargetType}}"
+    total-count="{{commentTotalCount}}"
+    visible="{{showPopup && popupType === 'comment'}}"
+    bind:close="onCommentClose"
+    bind:countchange="onCommentCountChange"
+    bind:report="onCommentReport"
+  />
 
-<page-container show="{{showPopup}}" position="bottom" round custom-style="height: 80vh;"
-  overlay-style="background:rgba(0,0,0,0.45);" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave"
-  bind:afterleave="onPopupAfterLeave" bind:clickoverlay="onOverlayTap">
-  <comment-panel wx:if="{{popupType === 'comment'}}" mode="sheet" target-id="{{currentPostId}}" target-type="post"
-    total-count="{{currentCommentCount}}" visible="{{showPopup}}" bind:close="onCommentClose"
-    bind:count-change="onCommentCountChange" />
+  <share-panel
+    wx:elif="{{popupType==='share'}}"
+    share-path="{{currentSharePath}}"
+    share-image-path="{{currentShareImage}}"
+    bind:close="onShareClose"
+  />
+
+  <report-panel
+    wx:elif="{{popupType === 'report'}}"
+    target-type="{{reportTargetType}}"
+    target-id="{{reportTargetId}}"
+    bind:close="onCloseReport"
+  />
 </page-container>
+
+<in-app-banner />

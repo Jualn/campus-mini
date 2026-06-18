@@ -12,35 +12,43 @@
         <text class="post-nickname">{{post.nickname}}</text>
         <text class="post-time">· {{post.createdAt}}</text>
       </view>
-      <view class="post-more" catchtap="onMoreTap">
-        <text class="more-dot">•••</text>
+      <view class="post-more" catchtap="onMoreTap" >
+        <image class="more-dot" src="/assets/icons/common/more.svg" mode="aspectFit"/>
       </view>
     </view>
 
     <view class="post-body">
-      <text class="post-text">{{post.content}}</text>
+      <text class="post-text {{isExpanded ? 'post-text--expanded' : ''}}">{{post.content}}</text>
+      <view class="post-expand" wx:if="{{canExpand}}" catchtap="onToggleExpand">
+        <text class="post-expand__text">{{isExpanded ? '收起' : '展开全文'}}</text>
+      </view>
     </view>
 
-    <grid-image images="{{post.images  || []}}" />
+    <grid-image images="{{post.images || []}}" bind:preview="onPreviewImage" />
 
     <!-- 操作栏 -->
     <view class="post-actions">
       <!-- 评论 -->
       <view class="action-item" catchtap="onComment">
-        <image class="action-icon" src="/images/comment.svg" mode="aspectFit" />
-        <text class="action-count">{{post.commentCount}}</text>
+        <image class="action-icon" src="/images/interact/comment.svg" mode="aspectFit" />
+        <text class="action-count">{{post.commentCount > 0 ? post.commentCount : ''}}</text>
       </view>
       <!-- 点赞 -->
       <view class="action-item" catchtap="onLike">
-        <view class="action-icon {{post.isLiked ? 'liked' : ''}}">
-          <image class="icon like-off" src="/images/like.svg" />
-          <image class="icon like-on" src="/images/like-fill.svg" />
+        <view class="action-icon {{liked ? 'liked' : ''}}">
+          <image class="icon like-off" src="/images/interact/like.svg" />
+          <image class="icon like-on" src="/images/interact/like-fill.svg" />
         </view>
-        <text class="action-count {{post.isLiked ? 'action-count--liked' : ''}}">{{post.likeCount}}</text>
+        <text class="action-count {{liked ? 'action-count--liked' : ''}}">{{likeCount > 0 ? likeCount : ''}}</text>
+      </view>
+      <!-- 浏览量 -->
+      <view class="action-item action-item--view">
+        <image class="action-icon" src="/images/interact/view.svg" mode="aspectFit" />
+        <text class="action-count action-count--view">{{viewCountText}}</text>
       </view>
       <!-- 分享 -->
-      <view class="action-item" catchtap="onShare">
-        <image class="action-icon" src="/images/share.svg" mode="aspectFit" />
+      <view class="action-item action-item--share" catchtap="onShare">
+        <image class="action-icon" src="/images/interact/share.svg" mode="aspectFit" />
       </view>
     </view>
 
