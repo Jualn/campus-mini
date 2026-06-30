@@ -2,6 +2,7 @@ import { messageService } from '../../services/index';
 import createLogger from '../../utils/logger';
 import type { FilterTab, MessageItem } from '../../types/business';
 import { getCustomTabBar } from '../../utils/tabbar';
+import { wxNavigateTo } from '../../utils/wx-promise';
 
 const MESSAGE_TAB_INDEX = 1;
 
@@ -190,6 +191,7 @@ Page({
     const targetId = String(e.currentTarget.dataset.targetId ?? '');
 
     if (id) this._markRead(id);
+
     this._navigate(targetType, targetId);
   },
 
@@ -261,6 +263,8 @@ Page({
   },
 
   _navigate(targetType: string, targetId: string) {
+    // if (targetType === TARGET_TYPES.COMMENT.value) return; // 评论类消息只标记已读，不跳转
+
     const normalizedType = (targetType || '').toLowerCase();
     if (!normalizedType || normalizedType === 'none') return;
 
@@ -272,12 +276,15 @@ Page({
     if (!targetId) return;
 
     const routes: Record<string, string> = {
-      activity: `/subpkg_activity/pages/detail/detail?id=${targetId}`,
+      activity: `/subpkg_activity/pages/detail/detail?activityId=${targetId}`,
       exam: `/subpkg_exam/pages/detail/detail?examId=${targetId}`,
-      post: `/subpkg_community/pages/detail/detail?id=${targetId}`,
+      post: `/subpkg_community/pages/detail/detail?postId=${targetId}`,
     };
 
     const url = routes[normalizedType];
-    if (url) void wx.navigateTo({ url });
+    if (url)
+      wxNavigateTo({ url }).catch((err: unknown) => {
+        log.error('_navigate', '跳转目标页失败', { targetType, targetId }, err);
+      });
   },
 });

@@ -83,6 +83,15 @@ function formatY(input: string): string {
   return `${y}年`;
 }
 
+function formatYM(input: string): string {
+  const d = parseDate(input);
+
+  const y = d.getFullYear().toString();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+
+  return `${y}年${m}月`;
+}
+
 function formatShortYMDHM(input: string): string {
   const d = parseDate(input);
 
@@ -101,6 +110,7 @@ export const TimeStyle = {
   TIME: 'HH:mm',
   MONTH_DAY_TIME: 'MM-DD HH:mm',
   YEAR: 'YYYY',
+  YM: 'YYYY-MM',
   SHORT_YMDHM: 'YY-MM-DD HH:mm,无单位',
 } as const;
 
@@ -123,6 +133,8 @@ export default function formatTime(
       return formatMD(input);
     case TimeStyle.MONTH_DAY_TIME:
       return formatMDHM(input);
+    case TimeStyle.YM:
+      return formatYM(input);
     case TimeStyle.YEAR:
       return formatY(input);
     case TimeStyle.TIME:

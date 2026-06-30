@@ -5,6 +5,7 @@ import {
   wxGetWindowInfo,
   wxNavigateBack,
   wxNavigateTo,
+  wxSetClipboardData,
   wxShowToast,
 } from '../../../utils/wx-promise';
 import { userService } from '../../../services/index';
@@ -35,6 +36,7 @@ Page({
 
   data: {
     statusBarHeight: 20,
+    wxNumber:"chan50813",
     version: '1.0.0',
 
     // 通知设置
@@ -183,6 +185,16 @@ Page({
         icon: 'error',
       });
     });
+  },
+
+  onGoFeedback(){
+    wxSetClipboardData({data:this.data.wxNumber})
+    .then(()=>{
+      void wxShowToast({title:"复制成功"});
+    }).catch(()=>{
+      void wxShowToast({title:"复制失败"});
+    })
+    
   },
 
   onGoEditProfile() {

@@ -27,20 +27,26 @@ type LoadScene = 'initial' | 'refresh';
 
 interface IndexPageExtraThis {
   _tabBarHidden: boolean;
-  _setTabBarHidden: (hidden: boolean) => void;
+  _setPopupTabBarHidden: (hidden: boolean) => void;
 }
 
 Page({
   _currentScrollTop: 0,
   _lastScrollTop: 0,
-  /** 存储当前tabbar状态避免多次调用 */
+  /** 当前真实应用到 custom-tabbar 的隐藏状态 */
   _tabBarHidden: false,
+  /** tabbar 是否因为页面滚动而隐藏 */
+  _tabBarHiddenByScroll: false,
+  /** tabbar 是否因为弹窗打开而隐藏 */
+  _tabBarHiddenByPopup: false,
   /** 存储当前是否正在预览图片 */
   _isPreviewingImage: false,
   _pullDownRefreshEnabled: false,
   // _viewedPostIds: new Set<string>(),
   /** 记录最后一篇文章的ID */
   _lastPostId: '',
+  /** 标记是否正在提交, 防止重复提交 */
+  _submitting: false,
   _disposers: [] as (() => void)[],
 
   behaviors: [
@@ -53,7 +59,7 @@ Page({
       postListKeys: ['posts'],
       onPopupVisibleChange(visible) {
         // 同步页面的 showPopup 状态，保持一致
-        this._setTabBarHidden(visible);
+        this._setPopupTabBarHidden(visible);
       },
     }),
   ],
@@ -70,27 +76,6 @@ Page({
 
     activities: [] as IndexActivityCard[],
     examList: [] as IndexExamCardItem[],
-
-    // page-container popup相关
-    // showPopup: false,
-    /** 弹窗类型 'comment' | 'share' | 'report' | 'post-edit' */
-    // popupType: '',
-
-    // comment-panel 传递的数据
-    // targetType: TARGET_TYPES.POST.value, // 默认目标类型为 post
-    // currentPostId: '',
-    // currentCommentCount: 0,
-
-    // share-panel 传递的数据
-    // currentShareImage: '',
-    // currentSharePath: '',
-
-    // report-panel 传递的数据
-    // reportTargetType: 0,
-    // reportTargetId: '',
-
-    // activePostId: '',
-    // activePostCommentCount: 0,
 
     isScrolled: false, // 新增：是否页面发生滚动
 
@@ -182,6 +167,9 @@ Page({
       getCustomTabBar(this).init();
     }
 
+    // 页面展示时隐藏tabbar，保持与弹窗打开时一致的状态，避免切后台再切回来时tabbar状态异常。
+    this._syncTabBarHidden(true);
+
     // 恢复上次滚动位置
     this._restoreScrollPosition();
 
@@ -236,50 +224,6 @@ Page({
     /* empty */
   },
 
-  // _applyPostSyncCache(list: PostCardItem[]) {
-  //   let changed = false;
-  //   const merged = list.map((post) => {
-  //     const cached = postSyncStore.get(post.id);
-  //     if (!cached) return post;
-
-  //     const nextIsLiked = typeof cached.isLiked === 'boolean' ? cached.isLiked : post.isLiked;
-  //     const nextLikeCount =
-  //       typeof cached.likeCount === 'number' ? Math.max(0, cached.likeCount) : post.likeCount;
-  //     const nextCommentCount =
-  //       typeof cached.commentCount === 'number'
-  //         ? Math.max(0, cached.commentCount)
-  //         : post.commentCount;
-  //     const nextViewCount =
-  //       typeof cached.viewCount === 'number' ? Math.max(0, cached.viewCount) : post.viewCount;
-
-  //     const hasDiff =
-  //       nextIsLiked !== post.isLiked ||
-  //       nextLikeCount !== post.likeCount ||
-  //       nextCommentCount !== post.commentCount ||
-  //       nextViewCount !== post.viewCount;
-
-  //     if (!hasDiff) return post;
-  //     changed = true;
-  //     return {
-  //       ...post,
-  //       isLiked: nextIsLiked,
-  //       likeCount: nextLikeCount,
-  //       commentCount: nextCommentCount,
-  //       viewCount: nextViewCount,
-  //     };
-  //   });
-
-  //   return { merged, changed };
-  // },
-
-  // _syncPostsFromCache() {
-  //   if (!this.data.posts.length) return;
-  //   const { merged, changed } = this._applyPostSyncCache(this.data.posts);
-  //   if (changed) {
-  //     this.setData({ posts: merged });
-  //   }
-  // },
-
   _loadListeners() {
     if (this._disposers.length > 0) return;
 
@@ -299,40 +243,6 @@ Page({
 
     this.setData({ posts: nextPosts });
   },
-
-  // _recordPostView(postId: string) {
-  //   if (!postId) return;
-  //   if (this._viewedPostIds.has(postId)) return;
-  //   this._viewedPostIds.add(postId);
-
-  //   this._bumpPostViewCount(postId);
-  //   interactService
-  //     .reportView({ targetType: TARGET_TYPES.POST.value, targetId: postId })
-  //     .catch((err: unknown) => {
-  //       log.warn('_recordPostView', '上报浏览失败', err);
-  //     });
-  // },
-
-  // _bumpPostViewCount(postId: string) {
-  //   const idx = this.data.posts.findIndex((p) => p.id === postId);
-  //   const cached = postSyncStore.get(postId);
-  //   const baseCount =
-  //     idx !== -1
-  //       ? (this.data.posts[idx]?.viewCount ?? 0)
-  //       : typeof cached?.viewCount === 'number'
-  //         ? cached.viewCount
-  //         : 0;
-  //   const nextCount = Math.max(0, baseCount + 1);
-
-  //   if (idx !== -1) {
-  //     this.setData({
-  //       [`posts[${String(idx)}].viewCount`]: nextCount,
-  //     });
-  //   }
-
-  //   postSyncStore.set({ id: postId, viewCount: nextCount });
-  //   eventBus.emit(EVENTS.POST_UPDATED, { id: postId, viewCount: nextCount });
-  // },
 
   /**
    * 加载首页数据。
@@ -455,51 +365,110 @@ Page({
     void this._loadMorePosts(true);
   },
 
-  /** 打开弹窗，确保 TabBar的状态是隐藏 */
-  // _openPopup(patch: Record<string, unknown>) {
-  //   this._setTabBarHidden(true);
-  //   this.setData({
-  //     ...patch,
-  //     showPopup: true,
-  //   });
-  // },
+  _setPopupTabBarHidden(hidden: boolean) {
+    if (this._tabBarHiddenByPopup === hidden) return;
 
-  /** 关闭弹窗, 如果tabbar是隐藏的保持原本隐藏，是显示的则恢复显示 */
-  // _closePopup(resetType = false) {
-  //   const patch: Record<string, unknown> = {
-  //     showPopup: false,
-  //   };
-  //   if (resetType) patch.popupType = '';
-  //   // 保持原本隐藏状态，如果之前是显示的则恢复显示
-  //   if (!this._tabBarHidden) this._setTabBarHidden(false);
-  //   this.setData(patch);
-  // },
+    this._tabBarHiddenByPopup = hidden;
+    this._syncTabBarHidden();
+  },
 
-  // ==== 新增：封装方法，统一控制 TabBar 显示/隐藏，避免重复调用 ====
-  _setTabBarHidden(hidden: boolean) {
+  _setScrollTabBarHidden(hidden: boolean) {
+    if (this._tabBarHiddenByScroll === hidden) return;
+
+    this._tabBarHiddenByScroll = hidden;
+    this._syncTabBarHidden();
+  },
+
+  _syncTabBarHidden(force = false) {
+    const shouldHidden = this._tabBarHiddenByPopup || this._tabBarHiddenByScroll;
+    this._applyTabBarHidden(shouldHidden, force);
+  },
+
+  _applyTabBarHidden(hidden: boolean, force = false) {
     const tabBar = typeof this.getTabBar === 'function' && this.getTabBar();
-    if (!tabBar) {
-      // 没有 tabbar （比如子包/调试环境）则跳过
-      this._tabBarHidden = hidden;
+
+    if (!force && this._tabBarHidden === hidden && this.data.tabBarHidden === hidden) {
+      return;
+    }
+
+    this._tabBarHidden = hidden;
+
+    if (tabBar) {
+      getCustomTabBar(this).toggleVisible(!hidden);
+    }
+
+    if (this.data.tabBarHidden !== hidden) {
       this.setData({
         tabBarHidden: hidden,
       });
-      return;
     }
-    // 避免重复调用同样的状态
-    if (this._tabBarHidden === hidden) return;
-
-    this._tabBarHidden = hidden;
-    getCustomTabBar(this).toggleVisible(!hidden);
-    this.setData({
-      tabBarHidden: hidden,
-    });
   },
+
+  // ==== 新增：封装方法，统一控制 TabBar 显示/隐藏，避免重复调用 ====
+  // _setTabBarHidden(hidden: boolean) {
+  //   const tabBar = typeof this.getTabBar === 'function' && this.getTabBar();
+  //   if (!tabBar) {
+  //     // 没有 tabbar （比如子包/调试环境）则跳过
+  //     this._tabBarHidden = hidden;
+  //     this.setData({
+  //       tabBarHidden: hidden,
+  //     });
+  //     return;
+  //   }
+  //   // 避免重复调用同样的状态
+  //   if (this._tabBarHidden === hidden) return;
+
+  //   this._tabBarHidden = hidden;
+  //   getCustomTabBar(this).toggleVisible(!hidden);
+  //   this.setData({
+  //     tabBarHidden: hidden,
+  //   });
+  // },
 
   _setHomeHeaderHidden(hidden: boolean) {
     this.setData({
       homeHeaderHidden: hidden,
     });
+  },
+
+  _handleTabbarByScroll(current: number) {
+    if (this.data.showPopup) return;
+
+    if (typeof this._lastScrollTop === 'undefined' || this._lastScrollTop === 0) {
+      this._lastScrollTop = current;
+      return;
+    }
+
+    if (current < 400) {
+      this._setHomeHeaderHidden(false);
+    }
+
+    if (current <= 20) {
+      this._setScrollTabBarHidden(false);
+      this._setHomeHeaderHidden(false);
+    }
+
+    const SCROLL_THRESHOLD = 20;
+    const delta = current - this._lastScrollTop;
+
+    this._lastScrollTop = current;
+
+    if (Math.abs(delta) < SCROLL_THRESHOLD) return;
+
+    if (delta > 0 && current > 50) {
+      this._setScrollTabBarHidden(true);
+
+      if (current > 350) {
+        this._setHomeHeaderHidden(true);
+      }
+
+      return;
+    }
+
+    if (delta < 0) {
+      this._setScrollTabBarHidden(false);
+      this._setHomeHeaderHidden(false);
+    }
   },
 
   /** 通过scrollStore管理，恢复滚动位置 */
@@ -539,31 +508,6 @@ Page({
     });
   },
 
-  _handleTabbarByScroll(current: number) {
-    if (typeof this._lastScrollTop === 'undefined' || this._lastScrollTop === 0) {
-      this._lastScrollTop = current;
-      return;
-    }
-    if (current < 400) this._setHomeHeaderHidden(false);
-    const SCROLL_THRESHOLD = 20;
-    const delta = current - this._lastScrollTop;
-
-    this._lastScrollTop = current;
-    if (Math.abs(delta) < SCROLL_THRESHOLD) return;
-
-    if (delta > 0 && current > 50) {
-      this._setTabBarHidden(true);
-      if (current > 350) this._setHomeHeaderHidden(true);
-      return;
-    }
-
-    if (delta < 0) {
-      this._setTabBarHidden(false);
-      this._setHomeHeaderHidden(false);
-      return;
-    }
-  },
-
   /** 截取去除杂乱字符的content，前10个字符作为标题 */
   _generateTitle(content: string, maxLength = 10): string {
     if (!content) return '无标题';
@@ -581,36 +525,6 @@ Page({
 
     return text || '无标题';
   },
-
-  // async onReportSubmit(
-  //   e: WechatMiniprogram.CustomEvent<{
-  //     targetType: TargetType;
-  //     targetId: string;
-  //     reason: ReportReason;
-  //     mark: string;
-  //   }>,
-  // ) {
-  //   const { targetType, targetId, reason, mark } = e.detail;
-  //   try {
-  //     await reportService.report({
-  //       targetType,
-  //       targetId,
-  //       reason: reason,
-  //       mark: mark.trim(),
-  //     });
-  //     void wxShowToast({
-  //       title: '举报成功',
-  //       icon: 'success',
-  //     });
-  //     this._closePopup(true);
-  //   } catch (err: unknown) {
-  //     log.error('onReportSubmit', '举报失败', err);
-  //     void wxShowToast({
-  //       title: '举报失败，请稍后再试',
-  //       icon: 'none',
-  //     });
-  //   }
-  // },
 
   onTapFab() {
     const { canPublishActivity, fabOpen } = this.data;
@@ -630,19 +544,6 @@ Page({
     this._isPreviewingImage = true;
   },
 
-  // // 触发 page-container 弹窗事件
-
-  // /**
-  //  * page-container -> bind:leave 事件回调，关闭所有弹窗
-  //  */
-  // onPopupLeave() {
-  //   this.setData({
-  //     showPopup: false,
-  //     popupType: '',
-  //   });
-  // },
-  // // onOpenComment, onOpenShare, onPostCardMore
-
   /**
    * FAB -> catchtap 发布按钮事件回调，打开发布帖子弹窗
    */
@@ -653,116 +554,6 @@ Page({
       popupType: 'post-edit',
     });
   },
-
-  // // post-card 绑定的发布活动事件
-
-  // /**
-  //  * post-card -> bind:comment 事件回调，打开评论区弹窗
-  //  * detail 需要传递 postId 和 commentCount，postId 用于打开对应的评论区，commentCount 用于显示当前评论数量
-  //  * @param e 事件对象，包含 detail.postId 和 detail.commentCount
-  //  */
-  // onOpenComment(e: WechatMiniprogram.CustomEvent<{ postId: string; commentCount: number }>) {
-  //   const { postId, commentCount } = e.detail;
-  //   this._recordPostView(postId);
-  //   if (typeof this.getTabBar === 'function') {
-  //     getCustomTabBar(this).toggleVisible(false);
-  //   }
-
-  //   void wxHideKeyboard();
-  //   this._pullDownRefreshEnabled = true;
-
-  //   this.setData({
-  //     currentPostId: postId,
-  //     activePostId: postId,
-  //     currentCommentCount: commentCount,
-  //     activePostCommentCount: commentCount,
-  //     popupType: 'comment',
-  //     showPopup: true,
-  //   });
-  // },
-  // /**
-  //  * post-card -> bind:view 事件回调，记录文章浏览，避免重复记录
-  //  * detail 需要传递 postId 用于记录浏览
-  //  * @param e 事件对象，包含 detail.postId
-  //  */
-  // onPostView(e: WechatMiniprogram.CustomEvent<{ postId: string }>) {
-  //   const postId = e.detail.postId;
-  //   this._recordPostView(postId);
-  // },
-  // /**
-  //  * post-card -> bind:share 事件回调，打开分享弹窗
-  //  * detail 需要传递 sharePath 和 shareImage，sharePath 用于设置分享路径，shareImage 用于设置分享图片
-  //  * @param e 事件对象，包含 detail.sharePath 和 detail.shareImage
-  //  */
-  // onOpenShare(e: WechatMiniprogram.CustomEvent<{ sharePath: string; shareImage: string }>) {
-  //   const { sharePath, shareImage } = e.detail;
-  //   this._openPopup({
-  //     activePostId: this.data.currentPostId,
-  //     popupType: 'share',
-  //     currentSharePath: sharePath,
-  //     currentShareImage: shareImage,
-  //   });
-  // },
-  // /**
-  //  * post-card -> bind:shareImageReady 事件回调，分享图片生成完成后更新分享图片地址
-  //  * detail 需要传递 shareImage，用于更新分享图片地址
-  //  * @param e 事件对象，包含 detail.shareImage
-  //  */
-  // onShareImageReady(e: WechatMiniprogram.CustomEvent<{ shareImage: string }>) {
-  //   this.setData({
-  //     currentShareImage: e.detail.shareImage,
-  //   });
-  // },
-  // /**
-  //  * post-card -> bind:more 事件回调，打开更多操作弹窗
-  //  * detail 需要传递 targetType 和 targetId，targetType 用于确定举报的目标类型（如帖子、评论等），targetId 用于确定举报的目标ID
-  //  * @param e 事件对象，包含 detail.targetType 和 detail.targetId，用于确定举报的目标类型和目标ID
-  //  */
-  // onPostCardMore(e: WechatMiniprogram.CustomEvent<{ targetType: number; targetId: string }>) {
-  //   const { targetType, targetId } = e.detail;
-  //   this._openPopup({
-  //     popupType: 'report',
-  //     reportTargetType: targetType,
-  //     reportTargetId: targetId,
-  //   });
-  // },
-
-  // // comment-panel 组件绑定的事件回调
-
-  // /**
-  //  * comment-panel -> bind:close 事件回调，关闭评论区弹窗
-  //  */
-  // onCommentClose() {
-  //   this.setData({ showPopup: false });
-  // },
-  // /**
-  //  * comment-panel -> bind:countChange 事件回调，更新当前文章的评论数量
-  //  * detail 需要传递 count，表示当前文章的最新评论数量
-  //  * @param e 事件对象，包含 detail.count，用于更新当前文章的评论数量
-  //  */
-  // onCommentCountChange(
-  //   e: WechatMiniprogram.CustomEvent<{
-  //     count: number;
-  //     delta: number;
-  //     targetId: string;
-  //     targetType: string;
-  //   }>,
-  // ) {
-  //   const { count } = e.detail;
-  //   const targetPostId = this.data.activePostId || this.data.currentPostId;
-  //   const idx = this.data.posts.findIndex((p: PostCardItem) => p.id === targetPostId);
-  //   const safeCount = Math.max(0, count);
-  //   const patch: Record<string, unknown> = {
-  //     activePostCommentCount: safeCount,
-  //   };
-  //   if (idx !== -1) {
-  //     patch[`posts[${String(idx)}].commentCount`] = safeCount;
-  //   }
-  //   this.setData(patch);
-  //   if (targetPostId) {
-  //     postSyncStore.set({ id: targetPostId, commentCount: safeCount });
-  //   }
-  // },
 
   // post-edit-panel 组件绑定的事件回调
 
@@ -777,13 +568,21 @@ Page({
       selectedFiles?: SelectedMediaFile[];
     }>,
   ) {
+    if (this._submitting) return;
+    this._submitting = true;
+
     const { content, selectedFiles } = e.detail;
+
     void wxShowLoading({
       title: '发布中...',
+      mask: true,
     });
+
     try {
       let attachmentItems: AttachmentItemRequest[] = [];
 
+      // 只有用户最终点击发布时才上传 COS
+      // 用户选择图片、取消图片、关闭弹窗时，不上传 COS
       if (selectedFiles && selectedFiles.length > 0) {
         attachmentItems = await mediaService.uploadAndSaveFiles(
           TARGET_TYPES.POST.value,
@@ -791,27 +590,34 @@ Page({
         );
       }
 
+      // TODO:
+      // 当前未做 COS 孤儿文件回收。
+      // 如果 COS 上传成功但 publishPost 失败，可能产生少量无业务引用文件。
+      // 现阶段先观察 COS 存储情况，后续如有必要再增加 objectKey 生命周期记录和定时清理。
       const postCard = await postService.publishPost({
         title: this._generateTitle(content),
         content,
         attachmentItems,
       });
 
-      void wxHideLoading();
       this._closePopup(true);
       this._prependPostCard(postCard);
       emitPostCreated(postCard);
+
       void wxShowToast({
         title: '发布成功',
         icon: 'success',
       });
     } catch (err) {
-      void wxHideLoading();
       void wxShowToast({
         title: '发布帖子失败，请稍后重试',
         icon: 'none',
       });
+
       log.error('onPostSubmit', '发布帖子异常', err);
+    } finally {
+      this._submitting = false;
+      void wxHideLoading();
     }
   },
   /**
@@ -820,24 +626,6 @@ Page({
   onPostEditClose() {
     this._closePopup();
   },
-
-  // // share-panel 组件绑定的事件回调
-
-  // /**
-  //  * share-panel -> bind:close 事件回调，关闭分享弹窗
-  //  */
-  // onShareClose() {
-  //   this._closePopup();
-  // },
-
-  // // report-panel 组件绑定的事件回调
-
-  // /**
-  //  * report-panel -> bind:close 事件回调，关闭举报弹窗
-  //  */
-  // onCloseReport() {
-  //   this._closePopup();
-  // },
 
   onPublishActivity() {
     this.setData({ fabOpen: false });

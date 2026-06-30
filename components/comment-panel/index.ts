@@ -40,11 +40,13 @@
 // comment-panel.ts
 
 import defineComponent from '../../utils/defineComponent';
-import { commentService, interactService } from '../../services/index';
+import { commentService, interactService, mediaService } from '../../services/index';
 import {
+  wxHideLoading,
   wxNavigateTo,
   wxOnKeyboardHeightChange,
   wxPreviewImage,
+  wxShowLoading,
   wxShowModal,
   wxShowToast,
 } from '../../utils/wx-promise';
@@ -54,6 +56,7 @@ import { getUserInfo } from '../../store/helper';
 import createLogger from '../../utils/logger';
 import { getAvatarInfo } from '../../utils/avatar';
 import { useSheet } from '../../behaviors/sheet-mixin';
+import { type SelectedMediaFile } from '../../services/media';
 
 // ==================== 类型 ======================
 
@@ -64,6 +67,7 @@ interface Private {
   _lastTargetId?: string;
   _commentLikePendingMap: Record<string, boolean>;
   _replyLikePendingMap: Record<string, boolean>;
+  _selectedFiles: SelectedMediaFile[];
 }
 
 // ===================== 常量 =====================
@@ -180,7 +184,7 @@ defineComponent<Private>()({
       this._lastTargetId = undefined;
       this._commentLikePendingMap = {};
       this._replyLikePendingMap = {};
-
+      this._selectedFiles = [];
       const info = wx.getWindowInfo();
       const safeBottom = info.screenHeight - info.safeArea.bottom;
       this._safeBottom = safeBottom;
@@ -212,6 +216,7 @@ defineComponent<Private>()({
       this._lastTargetId = undefined;
       this._commentLikePendingMap = {};
       this._replyLikePendingMap = {};
+      this._selectedFiles = [];
     },
   },
 
@@ -424,6 +429,7 @@ defineComponent<Private>()({
      */
     async onSend() {
       if (!this.data.canSend) return;
+
       const { inputValue, replyTarget, previewImage } = this.data;
       const text = inputValue.trim();
 
@@ -432,17 +438,17 @@ defineComponent<Private>()({
         return;
       }
 
-      const params = {
-        targetId: this.properties.targetId,
-        targetType: this.properties.targetType as TargetType,
-        content: text,
-        imageUrl: previewImage || '',
-        parentId: replyTarget.commentId ? replyTarget.commentId : undefined,
-      };
-
       const isReply = !!replyTarget.commentId;
+
+      // 回复状态下不允许图片，保险起见这里也拦一下
+      if (isReply && previewImage) {
+        void wxShowToast({ title: '回复暂不支持图片', icon: 'none' });
+        return;
+      }
+
       const tempId = `local-${Date.now().toString()}`;
       const nowLabel = '刚刚';
+
       const prevInputState = {
         inputValue,
         previewImage,
@@ -450,6 +456,7 @@ defineComponent<Private>()({
         replyTarget: { ...replyTarget },
         inputAutoFocus: this.data.inputAutoFocus,
         inputFocused: this.data.inputFocused,
+        selectedImageFile: this._selectedFiles[0], // 目前只支持单图，取第一张
       };
 
       const restoreInputState = () => {
@@ -460,6 +467,7 @@ defineComponent<Private>()({
           replyTarget: prevInputState.replyTarget,
           inputAutoFocus: prevInputState.inputAutoFocus,
           inputFocused: prevInputState.inputFocused,
+          selectedImageFile: prevInputState.selectedImageFile,
         });
       };
 
@@ -586,11 +594,39 @@ defineComponent<Private>()({
       }
 
       this.setData({ inputValue: '', previewImage: '', canSend: false });
+      this._selectedFiles = [];
+
       this.cancelReply();
       this._syncCount(1);
 
       try {
+        let imageUrl = '';
+
+        // 只有真正点击发送时才上传 COS
+        if (!isReply && this._selectedFiles[0]) {
+          const attachmentItems = await mediaService.uploadAndSaveFiles(
+            TARGET_TYPES.COMMENT.value,
+            [this._selectedFiles[0]],
+          );
+
+          imageUrl = attachmentItems[0]?.url ?? '';
+        }
+
+        // TODO:
+        // 当前未做 COS 孤儿文件回收。
+        // 如果评论图片上传 COS 成功，但 createComment 失败，可能产生少量无业务引用文件。
+        // 现阶段先保持简单，后续根据 COS 存储情况决定是否增加 objectKey 生命周期记录和定时清理。
+
+        const params = {
+          targetId: this.properties.targetId,
+          targetType: this.properties.targetType as TargetType,
+          content: text,
+          imageUrl,
+          parentId: replyTarget.commentId ? replyTarget.commentId : undefined,
+        };
+
         const res = await commentService.createComment(params);
+
         if (!res) {
           void wxShowToast({ title: '发送失败', icon: 'none' });
           rollback();
@@ -607,21 +643,30 @@ defineComponent<Private>()({
     },
 
     /** 选择一级评论图片；回复状态下不允许上传图片。 */
-    onChooseImage() {
+    async onChooseImage() {
       if (this.data.replyTarget.commentId) return;
-      wx.chooseMedia({
-        count: 1,
-        mediaType: ['image'],
-        sourceType: ['album', 'camera'],
-        success: (res) => {
-          this.setData({ previewImage: res.tempFiles[0].tempFilePath });
-        },
+      void wxShowLoading({
+        title: '上传中...',
       });
+      const count = 1;
+      try {
+        const res = await mediaService.selectImages(count);
+        if (res.length > 0) {
+          this.setData({ previewImage: res[0].filePath });
+          this._selectedFiles = [res[0]]; // 存储已选择的文件信息，后续发送评论时会用到
+        }
+      } catch (err: unknown) {
+        log.error('onChooseImage', '选择图片失败', err);
+        void wxShowToast({ title: '选择图片失败，请稍后再试！', icon: 'none' });
+      } finally {
+        void wxHideLoading();
+      }
     },
 
     /** 移除待发送的图片。 */
     removeImage() {
       this.setData({ previewImage: '' });
+      this._selectedFiles = [];
     },
 
     /**

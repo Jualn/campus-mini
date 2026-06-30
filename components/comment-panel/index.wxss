@@ -157,11 +157,11 @@
    评论列表
    ============================================ */
 .cp-list {
-  padding-bottom: 140rpx;
+  padding-bottom: 0rpx;
 }
 
 .cp-list--inline {
-  padding-bottom: 560rpx;
+  padding-bottom: 0rpx;
 }
 
 /* 单条一级评论 */

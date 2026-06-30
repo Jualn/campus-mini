@@ -1,9 +1,9 @@
 <!-- comment-panel 组件 支持两种模式： mode="sheet" → 弹出式半屏（用于 Feed 页点击评论按钮） mode="inline" → 嵌入式（用于帖子详情页、活动详情页） -->
 <wxs module="drag" src="../../utils/drag.wxs">
 </wxs>
-<view class="cp-root" catchtouchmove="{{drag.noop}}">
+<view class="cp-root" >
   <!-- ========== SHEET 模式：遮罩 + 半屏容器 ========== -->
-  <block wx:if="{{mode === 'sheet'}}">
+  <block wx:if="{{mode === 'sheet'}}" catchtouchmove="{{drag.noop}}">
     <!-- mask 铺满整个 page-container，上方空白也能点 -->
     <view class="cp-sheet-mask J-mask" data-panel-h="{{panelHeight}}"
       style="opacity:{{maskOpacity}};transition:{{maskTransition}};" catch:touchstart="{{drag.noop}}"

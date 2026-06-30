@@ -1,5 +1,6 @@
 /* share-popup.wxss */
-.sp-root{}
+.sp-root {
+}
 /* ─── 遮罩 ─── */
 .sp-mask {
   position: absolute;
@@ -89,9 +90,10 @@
 }
 
 .sp-close__icon {
-  font-size: 22rpx;
-  color: #999;
-  line-height: 1;
+  width: 26rpx;
+  height: 26rpx;
+  display: block;
+  opacity: 0.78;
 }
 
 /* ─── 预览卡片区 ─── */
@@ -105,11 +107,13 @@
   overflow: hidden;
   background: #f0f2f5;
   box-shadow:
-    0 8rpx 40rpx rgba(22, 119, 255, 0.10),
+    0 8rpx 40rpx rgba(22, 119, 255, 0.1),
     0 2rpx 8rpx rgba(0, 0, 0, 0.06);
   opacity: 0;
   transform: scale(0.97) translateY(8rpx);
-  transition: opacity 0.36s ease, transform 0.36s ease;
+  transition:
+    opacity 0.36s ease,
+    transform 0.36s ease;
 }
 
 .sp-preview-card--loaded {
@@ -165,10 +169,12 @@
 .sp-skeleton__shimmer {
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg,
-      transparent 30%,
-      rgba(255, 255, 255, 0.55) 50%,
-      transparent 70%);
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 70%
+  );
   background-size: 300% 100%;
   animation: shimmer 1.6s infinite;
 }
@@ -206,8 +212,10 @@
 }
 
 .sp-img-btn__icon {
-  font-size: 28rpx;
-  line-height: 1;
+  width: 52rpx;
+  height: 52rpx;
+  display: block;
+  flex-shrink: 0;
 }
 
 .sp-img-btn__label {
@@ -279,11 +287,13 @@
   justify-content: center;
   position: relative;
   /* 内嵌光泽 */
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.6), 0 4rpx 16rpx rgba(0, 0, 0, 0.10);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.6),
+    0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .sp-option__icon-wrap::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -300,13 +310,15 @@
 }
 
 .sp-option__icon {
-  width: 52rpx;
-  height: 52rpx;
+  width: 64rpx;
+  height: 64rpx;
+  display: block;
+  position: relative;
+  z-index: 1;
 }
 
 .sp-option__emoji {
-  font-size: 42rpx;
-  line-height: 1;
+  display: none;
 }
 
 .sp-option__label {
@@ -347,10 +359,6 @@
 
   .sp-close {
     background: rgba(255, 255, 255, 0.1);
-  }
-
-  .sp-close__icon {
-    color: #8b93a1;
   }
 
   .sp-preview-card {

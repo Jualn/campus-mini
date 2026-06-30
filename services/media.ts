@@ -195,6 +195,17 @@ export const selectImages = async (count = 1): Promise<SelectedMediaFile[]> => {
 };
 
 /**
+ * TODO:
+ *  当前没有做 COS 孤儿文件回收。
+ *
+ * 约束：
+ * 1. 选择图片/文件时只保存本地 filePath，不上传 COS；
+ * 2. 用户点击发布/提交时才调用 uploadAndSaveFiles；
+ * 3. 如果用户选择后取消图片，直接从本地 selectedFiles 中移除；
+ * 4. 暂不做前端删除 COS，也不做后端 pending 上传记录。
+ *
+ * 后续如果观察到 COS 孤儿文件明显增多，
+ * 再增加后端 objectKey 生命周期记录和定时清理。
  * 第二步：批量上传并保存（用户确认提交后调用）
  * 内部流程：获取 STS 凭证 → 批量上传 COS → 返回attachmentItems
  */

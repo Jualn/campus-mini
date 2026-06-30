@@ -44,7 +44,7 @@ const toProfileInfo = (profile: UserProfileVO): UserProfileInfo => ({
   bannerUrl: profile.backgroundUrl,
   bio: profile.bio,
   verified: profile.status === 1,
-  joinYear: formatTime(profile.createdAt, TimeStyle.YEAR),
+  joinYear: formatTime(profile.createdAt, TimeStyle.YM),
 });
 
 const toPublicProfileInfo = (profile: UserPublicProfileVO): UserProfileInfo => ({
@@ -53,7 +53,7 @@ const toPublicProfileInfo = (profile: UserPublicProfileVO): UserProfileInfo => (
   bannerUrl: profile.backgroundUrl,
   bio: profile.bio,
   verified: true,
-  joinYear: formatTime(profile.createdAt, TimeStyle.YEAR),
+  joinYear: formatTime(profile.createdAt, TimeStyle.YM),
 });
 
 const toEditProfileForm = (profile: UserProfileInfo): EditProfileForm => ({
@@ -75,41 +75,6 @@ function mapSettings(settings: UserSettingVO): Settings {
     },
   };
 }
-
-const buildNotifyPayload = (
-  notify: Partial<Settings['notify']>,
-): Partial<UserSettingUpdateRequest> => {
-  const payload: Partial<UserSettingUpdateRequest> = {};
-
-  if (notify.activity !== undefined) payload.notifyActivityRemind = notify.activity;
-  if (notify.exam !== undefined) payload.notifyExamRemind = notify.exam;
-  if (notify.interaction !== undefined) {
-    payload.notifyComment = notify.interaction;
-    payload.notifyReply = notify.interaction;
-    payload.notifyLike = notify.interaction;
-  }
-  if (notify.system !== undefined) payload.notifySystem = notify.system;
-  if (notify.audit !== undefined) payload.notifyAuditResult = notify.audit;
-
-  return payload;
-};
-
-const buildNotifyPatch = (
-  previous: Settings['notify'] | undefined,
-  next: Settings['notify'],
-): Partial<Settings['notify']> => {
-  if (!previous) return { ...next };
-
-  const patch: Partial<Settings['notify']> = {};
-
-  if (previous.activity !== next.activity) patch.activity = next.activity;
-  if (previous.exam !== next.exam) patch.exam = next.exam;
-  if (previous.interaction !== next.interaction) patch.interaction = next.interaction;
-  if (previous.system !== next.system) patch.system = next.system;
-  if (previous.audit !== next.audit) patch.audit = next.audit;
-
-  return patch;
-};
 
 type NotifyKey = keyof Settings['notify'];
 

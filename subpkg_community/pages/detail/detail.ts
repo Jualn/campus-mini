@@ -88,8 +88,6 @@ Page({
         bottomPad: res.height > 0 ? res.height + INPUT_BAR_HEIGHT_PX : INPUT_BAR_HEIGHT_PX,
       });
     });
-
-    void this._drawPostPoster();
   },
 
   onUnload() {
@@ -126,6 +124,7 @@ Page({
 
   async _drawPostPoster() {
     const post = this.data.post;
+
     const postData = {
       avatarUrl: post.avatar || '',
       avatarChar: post._avatarChar || '',
@@ -172,6 +171,8 @@ Page({
           currentCommentCount: merged.commentCount,
           targetId: merged.id,
         });
+
+        void this._drawPostPoster();
       })
       .catch((err: unknown) => {
         log.error('_loadPost', '加载帖子失败', err);
@@ -396,8 +397,9 @@ Page({
       showPopup: false,
       popupType: '',
 
-      currentShareImage: '',
-      currentSharePath: '',
+      // 保留分享相关内容
+      // currentShareImage: '',
+      // currentSharePath: '',
 
       reportTargetType: '',
       reportTargetId: '',

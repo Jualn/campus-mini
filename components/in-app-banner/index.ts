@@ -172,7 +172,7 @@ defineComponent<BannerPrivate>()({
     opacity: 0,
     transitionEnabled: true,
     dragging: false,
-    icon: '🔔',
+    icon: '/assets/icons/common/message_center.svg',
     tagText: '通知',
     title: '',
     content: '',

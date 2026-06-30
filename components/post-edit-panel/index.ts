@@ -141,7 +141,7 @@ defineComponent<PostEditPanelPrivate>()({
         });
         // 确保 this._selectedFiles 已初始化为数组
         this._selectedFiles = [...this._selectedFiles, ...selectedFiles];
-      } catch (err) {
+      } catch (err: unknown) {
         log.error('onAddImage', '添加图片失败', err);
         void wxShowToast({ title: '添加图片失败', icon: 'none' });
       }

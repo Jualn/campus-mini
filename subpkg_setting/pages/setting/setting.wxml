@@ -184,11 +184,14 @@
             <text class="setting-item__title">意见反馈</text>
           </view>
         </view>
-        <text class="setting-item__arrow">›</text>
+        <view class="setting-item__right">
+          <text class="setting-item__value">联系：{{wxNumber}}</text>
+        </view>
+        <!-- <text class="setting-item__arrow">›</text> -->
       </view>
       <view class="setting-divider" />
 
-      <view class="setting-item" bindtap="onGoAgreement">
+      <!-- <view class="setting-item" bindtap="onGoAgreement">
         <view class="setting-item__left">
           <image class="setting-item__icon-img" src="/images/icons/setting/user_agreement.svg" mode="aspectFit" />
           <view class="setting-item__text">
@@ -208,7 +211,7 @@
         </view>
         <text class="setting-item__arrow">›</text>
       </view>
-      <view class="setting-divider" />
+      <view class="setting-divider" /> -->
 
       <view class="setting-item">
         <view class="setting-item__left">
