@@ -70,6 +70,8 @@ export interface UserProfileInfo {
   avatarUrl?: string;
   nickname: string;
   verified?: boolean;
+  /** TODO 目前只是用于同步最新的role，不然只能通过重新登录来同步, 后续可以通过其他方式，不污染展示数据体 */
+  role?: number;
   // handle?: string;
   bio?: string;
   joinYear?: string;

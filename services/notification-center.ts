@@ -1,7 +1,7 @@
 import createLogger from '../utils/logger';
 import eventBus, { EVENTS } from '../utils/event-bus';
 import messageService from './message';
-import { isLoggedIn } from '../store/helper';
+import { isLoggedIn } from '../stores/helper';
 
 type BannerOptions = Parameters<typeof messageService.getUnreadBannerMessages>[0];
 

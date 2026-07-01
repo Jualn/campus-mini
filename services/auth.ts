@@ -2,8 +2,8 @@
 import api from './api';
 import { wxLogin } from '../utils/wx-promise';
 import storage from '../utils/storage';
-import store from '../store/index';
-import { clearUserState } from '../store/helper';
+import store from '../stores/index';
+import { clearUserState } from '../stores/helper';
 import createLogger from '../utils/logger';
 // import eventBus, { EVENTS } from '../utils/event-bus';
 import type { UserInfoDTO } from '../types/api';
@@ -66,7 +66,7 @@ const _doLogin = async () => {
   const { code } = await wxLogin();
 
   const response = await api.auth.login({ code });
-  console.log(666)
+
   // 解构返回的数据（ResultLoginVO.data）
   const { token, userInfo } = response;
 

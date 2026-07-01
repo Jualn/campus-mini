@@ -50,8 +50,6 @@ export interface UserProfileVO {
   statusDesc: string; // string
   banned: boolean; // boolean
   muted: boolean; // boolean
-  banReason: string; // string
-  banExpireAt: string; // string(date-time)
   capabilities: unknown[]; // array
   createdAt: string; // string(date-time)
 }

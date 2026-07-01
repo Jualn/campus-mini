@@ -13,7 +13,7 @@ import api from './api';
 import type { PostCardItem, PostDetail, ServiceCursorPage } from '../types/business';
 import type { PostCreateRequest, PostDetailVO, PostListBO } from '../types/api';
 import formatTime, { TimeStyle } from '../utils/time-util';
-import { getUserId } from '../store/helper';
+import { getUserId } from '../stores/helper';
 import { getAvatarInfo } from '../utils/avatar';
 import { emitPostDeleted } from '../events/post-event';
 

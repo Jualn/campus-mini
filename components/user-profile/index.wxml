@@ -26,7 +26,7 @@
         <!-- 自己：设置 + 编辑资料 -->
         <block wx:if="{{isSelf}}">
           <view class="btn-icon__wrap" bindtap="onGoSetting">
-            <image class="btn-icon" src="/images/icons/setting.svg" mode="aspectFit" />
+            <image class="btn-icon__setting" src="/images/icons/setting.svg" mode="aspectFit" />
           </view>
           <view class="btn-outline" bindtap="onEditProfile">
             <text class="btn-text">编辑资料</text>
@@ -35,7 +35,7 @@
         <!-- 别人：··· + 关注 -->
         <block wx:else>
           <view class="btn-icon" bindtap="onMore">
-            <text class="btn-icon__more">···</text>
+            <image class="btn-icon__more" src="/assets/icons/common/more.svg" mode="aspectFit"/>
           </view>
           <!-- <view class="btn-fill {{isFollowing ? 'btn-fill--grey' : ''}}" bindtap="onToggleFollow">
             <text class="btn-fill__text">{{isFollowing ? '已关注' : '关注'}}</text>

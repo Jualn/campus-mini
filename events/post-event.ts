@@ -1,5 +1,5 @@
 import eventBus, { EVENTS } from '../utils/event-bus';
-import { postSyncStore } from '../store/postSyncStore';
+import { postSyncStore } from '../stores/postSyncStore';
 import type { PostCardItem } from '../types/business';
 
 export interface PostUpdatePayload {

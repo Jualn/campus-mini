@@ -27,6 +27,7 @@
 
 import type { Settings } from '../types/business';
 import type { UserInfoDTO } from '../types/api';
+import storage, { STORAGE_KEYS } from '../utils/storage';
 
 // ✅ 1. 定义 State 结构
 interface AppState {
@@ -92,9 +93,13 @@ class Store<S extends object> {
    * @param {Object} patch 多个 key-value
    */
   setState(patch: Partial<S>): void {
-    for (const key in patch) {
-      this.set(key, patch[key] as S[keyof S]);
-    }
+    (Object.keys(patch) as (keyof S)[]).forEach((key) => {
+      const value = patch[key];
+
+      if (value !== undefined) {
+        this.set(key, value);
+      }
+    });
   }
 
   /**
@@ -117,30 +122,33 @@ class Store<S extends object> {
    */
   watch<K extends keyof S>(key: K, fn: Listener<S[K]>): () => void {
     if (!this._listeners.has(key)) this._listeners.set(key, new Set());
+
     this._listeners.get(key)?.add(fn as Listener);
+
     fn(this._state[key]); // 立即执行一次，获取初始值
+
     // 返回取消订阅函数
     return () => this._listeners.get(key)?.delete(fn as Listener); // 返回取消订阅函数
   }
 }
 
-// 4. wx 类型（微信小程序全局已有 @types/miniprogram-api-typings，此处仅兜底声明）
-declare const wx: { getStorageSync: (key: string) => string };
+const defaultUserInfo: UserInfoDTO = {
+  id: '',
+  nickname: '',
+  avatarUrl: '',
+  role: 1,
+};
 
 export default new Store<AppState>({
   /**
    * ========== 认证相关 ==========
    */
-  token: wx.getStorageSync('token') || '',
+  token: storage.get(STORAGE_KEYS.TOKEN) ?? '',
 
-  userInfo: {
-    id: '',
-    nickname: '',
-    avatarUrl: '',
-    role: 0,
-  }, // { id, name, avatar, role(1=用户,2=运营,3=管理员), ... }
+  // { id, name, avatar, role(1=用户,2=运营,3=管理员), ... }
+  userInfo: storage.get(STORAGE_KEYS.USER_INFO) ?? defaultUserInfo,
 
-  userSetting: {
+  userSetting: storage.get(STORAGE_KEYS.USER_SETTING) ?? {
     notify: {
       activity: false,
       exam: false,
@@ -161,3 +169,7 @@ export default new Store<AppState>({
   badgeCount: 0, // 消息/通知角标数
   cartCount: 0,
 });
+
+export { default as userStore } from './user';
+
+export { postStore } from './post';

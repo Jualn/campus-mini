@@ -80,6 +80,15 @@ class PostSyncStore {
     }
     this.map.clear();
   }
+
+  has(id: string) {
+    return !!this.get(id);
+  }
+
+  size() {
+    this.pruneExpired();
+    return this.map.size;
+  }
 }
 
 export const postSyncStore = new PostSyncStore();

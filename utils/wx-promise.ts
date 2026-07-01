@@ -197,6 +197,23 @@ export const showConfirm = async ({ title, content }: ConfirmOptions): Promise<b
 
 // 选图片（返回临时路径数组）
 export const chooseImages = async (count = 1): Promise<string[]> => {
+  try {
+    const res = await wxChooseMedia({
+      count,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+    });
+
+    return res.tempFiles.map((f) => f.tempFilePath);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    if (e?.errMsg?.includes('cancel')) {
+      return []; // 取消 = 正常流程
+    }
+
+    throw e; // 不要吞真正错误
+  }
   const res = await wxChooseMedia({
     count,
     mediaType: ['image'],

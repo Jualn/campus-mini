@@ -1,7 +1,6 @@
 // subpkg_user/pages/edit-profile/edit-profile.ts
 
 import {
-  chooseImages,
   wxGetWindowInfo,
   wxHideLoading,
   wxNavigateBack,
@@ -9,17 +8,28 @@ import {
   wxShowModal,
   wxShowToast,
 } from '../../../utils/wx-promise';
-import { userService } from '../../../services/index';
+import { mediaService, userService } from '../../../services/index';
 import type { EditProfileForm } from '../../../types/business';
 import createLogger from '../../../utils/logger';
+import { type SelectedMediaFile } from '../../../services/media';
+import { TARGET_TYPES } from '../../../utils/constants';
+import { userStore } from '../../../stores/index';
 
 const log = createLogger('EditProfilePage');
 
 Page({
+  _selectedAvatarFile: [] as SelectedMediaFile[],
+  _selectedBannerFile: [] as SelectedMediaFile[],
+
   data: {
     statusBarHeight: 20,
     navBarHeight: 88, // rpx → 将在 onLoad 中转为 px
+
+    loading: false,
+    loadError: false,
+
     hasChanged: false,
+
     _original: {} as EditProfileForm,
     form: {
       nickname: '',
@@ -37,25 +47,39 @@ Page({
       statusBarHeight,
       navBarHeight: statusBarHeight + 44,
     });
-    this._loadProfile();
+    void this._loadProfile();
   },
 
-  _loadProfile() {
-    userService
-      .getEditProfileForm()
-      .then((form) => {
-        this.setData({
-          form: {
-            ...form,
-          },
-          _original: {
-            ...form,
-          },
-        });
-      })
-      .catch((err: unknown) => {
-        log.error('_loadProfile', '加载资料失败:', err);
+  async _loadProfile() {
+    this.setData({
+      loading: true,
+      loadError: false,
+    });
+    const start = Date.now();
+    try {
+      const form = await userService.getEditProfileForm();
+
+      const cost = Date.now() - start;
+      const min = 300;
+
+      if (cost < min) {
+        await new Promise((r) => setTimeout(r, min - cost));
+      }
+
+      this.setData({
+        form: { ...form },
+        _original: { ...form },
+        loading: false,
+        loadError: false,
       });
+    } catch (err: unknown) {
+      log.error('_loadProfile', '加载资料失败:', err);
+
+      this.setData({
+        loading: false,
+        loadError: true,
+      });
+    }
   },
 
   onInput(e: WechatMiniprogram.Input) {
@@ -90,10 +114,14 @@ Page({
 
   async onChangeAvatar() {
     try {
-      const images = await chooseImages(1);
+      const selectedFiles = await mediaService.selectImages(1);
+      const newImgs = selectedFiles.map((f) => f.filePath);
+
       this.setData({
-        'form.avatar': images[0],
+        'form.avatarUrl': newImgs[0],
       });
+      this._selectedAvatarFile = selectedFiles;
+
       this._checkChanged();
     } catch (err) {
       log.error('onChangeAvatar', '选择头像失败:', err);
@@ -106,10 +134,14 @@ Page({
 
   async onChangeBanner() {
     try {
-      const images = await chooseImages(1);
+      const selectedFiles = await mediaService.selectImages(1);
+      const newImgs = selectedFiles.map((f) => f.filePath);
+
       this.setData({
-        'form.bannerUrl': images[0],
+        'form.bannerUrl': newImgs[0],
       });
+      this._selectedBannerFile = selectedFiles;
+
       this._checkChanged();
     } catch (err) {
       log.error('onChangeBanner', '选择封面失败:', err);
@@ -118,6 +150,10 @@ Page({
         icon: 'none',
       });
     }
+  },
+
+  onRetry() {
+    void this._loadProfile();
   },
 
   _checkChanged() {
@@ -130,8 +166,9 @@ Page({
     });
   },
 
-  onSave() {
+  async onSave() {
     if (!this.data.hasChanged) return;
+
     if (!this.data.form.nickname.trim()) {
       void wxShowToast({
         title: '昵称不能为空',
@@ -139,27 +176,84 @@ Page({
       });
       return;
     }
+
+    const original = this.data._original;
+    const current = this.data.form;
+
+    const changedForm: Partial<EditProfileForm> = {};
+
+    // 只提交发生变化的普通字段
+    if (current.nickname !== original.nickname) {
+      changedForm.nickname = current.nickname;
+    }
+
+    if (current.bio !== original.bio) {
+      changedForm.bio = current.bio;
+    }
+
+    const hasAvatarChanged = this._selectedAvatarFile.length > 0;
+    const hasBannerChanged = this._selectedBannerFile.length > 0;
+
+    // 没有普通字段变化，也没有图片变化，直接返回
+    if (Object.keys(changedForm).length === 0 && !hasAvatarChanged && !hasBannerChanged) {
+      return;
+    }
+
     void wxShowLoading({
       title: '保存中...',
     });
-    userService
-      .saveEditProfile(this.data.form)
-      .then(() => {
-        void wxHideLoading();
+
+    try {
+      if (hasAvatarChanged) {
+        const avatarUrl = await mediaService.uploadAndSaveFiles(
+          TARGET_TYPES.USER.value,
+          this._selectedAvatarFile,
+        );
+
+        if (avatarUrl[0]?.url) {
+          changedForm.avatarUrl = avatarUrl[0].url;
+        }
+      }
+
+      if (hasBannerChanged) {
+        const bannerUrl = await mediaService.uploadAndSaveFiles(
+          TARGET_TYPES.USER.value,
+          this._selectedBannerFile,
+        );
+
+        if (bannerUrl[0]?.url) {
+          changedForm.bannerUrl = bannerUrl[0].url;
+        }
+      }
+
+      if (Object.keys(changedForm).length === 0) {
         void wxShowToast({
-          title: '保存成功',
-          icon: 'success',
-        });
-        void wxNavigateBack();
-      })
-      .catch((err: unknown) => {
-        void wxHideLoading();
-        log.error('onSave', '保存失败:', err);
-        void wxShowToast({
-          title: '保存失败,请稍后再试',
+          title: '没有需要保存的内容',
           icon: 'none',
         });
+        return;
+      }
+
+      await userStore.saveEditProfileAndSync(changedForm);
+
+      this._selectedAvatarFile = [];
+      this._selectedBannerFile = [];
+
+      void wxShowToast({
+        title: '保存成功',
+        icon: 'success',
       });
+
+      void wxNavigateBack();
+    } catch (err) {
+      log.error('onSave', '保存失败:', err);
+      void wxShowToast({
+        title: '保存失败,请稍后再试',
+        icon: 'none',
+      });
+    } finally {
+      void wxHideLoading();
+    }
   },
 
   onCancel() {
@@ -175,7 +269,12 @@ Page({
       cancelText: '继续编辑',
     })
       .then((res) => {
-        if (res.confirm) void wxNavigateBack();
+        if (res.confirm) {
+          void wxNavigateBack();
+
+          this._selectedAvatarFile = [];
+          this._selectedBannerFile = [];
+        }
       })
       .catch((err: unknown) => {
         log.error('onCancel', '显示确认框失败:', err);

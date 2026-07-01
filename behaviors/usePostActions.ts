@@ -1,13 +1,14 @@
 import defineBehavior from '../utils/defineBehavior';
 import { wxHideKeyboard, wxShowActionSheet, wxShowModal, wxShowToast } from '../utils/wx-promise';
-import { interactService, postService } from '../services/index';
+import { postService } from '../services/index';
 import { TARGET_TYPES } from '../utils/constants';
 import type { PostCardItem } from '../types/business';
 import createLogger from '../utils/logger';
 import eventBus, { EVENTS } from '../utils/event-bus';
-import { postSyncStore } from '../store/postSyncStore';
+import { postSyncStore } from '../stores/postSyncStore';
 import { type PostUpdatePayload } from '../events/post-event';
-import { getUserInfo } from '../store/helper';
+import { getUserInfo } from '../stores/helper';
+import { postStore } from '../stores/index';
 
 const log = createLogger('usePostActions');
 
@@ -63,9 +64,6 @@ interface PostActionsPrivate {
    * 页面销毁时依次执行，避免遗漏某个监听器。
    */
   _behaviorDisposers: (() => void)[];
-
-  /** 当前页面生命周期内已经上报过浏览的帖子，避免重复计数。 */
-  _postActionsViewedPostIds: Set<string>;
 
   /** 独立记录弹窗状态，避免 leave / close 重复触发宿主回调。用于判断 page-container 是否已经处于打开状态。 */
   _postActionsPopupVisible: boolean;
@@ -126,14 +124,23 @@ export function mergePostSyncCache(list: PostCardItem[]) {
     if (!cached) return post;
 
     const nextIsLiked = typeof cached.isLiked === 'boolean' ? cached.isLiked : post.isLiked;
+
     const nextLikeCount =
       typeof cached.likeCount === 'number' ? Math.max(0, cached.likeCount) : post.likeCount;
+
     const nextCommentCount =
       typeof cached.commentCount === 'number'
         ? Math.max(0, cached.commentCount)
         : post.commentCount;
+
+    // viewCount 需要和服务端返回的值做比较，避免本地缓存的增量覆盖了服务端的最新值。
+    const serverViewCount = typeof post.viewCount === 'number' ? Math.max(0, post.viewCount) : 0;
+    const cachedViewCount =
+      typeof cached.viewCount === 'number' ? Math.max(0, cached.viewCount) : undefined;
     const nextViewCount =
-      typeof cached.viewCount === 'number' ? Math.max(0, cached.viewCount) : post.viewCount;
+      typeof cachedViewCount === 'number'
+        ? Math.max(serverViewCount, cachedViewCount)
+        : post.viewCount;
 
     const hasDiff =
       nextIsLiked !== post.isLiked ||
@@ -206,7 +213,6 @@ export function usePostActions<TExtraThis extends object = object>(
       attached() {
         // 私有属性初始化, 私有字段未初始化会导致页面重新进入时状态异常，例如已经上报过浏览的帖子再次上报，或弹窗状态丢失。
         this._behaviorDisposers = [];
-        this._postActionsViewedPostIds = new Set<string>();
         this._postActionsPopupVisible = this.data.showPopup;
 
         this._behaviorDisposers.push(
@@ -229,7 +235,6 @@ export function usePostActions<TExtraThis extends object = object>(
 
         // 清理私有属性，避免页面重新进入时状态异常
         this._behaviorDisposers = [];
-        this._postActionsViewedPostIds.clear();
         this._postActionsPopupVisible = false;
       },
     },
@@ -334,62 +339,22 @@ export function usePostActions<TExtraThis extends object = object>(
        * @returns Promise<void>
        */
       _recordPostView(postId: string) {
-        if (!postId || this._postActionsViewedPostIds.has(postId)) return;
+        if (!postId) return;
 
-        this._postActionsViewedPostIds.add(postId);
-        this._bumpPostViewCount(postId);
-
-        interactService
-          .reportView({
-            targetType: TARGET_TYPES.POST.value,
-            targetId: postId,
-          })
-          .catch((err: unknown) => {
-            // 浏览数采用乐观更新：上报失败不回滚 UI，避免列表数字来回跳动。
-            log.warn('_recordPostView', '上报浏览失败', err);
-          });
-      },
-
-      /**
-       * 浏览数 +1 的本地增量更新。
-       *
-       * @param postId 帖子 ID
-       */
-      _bumpPostViewCount(postId: string) {
-        const cached = postSyncStore.get(postId);
-
-        let currentCount: number | undefined;
+        let currentViewCount = 0;
 
         for (const listKey of postListKeys) {
           const list = this.data[listKey];
           if (!Array.isArray(list)) continue;
 
           const post = list.find((item) => item.id === postId);
-          if (post) {
-            currentCount = post.viewCount ? post.viewCount : 0;
-            break;
+          if (post && typeof post.viewCount === 'number') {
+            currentViewCount = Math.max(currentViewCount, post.viewCount);
           }
         }
 
-        const baseCount =
-          currentCount ??
-          (typeof cached?.viewCount === 'number' ? Math.max(0, cached.viewCount) : 0);
-        const nextCount = Math.max(0, baseCount + 1);
-
-        this._applyPostPatch({
-          id: postId,
-          viewCount: nextCount,
-        });
-
-        postSyncStore.set({
-          id: postId,
-          viewCount: nextCount,
-        });
-
-        eventBus.emit(EVENTS.POST_UPDATED, {
-          id: postId,
-          viewCount: nextCount,
-        });
+        // this._bumpPostViewCount(postId);
+        postStore.record(postId, currentViewCount);
       },
 
       async _deletePostFromCard(postId: string) {

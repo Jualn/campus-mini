@@ -111,9 +111,9 @@ const resolveLocalRoute = (
   if (!targetType || targetType === 'none' || !targetId) return null;
 
   const routes: Record<string, string> = {
-    activity: `/subpkg_activity/pages/detail/detail?id=${targetId}`,
+    activity: `/subpkg_activity/pages/detail/detail?activityId=${targetId}`,
     exam: `/subpkg_exam/pages/detail/detail?examId=${targetId}`,
-    post: `/subpkg_community/pages/detail/detail?id=${targetId}`,
+    post: `/subpkg_community/pages/detail/detail?postId=${targetId}`,
   };
 
   const url = routes[targetType];

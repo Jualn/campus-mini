@@ -1,13 +1,14 @@
 import { wxPageScrollTo, wxShowToast } from '../../utils/wx-promise';
-import { postService, userService } from '../../services/index';
+import { postService } from '../../services/index';
 import type { PostCardItem, UserProfileInfo } from '../../types/business';
 import { getCustomTabBar } from '../../utils/tabbar';
-import { scrollStore } from '../../store/scrollStore';
+import { scrollStore } from '../../stores/scrollStore';
 import createLogger from '../../utils/logger';
 import eventBus, { EVENTS } from '../../utils/event-bus';
 import { TARGET_TYPES } from '../../utils/constants';
 import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
+import { userStore } from '../../stores/index';
 
 const log = createLogger('MePage');
 
@@ -46,7 +47,7 @@ Page({
     activeTab: 'posts',
 
     userInfo: {} as UserProfileInfo,
- 
+
     likesLoaded: false,
 
     targetType: TARGET_TYPES.POST.value, // 默认目标类型为 post
@@ -151,7 +152,8 @@ Page({
     }
 
     try {
-      const result = await userService.getMePageData();
+      // const result = await userService.getMePageData();
+      const result = await userStore.getMePageDataAsync();
       const { merged } = this._applyPostSyncCache(result.posts);
 
       const patch: Record<string, unknown> = {

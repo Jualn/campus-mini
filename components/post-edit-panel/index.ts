@@ -150,10 +150,16 @@ defineComponent<PostEditPanelPrivate>()({
     onRemoveImage(e: WechatMiniprogram.TouchEvent) {
       const { index } = e.currentTarget.dataset as { index: number };
 
+      const removedPath = this.data.images[index];
+
       const images = this.data.images.filter((_, i) => i !== index);
+
+      const selectedFiles = this._selectedFiles.filter((f) => f.filePath !== removedPath);
+
       this.setData({
         images,
       });
+      this._selectedFiles = selectedFiles;
     },
 
     // ── 发布 ──────────────────────────────────────────

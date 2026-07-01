@@ -1,4 +1,5 @@
 /* subpkg_user/pages/edit-profile/index.wxss */
+@import "../../../styles/skeleton.wxss";
 
 page {
   background: var(--color-bg-page);
@@ -411,4 +412,64 @@ page {
    ===================================================== */
 .bottom-safe {
   height: calc(96rpx + 32rpx + 32rpx + env(safe-area-inset-bottom));
+}
+
+
+
+/* =====================================================
+    加载中 / 错误提示
+   ===================================================== */
+.page-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 160rpx; /* nav-bar height */
+  bottom: 0;
+  background: #fff;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-card {
+  position: absolute;
+  top: 280rpx;
+  width: 90%;
+}
+
+.skeleton-title {
+  width: 60%;
+  height: 40rpx;
+  margin-bottom: 24rpx;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.skeleton-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  margin-bottom: 40rpx;
+}
+
+.error-box {
+  text-align: center;
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: #999;
+  margin-bottom: 20rpx;
+}
+
+.retry-btn {
+  padding: 16rpx 32rpx;
+  background: #000;
+  color: #fff;
+  border-radius: 16rpx;
 }

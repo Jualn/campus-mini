@@ -37,7 +37,7 @@
   <!-- 范围筛选 -->
   <view class="scope-filter" bindtap="onShowScopeFilter">
     <text class="scope-filter__text">{{activeScope || '全院'}}</text>
-    <text class="scope-filter__arrow">⌄</text>
+    <text class="scope-filter__arrow">▼</text>
   </view>
 </view>
 

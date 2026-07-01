@@ -1,5 +1,24 @@
 <!-- subpkg_user/pages/edit-profile/index.wxml -->
+
 <view class="edit-page">
+
+<!-- 加载态 -->
+<view wx:if="{{loading}}" class="page-mask">
+  <view class="loading-card">
+    <view class="skeleton-block skeleton-radius-lg skeleton-avatar"></view>
+    <view class="skeleton-block skeleton-radius-md skeleton-title"></view>
+    <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
+    <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
+  </view>
+</view>
+
+<!-- 错误态 -->
+<view wx:elif="{{loadError}}" class="page-mask">
+  <view class="error-box">
+    <text class="error-text">加载失败</text>
+    <view class="retry-btn" bindtap="onRetry">重试</view>
+  </view>
+</view>
 
   <!-- 导航栏 -->
   <view class="nav-bar" style="padding-top:{{statusBarHeight}}px;">
@@ -22,7 +41,7 @@
   <!-- 头像行 -->
   <view class="avatar-row">
     <view class="avatar-wrap" bindtap="onChangeAvatar">
-      <image class="avatar-img" src="{{form.avatar}}" mode="aspectFill" />
+      <image class="avatar-img" src="{{form.avatarUrl}}" mode="aspectFill" />
       <view class="avatar-mask">
         <image class="avatar-mask__icon" src="/assets/icons/profile/change_avatar_line.svg" mode="aspectFit" />
       </view>

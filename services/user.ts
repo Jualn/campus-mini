@@ -14,7 +14,7 @@
 
 import api from './api';
 import postService from './post';
-import storage from '../utils/storage';
+import storage, { STORAGE_KEYS } from '../utils/storage';
 import createLogger from '../utils/logger';
 import type {
   EditProfileForm,
@@ -33,18 +33,18 @@ import type {
   UserSettingVO,
 } from '../types/api';
 import formatTime, { TimeStyle } from '../utils/time-util';
-import store from '../store/index';
-import { getUserInfo } from '../store/helper';
+import { getUserInfo } from '../stores/helper';
 
 const log = createLogger('UserService');
 
 const toProfileInfo = (profile: UserProfileVO): UserProfileInfo => ({
   nickname: profile.nickname,
-  avatarUrl: profile.avatarUrl || '',
+  avatarUrl: profile.avatarUrl,
   bannerUrl: profile.backgroundUrl,
   bio: profile.bio,
   verified: profile.status === 1,
   joinYear: formatTime(profile.createdAt, TimeStyle.YM),
+  role: profile.role,
 });
 
 const toPublicProfileInfo = (profile: UserPublicProfileVO): UserProfileInfo => ({
@@ -157,7 +157,7 @@ export const getPublicProfile = async (userId: string): Promise<UserProfileInfo>
 export const getMePageData = async (): Promise<MePageData> => {
   let userId = getUserInfo('id');
   if (!userId) {
-    const user = storage.get('userInfo') as UserInfoDTO | null;
+    const user = storage.get(STORAGE_KEYS.USER_INFO) as UserInfoDTO | null;
     if (!user) {
       return Promise.reject(new Error('用户未登录'));
     }
@@ -229,23 +229,35 @@ export const bindPhone = async (phone: number): Promise<void> => {
  *   bio: '个人签名'
  * })
  */
-export const updateUserInfo = async (data: EditProfileForm): Promise<void> => {
-  const payload: UserProfileUpdateRequest = {
-    nickname: data.nickname ? data.nickname : undefined,
-    avatarUrl: data.avatarUrl ? data.avatarUrl : undefined,
-    backgroundUrl: data.bannerUrl ? data.bannerUrl : undefined,
-    bio: data.bio ? data.bio : undefined,
-    // gender: data.gender ? formValueToGender(data.gender) : undefined,
-  };
+export const updateUserInfo = async (
+  data: Partial<EditProfileForm>,
+): Promise<UserProfileUpdateRequest> => {
+  const payload: UserProfileUpdateRequest = {};
+
+  if (data.nickname !== undefined) {
+    payload.nickname = data.nickname;
+  }
+
+  if (data.avatarUrl !== undefined) {
+    payload.avatarUrl = data.avatarUrl;
+  }
+
+  if (data.bannerUrl !== undefined) {
+    payload.backgroundUrl = data.bannerUrl;
+  }
+
+  if (data.bio !== undefined) {
+    payload.bio = data.bio;
+  }
+
+  // 如果没有任何字段变化，不请求后端
+  if (Object.keys(payload).length === 0) {
+    return payload;
+  }
 
   await api.user.updateCurrentProfile(payload);
-  const userInfo = store.get('userInfo');
-  if (userInfo) {
-    userInfo.avatarUrl = payload.avatarUrl ?? userInfo.avatarUrl;
-    userInfo.nickname = payload.nickname ?? userInfo.nickname;
-    storage.set('userInfo', userInfo);
-    store.set('userInfo', userInfo);
-  }
+
+  return payload;
 };
 
 /**

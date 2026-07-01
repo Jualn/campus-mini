@@ -14,10 +14,10 @@ import {
   wxShowToast,
 } from '../../../utils/wx-promise';
 import createLogger from '../../../utils/logger';
-import store from '../../../store/index';
+import store, { postStore } from '../../../stores/index';
 import type { PostDetail } from '../../../types/business';
 import { emitPostUpdated } from '../../../events/post-event';
-import { postSyncStore } from '../../../store/postSyncStore';
+import { postSyncStore } from '../../../stores/postSyncStore';
 import { drawPostPoster } from '../../../utils/share_poster/postPoster';
 
 const log = createLogger('PostDetailPage');
@@ -33,6 +33,10 @@ Page({
   _currentScrollTop: 0,
   _enteredFromShare: false,
   _likePending: false,
+  /** 浏览数上报定时器 */
+  _viewTimer: 0,
+  /**  */
+  _viewScheduled: false,
 
   data: {
     targetId: '',
@@ -67,19 +71,14 @@ Page({
     });
 
     const myAvatar = store.get('userInfo')?.avatarUrl;
-    const viewCount = this.data.post.viewCount;
+
     this.setData({
       myAvatar: myAvatar ?? '',
-      'post.viewCount': viewCount + 1,
+      targetId: query.postId || '',
     });
 
     this._loadPost(query.postId);
-
-    interactService
-      .reportView({ targetType: TARGET_TYPES.POST.value, targetId: query.postId })
-      .catch((err: unknown) => {
-        log.warn('reportView', '上报浏览失败', err);
-      });
+    this._scheduleViewReport(query.postId);
 
     // 监听键盘高度，输入栏跟随上移
     wxOnKeyboardHeightChange((res) => {
@@ -91,6 +90,7 @@ Page({
   },
 
   onUnload() {
+    this._clearViewTimer();
     wxOffKeyboardHeightChange();
   },
 
@@ -152,10 +152,24 @@ Page({
         const merged = { ...res };
 
         if (cached) {
-          if (typeof cached.isLiked === 'boolean') merged.isLiked = cached.isLiked;
-          if (typeof cached.likeCount === 'number') merged.likeCount = cached.likeCount;
-          if (typeof cached.commentCount === 'number') merged.commentCount = cached.commentCount;
-          if (typeof cached.viewCount === 'number') merged.viewCount = cached.viewCount;
+          if (typeof cached.isLiked === 'boolean') {
+            merged.isLiked = cached.isLiked;
+          }
+
+          if (typeof cached.likeCount === 'number') {
+            merged.likeCount = Math.max(0, cached.likeCount);
+          }
+
+          if (typeof cached.commentCount === 'number') {
+            merged.commentCount = Math.max(0, cached.commentCount);
+          }
+
+          if (typeof cached.viewCount === 'number') {
+            const serverViewCount =
+              typeof merged.viewCount === 'number' ? Math.max(0, merged.viewCount) : 0;
+            const cachedViewCount = Math.max(0, cached.viewCount);
+            merged.viewCount = Math.max(serverViewCount, cachedViewCount);
+          }
         }
 
         const safeLikeCount = typeof merged.likeCount === 'number' ? merged.likeCount : 0;
@@ -199,6 +213,33 @@ Page({
       ...(typeof patch.commentCount === 'number' ? { commentCount: patch.commentCount } : {}),
       ...(typeof patch.viewCount === 'number' ? { viewCount: patch.viewCount } : {}),
     });
+  },
+
+  _scheduleViewReport(postId: string) {
+    if (!postId || this._viewScheduled || this._viewTimer) return;
+
+    this._viewScheduled = true;
+
+    this._viewTimer = setTimeout(() => {
+      this._viewTimer = 0;
+      this._recordDetailView(postId);
+    }, 1200);
+  },
+
+  _clearViewTimer() {
+    if (!this._viewTimer) return;
+
+    clearTimeout(this._viewTimer);
+    this._viewTimer = 0;
+  },
+
+  _recordDetailView(postId: string) {
+    if (!postId) return;
+
+    const currentViewCount =
+      typeof this.data.post.viewCount === 'number' ? this.data.post.viewCount : 0;
+
+    postStore.record(postId, currentViewCount);
   },
 
   // comment-panel 回调：评论数变化时同步到帖子数据

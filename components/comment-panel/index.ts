@@ -52,7 +52,7 @@ import {
 } from '../../utils/wx-promise';
 import { TARGET_TYPES, type TargetType } from '../../utils/constants';
 import type { CommentItem, ReplyItem, ReplyTarget } from '../../types/business';
-import { getUserInfo } from '../../store/helper';
+import { getUserInfo } from '../../stores/helper';
 import createLogger from '../../utils/logger';
 import { getAvatarInfo } from '../../utils/avatar';
 import { useSheet } from '../../behaviors/sheet-mixin';

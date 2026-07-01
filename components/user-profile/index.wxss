@@ -106,7 +106,7 @@
   justify-content: center;
 }
 
-.btn-icon {
+.btn-icon__setting{
   width: 52rpx;
   height: 52rpx;
   display: block;
@@ -114,11 +114,16 @@
   flex-shrink: 0;
 }
 
+.btn-icon {
+  display: block;
+  opacity: 0.86;
+  flex-shrink: 0;
+}
+
 .btn-icon__more {
-  font-size: 30rpx;
-  color: var(--color-text-primary);
-  letter-spacing: 2rpx;
-  line-height: 1;
+  height: 76rpx;
+  width: 76rpx;
+  flex-shrink: 0;
 }
 
 .btn-outline {

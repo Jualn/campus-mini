@@ -12,7 +12,7 @@ import { userService } from '../../../services/index';
 import storage, { STORAGE_KEYS } from '../../../utils/storage';
 import type { Settings } from '../../../types/business';
 import createLogger from '../../../utils/logger';
-import store from '../../../store/index';
+import store from '../../../stores/index';
 
 const log = createLogger('SettingPage');
 
