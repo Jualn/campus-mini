@@ -5,21 +5,21 @@ import {
   wxNavigateTo,
   wxPageScrollTo,
   wxShowLoading,
-  wxShowToast,
 } from '../../utils/wx-promise';
-import { examService, mediaService, postService } from '../../services/index';
 import { TARGET_TYPES } from '../../utils/constants';
-import createLogger from '../../utils/logger';
-import type { SelectedMediaFile } from '../../services/media';
+import { createLogger } from '../../utils/logger';
+import type { SelectedMediaFile } from '../../actions/media';
 import type { AttachmentItemRequest } from '../../types/api';
 import type { IndexActivityCard, IndexExamCardItem, PostCardItem } from '../../types/business';
 import { getCustomTabBar } from '../../utils/tabbar';
 import { scrollStore } from '../../stores/scrollStore';
-import { emitPostCreated } from '../../events/post-event';
 import { getUserInfo } from '../../stores/helper';
-import { authReady } from '../../services/auth';
+import { authReady } from '../../actions/auth';
 import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
+import definePage from '../../utils/definePage';
+import { notifyToast, showErrorToast } from '../../utils/notify';
+import { examAction, mediaAction, postAction } from '../../actions/index';
 
 const log = createLogger('IndexPage');
 
@@ -28,9 +28,10 @@ type LoadScene = 'initial' | 'refresh';
 interface IndexPageExtraThis {
   _tabBarHidden: boolean;
   _setPopupTabBarHidden: (hidden: boolean) => void;
+  _prependPostCard: (post: PostCardItem) => void;
 }
 
-Page({
+definePage({
   _currentScrollTop: 0,
   _lastScrollTop: 0,
   /** 当前真实应用到 custom-tabbar 的隐藏状态 */
@@ -41,6 +42,7 @@ Page({
   _tabBarHiddenByPopup: false,
   /** 存储当前是否正在预览图片 */
   _isPreviewingImage: false,
+  _previewRestoreTimer: null as number | null,
   _pullDownRefreshEnabled: false,
   // _viewedPostIds: new Set<string>(),
   /** 记录最后一篇文章的ID */
@@ -60,6 +62,9 @@ Page({
       onPopupVisibleChange(visible) {
         // 同步页面的 showPopup 状态，保持一致
         this._setPopupTabBarHidden(visible);
+      },
+      onPostCreated(post) {
+        this._prependPostCard(post);
       },
     }),
   ],
@@ -114,7 +119,7 @@ Page({
       statusBarHeight: sys.statusBarHeight,
       navHeight: menuButton.top + 10,
       // 考试数据为本地同步数据，先准备好；即使动态接口失败，顶部内容也能正常展示。
-      examList: examService.getExamSimpleList(),
+      examList: examAction.getExamSimpleList(),
     });
 
     this._listLoadBeginInitial();
@@ -133,8 +138,13 @@ Page({
   },
 
   onUnload() {
+    if (this._previewRestoreTimer !== null) {
+      clearInterval(this._previewRestoreTimer);
+      this._previewRestoreTimer = null;
+    }
+
     // 卸载页面时移除事件监听，避免内存泄漏
-    this._disposers.forEach((off) => {
+    this._disposers.forEach((off: () => void) => {
       off();
     });
     this._disposers = [];
@@ -262,26 +272,25 @@ Page({
     }
 
     try {
-      const post = await postService.fetchPostList({});
-      const { merged } = this._applyPostSyncCache(post.list);
+      const post = await postAction.fetchPostList({});
 
       // 游标属于页面实例字段，不能通过 setData 写入，否则 _loadMorePosts 读取不到。
       this._lastPostId = post.nextCursor ?? '';
 
       this.setData({
-        posts: merged,
+        posts: post.list,
       });
 
       if (isInitial) {
         this._listLoadEndInitial({
           success: true,
-          hasContent: merged.length > 0,
+          hasContent: post.list.length > 0,
           hasMore: post.hasMore,
         });
       } else {
         this._listLoadEndRefresh({
           success: true,
-          hasContent: merged.length > 0,
+          hasContent: post.list.length > 0,
           hasMore: post.hasMore,
         });
       }
@@ -303,9 +312,8 @@ Page({
         });
 
         if (hasVisiblePosts) {
-          void wxShowToast({
-            title: '刷新失败，已保留当前内容',
-            icon: 'none',
+          showErrorToast(err, {
+            fallback: '刷新失败，已保留当前内容',
           });
         }
       }
@@ -333,17 +341,16 @@ Page({
     this._listLoadBeginMore();
 
     try {
-      const res = await postService.fetchPostList({ lastId });
+      const res = await postAction.fetchPostList({ lastId });
 
       // 防止后端游标边界重复返回同一条内容，避免列表出现重复卡片。
       const existingIds = new Set(this.data.posts.map((item) => item.id));
       const uniqueAppendList = res.list.filter((item) => !existingIds.has(item.id));
       const nextList = [...this.data.posts, ...uniqueAppendList];
-      const { merged } = this._applyPostSyncCache(nextList);
 
       this._lastPostId = res.nextCursor ?? '';
       this.setData({
-        posts: merged,
+        posts: nextList,
       });
 
       this._listLoadEndMore({
@@ -480,9 +487,11 @@ Page({
 
     if (this._isPreviewingImage) {
       // 如果正在预览图片，等预览结束再恢复滚动位置 （预览图片会改变页面结构，直接恢复滚动位置可能不准确）
-      const checkPreviewEnd = setInterval(() => {
+      if (this._previewRestoreTimer !== null) clearInterval(this._previewRestoreTimer);
+      this._previewRestoreTimer = setInterval(() => {
         if (!this._isPreviewingImage) {
-          clearInterval(checkPreviewEnd);
+          if (this._previewRestoreTimer !== null) clearInterval(this._previewRestoreTimer);
+          this._previewRestoreTimer = null;
           wxPageScrollTo({ scrollTop: savedScrollTop }).catch((err: unknown) => {
             log.error('_restoreScrollPosition', '恢复滚动位置失败', err);
           });
@@ -504,7 +513,7 @@ Page({
     this._saveCurrentScrollTop();
     wxNavigateTo({ url }).catch((err: unknown) => {
       log.error('_navigateTo', '导航失败', err);
-      void wxShowToast({ title: '导航失败', icon: 'error' });
+      notifyToast({ title: '导航失败', icon: 'error' });
     });
   },
 
@@ -584,7 +593,7 @@ Page({
       // 只有用户最终点击发布时才上传 COS
       // 用户选择图片、取消图片、关闭弹窗时，不上传 COS
       if (selectedFiles && selectedFiles.length > 0) {
-        attachmentItems = await mediaService.uploadAndSaveFiles(
+        attachmentItems = await mediaAction.uploadAndSaveFiles(
           TARGET_TYPES.POST.value,
           selectedFiles,
         );
@@ -594,24 +603,21 @@ Page({
       // 当前未做 COS 孤儿文件回收。
       // 如果 COS 上传成功但 publishPost 失败，可能产生少量无业务引用文件。
       // 现阶段先观察 COS 存储情况，后续如有必要再增加 objectKey 生命周期记录和定时清理。
-      const postCard = await postService.publishPost({
+      await postAction.publishPostAndSync({
         title: this._generateTitle(content),
         content,
         attachmentItems,
       });
 
       this._closePopup(true);
-      this._prependPostCard(postCard);
-      emitPostCreated(postCard);
 
-      void wxShowToast({
+      notifyToast({
         title: '发布成功',
         icon: 'success',
       });
     } catch (err) {
-      void wxShowToast({
-        title: '发布帖子失败，请稍后重试',
-        icon: 'none',
+      showErrorToast(err, {
+        fallback: '发布帖子失败，请稍后重试',
       });
 
       log.error('onPostSubmit', '发布帖子异常', err);

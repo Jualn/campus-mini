@@ -1,49 +1,23 @@
-// index.ts
 /**
- * Store（轻量状态管理）
+ * 应用级运行时状态。
  *
- * 用于管理全局共享状态，并支持响应式订阅机制。
- *
- * 核心思想：
- * - state：存储全局状态（内存）
- * - set：修改状态并触发更新
- * - get：读取状态
- * - watch：监听某个 key 的变化
- *
- * ⚠️ 特点说明：
- * - 仅运行时有效（刷新会丢失）
- * - 需要结合 wx.storage 做持久化
- * - 不支持深层自动响应（仅 key 级别）
- *
- * 推荐用途：
- * - userInfo
- * - token
- * - cartCount
- * - UI 状态（tab / badge / theme）
- *
- * 不推荐用途：
- * - 大型复杂对象深层变更（建议拆分 key）
+ * Store 不访问后端或 Storage。Action 负责初始化、持久化和清理状态；
+ * 页面只通过 Action 或只读 helper 使用这些数据。
  */
 
 import type { Settings } from '../types/business';
 import type { UserInfoDTO } from '../types/api';
-import storage, { STORAGE_KEYS } from '../utils/storage';
 
 // ✅ 1. 定义 State 结构
-interface AppState {
-  token?: string;
-  userInfo?: UserInfoDTO;
-  selectedTabIndex?: number;
-  badgeCount?: number;
-  cartCount?: number;
-  userSetting?: Settings;
+export interface AppState {
+  token: string;
+  userInfo: UserInfoDTO;
+  userSetting: Settings;
 }
 
-// ✅ 2. 订阅回调类型
 type Listener<T = unknown> = (value: T) => void;
 
-// ✅ 3. Store 用泛型约束 S，key 自动推断为 keyof S
-class Store<S extends object> {
+export class Store<S extends object> {
   private _state: S;
   private _listeners: Map<keyof S, Set<Listener>>;
   /**
@@ -139,37 +113,18 @@ const defaultUserInfo: UserInfoDTO = {
   role: 1,
 };
 
-export default new Store<AppState>({
-  /**
-   * ========== 认证相关 ==========
-   */
-  token: storage.get(STORAGE_KEYS.TOKEN) ?? '',
-
-  // { id, name, avatar, role(1=用户,2=运营,3=管理员), ... }
-  userInfo: storage.get(STORAGE_KEYS.USER_INFO) ?? defaultUserInfo,
-
-  userSetting: storage.get(STORAGE_KEYS.USER_SETTING) ?? {
-    notify: {
-      activity: false,
-      exam: false,
-      interaction: false,
-      system: false,
-      audit: false,
-    },
+export const createDefaultUserSettings = (): Settings => ({
+  notify: {
+    activity: false,
+    exam: false,
+    interaction: false,
+    system: false,
+    audit: false,
   },
-  /**
-   * ========== UI状态 ==========
-   * 运行时状态，页面刷新后丢失
-   */
-  selectedTabIndex: 0, // 当前选中的tabbar索引
-
-  /**
-   * ========== 其他状态 ==========
-   */
-  badgeCount: 0, // 消息/通知角标数
-  cartCount: 0,
 });
 
-export { default as userStore } from './user';
-
-export { postStore } from './post';
+export const appStore = new Store<AppState>({
+  token: '',
+  userInfo: defaultUserInfo,
+  userSetting: createDefaultUserSettings(),
+});

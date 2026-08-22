@@ -1,7 +1,8 @@
-import eventBus, { EVENTS } from '../utils/event-bus';
+import { eventBus, EVENTS } from '../utils/event-bus';
 import { wxPageScrollTo, wxSwitchTab } from '../utils/wx-promise';
 import defineComponent from '../utils/defineComponent';
-import { getUnreadCount } from '../services/notification-center';
+import { getUnreadCount } from '../actions/notification-center';
+import { ROUTES } from '../utils/routes';
 
 /**
  * 自定义 TabBar 组件接口
@@ -50,23 +51,23 @@ defineComponent<Private>()({
     tabList: [
       {
         text: '首页',
-        url: '/pages/index/index',
+        url: ROUTES.HOME,
         icon: '/images/tabbar/home.svg',
         iconActive: '/images/tabbar/home-active.svg',
       },
       {
         text: '消息',
-        url: '/pages/message/message',
+        url: ROUTES.MESSAGE,
         icon: '/images/tabbar/message.svg',
         iconActive: '/images/tabbar/message-active.svg',
         badge: 0,
       },
       {
         text: '我的',
-        url: '/pages/me/me',
+        url: ROUTES.ME,
         icon: '/images/tabbar/user.svg',
         iconActive: '/images/tabbar/user-active.svg',
-      }
+      },
       // {
       //   text: '测试',
       //   url: '/pages/test/test',

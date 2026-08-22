@@ -1,10 +1,11 @@
 // subpkg_exam/pages/detail/detail.ts
 
-import { wxNavigateBack, wxShowToast } from '../../../utils/wx-promise';
-import { examService } from '../../../services/index';
-import createLogger from '../../../utils/logger';
+import { wxNavigateBack, wxSetClipboardData } from '../../../utils/wx-promise';
+import { examAction } from '../../../actions/index';
+import { createLogger } from '../../../utils/logger';
 import type { ExamDetail } from '../../../types/business';
 import { drawExamPoster } from '../../utils/examPoster';
+import { showErrorToast, showSuccessToast } from '../../../utils/notify';
 
 const log = createLogger('ExamDetailPage');
 
@@ -28,16 +29,13 @@ Page({
       return;
     }
     try {
-      const detail = await examService.getExamDetail(examId);
+      const detail = await examAction.getExamDetail(examId);
       this.setData({
         exam: detail,
       });
     } catch (err) {
       log.error('onLoad', `加载考试详情失败 [${examId}]`, err);
-      void wxShowToast({
-        title: '加载考试详情失败',
-        icon: 'error',
-      });
+      showErrorToast(err, { fallback: '加载考试详情失败' });
     }
   },
 
@@ -93,24 +91,16 @@ Page({
 
   onOpenLink(e: WechatMiniprogram.TouchEvent) {
     const { url } = e.currentTarget.dataset as { url: string };
-  
+
     if (typeof url !== 'string' || !url.trim()) return;
-  
-    wx.setClipboardData({
-      data: url,
-      success: () => {
-        wx.showToast({
-          title: '链接已复制',
-          icon: 'success'
-        });
-      },
-      fail: () => {
-        wx.showToast({
-          title: '复制失败',
-          icon: 'none'
-        });
-      }
-    });
+
+    void wxSetClipboardData({ data: url })
+      .then(() => {
+        showSuccessToast('链接已复制');
+      })
+      .catch((err: unknown) => {
+        showErrorToast(err, { fallback: '复制失败' });
+      });
   },
 
   onBack() {

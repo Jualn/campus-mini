@@ -8,12 +8,12 @@
  * - DELETE /v1/comment/{commentId}
  */
 
-import api from './api';
-import createLogger from '../utils/logger';
+import { api } from './api';
+import { createLogger } from '../utils/logger';
 import type { CommentCreateRequest, CommentPageQuery, CommentVO, ReplyVO } from '../types/api';
 import type { CommentItem, ReplyItem, ServiceCursorPage } from '../types/business';
 import { getAvatarInfo } from '../utils/avatar';
-import formatTime, { TimeStyle } from '../utils/time-util';
+import { formatTime, TimeStyle } from '../utils/time-util';
 
 const log = createLogger('CommentService');
 
@@ -155,11 +155,4 @@ export const removeComment = async (commentId: string) => {
     log.error('removeComment', `删除评论失败 [${commentId}]`, err);
     throw err;
   }
-};
-
-export default {
-  getCommentList,
-  getReplyList,
-  createComment,
-  removeComment,
 };

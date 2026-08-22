@@ -12,28 +12,18 @@
  * - follower / following / stats / search
  */
 
-import api from './api';
-import postService from './post';
-import storage, { STORAGE_KEYS } from '../utils/storage';
-import createLogger from '../utils/logger';
-import type {
-  EditProfileForm,
-  MePageData,
-  Settings,
-  UserPageData,
-  UserProfileInfo,
-} from '../types/business';
+import { api } from './api';
+import { createLogger } from '../utils/logger';
+import type { EditProfileForm, Settings, UserProfileInfo } from '../types/business';
 import type {
   UserAgreementStatusVO,
-  UserInfoDTO,
   UserProfileUpdateRequest,
   UserProfileVO,
   UserPublicProfileVO,
   UserSettingUpdateRequest,
   UserSettingVO,
 } from '../types/api';
-import formatTime, { TimeStyle } from '../utils/time-util';
-import { getUserInfo } from '../stores/helper';
+import { formatTime, TimeStyle } from '../utils/time-util';
 
 const log = createLogger('UserService');
 
@@ -56,7 +46,7 @@ const toPublicProfileInfo = (profile: UserPublicProfileVO): UserProfileInfo => (
   joinYear: formatTime(profile.createdAt, TimeStyle.YM),
 });
 
-const toEditProfileForm = (profile: UserProfileInfo): EditProfileForm => ({
+export const toEditProfileForm = (profile: UserProfileInfo): EditProfileForm => ({
   nickname: profile.nickname || '',
   bio: profile.bio ?? '',
   avatarUrl: profile.avatarUrl ?? '',
@@ -154,46 +144,6 @@ export const getPublicProfile = async (userId: string): Promise<UserProfileInfo>
  *
  * @returns 用户主页数据
  */
-export const getMePageData = async (): Promise<MePageData> => {
-  let userId = getUserInfo('id');
-  if (!userId) {
-    const user = storage.get(STORAGE_KEYS.USER_INFO) as UserInfoDTO | null;
-    if (!user) {
-      return Promise.reject(new Error('用户未登录'));
-    }
-    userId = user.id;
-  }
-  const [profile, postsResult] = await Promise.all([
-    getCurrentProfile(),
-    postService.getUserPosts(userId, { pageSize: 20 }),
-  ]);
-
-  return {
-    userInfo: { ...profile, id: userId },
-    posts: postsResult.list,
-    activeTab: 'posts',
-  };
-};
-
-/**
- * 获取user页面中当前被查看用户信息，与该用户相关帖子
- *
- * @param userId 当前被查看用户id
- * @returns user页面数据
- */
-export const getUserPageData = async (userId: string): Promise<UserPageData> => {
-  const [profile, postsResult] = await Promise.all([
-    getPublicProfile(userId),
-    postService.getUserPosts(userId, { pageSize: 20 }),
-  ]);
-
-  return {
-    userInfo: { ...profile, id: userId },
-    posts: postsResult.list,
-    activeTab: 'posts',
-  };
-};
-
 // ************************************ 编辑资料相关 ************************************
 export const getEditProfileForm = async (): Promise<EditProfileForm> => {
   const profile = await getCurrentProfile();
@@ -281,14 +231,7 @@ export const updateUserInfo = async (
  * }
  */
 export const getUserSettings = async (): Promise<Settings> => {
-  let setting = storage.get('userSetting') as Settings | null;
-
-  if (!setting) {
-    setting = mapSettings(await api.setting.get());
-    storage.set('userSetting', setting);
-  }
-
-  return setting;
+  return mapSettings(await api.setting.get());
 };
 
 /**
@@ -353,20 +296,4 @@ export const agreeAgreement = async (version: string) => {
     log.error('agreeAgreement', '同意用户协议失败', err);
     throw err;
   }
-};
-
-export default {
-  getCurrentProfile,
-  getPublicProfile,
-  getUserInfo,
-  getMePageData,
-  getUserPageData,
-  getEditProfileForm,
-  updateUserInfo,
-  saveEditProfile,
-  updateNotifySetting,
-  getUserSettings,
-  getAgreementStatus,
-  bindPhone,
-  agreeAgreement,
 };

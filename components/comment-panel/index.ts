@@ -40,7 +40,6 @@
 // comment-panel.ts
 
 import defineComponent from '../../utils/defineComponent';
-import { commentService, interactService, mediaService } from '../../services/index';
 import {
   wxHideLoading,
   wxNavigateTo,
@@ -48,15 +47,16 @@ import {
   wxPreviewImage,
   wxShowLoading,
   wxShowModal,
-  wxShowToast,
 } from '../../utils/wx-promise';
 import { TARGET_TYPES, type TargetType } from '../../utils/constants';
 import type { CommentItem, ReplyItem, ReplyTarget } from '../../types/business';
 import { getUserInfo } from '../../stores/helper';
-import createLogger from '../../utils/logger';
+import { createLogger } from '../../utils/logger';
 import { getAvatarInfo } from '../../utils/avatar';
 import { useSheet } from '../../behaviors/sheet-mixin';
-import { type SelectedMediaFile } from '../../services/media';
+import { type SelectedMediaFile } from '../../actions/media';
+import { commentAction, mediaAction } from '../../actions/index';
+import { notifyToast } from '../../utils/notify';
 
 // ==================== 类型 ======================
 
@@ -266,7 +266,7 @@ defineComponent<Private>()({
 
       try {
         const lastId = isFirst ? undefined : this.data._lastCommentId;
-        const res = await commentService.getCommentList({
+        const res = await commentAction.getCommentList({
           targetId: targetId,
           targetType: targetType as TargetType,
           pageSize: 20,
@@ -283,7 +283,7 @@ defineComponent<Private>()({
         });
       } catch (err) {
         log.error('_loadComments', '加载评论失败', err);
-        void wxShowToast({ title: '加载评论失败', icon: 'none' });
+        notifyToast({ title: '加载评论失败', icon: 'none' });
       } finally {
         this._loading = false;
         this.setData({ firstLoading: false, loadingMore: false });
@@ -351,7 +351,7 @@ defineComponent<Private>()({
           return;
         }
         // 获取回复列表（作为评论的子评论）
-        const res = await commentService.getReplyList({
+        const res = await commentAction.getReplyList({
           targetId: targetId,
           targetType: targetType as TargetType, // 4 表示获取该评论的回复
           parentId: parentId,
@@ -434,7 +434,7 @@ defineComponent<Private>()({
       const text = inputValue.trim();
 
       if (!text && !previewImage) {
-        void wxShowToast({ title: '请输入内容', icon: 'none', duration: 1500 });
+        notifyToast({ title: '请输入内容', icon: 'none', duration: 1500 });
         return;
       }
 
@@ -442,7 +442,7 @@ defineComponent<Private>()({
 
       // 回复状态下不允许图片，保险起见这里也拦一下
       if (isReply && previewImage) {
-        void wxShowToast({ title: '回复暂不支持图片', icon: 'none' });
+        notifyToast({ title: '回复暂不支持图片', icon: 'none' });
         return;
       }
 
@@ -477,7 +477,7 @@ defineComponent<Private>()({
       if (isReply) {
         const cidx = this._findCommentIdx(replyTarget.commentId);
         if (cidx === -1) {
-          void wxShowToast({ title: '评论已失效，请刷新后重试', icon: 'none' });
+          notifyToast({ title: '评论已失效，请刷新后重试', icon: 'none' });
           return;
         }
 
@@ -600,44 +600,25 @@ defineComponent<Private>()({
       this._syncCount(1);
 
       try {
-        let imageUrl = '';
-
-        // 只有真正点击发送时才上传 COS
-        if (!isReply && this._selectedFiles[0]) {
-          const attachmentItems = await mediaService.uploadAndSaveFiles(
-            TARGET_TYPES.COMMENT.value,
-            [this._selectedFiles[0]],
-          );
-
-          imageUrl = attachmentItems[0]?.url ?? '';
-        }
-
-        // TODO:
-        // 当前未做 COS 孤儿文件回收。
-        // 如果评论图片上传 COS 成功，但 createComment 失败，可能产生少量无业务引用文件。
-        // 现阶段先保持简单，后续根据 COS 存储情况决定是否增加 objectKey 生命周期记录和定时清理。
-
-        const params = {
+        const res = await commentAction.createCommentWithImage({
           targetId: this.properties.targetId,
           targetType: this.properties.targetType as TargetType,
           content: text,
-          imageUrl,
           parentId: replyTarget.commentId ? replyTarget.commentId : undefined,
-        };
-
-        const res = await commentService.createComment(params);
+          imageFile: !isReply ? this._selectedFiles[0] : undefined,
+        });
 
         if (!res) {
-          void wxShowToast({ title: '发送失败', icon: 'none' });
+          notifyToast({ title: '发送失败', icon: 'none' });
           rollback();
           return;
         }
 
-        void wxShowToast({ title: '发布成功', icon: 'success', duration: 1500 });
+        notifyToast({ title: '发布成功', icon: 'success', duration: 1500 });
         applyServerId(res);
       } catch (error) {
         rollback();
-        void wxShowToast({ title: '发送失败', icon: 'none' });
+        notifyToast({ title: '发送失败', icon: 'none' });
         log.error('onSend', '发送评论失败', error);
       }
     },
@@ -650,14 +631,14 @@ defineComponent<Private>()({
       });
       const count = 1;
       try {
-        const res = await mediaService.selectImages(count);
+        const res = await mediaAction.selectImages(count);
         if (res.length > 0) {
           this.setData({ previewImage: res[0].filePath });
           this._selectedFiles = [res[0]]; // 存储已选择的文件信息，后续发送评论时会用到
         }
       } catch (err: unknown) {
         log.error('onChooseImage', '选择图片失败', err);
-        void wxShowToast({ title: '选择图片失败，请稍后再试！', icon: 'none' });
+        notifyToast({ title: '选择图片失败，请稍后再试！', icon: 'none' });
       } finally {
         void wxHideLoading();
       }
@@ -690,20 +671,10 @@ defineComponent<Private>()({
       });
 
       try {
-        if (isLiked) {
-          await interactService.unlike({
-            targetType: TARGET_TYPES.COMMENT.value,
-            targetId: commentId,
-          });
-        } else {
-          await interactService.like({
-            targetType: TARGET_TYPES.COMMENT.value,
-            targetId: commentId,
-          });
-        }
+        await commentAction.toggleCommentLike({ commentId, isLiked });
       } catch (err) {
         log.error('onCommentLike', '点赞失败', err);
-        void wxShowToast({ title: '点赞失败, 请稍后再试！', icon: 'none' });
+        notifyToast({ title: '点赞失败, 请稍后再试！', icon: 'none' });
         // 恢复状态
         this._updateComment(idx, { isLiked, likeCount: comment.likeCount });
       } finally {
@@ -740,17 +711,10 @@ defineComponent<Private>()({
       this._updateComment(cidx, { replyList: newReplyList });
 
       try {
-        if (isLiked) {
-          await interactService.unlike({
-            targetType: TARGET_TYPES.COMMENT.value,
-            targetId: replyId,
-          });
-        } else {
-          await interactService.like({ targetType: TARGET_TYPES.COMMENT.value, targetId: replyId });
-        }
+        await commentAction.toggleCommentLike({ commentId: replyId, isLiked });
       } catch (err) {
         log.error('onReplyLike', '同步点赞状态失败', err);
-        void wxShowToast({ title: '操作失败,请稍后再试！', icon: 'none' });
+        notifyToast({ title: '操作失败,请稍后再试！', icon: 'none' });
         newReplyList[ridx] = reply; // 恢复原始 reply 对象
         this._updateComment(cidx, { replyList: newReplyList });
       } finally {
@@ -836,7 +800,7 @@ defineComponent<Private>()({
 
       if (!targetId) {
         this.onMenuClose();
-        void wxShowToast({ title: '举报对象不存在', icon: 'none' });
+        notifyToast({ title: '举报对象不存在', icon: 'none' });
         return;
       }
 
@@ -873,8 +837,7 @@ defineComponent<Private>()({
 
       try {
         if (type === 'comment') {
-          // TODO: 调用评论删除接口
-          await commentService.removeComment(commentId);
+          await commentAction.removeComment(commentId);
 
           // 接口成功后，从本地列表移除该评论
           const deletedComment = this.data.commentList.find((c) => c.commentId === commentId);
@@ -884,8 +847,7 @@ defineComponent<Private>()({
           this.setData({ commentList: list });
           this._syncCount(-deletedCount); // 通知父组件数量 -当前评论加当前评论的子评论
         } else {
-          // TODO: 调用回复删除接口（若有单独接口）
-          await commentService.removeComment(replyId);
+          await commentAction.removeComment(replyId);
 
           // 接口成功后，从父评论的 replyList / replyPreview 中移除
           const cidx = this._findCommentIdx(commentId);
@@ -901,9 +863,9 @@ defineComponent<Private>()({
           this._syncCount(-1);
         }
 
-        void wxShowToast({ title: '已删除', icon: 'success' });
+        notifyToast({ title: '已删除', icon: 'success' });
       } catch (err) {
-        void wxShowToast({ title: '删除失败，请稍后再试', icon: 'none' });
+        notifyToast({ title: '删除失败，请稍后再试', icon: 'none' });
         log.error('onMenuDelete', '删除失败', err);
       }
     },

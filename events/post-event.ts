@@ -1,4 +1,4 @@
-import eventBus, { EVENTS } from '../utils/event-bus';
+import { eventBus, EVENTS } from '../utils/event-bus';
 import { postSyncStore } from '../stores/postSyncStore';
 import type { PostCardItem } from '../types/business';
 

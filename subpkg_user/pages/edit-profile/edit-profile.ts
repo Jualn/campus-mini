@@ -6,14 +6,13 @@ import {
   wxNavigateBack,
   wxShowLoading,
   wxShowModal,
-  wxShowToast,
 } from '../../../utils/wx-promise';
-import { mediaService, userService } from '../../../services/index';
 import type { EditProfileForm } from '../../../types/business';
-import createLogger from '../../../utils/logger';
-import { type SelectedMediaFile } from '../../../services/media';
+import { createLogger } from '../../../utils/logger';
+import { type SelectedMediaFile } from '../../../actions/media';
 import { TARGET_TYPES } from '../../../utils/constants';
-import { userStore } from '../../../stores/index';
+import { mediaAction, userAction } from '../../../actions/index';
+import { notifyToast } from '../../../utils/notify';
 
 const log = createLogger('EditProfilePage');
 
@@ -57,7 +56,7 @@ Page({
     });
     const start = Date.now();
     try {
-      const form = await userService.getEditProfileForm();
+      const form = await userAction.getEditProfileForm();
 
       const cost = Date.now() - start;
       const min = 300;
@@ -114,7 +113,7 @@ Page({
 
   async onChangeAvatar() {
     try {
-      const selectedFiles = await mediaService.selectImages(1);
+      const selectedFiles = await mediaAction.selectImages(1);
       const newImgs = selectedFiles.map((f) => f.filePath);
 
       this.setData({
@@ -125,7 +124,7 @@ Page({
       this._checkChanged();
     } catch (err) {
       log.error('onChangeAvatar', '选择头像失败:', err);
-      void wxShowToast({
+      notifyToast({
         title: '选择头像失败,请稍后再试',
         icon: 'none',
       });
@@ -134,7 +133,7 @@ Page({
 
   async onChangeBanner() {
     try {
-      const selectedFiles = await mediaService.selectImages(1);
+      const selectedFiles = await mediaAction.selectImages(1);
       const newImgs = selectedFiles.map((f) => f.filePath);
 
       this.setData({
@@ -145,7 +144,7 @@ Page({
       this._checkChanged();
     } catch (err) {
       log.error('onChangeBanner', '选择封面失败:', err);
-      void wxShowToast({
+      notifyToast({
         title: '选择封面失败,请稍后再试',
         icon: 'none',
       });
@@ -170,7 +169,7 @@ Page({
     if (!this.data.hasChanged) return;
 
     if (!this.data.form.nickname.trim()) {
-      void wxShowToast({
+      notifyToast({
         title: '昵称不能为空',
         icon: 'none',
       });
@@ -205,7 +204,7 @@ Page({
 
     try {
       if (hasAvatarChanged) {
-        const avatarUrl = await mediaService.uploadAndSaveFiles(
+        const avatarUrl = await mediaAction.uploadAndSaveFiles(
           TARGET_TYPES.USER.value,
           this._selectedAvatarFile,
         );
@@ -216,7 +215,7 @@ Page({
       }
 
       if (hasBannerChanged) {
-        const bannerUrl = await mediaService.uploadAndSaveFiles(
+        const bannerUrl = await mediaAction.uploadAndSaveFiles(
           TARGET_TYPES.USER.value,
           this._selectedBannerFile,
         );
@@ -227,19 +226,19 @@ Page({
       }
 
       if (Object.keys(changedForm).length === 0) {
-        void wxShowToast({
+        notifyToast({
           title: '没有需要保存的内容',
           icon: 'none',
         });
         return;
       }
 
-      await userStore.saveEditProfileAndSync(changedForm);
+      await userAction.saveEditProfileAndSync(changedForm);
 
       this._selectedAvatarFile = [];
       this._selectedBannerFile = [];
 
-      void wxShowToast({
+      notifyToast({
         title: '保存成功',
         icon: 'success',
       });
@@ -247,7 +246,7 @@ Page({
       void wxNavigateBack();
     } catch (err) {
       log.error('onSave', '保存失败:', err);
-      void wxShowToast({
+      notifyToast({
         title: '保存失败,请稍后再试',
         icon: 'none',
       });

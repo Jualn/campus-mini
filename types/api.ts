@@ -139,7 +139,7 @@ export interface ActivityCreateRequest {
   title: string; // string
   content: string; // string
   location: string; // string
-  category: ActivityCategory; // integer(int32)
+  category: number; // integer(int32)
   organizer: string; // string
   audienceScope: number; // integer(int32)
   contactInfo: string; // string

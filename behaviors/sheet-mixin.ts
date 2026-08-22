@@ -18,6 +18,8 @@ interface SheetPrivate {
   _dismissing: boolean;
   _scrollTop: number;
   _keyboardListener: { remove?: () => void } | null;
+  _enterTimer: number | null;
+  _dismissTimer: number | null;
 }
 
 // 构建给 回调使用的 this 类型，包含组件实例的所有公开数据和方法，以及私有字段, 回调需要使用就得加上类型声明
@@ -81,10 +83,13 @@ export function useSheet(options: UseSheetOptions = {}) {
         this._dismissing = false;
         this._scrollTop = 0;
         this._keyboardListener = null;
+        this._enterTimer = null;
+        this._dismissTimer = null;
         this.setData({ panelHeight: h });
 
         // 入场动画，延迟 30ms 等节点渲染完成
-        setTimeout(() => {
+        this._enterTimer = setTimeout(() => {
+          this._enterTimer = null;
           this.animate(
             '.J-sheet',
             [
@@ -98,6 +103,11 @@ export function useSheet(options: UseSheetOptions = {}) {
       },
 
       detached() {
+        if (this._enterTimer !== null) clearTimeout(this._enterTimer);
+        if (this._dismissTimer !== null) clearTimeout(this._dismissTimer);
+        this._enterTimer = null;
+        this._dismissTimer = null;
+
         // 组件销毁时清理监听器，防止内存泄漏
         this._keyboardListener?.remove?.();
         this._keyboardListener = null;
@@ -128,7 +138,9 @@ export function useSheet(options: UseSheetOptions = {}) {
         this._keyboardListener?.remove?.();
         this._keyboardListener = null;
 
-        setTimeout(() => {
+        if (this._dismissTimer !== null) clearTimeout(this._dismissTimer);
+        this._dismissTimer = setTimeout(() => {
+          this._dismissTimer = null;
           this._dismissing = false;
           this.triggerEvent('close');
           // 叠加执行传入的 onClose，不替换 triggerEvent
@@ -175,7 +187,9 @@ export function useSheet(options: UseSheetOptions = {}) {
         this._keyboardListener?.remove?.();
         this._keyboardListener = null;
 
-        setTimeout(() => {
+        if (this._dismissTimer !== null) clearTimeout(this._dismissTimer);
+        this._dismissTimer = setTimeout(() => {
+          this._dismissTimer = null;
           this._dismissing = false;
           this.triggerEvent('close');
           onClose?.call(this);

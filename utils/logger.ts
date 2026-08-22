@@ -49,5 +49,3 @@ export function createLogger(module: string) {
     error: console.error.bind(console, fmt('error', module)),
   };
 }
-
-export default createLogger;

@@ -1,10 +1,10 @@
 // subpkg_community/pages/search-result/search-result.ts
 
-import { searchService } from '../../../services/index';
 import type { ActivityCard, PostCardItem } from '../../../types/business';
-import createLogger from '../../../utils/logger';
-import { addSearchHistory } from '../../utils/search-history';
-import { wxNavigateBack, wxShowToast } from '../../../utils/wx-promise';
+import { createLogger } from '../../../utils/logger';
+import { wxNavigateBack } from '../../../utils/wx-promise';
+import { searchAction } from '../../../actions/index';
+import { notifyToast } from '../../../utils/notify';
 
 const log = createLogger('SearchResultPage');
 
@@ -89,7 +89,7 @@ Page({
     });
 
     if (keyword) {
-      addSearchHistory(keyword);
+      searchAction.recordSearchKeyword(keyword);
       void this._search(true);
     }
   },
@@ -173,7 +173,7 @@ Page({
     const keyword = this.data.keyword.trim();
     if (!keyword) return;
 
-    addSearchHistory(keyword);
+    searchAction.recordSearchKeyword(keyword);
     this._resetAll();
     void this._search(true);
   },
@@ -240,7 +240,7 @@ Page({
 
     try {
       if (activeTab === 'all') {
-        const res = await searchService.searchPosts({
+        const res = await searchAction.searchPosts({
           keyword,
           lastId: reset ? undefined : this.data.postNextCursor || undefined,
           pageSize: PAGE_SIZE,
@@ -259,7 +259,7 @@ Page({
       }
 
       if (activeTab === 'activity') {
-        const res = await searchService.searchActivities({
+        const res = await searchAction.searchActivities({
           keyword,
           lastId: reset ? undefined : this.data.activityNextCursor || undefined,
           pageSize: PAGE_SIZE,
@@ -286,7 +286,7 @@ Page({
       }
     } catch (err: unknown) {
       log.error('_search', '搜索失败', err);
-      void wxShowToast({
+      notifyToast({
         title: '搜索失败，请稍后再试',
         icon: 'none',
       });

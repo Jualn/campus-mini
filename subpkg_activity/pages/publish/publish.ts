@@ -1,10 +1,10 @@
 // subpkg_activity/pages/publish/publish.ts
 
-import { TARGET_TYPE } from '../../../utils/constants';
-import { activityService, mediaService } from '../../../services/index';
-import createLogger from '../../../utils/logger';
-import { wxShowToast } from '../../../utils/wx-promise';
-import type { SelectedMediaFile } from '../../../services/media';
+import { MEDIA_TYPES, TARGET_TYPES, type MediaType } from '../../../utils/constants';
+import { activityAction, mediaAction } from '../../../actions/index';
+import { createLogger } from '../../../utils/logger';
+import { notifyToast } from '../../../utils/notify';
+import type { SelectedMediaFile } from '../../../actions/media';
 import type {
   ActivityCreateRequest,
   AttachmentItemRequest,
@@ -99,6 +99,13 @@ interface ActivityAttachmentFile {
   ext: string;
   status: UploadStatus;
   uploadError?: string;
+}
+
+function resolveAttachmentMediaType(ext: string): MediaType {
+  const normalized = ext.toLowerCase();
+  if (normalized === 'pdf') return MEDIA_TYPES.PDF.value;
+  if (normalized === 'doc' || normalized === 'docx') return MEDIA_TYPES.WORD.value;
+  return MEDIA_TYPES.IMAGE.value;
 }
 
 /* ActivityForm 接口已移除，页面直接使用内联类型 */
@@ -916,7 +923,7 @@ Page({
 
   onToggleAudience(e: WechatMiniprogram.TouchEvent) {
     if (this.data.aiStatus.activeField === 'audienceScope') {
-      void wxShowToast({
+      notifyToast({
         title: 'AI 正在填写参与范围',
         icon: 'none',
       });
@@ -989,7 +996,7 @@ Page({
 
   chooseAiFile() {
     if (this.isAiRunning()) {
-      void wxShowToast({
+      notifyToast({
         title: 'AI 处理中，请稍后',
         icon: 'none',
       });
@@ -1006,7 +1013,7 @@ Page({
         const ext = getExt(name);
 
         if (!isAllowedDocExt(ext)) {
-          void wxShowToast({
+          notifyToast({
             title: '仅支持 PDF、DOC、DOCX',
             icon: 'none',
           });
@@ -1028,7 +1035,7 @@ Page({
 
   removeAiFile() {
     if (this.isAiRunning()) {
-      void wxShowToast({
+      notifyToast({
         title: 'AI 处理中，暂不能删除',
         icon: 'none',
       });
@@ -1048,7 +1055,7 @@ Page({
       filePath: file.path,
       showMenu: true,
       fail: () => {
-        void wxShowToast({
+        notifyToast({
           title: '暂不支持预览该文件',
           icon: 'none',
         });
@@ -1058,7 +1065,7 @@ Page({
 
   async startAiFill() {
     if (!this.data.aiFile) {
-      void wxShowToast({
+      notifyToast({
         title: '请先上传活动文件',
         icon: 'none',
       });
@@ -1066,7 +1073,7 @@ Page({
     }
 
     if (this.isAiRunning()) {
-      void wxShowToast({
+      notifyToast({
         title: 'AI 正在处理中',
         icon: 'none',
       });
@@ -1089,11 +1096,11 @@ Page({
     });
 
     try {
-      const res = await activityService.upload(this.data.aiFile.path);
+      const res = await activityAction.uploadActivityAiFile(this.data.aiFile.path);
       await this.startAiStream(res.taskId);
     } catch (e) {
       log.error('startAiFill', '上传文件失败', e);
-      void wxShowToast({
+      notifyToast({
         title: '文件上传失败，请稍后重试',
         icon: 'none',
       });
@@ -1157,7 +1164,7 @@ Page({
 
     this.startThinkingTicker();
 
-    const task = activityService.activtyPublishStream<AiStreamEvent | null>(
+    const task = activityAction.startActivityPublishStream<AiStreamEvent | null>(
       taskId,
       undefined,
       (line) => {
@@ -1826,7 +1833,7 @@ Page({
     const remainCount = maxCount - currentFiles.length;
 
     if (remainCount <= 0) {
-      void wxShowToast({
+      notifyToast({
         title: `最多上传 ${String(maxCount)} 个附件`,
         icon: 'none',
       });
@@ -1836,14 +1843,14 @@ Page({
     let selected: SelectedMediaFile[];
 
     try {
-      selected = await mediaService.selectMessageFiles({
+      selected = await mediaAction.selectMessageFiles({
         count: remainCount,
         type: 'file',
         extension: ['pdf', 'doc', 'docx'],
       });
     } catch (e) {
       console.error('chooseAttachmentFile', '选择文件失败', e);
-      void wxShowToast({
+      notifyToast({
         title: '选择文件失败，请尝试重新选择',
         icon: 'none',
       });
@@ -1878,7 +1885,7 @@ Page({
     let attachmentItems: AttachmentItemRequest[];
 
     try {
-      attachmentItems = await mediaService.uploadAndSaveFiles(TARGET_TYPE.activity, selected);
+      attachmentItems = await mediaAction.uploadAndSaveFiles(TARGET_TYPES.ACTIVITY.value, selected);
     } catch (e) {
       console.error('uploadAttachmentFiles', '上传文件失败', e);
 
@@ -1899,7 +1906,7 @@ Page({
         attachmentFiles: files,
       });
 
-      void wxShowToast({
+      notifyToast({
         title: '部分附件上传失败',
         icon: 'none',
       });
@@ -1939,7 +1946,7 @@ Page({
         filePath: file.path,
         showMenu: true,
         fail: () => {
-          void wxShowToast({
+          notifyToast({
             title: '暂不支持预览该文件',
             icon: 'none',
           });
@@ -1956,7 +1963,7 @@ Page({
             filePath: res.tempFilePath,
             showMenu: true,
             fail: () => {
-              void wxShowToast({
+              notifyToast({
                 title: '暂不支持预览该文件',
                 icon: 'none',
               });
@@ -1964,7 +1971,7 @@ Page({
           });
         },
         fail: () => {
-          void wxShowToast({
+          notifyToast({
             title: '文件下载失败',
             icon: 'none',
           });
@@ -1973,7 +1980,7 @@ Page({
       return;
     }
 
-    void wxShowToast({
+    notifyToast({
       title: '暂无可预览文件',
       icon: 'none',
     });
@@ -1987,14 +1994,14 @@ Page({
     let selected: SelectedMediaFile[];
 
     try {
-      selected = await mediaService.selectMessageFiles({
+      selected = await mediaAction.selectMessageFiles({
         count: 1,
         type: 'file',
         extension: ['pdf', 'doc', 'docx'],
       });
     } catch (e) {
       console.error('replaceAttachment', '选择文件失败', e);
-      void wxShowToast({
+      notifyToast({
         title: '选择文件失败，请尝试重新选择',
         icon: 'none',
       });
@@ -2004,10 +2011,10 @@ Page({
     let attachmentItems: AttachmentItemRequest[];
 
     try {
-      attachmentItems = await mediaService.uploadAndSaveFiles(TARGET_TYPE.activity, selected);
+      attachmentItems = await mediaAction.uploadAndSaveFiles(TARGET_TYPES.ACTIVITY.value, selected);
     } catch (e) {
       console.error('replaceAttachment', '上传文件失败', e);
-      void wxShowToast({
+      notifyToast({
         title: '文件上传失败，请尝试重新选择上传',
         icon: 'none',
       });
@@ -2052,7 +2059,7 @@ Page({
     const file = this.data.attachmentFiles[index];
 
     if (!file.path) {
-      void wxShowToast({
+      notifyToast({
         title: '无法重试，请重新选择文件',
         icon: 'none',
       });
@@ -2085,7 +2092,7 @@ Page({
     const hasUploading = files.some((item) => item.status === 'uploading');
 
     if (hasUploading) {
-      void wxShowToast({
+      notifyToast({
         title: '附件上传中，请稍后提交',
         icon: 'none',
       });
@@ -2095,7 +2102,7 @@ Page({
     const hasFailed = files.some((item) => item.status === 'failed');
 
     if (hasFailed) {
-      void wxShowToast({
+      notifyToast({
         title: '存在上传失败的附件，请删除或重试',
         icon: 'none',
       });
@@ -2126,7 +2133,7 @@ Page({
     const attachmentItems: AttachmentItemRequest[] = this.data.attachmentFiles
       .filter((item) => item.status === 'uploaded')
       .map((item, index) => ({
-        type: TARGET_TYPE.activity,
+        type: resolveAttachmentMediaType(item.ext),
         originalName: item.name,
         url: item.url ?? '',
         sortOrder: index,
@@ -2157,7 +2164,7 @@ Page({
     const payload = this.buildSubmitPayload();
 
     if (!payload.title) {
-      void wxShowToast({
+      notifyToast({
         title: '请填写活动标题',
         icon: 'none',
       });
@@ -2165,7 +2172,7 @@ Page({
     }
 
     if (!payload.content) {
-      void wxShowToast({
+      notifyToast({
         title: '请填写活动详情',
         icon: 'none',
       });
@@ -2173,23 +2180,23 @@ Page({
     }
 
     if (!payload.startTime || !payload.endTime) {
-      void wxShowToast({
+      notifyToast({
         title: '请选择活动开始和结束时间',
         icon: 'none',
       });
       return;
     }
 
-    activityService
-      .create(payload)
+    activityAction
+      .createActivity(payload)
       .then(() => {
-        void wxShowToast({
+        notifyToast({
           title: '发布成功',
           icon: 'success',
         });
       })
       .catch(() => {
-        void wxShowToast({
+        notifyToast({
           title: '发布失败',
           icon: 'none',
         });

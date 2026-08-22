@@ -1,4 +1,4 @@
-// import createLogger from '../../utils/logger';
+// import { createLogger } from '../../utils/logger';
 
 // const { drawPostPoster } = require('../../utils/share_poster/postPoster');
 // const { drawActivityPoster } = require('../../utils/share_poster/activityPoster');
@@ -142,6 +142,30 @@ interface AiStatus {
   activeLabel: string;
   activeSubText: string;
   skippedLabels: string[];
+}
+
+interface TestPageData {
+  categoryOptions: CategoryOption[];
+  categoryIndex: number;
+  audienceOptions: AudienceOption[];
+  today: string;
+  aiFile: AiFile | null;
+  form: ActivityForm;
+  aiStatus: AiStatus;
+  userLockedFields: Partial<Record<FormFieldKey, boolean>>;
+  qrcodeImage: QrcodeImage | null;
+  attachmentFile: UploadedAttachment | null;
+}
+
+interface TestPageCustom {
+  fieldTaskQueue: Promise<void>;
+  contentQueue: string[];
+  isAppendingContent: boolean;
+  contentStarted: boolean;
+  thinkingTimer: ReturnType<typeof setInterval> | null;
+  finishRequested: boolean;
+  streamBuffer: string;
+  [key: string]: any;
 }
 
 interface AiStreamEvent {
@@ -319,7 +343,7 @@ function decodeChunk(buffer: ArrayBuffer): string {
   }
 }
 
-Page({
+Page<TestPageData, TestPageCustom>({
   // data: {
   //   postData: {
   //     avatar: '/images/1760004156926.jpg',
@@ -650,7 +674,7 @@ Page({
   thinkingTimer: null,
   finishRequested: false,
   streamBuffer: '',
-  behaviors:[],
+  behaviors: [],
   data: {
     categoryOptions: CATEGORY_OPTIONS,
     categoryIndex: 0,
@@ -672,8 +696,8 @@ Page({
       max_participants: '',
       location: '',
       join_method: '',
-      contact_info: [],
-      timeline: [],
+      contact_info: [] as ContactItem[],
+      timeline: [] as TimelineItem[],
       content: '',
       qrcode_url: '',
     },
@@ -684,10 +708,10 @@ Page({
       activeField: '',
       activeLabel: '',
       activeSubText: '',
-      skippedLabels: [],
+      skippedLabels: [] as string[],
     },
 
-    userLockedFields: {},
+    userLockedFields: {} as Partial<Record<FormFieldKey, boolean>>,
 
     qrcodeImage: null as QrcodeImage | null,
 
@@ -1037,16 +1061,16 @@ Page({
       [`userLockedFields.${field}`]: true,
     });
   },
-  chooseAiFile(){
-    const token = wx.getStorageSync('token')
+  chooseAiFile() {
+    const token = wx.getStorageSync('token');
 
-const h5EntryUrl =
-  `https://test.jualn.cn/third/wx/mp-oauth/start?token=${encodeURIComponent(token)}`
+    const h5EntryUrl = `https://test.jualn.cn/third/wx/mp-oauth/start?token=${encodeURIComponent(token)}`;
 
-wx.navigateTo({
-  url: '/subpkg_setting/pages/service-subscribe-webview/index?url=' +
-    encodeURIComponent(h5EntryUrl)
-})
+    wx.navigateTo({
+      url:
+        '/subpkg_setting/pages/service-subscribe-webview/index?url=' +
+        encodeURIComponent(h5EntryUrl),
+    });
   },
   // chooseAiFile() {
   //   if (this.isAiRunning()) {
@@ -1910,7 +1934,7 @@ wx.navigateTo({
         end_time: item.end_time || null,
         sort_order: Number(item.sort_order ?? index),
       }))
-      .filter((item: TimelineItem) => item.label);
+      .filter((item) => item.label);
 
     return {
       activity: {

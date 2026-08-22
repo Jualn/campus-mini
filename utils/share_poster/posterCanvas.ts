@@ -1,10 +1,10 @@
 // posterCanvas.ts
 
-import createLogger from '../logger';
+import { createLogger } from '../logger';
 
-const W = 1080;
-const H = 864;
-const BLUE = '#1677ff';
+export const W = 1080;
+export const H = 864;
+export const BLUE = '#1677ff';
 
 const log = createLogger('PosterCanvas');
 
@@ -68,7 +68,7 @@ interface CanvasInit {
 
 // ── 初始化 ────────────────────────────────────────────────────────────
 
-function initCanvas(canvasNode: WechatMiniprogram.Canvas): CanvasInit {
+export function initCanvas(canvasNode: WechatMiniprogram.Canvas): CanvasInit {
   const dpr = wx.getWindowInfo().pixelRatio;
   const ctx = canvasNode.getContext('2d') as unknown as Ctx2D;
   canvasNode.width = W * dpr;
@@ -77,15 +77,18 @@ function initCanvas(canvasNode: WechatMiniprogram.Canvas): CanvasInit {
   return { ctx, W, H, dpr };
 }
 
-function getCanvasNode(selector: string, scope: WxScope): Promise<WechatMiniprogram.Canvas> {
+export function getCanvasNode(selector: string, scope: WxScope): Promise<WechatMiniprogram.Canvas> {
   return new Promise((resolve, reject) => {
     wx.createSelectorQuery()
       .in(scope)
       .select(selector)
       .fields({ node: true, size: true })
       .exec((res) => {
-        if (res[0]?.node) {
-          resolve(res[0].node as WechatMiniprogram.Canvas);
+        const result = res as unknown as { node?: WechatMiniprogram.Canvas }[];
+        const canvas = result[0]?.node;
+
+        if (canvas) {
+          resolve(canvas);
         } else {
           reject(new Error('Canvas 节点未找到'));
         }
@@ -95,7 +98,7 @@ function getCanvasNode(selector: string, scope: WxScope): Promise<WechatMiniprog
 
 // ── 图片 ─────────────────────────────────────────────────────────────
 
-function loadImage(canvasNode: WechatMiniprogram.Canvas, src: string): Promise<WxImage> {
+export function loadImage(canvasNode: WechatMiniprogram.Canvas, src: string): Promise<WxImage> {
   return new Promise((resolve, reject) => {
     const img = canvasNode.createImage();
     img.onload = () => {
@@ -108,7 +111,14 @@ function loadImage(canvasNode: WechatMiniprogram.Canvas, src: string): Promise<W
   });
 }
 
-function drawCover(ctx: Ctx2D, img: WxImage, x: number, y: number, w: number, h: number): void {
+export function drawCover(
+  ctx: Ctx2D,
+  img: WxImage,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
   const ir = img.width / img.height;
   const ar = w / h;
   let sx: number, sy: number, sw: number, sh: number;
@@ -127,7 +137,7 @@ function drawCover(ctx: Ctx2D, img: WxImage, x: number, y: number, w: number, h:
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 
-async function drawCircleImage(
+export async function drawCircleImage(
   canvasNode: WechatMiniprogram.Canvas,
   ctx: Ctx2D,
   src: string,
@@ -153,7 +163,7 @@ async function drawCircleImage(
 
 // ── 文字与图形 ────────────────────────────────────────────────────────
 
-function drawTextAvatar(
+export function drawTextAvatar(
   ctx: Ctx2D,
   text: string,
   bgColor: string,
@@ -178,7 +188,7 @@ function drawTextAvatar(
   ctx.restore();
 }
 
-function roundRect(ctx: Ctx2D, x: number, y: number, w: number, h: number, r: number): void {
+export function roundRect(ctx: Ctx2D, x: number, y: number, w: number, h: number, r: number): void {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -188,7 +198,7 @@ function roundRect(ctx: Ctx2D, x: number, y: number, w: number, h: number, r: nu
   ctx.closePath();
 }
 
-function drawText(
+export function drawText(
   ctx: Ctx2D,
   text: string,
   x: number,
@@ -201,13 +211,13 @@ function drawText(
   let lineCount = 0;
   let currentY = y;
 
-  const safeText = text == null ? '' : String(text);
+  const safeText = text;
 
   if (!safeText) {
     return y;
   }
 
-  for (let n = 0; n < safeText.length ; n++) {
+  for (let n = 0; n < safeText.length; n++) {
     const testLine = line + safeText[n];
     if (ctx.measureText(testLine).width > maxWidth && n > 0) {
       lineCount++;
@@ -230,7 +240,7 @@ function drawText(
   return currentY + lineHeight;
 }
 
-function truncateText(ctx: Ctx2D, text: string, maxWidth: number): string {
+export function truncateText(ctx: Ctx2D, text: string, maxWidth: number): string {
   if (ctx.measureText(text).width <= maxWidth) return text;
   let t = text;
   while (ctx.measureText(t + '...').width > maxWidth && t.length > 0) {
@@ -241,7 +251,7 @@ function truncateText(ctx: Ctx2D, text: string, maxWidth: number): string {
 
 // ── 绘制工具 ─────────────────────────────────────────────────────────
 
-function drawTopBar(ctx: Ctx2D, color: string = BLUE): void {
+export function drawTopBar(ctx: Ctx2D, color: string = BLUE): void {
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, W, 12);
 }
@@ -267,27 +277,10 @@ function saveToTempFile(
   );
 }
 
-function finalize(
+export function finalize(
   canvasNode: WechatMiniprogram.Canvas,
   scope: WxScope,
   onSuccess: (tempFilePath: string) => void,
 ): void {
   saveToTempFile(canvasNode, scope, onSuccess);
 }
-
-export default {
-  W,
-  H,
-  BLUE,
-  initCanvas,
-  getCanvasNode,
-  loadImage,
-  drawCover,
-  drawCircleImage,
-  drawTextAvatar,
-  roundRect,
-  drawText,
-  truncateText,
-  drawTopBar,
-  finalize,
-};

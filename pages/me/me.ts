@@ -1,28 +1,29 @@
-import { wxPageScrollTo, wxShowToast } from '../../utils/wx-promise';
-import { postService } from '../../services/index';
+import { wxPageScrollTo } from '../../utils/wx-promise';
 import type { PostCardItem, UserProfileInfo } from '../../types/business';
 import { getCustomTabBar } from '../../utils/tabbar';
 import { scrollStore } from '../../stores/scrollStore';
-import createLogger from '../../utils/logger';
-import eventBus, { EVENTS } from '../../utils/event-bus';
+import { createLogger } from '../../utils/logger';
 import { TARGET_TYPES } from '../../utils/constants';
 import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
-import { userStore } from '../../stores/index';
+import { postAction, userAction } from '../../actions/index';
+import definePage from '../../utils/definePage';
+import { notifyToast } from '../../utils/notify';
 
 const log = createLogger('MePage');
 
 interface MePageExtraThis {
   _setTabBarHidden: (hidden: boolean) => void;
+  _prependPost: (post: PostCardItem) => void;
 }
 
-Page({
+definePage({
   _currentScrollTop: 0,
   /** 存储当前是否正在预览图片 */
   _isPreviewingImage: false,
+  _previewRestoreTimer: null as number | null,
   _pullDownRefreshEnabled: false,
   _tabBarHidden: false,
-  _disposers: [] as (() => void)[],
 
   behaviors: [
     useListLoad({
@@ -35,6 +36,9 @@ Page({
       postListKeys: ['posts', 'postsCache', 'likesCache'],
       onPopupVisibleChange(visible) {
         this._setTabBarHidden(visible);
+      },
+      onPostCreated(post) {
+        this._prependPost(post);
       },
     }),
   ],
@@ -56,13 +60,6 @@ Page({
   onLoad() {
     this._currentScrollTop = 0;
 
-    this._disposers.push(
-      eventBus.on(EVENTS.POST_CREATED, (post) => {
-        if (!post.id) return;
-        this._prependPost(post);
-      }),
-    );
-
     const systemInfo = wx.getWindowInfo();
     this.setData({
       statusBarHeight: systemInfo.statusBarHeight,
@@ -81,11 +78,10 @@ Page({
   },
 
   onUnload() {
-    this._disposers.forEach((off) => {
-      off();
-    });
-    this._disposers = [];
-
+    if (this._previewRestoreTimer !== null) {
+      clearInterval(this._previewRestoreTimer);
+      this._previewRestoreTimer = null;
+    }
     this._saveCurrentPosition();
   },
 
@@ -152,25 +148,23 @@ Page({
     }
 
     try {
-      // const result = await userService.getMePageData();
-      const result = await userStore.getMePageDataAsync();
-      const { merged } = this._applyPostSyncCache(result.posts);
+      const result = await userAction.getMePageData();
 
       const patch: Record<string, unknown> = {
         userInfo: result.userInfo,
-        postsCache: merged,
+        postsCache: result.posts,
       };
 
       // 只有当前在 posts tab 才把结果渲染到列表，避免覆盖其他 tab 的数据
       if (this.data.activeTab === 'posts') {
-        patch.posts = merged;
+        patch.posts = result.posts;
       }
 
       this.setData(patch);
 
       const maybeHasMore = (result as { hasMore?: boolean }).hasMore;
       const hasMore = typeof maybeHasMore === 'boolean' ? maybeHasMore : false;
-      const hasContent = !!result.userInfo.id || merged.length > 0;
+      const hasContent = !!result.userInfo.id || result.posts.length > 0;
 
       if (scene === 'initial') {
         this._listLoadEndInitial({
@@ -203,7 +197,7 @@ Page({
           hasContent,
         });
 
-        void wxShowToast({
+        notifyToast({
           title: '刷新失败，请稍后再试',
           icon: 'none',
         });
@@ -252,17 +246,16 @@ Page({
       const userId = this.data.userInfo.id ?? '';
       if (!userId) throw new Error('missing user id');
 
-      const result = await postService.getUserLikedPosts(userId);
-      const { merged } = this._applyPostSyncCache(result.list);
+      const result = await postAction.getUserLikedPosts(userId);
 
       const patch: Record<string, unknown> = {
-        likesCache: merged,
+        likesCache: result.list,
         likesLoaded: true,
         likesError: false,
       };
 
       if (this.data.activeTab === 'likes') {
-        patch.posts = merged;
+        patch.posts = result.list;
       }
 
       this.setData(patch);
@@ -280,7 +273,7 @@ Page({
 
       this.setData(patch);
 
-      void wxShowToast({
+      notifyToast({
         title: '加载失败，请稍后再试',
         icon: 'none',
       });
@@ -300,9 +293,11 @@ Page({
 
     if (this._isPreviewingImage) {
       // 如果正在预览图片，等预览结束再恢复滚动位置 （预览图片会改变页面结构，直接恢复滚动位置可能不准确）
-      const checkPreviewEnd = setInterval(() => {
+      if (this._previewRestoreTimer !== null) clearInterval(this._previewRestoreTimer);
+      this._previewRestoreTimer = setInterval(() => {
         if (!this._isPreviewingImage) {
-          clearInterval(checkPreviewEnd);
+          if (this._previewRestoreTimer !== null) clearInterval(this._previewRestoreTimer);
+          this._previewRestoreTimer = null;
           wxPageScrollTo({ scrollTop: savedScrollTop }).catch((err: unknown) => {
             log.error('_restoreScrollPosition', '恢复滚动位置失败', err);
           });

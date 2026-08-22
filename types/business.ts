@@ -1,6 +1,5 @@
 // 业务实体类型
 
-import { type TargetType } from '../utils/constants';
 import type { ActivityUiStatus, Attachment, Contact, TimelineNode } from '../services/activity';
 
 // *********************** Service 层返回类型定义 ***********************
@@ -356,7 +355,7 @@ export interface MessageItem {
   content: string;
   isRead: boolean;
   createdAt: string;
-  targetType: TargetType;
+  targetType: string;
   targetId: string;
   timeAgo?: string;
   shortTitle?: string;

@@ -5,97 +5,9 @@ import {
   addSearchHistory,
   clearSearchHistory,
   getSearchHistory,
-} from '../../utils/search-history';
+} from '../../../utils/search-history';
 
 const RESULT_PAGE_URL = '/subpkg_community/pages/search-result/search-result';
-
-const TAB_LIST = [
-  { id: 'all', label: '全部' },
-  { id: 'post', label: '动态' },
-  { id: 'activity', label: '活动' },
-  { id: 'exam', label: '考试' },
-];
-
-const MOCK_POSTS = [
-  {
-    id: 'post_101',
-    title: '图书馆五楼还有空位，晚上一起自习吗？',
-    desc: '期中周冲刺，分享一个安静角落，插座也够用。',
-    meta: '校园圈动态',
-    extra: '10分钟前',
-    keywords: ['图书馆', '自习', '期中', '复习'],
-  },
-  {
-    id: 'post_102',
-    title: '求高数笔记，愿意有偿交换英语资料',
-    desc: '高数上册积分部分有点卡，求大佬救命。',
-    meta: '学习互助',
-    extra: '1小时前',
-    keywords: ['高数', '笔记', '英语', '资料'],
-  },
-  {
-    id: 'post_103',
-    title: '二食堂新品测评：麻辣香锅可冲',
-    desc: '人均18，分量很足，晚上七点后排队短。',
-    meta: '校园生活',
-    extra: '今天',
-    keywords: ['食堂', '香锅', '校园生活'],
-  },
-];
-
-const MOCK_ACTIVITIES = [
-  {
-    id: 'act_001',
-    title: '春季草坪音乐节',
-    desc: '社团联合演出，支持自由点歌。',
-    meta: '文艺活动',
-    extra: '本周六',
-    keywords: ['音乐节', '社团', '演出'],
-  },
-  {
-    id: 'act_002',
-    title: '校园黑客马拉松',
-    desc: '24小时组队开发，AI 方向优先赛道。',
-    meta: '竞赛活动',
-    extra: '报名中',
-    keywords: ['黑客马拉松', '编程', '比赛', 'AI'],
-  },
-  {
-    id: 'act_003',
-    title: '求职简历工作坊',
-    desc: '就业中心老师现场修改简历，一对一答疑。',
-    meta: '就业服务',
-    extra: '下周三',
-    keywords: ['简历', '求职', '就业'],
-  },
-];
-
-const MOCK_EXAMS = [
-  {
-    id: 'cet4',
-    title: '英语四级',
-    desc: '全国大学英语四级考试',
-    meta: '语言考试',
-    extra: '2026-06-13',
-    keywords: ['英语', '四级', 'CET4'],
-  },
-  {
-    id: 'cet6',
-    title: '英语六级',
-    desc: '全国大学英语六级考试',
-    meta: '语言考试',
-    extra: '2026-06-13',
-    keywords: ['英语', '六级', 'CET6'],
-  },
-  {
-    id: 'ncre',
-    title: '全国计算机等级考试',
-    desc: '计算机基础能力认证考试',
-    meta: '计算机考试',
-    extra: '每年3月/9月',
-    keywords: ['计算机', 'NCRE', '二级'],
-  },
-];
 
 Page({
   data: {

@@ -23,7 +23,7 @@
 
 import defineComponent from '../../utils/defineComponent';
 import type { ActivityCard } from '../../types/business';
-import createLogger from '../../utils/logger';
+import { createLogger } from '../../utils/logger';
 import { wxNavigateTo } from '../../utils/wx-promise';
 
 const log = createLogger('ActivityCard');

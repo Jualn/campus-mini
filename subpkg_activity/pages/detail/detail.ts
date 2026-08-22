@@ -1,10 +1,13 @@
 // subpkg_activity/pages/detail/detail.ts
 
-import { wxNavigateBack, wxShowActionSheet, wxShowToast } from '../../../utils/wx-promise';
-import { activityService } from '../../../services/index';
-import createLogger from '../../../utils/logger';
+import { wxNavigateBack, wxShowActionSheet } from '../../../utils/wx-promise';
+import { createLogger } from '../../../utils/logger';
 import type { ActivityDetail } from '../../../types/business';
 import { drawActivityPoster } from '../../utils/activityPoster';
+import { activityAction } from '../../../actions/index';
+import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import definePage from '../../../utils/definePage';
+import { showInfoToast, showSuccessToast } from '../../../utils/notify';
 
 const log = createLogger('ActivityDetailPage');
 
@@ -174,7 +177,9 @@ export interface ActivityDetailResponse {
 // § 9  Page 实现
 // ============================================================
 
-Page({
+definePage({
+  behaviors: [useAsyncLoad()],
+
   /** 滚动位置快照，用于弹窗锁定页面时记录当前位置 */
   _currentScrollTop: 0,
 
@@ -254,16 +259,18 @@ Page({
   // ── 数据加载 ──────────────────────────────────────────────
   _loadActivity(id: string) {
     if (!id) {
+      this._asyncLoadFail('活动不存在');
       this.setData({ isLoading: false, loadError: true });
       return;
     }
 
+    this._asyncLoadBegin();
     this.setData({
       isLoading: true,
       loadError: false,
     });
 
-    activityService
+    activityAction
       .getActivityDetail(id)
       .then((res) => {
         this.setData(
@@ -273,12 +280,14 @@ Page({
             loadError: false,
           },
           () => {
+            this._asyncLoadSuccess();
             void wx.setNavigationBarTitle({ title: res.title });
             void this._drawActivityPoster();
           },
         );
       })
       .catch((err: unknown) => {
+        this._asyncLoadFail('加载活动失败');
         this.setData({ isLoading: false, loadError: true });
         log.error('_loadActivity', '加载活动失败', err);
       });
@@ -286,7 +295,7 @@ Page({
 
   async _drawActivityPoster() {
     const activity = this.data.activity;
-    if (!activity?.id) return;
+    if (!activity.id) return;
 
     const activityData = {
       title: activity.title,
@@ -310,7 +319,7 @@ Page({
   },
 
   onEnroll() {
-    void wxShowToast({ title: '报名成功', icon: 'success' });
+    showSuccessToast('报名成功');
   },
 
   onShare() {
@@ -325,7 +334,7 @@ Page({
     });
 
     if (res.tapIndex === 0) {
-      await wxShowToast({ title: '举报已提交', icon: 'none' });
+      showInfoToast('举报已提交');
     }
   },
 

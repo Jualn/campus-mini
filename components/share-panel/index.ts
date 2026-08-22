@@ -2,7 +2,7 @@
 import { useSheet } from '../../behaviors/sheet-mixin';
 import defineComponent from '../../utils/defineComponent';
 import type {} from '../../types/business';
-import createLogger from '../../utils/logger';
+import { createLogger } from '../../utils/logger';
 import {
   wxAuthorize,
   wxGetSetting,
@@ -11,8 +11,8 @@ import {
   wxSaveImageToPhotosAlbum,
   wxSetClipboardData,
   wxShowModal,
-  wxShowToast,
 } from '../../utils/wx-promise';
+import { notifyToast } from '../../utils/notify';
 
 const log = createLogger('SharePanel');
 
@@ -81,14 +81,14 @@ defineComponent()({
           filePath: shareImagePath,
         })
           .then(() => {
-            void wxShowToast({
+            notifyToast({
               title: '已保存到相册',
               icon: 'success',
             });
           })
           .catch((err: unknown) => {
             log.error('onSaveImage', '保存失败', err);
-            void wxShowToast({
+            notifyToast({
               title: '保存失败，请重试',
               icon: 'error',
             });
@@ -133,7 +133,7 @@ defineComponent()({
       void wxSetClipboardData({
         data: fullPath,
       }).then(() => {
-        void wxShowToast({
+        notifyToast({
           title: '链接已复制',
           icon: 'success',
         });

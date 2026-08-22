@@ -12,8 +12,8 @@
  * - GET    /v1/exam/{id}/timeline → getExamTimeline
  */
 
-import api from './api'; // 接口保留，当前未使用
-import createLogger from '../utils/logger';
+import { api } from './api'; // 接口保留，当前未使用
+import { createLogger } from '../utils/logger';
 import {
   EXAM_DB,
   getExamDetail as getExamDetailFromDB,
@@ -632,15 +632,4 @@ export const getExamDetail = async (examId: string): Promise<ExamDetail> => {
     ...detail,
     color: normalizeColor(detail.color),
   };
-};
-
-export default {
-  getExamSimpleList,
-  getExamTimelines,
-  getExamTimeline,
-  getExamListPageData,
-  refreshExamListPageData,
-  filterExamListByCategory,
-  searchExamList,
-  getExamDetail,
 };

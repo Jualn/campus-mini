@@ -1,9 +1,9 @@
 // behaviors/useListLoad.ts
 import defineBehavior from '../utils/defineBehavior';
 
-type ListLoadPhase = 'idle' | 'initial' | 'refresh' | 'more';
+export type ListLoadPhase = 'idle' | 'initial' | 'refresh' | 'more';
 
-interface ListLoadState {
+export interface ListLoadState {
   /** 当前加载阶段 */
   phase: ListLoadPhase;
 

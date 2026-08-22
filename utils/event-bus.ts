@@ -15,17 +15,12 @@
  * - 不适用于全局状态管理（如 userInfo / token）
  * - 适合一次性事件或松耦合通信
  *
- * 使用场景：
- * - 登录成功通知
- * - websocket 消息广播
- * - 页面刷新通知
- * - toast / modal 控制
- * - 跨页面事件触发
+ * 仅声明当前项目真实存在的跨模块事实事件。
  */
 
 import { type PostUpdatePayload } from '../events/post-event';
 import type { BannerMessage, PostCardItem } from '../types/business';
-import createLogger from './logger';
+import { createLogger } from './logger';
 
 const log = createLogger('EventBus');
 
@@ -39,12 +34,6 @@ const log = createLogger('EventBus');
 export const EVENTS = {
   LOGIN_SUCCESS: 'login:success',
   LOGOUT: 'logout',
-  USER_INFO_UPDATE: 'user:info:update',
-  ORDER_CREATED: 'order:created',
-  CART_CHANGED: 'cart:changed',
-  PAGECONTAINER_STATUS_CHANGED: 'pagecontainer:status:changed',
-
-  LIKE_CHANGED: 'like:changed', // 点赞状态变化
 
   /** 帖子相关事件：创建 */
   POST_CREATED: 'post:created',
@@ -70,33 +59,16 @@ export const EVENTS = {
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
 
-export interface LikeChangedPayload {
-  targetType: string;
-  targetId: string;
-  liked: boolean;
-  likeCount: number;
-}
-
 export interface EventMap {
   [EVENTS.LOGIN_SUCCESS]: [];
 
   [EVENTS.LOGOUT]: [];
-
-  [EVENTS.USER_INFO_UPDATE]: [userId: number];
-
-  [EVENTS.ORDER_CREATED]: [orderId: string];
-
-  [EVENTS.CART_CHANGED]: [];
-
-  [EVENTS.PAGECONTAINER_STATUS_CHANGED]: [status: boolean];
 
   [EVENTS.POST_CREATED]: [PostCardItem];
 
   [EVENTS.POST_UPDATED]: [PostUpdatePayload];
 
   [EVENTS.POST_DELETED]: [postId: string];
-
-  [EVENTS.LIKE_CHANGED]: [LikeChangedPayload];
 
   [EVENTS.NOTIFY_BANNER_SHOW]: [BannerMessage | BannerMessage[]];
 
@@ -111,7 +83,7 @@ export interface EventMap {
 type Fn<T extends unknown[] = unknown[]> = (...args: T) => void;
 const map = new Map<EventName, Set<Fn>>(); // key → Set<fn>
 
-const eventBus = {
+export const eventBus = {
   /**
    * 订阅事件, 确保同一事件订阅的是同一函数实例, 取消订阅也是同一函数实例
    * 不然会导致无法正确取消订阅, 因为 on/off 需要同一个函数实例才能正确添加/删除监听
@@ -190,5 +162,3 @@ const eventBus = {
     }
   },
 };
-
-export default eventBus;

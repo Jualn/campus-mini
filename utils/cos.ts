@@ -9,7 +9,7 @@
  */
 
 import type { CosUploadCredentialDTO } from '../types/api';
-import createLogger from './logger';
+import { createLogger } from './logger';
 
 declare const require: (id: string) => unknown;
 
@@ -470,13 +470,4 @@ export const uploadCosFilesBatch = (
       },
     );
   });
-};
-
-export default {
-  buildCosFileUrl,
-  buildCosObjectUrl,
-  createCosClient,
-  createDefaultObjectKey,
-  uploadCosFile,
-  uploadCosFilesBatch,
 };

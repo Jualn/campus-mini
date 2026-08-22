@@ -32,6 +32,8 @@ export default tseslint.config(
       "node_modules/**",
       "dist/**",
       "typings/**",          // miniprogram-api-typings 自动生成的类型声明
+      "pages/test/**",       // 架构改造明确排除的测试页面
+      "**/*.js",             // 本项目规范检查只针对 TypeScript 源码
       "*.min.js",
     ],
   },

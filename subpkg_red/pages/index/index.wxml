@@ -1,85 +1,90 @@
-<!--subpkg_red/pages/index/index.wxml-->
-<view class="container">
-  <!-- 头部 -->
-  <view class="header">
-    <view class="header-content">
-      <text class="header-title">先锋e站</text>
-    </view>
-    <text class="header-subtitle">{{currentMenu.slogan}}</text>
+<view class="red-page">
+  <view class="hero">
+    <view class="hero__eyebrow">红色阵地</view>
+    <view class="hero__title">E 网同心</view>
+    <view class="hero__subtitle">学习、服务、活动、实践一体化入口</view>
   </view>
 
-  <!-- 横向分类 -->
-  <scroll-view class="menu-scroll" scroll-x="true" show-scrollbar="false">
-    <view class="menu-tabs">
+  <view class="structure">
+    <view
+      class="structure__item"
+      wx:for="{{structureItems}}"
+      wx:key="id"
+    >
+      <view class="structure__index">0{{index + 1}}</view>
+      <view class="structure__body">
+        <view class="structure__title">{{item.title}}</view>
+        <view class="structure__summary">{{item.summary}}</view>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false" enable-flex>
+    <view class="category-tabs">
       <view
-        class="menu-tab {{activeMenuKey === item.key ? 'active' : ''}}"
-        wx:for="{{menuList}}"
+        class="category-tab {{activeCategoryKey === item.key ? 'category-tab--active' : ''}}"
+        wx:for="{{categories}}"
         wx:key="key"
-        bindtap="switchMenu"
+        bindtap="switchCategory"
         data-key="{{item.key}}"
       >
-        <text class="tab-title">{{item.title}}</text>
-        <view class="tab-indicator" wx:if="{{activeMenuKey === item.key}}"></view>
+        <text class="category-tab__title">{{item.title}}</text>
       </view>
     </view>
   </scroll-view>
 
-  <!-- 内容区域 -->
-  <view class="content-area">
-    <view class="section-title-wrap">
-      <text class="section-title">{{currentMenu.title}}</text>
-      <text class="section-desc">{{currentMenu.slogan}}</text>
+  <view class="content">
+    <view class="section-heading">
+      <view>
+        <view class="section-heading__title">{{currentCategory.title}}</view>
+        <view class="section-heading__subtitle">{{currentCategory.subtitle}}</view>
+      </view>
+      <view class="section-heading__count">{{currentCategory.items.length}} 项</view>
     </view>
 
-    <view class="content-list" wx:if="{{currentMenu.items.length}}">
+    <view class="category-summary">{{currentCategory.summary}}</view>
+
+    <view class="topic-list">
       <view
-        class="content-item"
-        wx:for="{{currentMenu.items}}"
-        wx:for-item="subItem"
+        class="topic-card"
+        wx:for="{{currentCategory.items}}"
         wx:key="id"
-        bindtap="onItemClick"
-        data-item="{{subItem}}"
+        bindtap="onTopicTap"
+        data-id="{{item.id}}"
       >
-        <view class="item-main">
-          <view class="item-left">
-            <view class="item-dot"></view>
-
-            <view class="item-info">
-              <view class="item-title-row">
-                <text class="item-name">{{subItem.name}}</text>
-                <text class="item-tag" wx:if="{{subItem.tag}}">{{subItem.tag}}</text>
+        <view class="topic-card__main">
+          <view class="topic-card__dot"></view>
+          <view class="topic-card__body">
+            <view class="topic-card__title-row">
+              <text class="topic-card__title">{{item.title}}</text>
+              <view class="topic-card__tags" wx:if="{{item.tags && item.tags.length}}">
+                <text
+                  class="topic-card__tag"
+                  wx:for="{{item.tags}}"
+                  wx:for-item="tag"
+                  wx:key="*this"
+                >{{tag}}</text>
               </view>
-
-              <text class="item-desc" wx:if="{{subItem.desc}}">{{subItem.desc}}</text>
             </view>
+            <view class="topic-card__summary">{{item.summary}}</view>
           </view>
-
-          <text class="item-arrow">›</text>
         </view>
 
-        <!-- 后续小类扩展区域 -->
-        <view class="child-list" wx:if="{{subItem.children && subItem.children.length}}">
+        <view class="child-list" wx:if="{{item.children && item.children.length}}">
           <view
             class="child-chip"
-            wx:for="{{subItem.children}}"
+            wx:for="{{item.children}}"
             wx:for-item="child"
             wx:key="id"
-            catchtap="onChildItemClick"
-            data-item="{{child}}"
-          >
-            <text class="child-name">{{child.name}}</text>
-          </view>
+          >{{child.title}}</view>
         </view>
       </view>
     </view>
 
-    <view class="empty" wx:else>
-      <text class="empty-text">暂无内容</text>
+    <view class="selection" wx:if="{{selectedItem}}">
+      <view class="selection__label">当前选中</view>
+      <view class="selection__title">{{selectedItem.title}}</view>
+      <view class="selection__summary">{{selectedItem.summary}}</view>
     </view>
-  </view>
-
-  <!-- 底部提示 -->
-  <view class="footer">
-    <text class="footer-text">不忘初心 · 牢记使命</text>
   </view>
 </view>

@@ -1,14 +1,13 @@
 import defineBehavior from '../utils/defineBehavior';
-import { wxHideKeyboard, wxShowActionSheet, wxShowModal, wxShowToast } from '../utils/wx-promise';
-import { postService } from '../services/index';
+import { wxHideKeyboard, wxShowActionSheet, wxShowModal } from '../utils/wx-promise';
+import { postAction } from '../actions/index';
 import { TARGET_TYPES } from '../utils/constants';
 import type { PostCardItem } from '../types/business';
-import createLogger from '../utils/logger';
-import eventBus, { EVENTS } from '../utils/event-bus';
-import { postSyncStore } from '../stores/postSyncStore';
+import { createLogger } from '../utils/logger';
+import { eventBus, EVENTS } from '../utils/event-bus';
 import { type PostUpdatePayload } from '../events/post-event';
 import { getUserInfo } from '../stores/helper';
-import { postStore } from '../stores/index';
+import { showErrorToast, showSuccessToast } from '../utils/notify';
 
 const log = createLogger('usePostActions');
 
@@ -54,6 +53,8 @@ export interface PostActionsData {
    * 值为 comment 时，关闭举报面板后返回评论面板，而不是关闭整个 page-container。
    */
   previousPopupType: '' | 'comment';
+  reportSourceType: string;
+  reportParentId: string;
 }
 
 interface PostActionsPrivate {
@@ -104,6 +105,13 @@ export interface UsePostActionsOptions<TExtraThis extends object = object> {
    * 面板之间切换（例如 comment -> report）不会重复触发。
    */
   onPopupVisibleChange?: (this: PostActionsThis<TExtraThis>, visible: boolean) => void;
+
+  /**
+   * 新帖子创建时的页面自定义处理。
+   *
+   * 例如 me 页需要把自己刚发布的帖子插入个人列表。
+   */
+  onPostCreated?: (this: PostActionsThis<TExtraThis>, post: PostCardItem) => void;
 }
 
 function toSafeCount(value: number | undefined): number {
@@ -117,50 +125,7 @@ function toSafeCount(value: number | undefined): number {
  * 才能完成首屏数据整理。
  */
 export function mergePostSyncCache(list: PostCardItem[]) {
-  let changed = false;
-
-  const merged = list.map((post) => {
-    const cached = postSyncStore.get(post.id);
-    if (!cached) return post;
-
-    const nextIsLiked = typeof cached.isLiked === 'boolean' ? cached.isLiked : post.isLiked;
-
-    const nextLikeCount =
-      typeof cached.likeCount === 'number' ? Math.max(0, cached.likeCount) : post.likeCount;
-
-    const nextCommentCount =
-      typeof cached.commentCount === 'number'
-        ? Math.max(0, cached.commentCount)
-        : post.commentCount;
-
-    // viewCount 需要和服务端返回的值做比较，避免本地缓存的增量覆盖了服务端的最新值。
-    const serverViewCount = typeof post.viewCount === 'number' ? Math.max(0, post.viewCount) : 0;
-    const cachedViewCount =
-      typeof cached.viewCount === 'number' ? Math.max(0, cached.viewCount) : undefined;
-    const nextViewCount =
-      typeof cachedViewCount === 'number'
-        ? Math.max(serverViewCount, cachedViewCount)
-        : post.viewCount;
-
-    const hasDiff =
-      nextIsLiked !== post.isLiked ||
-      nextLikeCount !== post.likeCount ||
-      nextCommentCount !== post.commentCount ||
-      nextViewCount !== post.viewCount;
-
-    if (!hasDiff) return post;
-
-    changed = true;
-    return {
-      ...post,
-      isLiked: nextIsLiked,
-      likeCount: nextLikeCount,
-      commentCount: nextCommentCount,
-      viewCount: nextViewCount,
-    };
-  });
-
-  return { merged, changed };
+  return postAction.mergePostSyncCache(list);
 }
 
 /**
@@ -178,7 +143,11 @@ export function mergePostSyncCache(list: PostCardItem[]) {
 export function usePostActions<TExtraThis extends object = object>(
   options: UsePostActionsOptions<TExtraThis> = {},
 ) {
-  const { postListKeys: configuredPostListKeys = ['posts'], onPopupVisibleChange } = options;
+  const {
+    postListKeys: configuredPostListKeys = ['posts'],
+    onPopupVisibleChange,
+    onPostCreated,
+  } = options;
 
   // 去重，避免同一个列表被重复生成 setData patch。
   const postListKeys = [...new Set(configuredPostListKeys)];
@@ -224,6 +193,11 @@ export function usePostActions<TExtraThis extends object = object>(
           eventBus.on(EVENTS.POST_DELETED, (postId) => {
             if (!postId) return;
             this._removePostFromLists(postId);
+          }),
+
+          eventBus.on(EVENTS.POST_CREATED, (post) => {
+            if (!post.id) return;
+            onPostCreated?.call(this as unknown as PostActionsThis<TExtraThis>, post);
           }),
         );
       },
@@ -353,8 +327,7 @@ export function usePostActions<TExtraThis extends object = object>(
           }
         }
 
-        // this._bumpPostViewCount(postId);
-        postStore.record(postId, currentViewCount);
+        postAction.recordPostView(postId, currentViewCount);
       },
 
       async _deletePostFromCard(postId: string) {
@@ -371,7 +344,7 @@ export function usePostActions<TExtraThis extends object = object>(
         if (!confirmed) return;
 
         try {
-          await postService.deletePost(postId);
+          await postAction.deletePostAndSync(postId);
 
           const patch: Record<string, unknown> = {};
 
@@ -389,17 +362,11 @@ export function usePostActions<TExtraThis extends object = object>(
             this.setData(patch);
           }
 
-          void wxShowToast({
-            title: '已删除',
-            icon: 'success',
-          });
+          showSuccessToast('已删除');
         } catch (err) {
           log.error('_deletePostFromCard', '删除帖子失败', err);
 
-          void wxShowToast({
-            title: '删除失败，请稍后再试',
-            icon: 'none',
-          });
+          showErrorToast(err, { fallback: '删除失败，请稍后再试' });
         }
       },
 
@@ -630,15 +597,7 @@ export function usePostActions<TExtraThis extends object = object>(
           commentCount: safeCount,
         });
 
-        postSyncStore.set({
-          id: targetPostId,
-          commentCount: safeCount,
-        });
-
-        eventBus.emit(EVENTS.POST_UPDATED, {
-          id: targetPostId,
-          commentCount: safeCount,
-        });
+        postAction.syncPostCommentCount(targetPostId, safeCount);
       },
 
       /**

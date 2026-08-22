@@ -1,14 +1,10 @@
 // subpkg_exam/pages/list/list.ts
 
 import type { ExamListItem, ExamSearchItem, HotExam } from '../../../types/business';
-import { examService } from '../../../services/index';
-import createLogger from '../../../utils/logger';
-import {
-  wxGetWindowInfo,
-  wxNavigateBack,
-  wxNavigateTo,
-  wxShowToast,
-} from '../../../utils/wx-promise';
+import { examAction } from '../../../actions/index';
+import { createLogger } from '../../../utils/logger';
+import { wxGetWindowInfo, wxNavigateBack, wxNavigateTo } from '../../../utils/wx-promise';
+import { notifyToast } from '../../../utils/notify';
 
 const CATEGORIES = [
   { id: 'all', icon: '📋', label: '全部' },
@@ -66,10 +62,10 @@ Page({
   },
 
   _loadExams() {
-    const { allExams, hotExam } = examService.getExamListPageData();
+    const { allExams, hotExam } = examAction.getExamListPageData();
 
     if (!allExams.length) {
-      void wxShowToast({
+      notifyToast({
         title: '暂无考试数据',
         icon: 'none',
       });
@@ -84,7 +80,7 @@ Page({
   },
 
   _refreshCountdown() {
-    const { allExams, hotExam } = examService.refreshExamListPageData(this.data.allExams);
+    const { allExams, hotExam } = examAction.refreshExamListPageData(this.data.allExams);
     this.setData({
       allExams,
       hotExam,
@@ -94,7 +90,7 @@ Page({
 
   _filterExams() {
     const { allExams, activeCategory } = this.data;
-    const filtered = examService.filterExamListByCategory(allExams, activeCategory);
+    const filtered = examAction.filterExamListByCategory(allExams, activeCategory);
     this.setData({
       filteredExams: filtered,
     });
@@ -111,20 +107,20 @@ Page({
 
   onSearch(e: WechatMiniprogram.Input) {
     const kw = e.detail.value.trim();
-  
+
     this.setData({
       keyword: kw,
     });
-  
+
     if (!kw) {
       this.setData({
         searchResult: [],
       });
       return;
     }
-  
-    const result = examService.searchExamList(this.data.allExams, kw);
-  
+
+    const result = examAction.searchExamList(this.data.allExams, kw);
+
     this.setData({
       searchResult: result,
     });

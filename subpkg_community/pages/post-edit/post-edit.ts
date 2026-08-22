@@ -3,14 +3,17 @@
 // 换为弹窗形式
 
 import {
-  chooseImages,
   wxGetWindowInfo,
   wxNavigateBack,
   wxOffKeyboardHeightChange,
   wxOnKeyboardHeightChange,
+  wxShowActionSheet,
   wxShowModal,
 } from '../../../utils/wx-promise';
-import type { PostEditData } from '../../../types/business';
+import { mediaAction, postAction } from '../../../actions/index';
+import type { SelectedMediaFile } from '../../../actions/media';
+import { TARGET_TYPES } from '../../../utils/constants';
+import { showErrorToast, showInfoToast, showSuccessToast } from '../../../utils/notify';
 
 const VISIBILITY_OPTIONS = [
   { value: 'all', label: '所有人' },
@@ -19,6 +22,10 @@ const VISIBILITY_OPTIONS = [
 ];
 
 Page({
+  _openTimer: null as number | null,
+  _closeTimer: null as number | null,
+  _publishTimer: null as number | null,
+
   data: {
     // 动画状态
     ready: false, // 触发弹起动画
@@ -31,13 +38,15 @@ Page({
 
     // 表单
     content: '',
-    images: [],
-    topics: [],
+    images: [] as string[],
+    selectedFiles: [] as SelectedMediaFile[],
+    topics: [] as string[],
     visibility: 'all',
     visibilityLabel: '所有人',
 
     // 是否可以发布
     canSubmit: false,
+    submitting: false,
 
     // 话题输入弹窗
     showTopicInput: false,
@@ -70,7 +79,8 @@ Page({
     });
 
     // 延一帧触发弹起动画，让页面先渲染
-    setTimeout(() => {
+    this._openTimer = setTimeout(() => {
+      this._openTimer = null;
       this.setData({
         ready: true,
         autoFocus: true,
@@ -79,6 +89,12 @@ Page({
   },
 
   onUnload() {
+    [this._openTimer, this._closeTimer, this._publishTimer].forEach((timer) => {
+      if (timer !== null) clearTimeout(timer);
+    });
+    this._openTimer = null;
+    this._closeTimer = null;
+    this._publishTimer = null;
     wxOffKeyboardHeightChange();
   },
 
@@ -109,7 +125,11 @@ Page({
       closing: true,
       ready: false,
     });
-    setTimeout(() => void wxNavigateBack(), 300);
+    if (this._closeTimer !== null) clearTimeout(this._closeTimer);
+    this._closeTimer = setTimeout(() => {
+      this._closeTimer = null;
+      void wxNavigateBack();
+    }, 300);
   },
 
   // ─── 正文 ────────────────────────────────────────────────
@@ -122,37 +142,28 @@ Page({
   },
 
   // ─── 图片 ────────────────────────────────────────────────
-  onAddImage() {
+  async onAddImage() {
     const remain = 9 - this.data.images.length;
     if (remain <= 0) return;
-    chooseImages({ count: remain })
-      .then((newImages) => {
-        this.setData({
-          images: [...this.data.images, ...newImages],
-        });
-      })
-      .catch(() => {
-        /* 用户取消，不做处理 */
-      });
 
-    wx.chooseMedia({
-      count: remain,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      success: (res: any) => {
-        const newImages = res.tempFiles.map((f: any) => f.tempFilePath);
-        this.setData({
-          images: [...this.data.images, ...newImages],
-        });
-      },
-    });
+    try {
+      const selectedFiles = await mediaAction.selectImages(remain);
+      this.setData({
+        images: [...this.data.images, ...selectedFiles.map((file) => file.filePath)],
+        selectedFiles: [...this.data.selectedFiles, ...selectedFiles],
+      });
+    } catch {
+      /* 用户取消，不做处理 */
+    }
   },
 
-  onRemoveImage(e: any) {
-    const index = e.currentTarget.dataset.index;
+  onRemoveImage(e: WechatMiniprogram.TouchEvent) {
+    const { index } = e.currentTarget.dataset as { index: number };
     const images = this.data.images.filter((_, i) => i !== index);
+    const selectedFiles = this.data.selectedFiles.filter((_, i) => i !== index);
     this.setData({
       images,
+      selectedFiles,
     });
   },
 
@@ -164,7 +175,7 @@ Page({
     });
   },
 
-  onTopicInput(e: any) {
+  onTopicInput(e: WechatMiniprogram.Input) {
     this.setData({
       topicInput: e.detail.value,
     });
@@ -179,17 +190,11 @@ Page({
       return;
     }
     if (this.data.topics.includes(topic)) {
-      wx.showToast({
-        title: '话题已存在',
-        icon: 'none',
-      });
+      showInfoToast('话题已存在');
       return;
     }
     if (this.data.topics.length >= 5) {
-      wx.showToast({
-        title: '最多添加5个话题',
-        icon: 'none',
-      });
+      showInfoToast('最多添加5个话题');
       return;
     }
     this.setData({
@@ -205,8 +210,9 @@ Page({
     });
   },
 
-  onRemoveTopic(e: any) {
-    const topics = this.data.topics.filter((_, i) => i !== e.currentTarget.dataset.index);
+  onRemoveTopic(e: WechatMiniprogram.TouchEvent) {
+    const { index } = e.currentTarget.dataset as { index: number };
+    const topics = this.data.topics.filter((_, i) => i !== index);
     this.setData({
       topics,
     });
@@ -214,50 +220,69 @@ Page({
 
   // ─── 可见范围 ────────────────────────────────────────────
   onPickVisibility() {
-    wx.showActionSheet({
+    void wxShowActionSheet({
       itemList: VISIBILITY_OPTIONS.map((o) => o.label),
-      success: (res: any) => {
+    })
+      .then((res) => {
         const selected = VISIBILITY_OPTIONS[res.tapIndex];
         this.setData({
           visibility: selected.value,
           visibilityLabel: selected.label,
         });
-      },
-    });
+      })
+      .catch(() => {
+        // 用户取消选择，不处理。
+      });
   },
 
   // ─── 收起键盘 ────────────────────────────────────────────
   onHideKeyboard() {
-    wx.hideKeyboard();
+    void wx.hideKeyboard();
   },
 
   // ─── 发布 ────────────────────────────────────────────────
-  onSubmit() {
-    if (!this.data.canSubmit) return;
+  async onSubmit() {
+    if (!this.data.canSubmit || this.data.submitting) return;
 
-    wx.showLoading({
+    const content = this.data.content.trim();
+    if (!content) return;
+
+    void wx.showLoading({
       title: '发布中...',
     });
 
-    // 真实场景：先上传图片到 OSS，再提交帖子
-    // uploadImages(images).then(urls => wx.request({ url: '/api/post', method: 'POST', data: { content, images: urls, topics, visibility } }))
+    this.setData({ submitting: true });
 
-    setTimeout(() => {
-      wx.hideLoading();
-      wx.showToast({
-        title: '发布成功',
-        icon: 'success',
+    try {
+      const attachmentItems =
+        this.data.selectedFiles.length > 0
+          ? await mediaAction.uploadAndSaveFiles(TARGET_TYPES.POST.value, this.data.selectedFiles)
+          : [];
+      const topicText = this.data.topics.map((topic) => `#${topic}`).join(' ');
+      const finalContent = topicText ? `${content}\n${topicText}` : content;
+
+      await postAction.publishPostAndSync({
+        title: finalContent.slice(0, 30),
+        content: finalContent,
+        attachmentItems,
       });
 
-      // 通知首页刷新
-      const pages = getCurrentPages();
-      const prevPage = pages[pages.length - 2];
-      if (prevPage && (prevPage as any).onRefresh) {
-        (prevPage as any).onRefresh();
-      }
+      void wx.hideLoading();
+      showSuccessToast('发布成功');
 
       // 延迟返回，让 toast 显示完
-      setTimeout(() => this._closePanel(), 1500);
-    }, 800);
+      if (this._publishTimer !== null) clearTimeout(this._publishTimer);
+      this._publishTimer = setTimeout(() => {
+        this._publishTimer = null;
+        this._closePanel();
+      }, 1500);
+    } catch (err) {
+      void wx.hideLoading();
+      showErrorToast(err, {
+        fallback: '发布失败，请稍后再试',
+      });
+    } finally {
+      this.setData({ submitting: false });
+    }
   },
 });

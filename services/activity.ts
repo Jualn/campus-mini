@@ -10,8 +10,8 @@
  * - DELETE /v1/activity/{id}
  */
 
-import api from './api';
-import createLogger from '../utils/logger';
+import { api } from './api';
+import { createLogger } from '../utils/logger';
 import type { ActivityCard, ActivityDetail, ServiceCursorPage } from '../types/business';
 import type {
   ActivityCreateRequest,
@@ -25,7 +25,7 @@ import {
   type ActivityStatus,
   formatDepartmentText,
 } from '../utils/constants';
-import formatTime, { calcDaysToDeadline, parseDate, TimeStyle } from '../utils/time-util';
+import { formatTime, calcDaysToDeadline, parseDate, TimeStyle } from '../utils/time-util';
 
 const log = createLogger('ActivityService');
 void log;
@@ -409,11 +409,3 @@ export const activtyPublishStream = <T>(
   skipped?: string,
   parser?: (line: string) => T,
 ) => api.activity.activtyPublishStream<T>(taskId, skipped, parser);
-
-export default {
-  create,
-  getActivityList,
-  getActivityDetail,
-  upload,
-  activtyPublishStream,
-};

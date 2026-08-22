@@ -16,8 +16,10 @@
 //   desc        string     考试简介/亮点，2-3句话，是吸引用户的核心文案
 //   level       string     可选，等级说明，如"四级 / 六级"
 
-import PC, { type WxScope } from '../../utils/share_poster/posterCanvas';
-import createLogger from '../../utils/logger';
+import * as PC from '../../utils/share_poster/posterCanvas';
+import type { WxScope } from '../../utils/share_poster/posterCanvas';
+import { createLogger } from '../../utils/logger';
+import { showErrorToast } from '../../utils/notify';
 
 // 考试卡片专用色
 const EXAM_AMBER = '#fa8c16'; // 报名时间（紧迫感）
@@ -46,23 +48,20 @@ export async function drawExamPoster(
 ): Promise<void> {
   try {
     const canvas = await PC.getCanvasNode('#posterCanvas', scope);
-    await _draw(canvas, scope, examData, onSuccess);
+    _draw(canvas, scope, examData, onSuccess);
   } catch (err) {
-    wx.hideLoading();
-    wx.showToast({
-      title: '绘制失败',
-      icon: 'error',
-    });
+    void wx.hideLoading();
+    showErrorToast(err, { fallback: '绘制失败' });
     log.error('drawExamPoster', '绘制失败', err);
   }
 }
 
-async function _draw(
+function _draw(
   canvas: WechatMiniprogram.Canvas,
   scope: WxScope,
   data: ExamData,
   onSuccess: OnSuccess,
-): Promise<void> {
+): void {
   const { ctx, W, H } = PC.initCanvas(canvas);
   const { name, tags = [], enrollTime, examTime, desc, level } = data;
   const PAD = 32;

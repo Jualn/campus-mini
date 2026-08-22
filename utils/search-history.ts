@@ -1,6 +1,6 @@
 // utils/search-history.ts
 
-import storage, { STORAGE_KEYS } from '../../utils/storage';
+import { storage, STORAGE_KEYS } from './storage';
 
 const MAX_SEARCH_HISTORY = 8;
 

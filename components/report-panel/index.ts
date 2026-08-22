@@ -1,10 +1,10 @@
 // components/report-panel/index.ts
 import defineComponent from '../../utils/defineComponent';
-import createLogger from '../../utils/logger';
-import { wxShowToast } from '../../utils/wx-promise';
+import { createLogger } from '../../utils/logger';
+import { notifyToast } from '../../utils/notify';
 import { REPORT_REASONS, type TargetType, type ReportReason } from '../../utils/constants';
 import { useSheet } from '../../behaviors/sheet-mixin';
-import { reportService } from '../../services/index';
+import { reportAction } from '../../actions/index';
 
 interface ReportPanelPrivate {
   _sheetDismiss?: () => void;
@@ -199,7 +199,7 @@ defineComponent<ReportPanelPrivate>()({
           targetId,
         });
 
-        void wxShowToast({
+        notifyToast({
           title: '举报对象异常',
           icon: 'none',
         });
@@ -208,7 +208,7 @@ defineComponent<ReportPanelPrivate>()({
       }
 
       if (!selectedReason) {
-        void wxShowToast({
+        notifyToast({
           title: '请选择举报原因',
           icon: 'none',
         });
@@ -217,14 +217,14 @@ defineComponent<ReportPanelPrivate>()({
       }
 
       try {
-        await reportService.report({
+        await reportAction.submitReport({
           targetType,
           targetId,
           reason: selectedReason,
           mark: remark.trim(),
         });
 
-        void wxShowToast({
+        notifyToast({
           title: '举报成功',
           icon: 'success',
         });
@@ -233,7 +233,7 @@ defineComponent<ReportPanelPrivate>()({
         this.triggerEvent('close');
       } catch (err: unknown) {
         log.error('onReportSubmit', '举报失败', err);
-        void wxShowToast({
+        notifyToast({
           title: '举报失败，请稍后再试',
           icon: 'none',
         });

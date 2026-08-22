@@ -1,11 +1,13 @@
 // subpkg_activity/pages/list/list.ts
 
 import type { ActivityCard } from '../../../types/business';
-import { activityService, searchService } from '../../../services/index';
 import { ACTIVITY_STATUS_ORDER, DepartmentBit, DepartmentText } from '../../../utils/constants';
-import createLogger from '../../../utils/logger';
+import { createLogger } from '../../../utils/logger';
 import { useListLoad } from '../../../behaviors/useListLoad';
-import { wxNavigateBack, wxNavigateTo, wxShowActionSheet, wxShowToast } from '../../../utils/wx-promise';
+import definePage from '../../../utils/definePage';
+import { wxNavigateBack, wxNavigateTo, wxShowActionSheet } from '../../../utils/wx-promise';
+import { activityAction, searchAction } from '../../../actions/index';
+import { showErrorToast } from '../../../utils/notify';
 
 const STATUS_TABS = [
   { id: 'all', label: '全部' },
@@ -37,7 +39,7 @@ function getScopeList(activity: ActivityCard) {
   return [];
 }
 
-Page({
+definePage({
   behaviors: [useListLoad({ defaultHasMore: false })],
 
   data: {
@@ -102,7 +104,7 @@ Page({
   _loadActivities(scene: 'initial' | 'refresh' = 'initial') {
     if (scene === 'refresh') {
       if (!this._listLoadCanRefresh()) {
-        wx.stopPullDownRefresh();
+        void wx.stopPullDownRefresh();
         return;
       }
       this._listLoadBeginRefresh();
@@ -110,10 +112,10 @@ Page({
       this._listLoadBeginInitial();
     }
 
-    activityService
+    void activityAction
       .getActivityList()
       .then((res) => {
-        const list = res.list || [];
+        const list = res.list;
         // const seriesMap: { [key: string]: any } = {};
         // list.forEach((a: any) => {
         //   if (a.series_id) {
@@ -161,7 +163,7 @@ Page({
         if (scene === 'refresh') {
           this._listLoadEndRefresh(doneOptions);
           if (hasContent) {
-            wx.showToast({ title: '刷新失败，请稍后重试', icon: 'none' });
+            showErrorToast(err, { fallback: '刷新失败，请稍后重试' });
           }
         } else {
           this._listLoadEndInitial(doneOptions);
@@ -170,7 +172,7 @@ Page({
         log.error('_loadActivities', '加载活动失败', err);
       })
       .finally(() => {
-        if (scene === 'refresh') wx.stopPullDownRefresh();
+        if (scene === 'refresh') void wx.stopPullDownRefresh();
       });
   },
 
@@ -187,7 +189,9 @@ Page({
     if (activeScope && activeScope !== DepartmentText[DepartmentBit.ALL]) {
       result = result.filter((a) => {
         const scopeList = getScopeList(a);
-        return scopeList.includes(activeScope) || scopeList.includes(DepartmentText[DepartmentBit.ALL]);
+        return (
+          scopeList.includes(activeScope) || scopeList.includes(DepartmentText[DepartmentBit.ALL])
+        );
       });
     }
     // if (activeSeries) result = result.filter((a: any) => a.series_id === activeSeries);
@@ -263,7 +267,7 @@ Page({
     });
 
     try {
-      const res = await searchService.searchActivities({
+      const res = await searchAction.searchActivities({
         keyword,
         lastId: reset ? undefined : this.data.searchNextCursor || undefined,
         pageSize: PAGE_SIZE,
@@ -271,11 +275,11 @@ Page({
 
       if (currentRequest !== searchRequestSeq) return;
 
-      const list = res.list || [];
+      const list = res.list;
 
       this.setData({
         searchResult: reset ? list : [...this.data.searchResult, ...list],
-        searchHasMore: !!res.hasMore,
+        searchHasMore: res.hasMore,
         searchNextCursor: res.nextCursor ?? '',
         searchLoaded: true,
       });
@@ -288,10 +292,7 @@ Page({
       });
 
       log.error('_searchActivities', '搜索活动失败', err);
-      void wxShowToast({
-        title: '搜索失败，请稍后再试',
-        icon: 'none',
-      });
+      showErrorToast(err, { fallback: '搜索失败，请稍后再试' });
     } finally {
       if (currentRequest === searchRequestSeq) {
         this.setData({
@@ -350,7 +351,7 @@ Page({
       ),
     ];
 
-    wxShowActionSheet({
+    void wxShowActionSheet({
       itemList: scopes,
     })
       .then((res) => {
@@ -373,7 +374,7 @@ Page({
     if (this.data.keyword.trim()) {
       clearSearchDebounceTimer();
       void this._searchActivities(true).finally(() => {
-        wx.stopPullDownRefresh();
+        void wx.stopPullDownRefresh();
       });
       return;
     }

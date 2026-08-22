@@ -15,8 +15,10 @@
 //   maxPeople  number|null  人数上限，null 表示不限
 //   cover      string       封面图路径，空字符串表示无封面
 
-import PC, { type WxScope } from '../../utils/share_poster/posterCanvas';
-import createLogger from '../../utils/logger';
+import * as PC from '../../utils/share_poster/posterCanvas';
+import type { WxScope } from '../../utils/share_poster/posterCanvas';
+import { createLogger } from '../../utils/logger';
+import { showErrorToast } from '../../utils/notify';
 
 // ── 类型定义 ──────────────────────────────────────────────────────────
 
@@ -43,14 +45,11 @@ export async function drawActivityPoster(
     if (activityData.cover) {
       await _drawWithCover(canvas, scope, activityData, onSuccess);
     } else {
-      await _drawNoCover(canvas, scope, activityData, onSuccess);
+      _drawNoCover(canvas, scope, activityData, onSuccess);
     }
   } catch (err) {
-    wx.hideLoading();
-    wx.showToast({
-      title: '绘制失败',
-      icon: 'error',
-    });
+    void wx.hideLoading();
+    showErrorToast(err, { fallback: '绘制失败' });
     log.error('drawActivityPoster', '绘制失败', err);
   }
 }
@@ -79,7 +78,7 @@ async function _drawWithCover(
     ctx.clip();
     PC.drawCover(ctx, img, 0, 0, W, imgH);
     ctx.restore();
-  } catch (e) {
+  } catch {
     const grad = ctx.createLinearGradient(0, 0, W, imgH);
     grad.addColorStop(0, '#1677ff');
     grad.addColorStop(1, '#69b1ff');
@@ -124,7 +123,7 @@ async function _drawWithCover(
       infoStartY + infoLineH * 2,
       W - PAD * 2,
       '人数',
-      `限 ${maxPeople} 人`,
+      `限 ${String(maxPeople)} 人`,
       '#fa8c16',
     );
   }
@@ -159,12 +158,12 @@ function _drawInfoRow(
 }
 
 // ── 无封面版 ─────────────────────────────────────────
-async function _drawNoCover(
+function _drawNoCover(
   canvas: WechatMiniprogram.Canvas,
   scope: WxScope,
   data: ActivityData,
   onSuccess: OnSuccess,
-): Promise<void> {
+): void {
   const { ctx, W, H } = PC.initCanvas(canvas);
   const { title, time, location, maxPeople } = data;
   const PAD = 32;
@@ -264,7 +263,7 @@ async function _drawNoCover(
     ctx.fillText('人数上限', col2X + 24, row2Y + 54);
     ctx.fillStyle = '#1a1a1a';
     ctx.font = 'bold 54px sans-serif';
-    const numStr = `${maxPeople}`;
+    const numStr = String(maxPeople);
     ctx.fillText(numStr, col2X + 24, row2Y + row2H / 2 + 22);
     ctx.fillStyle = '#888888';
     ctx.font = '54px sans-serif';

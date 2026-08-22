@@ -120,7 +120,7 @@ export const TimeStyle = {
  * @param style 类型
  * @returns 带有单位的，YYYY -> xxxx年 MM-DD -> xx月xx日 HH:mm -> xx:xx
  */
-export default function formatTime(
+export function formatTime(
   input: string,
   style: (typeof TimeStyle)[keyof typeof TimeStyle],
 ): string {

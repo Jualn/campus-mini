@@ -9,13 +9,11 @@
  * - DELETE /v1/post/{postId}
  */
 
-import api from './api';
+import { api } from './api';
 import type { PostCardItem, PostDetail, ServiceCursorPage } from '../types/business';
 import type { PostCreateRequest, PostDetailVO, PostListBO } from '../types/api';
-import formatTime, { TimeStyle } from '../utils/time-util';
-import { getUserId } from '../stores/helper';
+import { formatTime, TimeStyle } from '../utils/time-util';
 import { getAvatarInfo } from '../utils/avatar';
-import { emitPostDeleted } from '../events/post-event';
 
 export const mapPostListItem = (post: PostListBO): PostCardItem => ({
   id: post.id,
@@ -47,7 +45,7 @@ const mapPostDetail = (post: PostDetailVO): PostDetail => ({
   isLiked: post.liked,
   createdAtText: post.publishedAt ? formatTime(post.publishedAt, TimeStyle.POST) : '',
   viewCount: post.viewCount || 0,
-  isSelf: getUserId() === post.author.id,
+  isSelf: false,
   // isFollowing: false,
   _avatarBg: getAvatarInfo(post.author.nickname).bg,
   _avatarChar: getAvatarInfo(post.author.nickname).char,
@@ -231,8 +229,6 @@ export const deletePost = async (postId: string): Promise<void> => {
   }
 
   await api.post.remove(postId);
-
-  emitPostDeleted(postId);
 };
 
 /**
@@ -247,15 +243,4 @@ export const togglePostCollect = (postId: string, collect: boolean): Promise<unk
   }
 
   return Promise.resolve({ postId, collect });
-};
-
-export default {
-  fetchPostList,
-  getUserPosts,
-  getUserLikedPosts,
-  getPostDetail,
-  publishPost,
-  editPost,
-  deletePost,
-  togglePostCollect,
 };

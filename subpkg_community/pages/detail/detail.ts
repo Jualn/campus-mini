@@ -1,7 +1,6 @@
 // subpkg_community/pages/detail/detail.ts
 
 import { TARGET_TYPES } from '../../../utils/constants';
-import { postService, interactService } from '../../../services/index';
 import {
   wxGetWindowInfo,
   wxNavigateBack,
@@ -11,14 +10,15 @@ import {
   wxReLaunch,
   wxShowActionSheet,
   wxShowModal,
-  wxShowToast,
 } from '../../../utils/wx-promise';
-import createLogger from '../../../utils/logger';
-import store, { postStore } from '../../../stores/index';
+import { createLogger } from '../../../utils/logger';
+import { getUserInfo } from '../../../stores/helper';
 import type { PostDetail } from '../../../types/business';
-import { emitPostUpdated } from '../../../events/post-event';
-import { postSyncStore } from '../../../stores/postSyncStore';
 import { drawPostPoster } from '../../../utils/share_poster/postPoster';
+import { showErrorToast } from '../../../utils/notify';
+import { postAction } from '../../../actions/index';
+import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import definePage from '../../../utils/definePage';
 
 const log = createLogger('PostDetailPage');
 
@@ -29,7 +29,9 @@ const INPUT_BAR_HEIGHT_PX = 56;
 // 改成项目真实的首页路径。无论首页是不是 tabBar，reLaunch 都可以打开。
 const HOME_PAGE_URL = '/pages/index/index';
 
-Page({
+definePage({
+  behaviors: [useAsyncLoad()],
+
   _currentScrollTop: 0,
   _enteredFromShare: false,
   _likePending: false,
@@ -58,6 +60,8 @@ Page({
     currentSharePath: '',
     reportTargetType: '',
     reportTargetId: '',
+    isLoading: true,
+    loadError: false,
   },
 
   onLoad(query: { postId: string; from?: string }) {
@@ -70,7 +74,7 @@ Page({
       isShareEntry,
     });
 
-    const myAvatar = store.get('userInfo')?.avatarUrl;
+    const myAvatar = getUserInfo('avatarUrl');
 
     this.setData({
       myAvatar: myAvatar ?? '',
@@ -145,32 +149,19 @@ Page({
   },
 
   _loadPost(id: string) {
-    postService
+    if (!id) {
+      this._asyncLoadFail('帖子不存在');
+      this.setData({ isLoading: false, loadError: true });
+      return;
+    }
+
+    this._asyncLoadBegin();
+    this.setData({ isLoading: true, loadError: false });
+
+    postAction
       .getPostDetail(id)
       .then((res) => {
-        const cached = postSyncStore.get(res.id);
         const merged = { ...res };
-
-        if (cached) {
-          if (typeof cached.isLiked === 'boolean') {
-            merged.isLiked = cached.isLiked;
-          }
-
-          if (typeof cached.likeCount === 'number') {
-            merged.likeCount = Math.max(0, cached.likeCount);
-          }
-
-          if (typeof cached.commentCount === 'number') {
-            merged.commentCount = Math.max(0, cached.commentCount);
-          }
-
-          if (typeof cached.viewCount === 'number') {
-            const serverViewCount =
-              typeof merged.viewCount === 'number' ? Math.max(0, merged.viewCount) : 0;
-            const cachedViewCount = Math.max(0, cached.viewCount);
-            merged.viewCount = Math.max(serverViewCount, cachedViewCount);
-          }
-        }
 
         const safeLikeCount = typeof merged.likeCount === 'number' ? merged.likeCount : 0;
         const safeCommentCount = typeof merged.commentCount === 'number' ? merged.commentCount : 0;
@@ -184,15 +175,19 @@ Page({
           post: merged,
           currentCommentCount: merged.commentCount,
           targetId: merged.id,
+          isLoading: false,
+          loadError: false,
         });
 
+        this._asyncLoadSuccess();
         void this._drawPostPoster();
       })
       .catch((err: unknown) => {
+        this._asyncLoadFail('加载帖子失败');
+        this.setData({ isLoading: false, loadError: true });
         log.error('_loadPost', '加载帖子失败', err);
-        void wxShowToast({
-          title: '加载失败',
-          icon: 'none',
+        showErrorToast(err, {
+          fallback: '加载失败',
         });
       });
   },
@@ -206,7 +201,7 @@ Page({
   }) {
     const postId = patch.id ?? this.data.post.id;
     if (!postId) return;
-    emitPostUpdated({
+    postAction.syncPostPatch({
       id: postId,
       ...(typeof patch.isLiked === 'boolean' ? { isLiked: patch.isLiked } : {}),
       ...(typeof patch.likeCount === 'number' ? { likeCount: patch.likeCount } : {}),
@@ -239,7 +234,7 @@ Page({
     const currentViewCount =
       typeof this.data.post.viewCount === 'number' ? this.data.post.viewCount : 0;
 
-    postStore.record(postId, currentViewCount);
+    postAction.recordPostView(postId, currentViewCount);
   },
 
   // comment-panel 回调：评论数变化时同步到帖子数据
@@ -292,14 +287,13 @@ Page({
       'post.isLiked': nextIsLiked,
       'post.likeCount': nextLikeCount,
     });
-    this._emitPostUpdate({ id, isLiked: nextIsLiked, likeCount: nextLikeCount });
 
     try {
-      if (isLiked) {
-        await interactService.unlike({ targetType: TARGET_TYPES.POST.value, targetId: id });
-      } else {
-        await interactService.like({ targetType: TARGET_TYPES.POST.value, targetId: id });
-      }
+      await postAction.togglePostLikeAndSync({
+        postId: id,
+        currentLiked: currentIsLiked,
+        currentLikeCount: safeLikeCount,
+      });
     } catch (err) {
       log.error('onLike', '点赞操作失败', err);
       // 恢复状态
@@ -307,10 +301,8 @@ Page({
         'post.isLiked': currentIsLiked,
         'post.likeCount': safeLikeCount,
       });
-      this._emitPostUpdate({ id, isLiked: currentIsLiked, likeCount: safeLikeCount });
-      void wxShowToast({
-        title: '操作失败',
-        icon: 'none',
+      showErrorToast(err, {
+        fallback: '操作失败，请稍后再试',
       });
     } finally {
       this._likePending = false;
@@ -322,17 +314,6 @@ Page({
     const comp = this.selectComponent('#post-detail-comment-panel');
     comp.setData({ inputAutoFocus: true });
   },
-
-  // onToggleFollow() {
-  //   const isFollowing = this.data.post.isFollowing;
-  //   this.setData({
-  //     'post.isFollowing': !isFollowing,
-  //   });
-  //   void wxShowToast({
-  //     title: isFollowing ? '已取消关注' : '已关注',
-  //     icon: 'none',
-  //   });
-  // },
 
   goToUser(e: WechatMiniprogram.TouchEvent) {
     const userId = e.currentTarget.dataset.id as string;
@@ -368,7 +349,7 @@ Page({
         });
 
         if (r.confirm) {
-          await postService.deletePost(this.data.post.id);
+          await postAction.deletePostAndSync(this.data.post.id);
           this.onBack();
         }
       } else if (!isSelf && res.tapIndex === 0) {
@@ -380,7 +361,7 @@ Page({
       }
     } catch (err) {
       log.error('onMore', '更多操作失败', err);
-      void wxShowToast({ title: '操作失败，请重试!', icon: 'none' });
+      showErrorToast(err, { fallback: '操作失败，请重试' });
     }
   },
 
@@ -389,7 +370,7 @@ Page({
       url: HOME_PAGE_URL,
     }).catch((err: unknown) => {
       log.error('_goHome', '返回首页失败，请检查 HOME_PAGE_URL', err);
-      void wxShowToast({ title: '返回首页失败', icon: 'none' });
+      showErrorToast(err, { fallback: '返回首页失败' });
     });
   },
 

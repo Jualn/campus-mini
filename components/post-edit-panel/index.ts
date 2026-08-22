@@ -1,10 +1,10 @@
 // components/post-edit-panel/index.ts
 import { useSheet } from '../../behaviors/sheet-mixin';
 import defineComponent from '../../utils/defineComponent';
-import { mediaService } from '../../services/index';
-import createLogger from '../../utils/logger';
-import { wxShowToast } from '../../utils/wx-promise';
-import type { SelectedMediaFile } from '../../services/media';
+import { createLogger } from '../../utils/logger';
+import { notifyToast } from '../../utils/notify';
+import type { SelectedMediaFile } from '../../actions/media';
+import { mediaAction } from '../../actions/index';
 
 const log = createLogger('PostEditPanel');
 
@@ -134,7 +134,7 @@ defineComponent<PostEditPanelPrivate>()({
       if (remain <= 0) return;
 
       try {
-        const selectedFiles = await mediaService.selectImages(remain);
+        const selectedFiles = await mediaAction.selectImages(remain);
         const newImgs = selectedFiles.map((f) => f.filePath);
         this.setData({
           images: [...this.data.images, ...newImgs],
@@ -143,7 +143,7 @@ defineComponent<PostEditPanelPrivate>()({
         this._selectedFiles = [...this._selectedFiles, ...selectedFiles];
       } catch (err: unknown) {
         log.error('onAddImage', '添加图片失败', err);
-        void wxShowToast({ title: '添加图片失败', icon: 'none' });
+        notifyToast({ title: '添加图片失败', icon: 'none' });
       }
     },
 

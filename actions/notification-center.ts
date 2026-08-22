@@ -1,9 +1,9 @@
-import createLogger from '../utils/logger';
-import eventBus, { EVENTS } from '../utils/event-bus';
-import messageService from './message';
+import { createLogger } from '../utils/logger';
+import { eventBus, EVENTS } from '../utils/event-bus';
+import * as messageAction from './message';
 import { isLoggedIn } from '../stores/helper';
 
-type BannerOptions = Parameters<typeof messageService.getUnreadBannerMessages>[0];
+type BannerOptions = Parameters<typeof messageAction.getUnreadBannerMessages>[0];
 
 export interface NotifyPollingOptions {
   intervalMs?: number;
@@ -25,6 +25,7 @@ let activeIntervalMs: number | null = null;
 
 let onBannerTap: ((payload: unknown) => void) | null = null;
 let onLogout: (() => void) | null = null;
+let onLogin: (() => void) | null = null;
 
 const applyOptions = (options?: NotifyPollingOptions) => {
   if (!options) return;
@@ -54,14 +55,14 @@ const emitUnreadChange = (count: number) => {
  * @param options 可选的轮询配置项，包括轮询间隔和 Banner 请求参数
  * @returns Promise<void>
  */
-const pollOnce = async (options?: NotifyPollingOptions) => {
+export const pollOnce = async (options?: NotifyPollingOptions) => {
   applyOptions(options);
   if (isPolling) return;
   if (!isLoggedIn()) return;
 
   isPolling = true;
   try {
-    const count = await messageService.getUnreadCount();
+    const count = await messageAction.getUnreadCount();
     emitUnreadChange(count);
 
     if (count <= 0) return;
@@ -69,7 +70,7 @@ const pollOnce = async (options?: NotifyPollingOptions) => {
     const nextOptions = bannerOptions
       ? { ...bannerOptions, unreadCount: count }
       : { unreadCount: count };
-    const banners = await messageService.getUnreadBannerMessages(nextOptions);
+    const banners = await messageAction.getUnreadBannerMessages(nextOptions);
     if (banners.length > 0) {
       eventBus.emit(EVENTS.NOTIFY_BANNER_SHOW, banners);
     }
@@ -89,12 +90,19 @@ const pollOnce = async (options?: NotifyPollingOptions) => {
  * @returns void
  */
 const bindEvents = () => {
+  if (!onLogin) {
+    onLogin = () => {
+      start();
+    };
+    eventBus.on(EVENTS.LOGIN_SUCCESS, onLogin);
+  }
+
   if (!onBannerTap) {
     onBannerTap = (payload: unknown) => {
       const item = payload as { id?: string | number; isAggregate?: boolean };
       if (!item.id || item.isAggregate) return;
 
-      void messageService
+      void messageAction
         .markMessageAsRead(String(item.id))
         .then(() => {
           eventBus.emit(EVENTS.NOTIFY_LIST_REFRESH);
@@ -111,7 +119,7 @@ const bindEvents = () => {
     onLogout = () => {
       stop();
       unreadCount = 0;
-      messageService.resetNotificationBannerCache();
+      messageAction.resetNotificationBannerCache();
       eventBus.emit(EVENTS.NOTIFY_UNREAD_CHANGE, 0);
     };
     eventBus.on(EVENTS.LOGOUT, onLogout);
@@ -130,12 +138,13 @@ const bindEvents = () => {
  *   - bannerOptions: 获取 Banner 消息时的额外参数，如 unreadCount 等
  * @returns void
  */
-const start = (options?: NotifyPollingOptions) => {
+export const start = (options?: NotifyPollingOptions) => {
   applyOptions(options);
   bindEvents();
+  if (!isLoggedIn()) return;
 
-  if (pollTimer && activeIntervalMs === pollIntervalMs) return;
-  if (pollTimer) {
+  if (pollTimer !== null && activeIntervalMs === pollIntervalMs) return;
+  if (pollTimer !== null) {
     clearInterval(pollTimer);
     pollTimer = null;
   }
@@ -152,15 +161,9 @@ const start = (options?: NotifyPollingOptions) => {
  * 如果当前没有轮询任务在运行，则调用该函数不会有任何效果。
  * @returns void
  */
-const stop = () => {
-  if (!pollTimer) return;
+export const stop = () => {
+  if (pollTimer === null) return;
   clearInterval(pollTimer);
   pollTimer = null;
   activeIntervalMs = null;
-};
-
-export default {
-  start,
-  stop,
-  pollOnce,
 };

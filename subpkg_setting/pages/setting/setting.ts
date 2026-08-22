@@ -6,13 +6,11 @@ import {
   wxNavigateBack,
   wxNavigateTo,
   wxSetClipboardData,
-  wxShowToast,
 } from '../../../utils/wx-promise';
-import { userService } from '../../../services/index';
-import storage, { STORAGE_KEYS } from '../../../utils/storage';
+import { authAction, userAction } from '../../../actions/index';
 import type { Settings } from '../../../types/business';
-import createLogger from '../../../utils/logger';
-import store from '../../../stores/index';
+import { createLogger } from '../../../utils/logger';
+import { notifyToast } from '../../../utils/notify';
 
 const log = createLogger('SettingPage');
 
@@ -36,7 +34,7 @@ Page({
 
   data: {
     statusBarHeight: 20,
-    wxNumber:"chan50813",
+    wxNumber: 'chan50813',
     version: '1.0.0',
 
     // 通知设置
@@ -62,7 +60,7 @@ Page({
   onShow() {
     this._active = true;
     // 用本地缓存（只有保存成功才会更新）兜底纠正离开期间残留的乐观状态
-    const cached = storage.get('userSetting') as Settings | null;
+    const cached = userAction.getCachedUserSettings();
     this.setData({
       ...(cached?.notify ? { notify: cached.notify } : {}),
       notifyPending: createFlagMap(false), // 离开期间发出的请求此时一定已有结果，清掉可能卡住的 spinner
@@ -81,7 +79,7 @@ Page({
   },
 
   async _loadSettings() {
-    const setting = await userService.getUserSettings();
+    const setting = await userAction.getUserSettings();
 
     const accountInfo = wxGetAccountInfoSync();
     this.setData({
@@ -93,7 +91,6 @@ Page({
   async _saveNotify(key: NotifyKey, value: boolean, prevValue: boolean) {
     this._savingKeys.add(key);
 
-    // 延迟显示 loading，避免接口很快返回时的闪烁
     const timer = setTimeout(() => {
       if (this._active) {
         this.setData({ [`notifyPending.${key}`]: true });
@@ -102,52 +99,36 @@ Page({
     this._pendingTimers[key] = timer;
 
     try {
-      await userService.updateNotifySetting(key, value);
-
-      // 只合并自己这个字段，避免覆盖其他还在 pending 中、尚未确认的字段
-      const cached = (storage.get('userSetting') as Settings | null) ?? {
-        notify: { ...this.data.notify },
-      };
-      const confirmedNotify = { ...cached.notify, [key]: value };
-      const settings: Settings = { notify: confirmedNotify };
-
-      storage.set('userSetting', settings);
-      store.set('userSetting', settings);
+      await userAction.updateNotifySettingAndSync(key, value, this.data.notify);
 
       clearTimeout(timer);
       if (this._active) {
         this.setData({
-          [`notify.${key}`]: value, // 兜底：防止 onShow 期间被重置后没同步回来
+          [`notify.${key}`]: value,
           [`notifyPending.${key}`]: false,
         });
       }
     } catch (e) {
       clearTimeout(timer);
-      log.error('_saveNotify', '保存通知设置失败', e);
+      log.error('_saveNotify', '????????', e);
 
       if (this._active) {
-        const rolledBackNotify = { ...this.data.notify, [key]: prevValue };
         this.setData({
           [`notify.${key}`]: prevValue,
           [`notifyPending.${key}`]: false,
           [`notifyError.${key}`]: true,
         });
-        // 全局 store 只在成功时写入过，这里若 UI 已回滚也保持一致
-        store.set('userSetting', { notify: rolledBackNotify });
       }
-      // 页面不可见时不做任何 UI 处理，storage 没被写入新值，onShow 会自动纠正
     } finally {
       this._savingKeys.delete(key);
       this._pendingTimers[key] = undefined;
     }
   },
 
-  // 通知开关
   onNotifyChange(e: WechatMiniprogram.SwitchChange) {
     const { key } = e.currentTarget.dataset as { key: NotifyKey };
     const value = e.detail.value;
 
-    // 上一次还没保存完时，忽略本次点击（不依赖 native disabled，避免视觉变灰）
     if (this._savingKeys.has(key)) return;
 
     const prevValue = this.data.notify[key];
@@ -161,11 +142,11 @@ Page({
   },
 
   bindMp() {
-    const token = storage.get(STORAGE_KEYS.TOKEN);
+    const token = authAction.getToken();
 
     if (!token) {
       log.error('bindMp', '用户未登录，无法跳转公众号订阅页');
-      void wxShowToast({
+      notifyToast({
         title: '用户未登录，无法跳转公众号订阅页',
         icon: 'error',
       });
@@ -180,21 +161,21 @@ Page({
         encodeURIComponent(h5EntryUrl),
     }).catch((err: unknown) => {
       log.error('bindMp', '跳转公众号订阅页失败', err);
-      void wxShowToast({
+      notifyToast({
         title: '跳转失败，请稍后再试',
         icon: 'error',
       });
     });
   },
 
-  onGoFeedback(){
-    wxSetClipboardData({data:this.data.wxNumber})
-    .then(()=>{
-      void wxShowToast({title:"复制成功"});
-    }).catch(()=>{
-      void wxShowToast({title:"复制失败"});
-    })
-    
+  onGoFeedback() {
+    wxSetClipboardData({ data: this.data.wxNumber })
+      .then(() => {
+        notifyToast({ title: '复制成功' });
+      })
+      .catch(() => {
+        notifyToast({ title: '复制失败' });
+      });
   },
 
   onGoEditProfile() {

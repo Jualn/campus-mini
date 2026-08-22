@@ -13,8 +13,8 @@
  * - GET /v1/interact/like/count
  */
 
-import api from './api';
-import createLogger from '../utils/logger';
+import { api } from './api';
+import { createLogger } from '../utils/logger';
 import { TARGET_TYPES, type TargetType } from '../utils/constants';
 
 const log = createLogger('InteractService');
@@ -115,16 +115,4 @@ export const getLikeCount = async (targetType: TargetType, targetId: string): Pr
 export const togglePostLike = (postId: string, isLike = true) => {
   const payload = { targetType: TARGET_TYPES.POST.value, targetId: postId };
   return isLike ? like(payload) : unlike(payload);
-};
-
-export default {
-  like,
-  unlike,
-  reportView,
-  reportShare,
-  togglePostLike,
-  getViewCount,
-  getShareCount,
-  isLiked,
-  getLikeCount,
 };

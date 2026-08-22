@@ -1,5 +1,5 @@
 import type { ReportCreateRequest } from '../types/api';
-import api from './api';
+import { api } from './api';
 
 /**
  * 举报服务
@@ -11,8 +11,4 @@ import api from './api';
 export const report = async (options: ReportCreateRequest): Promise<void> => {
   await api.report.create(options);
   // 举报相关逻辑
-};
-
-export default {
-  report,
 };

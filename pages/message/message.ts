@@ -1,8 +1,15 @@
-import { messageService } from '../../services/index';
-import createLogger from '../../utils/logger';
+import { messageAction } from '../../actions/index';
+import { createLogger } from '../../utils/logger';
 import type { FilterTab, MessageItem } from '../../types/business';
 import { getCustomTabBar } from '../../utils/tabbar';
 import { wxNavigateTo } from '../../utils/wx-promise';
+import { showErrorToast, showInfoToast } from '../../utils/notify';
+import {
+  ROUTES,
+  buildActivityDetailRoute,
+  buildExamDetailRoute,
+  buildPostDetailRoute,
+} from '../../utils/routes';
 
 const MESSAGE_TAB_INDEX = 1;
 
@@ -17,7 +24,7 @@ type LoadOptions = Partial<{
 
 Page({
   data: {
-    // pageCopy: messageService.getMessagePageCopy(),
+    // pageCopy: messageAction.getMessagePageCopy(),
     statusBarHeight: 20,
     navTopGap: 8,
     navHeight: 32,
@@ -92,7 +99,7 @@ Page({
       isRefreshing: !!options.fromPullDown,
     });
 
-    loadingTask = messageService
+    loadingTask = messageAction
       .getMessageFeedData()
       .then((data) => {
         const allMessages = data.allMessages;
@@ -113,7 +120,7 @@ Page({
       .catch((err: unknown) => {
         log.error('_loadMessages', '加载消息失败', err);
         if (!options.silent) {
-          void wx.showToast({ title: '消息加载失败，请稍后重试', icon: 'none' });
+          showErrorToast(err, { fallback: '消息加载失败，请稍后重试' });
         }
       })
       .finally(() => {
@@ -144,12 +151,12 @@ Page({
     unreadCount?: number;
   }) {
     const allMessages = payload.allMessages;
-    const filterTabs = payload.filterTabs ?? messageService.getFilterTabs(allMessages);
+    const filterTabs = payload.filterTabs ?? messageAction.getFilterTabs(allMessages);
     const activeFilter = payload.activeFilter ?? this._resolveActiveFilter(filterTabs);
     const unreadCount =
       payload.unreadCount ?? allMessages.filter((m: MessageItem) => !m.isRead).length;
     const totalCount = payload.totalCount ?? allMessages.length;
-    const sections = messageService.applyMessageFilter(allMessages, activeFilter);
+    const sections = messageAction.applyMessageFilter(allMessages, activeFilter);
 
     this.setData({
       allMessages,
@@ -165,7 +172,7 @@ Page({
 
   _applyFilter(activeFilter?: string) {
     const currentFilter = activeFilter ?? this.data.activeFilter;
-    const sections = messageService.applyMessageFilter(this.data.allMessages, currentFilter);
+    const sections = messageAction.applyMessageFilter(this.data.allMessages, currentFilter);
 
     this.setData({
       activeFilter: currentFilter,
@@ -215,7 +222,7 @@ Page({
       activeFilter: this.data.activeFilter,
     });
 
-    void messageService.markMessageAsRead(id).catch((err: unknown) => {
+    void messageAction.markMessageAsRead(id).catch((err: unknown) => {
       log.error('_markRead', '标记消息已读失败', err);
       this._commitMessageState({
         allMessages: previousMessages,
@@ -236,10 +243,10 @@ Page({
       unreadCount: 0,
     });
 
-    void messageService
+    void messageAction
       .markAllMessagesAsRead()
       .then(() => {
-        void wx.showToast({ title: '已全部标记已读', icon: 'none' });
+        showInfoToast('已全部标记已读');
       })
       .catch((err: unknown) => {
         log.error('onMarkAllRead', '全部已读失败', err);
@@ -247,7 +254,7 @@ Page({
           allMessages: previousMessages,
           activeFilter: this.data.activeFilter,
         });
-        void wx.showToast({ title: '操作失败，请稍后重试', icon: 'none' });
+        showErrorToast(err, { fallback: '操作失败，请稍后重试' });
       });
   },
 
@@ -269,16 +276,16 @@ Page({
     if (!normalizedType || normalizedType === 'none') return;
 
     if (normalizedType === 'notification_center') {
-      void wx.switchTab({ url: '/pages/message/index' });
+      void wx.switchTab({ url: ROUTES.MESSAGE });
       return;
     }
 
     if (!targetId) return;
 
     const routes: Record<string, string> = {
-      activity: `/subpkg_activity/pages/detail/detail?activityId=${targetId}`,
-      exam: `/subpkg_exam/pages/detail/detail?examId=${targetId}`,
-      post: `/subpkg_community/pages/detail/detail?postId=${targetId}`,
+      activity: buildActivityDetailRoute(targetId),
+      exam: buildExamDetailRoute(targetId),
+      post: buildPostDetailRoute(targetId),
     };
 
     const url = routes[normalizedType];

@@ -1,5 +1,5 @@
 import type { ActivityCard, PostCardItem, ServiceCursorPage } from '../types/business';
-import api from './api';
+import { api } from './api';
 import { mapPostListItem } from './post';
 import { toCard } from './activity';
 
@@ -27,9 +27,4 @@ export const searchActivities = async (query: {
     list: res.list.map(toCard),
     nextCursor: res.nextCursor,
   };
-};
-
-export default {
-  searchPosts,
-  searchActivities,
 };

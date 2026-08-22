@@ -1,5 +1,5 @@
 import type * as ApiTypes from '../types/api';
-import http from '../utils/request';
+import { http } from '../utils/request';
 
 export const api = {
   auth: {
@@ -163,5 +163,3 @@ export const api = {
       http.get<ApiTypes.PageResultActivityListBO>('/v1/search/activities', query),
   },
 };
-
-export default api;

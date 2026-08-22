@@ -13,9 +13,15 @@
  * - PUT /v1/notify/me/read-all
  */
 
-import api from './api';
-import formatTime, { TimeStyle, parseDate } from '../utils/time-util';
-import { TARGET_TYPE } from '../utils/constants';
+import { api } from './api';
+import { formatTime, TimeStyle, parseDate } from '../utils/time-util';
+import { TARGET_TYPES } from '../utils/constants';
+import {
+  ROUTES,
+  buildActivityDetailRoute,
+  buildExamDetailRoute,
+  buildPostDetailRoute,
+} from '../utils/routes';
 import type { NotificationPageQuery, NotificationVO } from '../types/api';
 import type {
   FilterTab,
@@ -58,6 +64,8 @@ export interface NotificationBannerMessage {
   accentClass?: string;
   routeUrl?: string;
   routeMethod?: NotificationRouteMethod;
+  /** 聚合消息所包含的原始通知 ID，供 Action 维护去重缓存。 */
+  sourceIds?: string[];
 }
 
 export interface MessagePageCopy {
@@ -78,21 +86,20 @@ interface MessageFeedServiceData extends MessageFeedData {
   pageCopy: MessagePageCopy;
 }
 
-interface GetUnreadBannerMessagesOptions {
+export interface GetUnreadBannerMessagesOptions {
   /** 本次最多拉取多少条未读通知 */
   pageSize?: number;
   /** 超过多少条后改为聚合弹窗 */
   aggregateThreshold?: number;
-  /** 是否过滤已经弹过的通知，避免轮询时重复弹 */
-  dedupe?: boolean;
   /** 外部已获取的未读数，传入可避免重复请求 */
   unreadCount?: number;
+  /** 由 Action 注入的已展示通知集合；Service 本身不持有运行时缓存。 */
+  excludeIds?: ReadonlySet<string>;
 }
 
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_BANNER_PAGE_SIZE = 10;
 const DEFAULT_AGGREGATE_THRESHOLD = 3;
-const MESSAGE_PAGE_ROUTE = '/pages/message/index';
 
 const MESSAGE_PAGE_COPY: MessagePageCopy = {
   pageTitle: '消息中心',
@@ -128,6 +135,13 @@ const TYPE_CONFIG: Record<MessageType, TypeConfig> = {
   //   icon: '/assets/icons/common/exam.svg',
   //   accentClass: 'banner--exam',
   // },
+  exam: {
+    typeLabel: '考试提醒',
+    actionLabel: '查看详情',
+    urgent: true,
+    icon: '/assets/icons/common/exam.svg',
+    accentClass: 'banner--exam',
+  },
   interaction: {
     typeLabel: '互动消息',
     actionLabel: '',
@@ -151,6 +165,9 @@ const NOTIFY_TYPE_TO_MESSAGE_TYPE: Partial<Record<string, MessageType>> = {
   // EXAM: 'exam',
   // EXAM_REMIND: 'exam',
   // EXAM_NOTICE: 'exam',
+  EXAM: 'exam',
+  EXAM_REMIND: 'exam',
+  EXAM_NOTICE: 'exam',
 
   INTERACTION: 'interaction',
   COMMENTED_ME: 'interaction',
@@ -164,6 +181,7 @@ const NOTIFY_TYPE_TO_MESSAGE_TYPE: Partial<Record<string, MessageType>> = {
   '3': 'interaction',
   '4': 'activity',
   // '5': 'exam',
+  '5': 'exam',
   '6': 'system',
   '7': 'system',
 };
@@ -237,9 +255,6 @@ const FILTER_TABS: FilterTab[] = [
   },
 ];
 
-/** 模块运行期缓存：用于轮询弹窗时避免同一条通知反复弹 */
-const shownBannerIds = new Set<string>();
-
 /* -------------------------------------------------------------------------- */
 /* 2. 基础归一化与映射                                                         */
 /* -------------------------------------------------------------------------- */
@@ -267,7 +282,7 @@ const resolveTypeConfig = (
 
 const normalizeTargetType = (value?: string | number | null): string => {
   if (typeof value === 'number') {
-    const entry = Object.entries(TARGET_TYPE).find(([, targetValue]) => targetValue === value);
+    const entry = Object.entries(TARGET_TYPES).find(([, target]) => target.code === value);
     if (entry) return normalizeTargetType(entry[0]);
   }
 
@@ -301,15 +316,15 @@ export const resolveNotificationRoute = (
   const id = safeText(targetId == null ? '' : String(targetId));
 
   if (normalizedType === 'notification') {
-    return { url: MESSAGE_PAGE_ROUTE, method: 'switchTab' };
+    return { url: ROUTES.MESSAGE, method: 'switchTab' };
   }
 
   if (!normalizedType || normalizedType === 'none') return null;
 
   const routes: Record<string, string> = {
-    activity: `/subpkg_activity/pages/detail/detail?id=${id}`,
-    // exam: `/subpkg_exam/pages/detail/detail?examId=${id}`,
-    post: `/subpkg_community/pages/detail/detail?id=${id}`,
+    activity: buildActivityDetailRoute(id),
+    exam: buildExamDetailRoute(id),
+    post: buildPostDetailRoute(id),
   };
 
   const url = routes[normalizedType];
@@ -550,18 +565,10 @@ const toAggregateBannerMessage = (
   notificationCount: totalUnread,
   isAggregate: true,
   accentClass: TYPE_CONFIG.system.accentClass,
-  routeUrl: MESSAGE_PAGE_ROUTE,
+  routeUrl: ROUTES.MESSAGE,
   routeMethod: 'switchTab',
+  sourceIds: messages.map((item) => item.id),
 });
-
-const rememberShownBannerIds = (messages: MessageItem[]) => {
-  for (const message of messages) {
-    shownBannerIds.add(message.id);
-  }
-};
-
-const filterUnshownMessages = (messages: MessageItem[]) =>
-  messages.filter((message) => !shownBannerIds.has(message.id));
 
 /* -------------------------------------------------------------------------- */
 /* 6. 页面 / 弹窗调用的 service 方法                                             */
@@ -635,8 +642,8 @@ export const getUnreadBannerMessages = async (
   const {
     pageSize = DEFAULT_BANNER_PAGE_SIZE,
     aggregateThreshold = DEFAULT_AGGREGATE_THRESHOLD,
-    dedupe = true,
     unreadCount: knownUnread,
+    excludeIds,
   } = options;
 
   const unreadCount = typeof knownUnread === 'number' ? knownUnread : await getUnreadCount();
@@ -648,10 +655,8 @@ export const getUnreadBannerMessages = async (
   });
 
   let messages = mapNotificationListToMessages(page.list).filter((item) => !item.isRead);
-  if (dedupe) messages = filterUnshownMessages(messages);
+  if (excludeIds) messages = messages.filter((message) => !excludeIds.has(message.id));
   if (!messages.length) return [];
-
-  rememberShownBannerIds(messages);
 
   if (messages.length > aggregateThreshold || unreadCount > aggregateThreshold) {
     return [toAggregateBannerMessage(messages, unreadCount)];
@@ -677,27 +682,4 @@ export const markMessageAsRead = async (messageId: string): Promise<void> => {
  */
 export const markAllMessagesAsRead = async (): Promise<void> => {
   await api.notify.markAllRead();
-  shownBannerIds.clear();
-};
-
-/**
- * 手动重置弹窗去重缓存。
- * 例如退出登录、切换账号、重新初始化通知系统时调用。
- */
-export const resetNotificationBannerCache = () => {
-  shownBannerIds.clear();
-};
-
-export default {
-  getMessagePageCopy,
-  resolveNotificationRoute,
-  getFilterTabs,
-  applyMessageFilter,
-  getUnreadCount,
-  getUnreadMessages,
-  getMessageFeedData,
-  getUnreadBannerMessages,
-  markMessageAsRead,
-  markAllMessagesAsRead,
-  resetNotificationBannerCache,
 };

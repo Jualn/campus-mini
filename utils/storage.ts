@@ -1,6 +1,6 @@
 // storage.ts
 import type { Settings } from '../types/business';
-import createLogger from './logger';
+import { createLogger } from './logger';
 import { wxGetStorageSync } from './wx-promise';
 import type { UserInfoDTO } from '../types/api';
 
@@ -22,16 +22,15 @@ import type { UserInfoDTO } from '../types/api';
  * 推荐用途：
  * - token / session
  * - 用户偏好配置
- * - 缓存类数据
- * - 临时业务状态
+ * - 明确需要跨启动保留的轻量缓存
  *
  * ========== 项目中应该保存的key ==========
  * token           - JWT或其他认证token
  * userInfo        - 用户基础信息（id, name, avatar, role等）
  *
  * ❌ 不应该存储在这里：
- * - UI状态（scrollTops, selectedTabIndex）→ 放在 store
- * - 临时业务数据 → 放在 store
+ * - 页面 UI 状态 → 页面自身或专用运行时 Store
+ * - 临时业务同步数据 → 对应领域的运行时 Store
  */
 
 const log = createLogger('Storage');
@@ -57,7 +56,7 @@ interface ExpiringStorage<T extends StorageKey> {
   expiry: number; // 过期时间戳（ms）
 }
 
-const storage = {
+export const storage = {
   /**
    * 获取存储数据
    *
@@ -170,5 +169,3 @@ const storage = {
     return item.value;
   },
 };
-
-export default storage;

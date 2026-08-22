@@ -15,7 +15,8 @@
 //   content  string   正文内容
 //   images   string[] 图片路径数组，空数组或不传为无图
 
-import PC, { type WxScope } from './posterCanvas';
+import * as PC from './posterCanvas';
+import type { WxScope } from './posterCanvas';
 
 // ── 类型定义 ──────────────────────────────────────────────────────────
 

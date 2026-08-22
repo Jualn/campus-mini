@@ -18,11 +18,11 @@ import defineComponent from '../../utils/defineComponent';
 import { getAvatarInfo } from '../../utils/avatar';
 import { drawPostPoster } from '../../utils/share_poster/postPoster';
 import type { PostCardItem } from '../../types/business';
-import createLogger from '../../utils/logger';
-import { wxNavigateTo, wxShowToast } from '../../utils/wx-promise';
-import { interactService } from '../../services/index';
+import { createLogger } from '../../utils/logger';
+import { wxNavigateTo } from '../../utils/wx-promise';
+import { notifyToast, showErrorToast } from '../../utils/notify';
+import { postAction } from '../../actions/index';
 import { TARGET_TYPES } from '../../utils/constants';
-import { emitPostUpdated } from '../../events/post-event';
 
 const log = createLogger('PostCard');
 
@@ -142,29 +142,20 @@ defineComponent<PostCardPrivate>()({
         likeCount: nextLikeCount,
       });
 
-      emitPostUpdated({
-        id: postId,
-        isLiked: nextLiked,
-        likeCount: nextLikeCount,
-      });
-
       try {
-        if (liked) {
-          await interactService.unlike({ targetType: TARGET_TYPES.POST.value, targetId: postId });
-        } else {
-          await interactService.like({ targetType: TARGET_TYPES.POST.value, targetId: postId });
-        }
+        await postAction.togglePostLikeAndSync({
+          postId,
+          currentLiked: liked,
+          currentLikeCount: safeLikeCount,
+        });
       } catch (err) {
         log.error('onLike', '点赞失败', err);
-        void wxShowToast({ title: '点赞失败, 请稍后再试！', icon: 'none' });
+        showErrorToast(err, {
+          fallback: '点赞失败，请稍后再试',
+        });
         // 恢复状态
         this.setData({
           liked: liked,
-          likeCount: safeLikeCount,
-        });
-        emitPostUpdated({
-          id: postId,
-          isLiked: liked,
           likeCount: safeLikeCount,
         });
       } finally {
@@ -243,7 +234,7 @@ defineComponent<PostCardPrivate>()({
         });
       }).catch((err: unknown) => {
         log.error('onShare', '生成分享图片失败', err);
-        void wxShowToast({
+        notifyToast({
           title: '生成分享图片失败',
           icon: 'none',
         });
@@ -277,7 +268,7 @@ defineComponent<PostCardPrivate>()({
     //     await postService.deletePost(id);
     //   } catch (err) {
     //     log.error('deletePost', '删除帖子失败', err);
-    //     void wxShowToast({ title: '删除帖子失败，请稍后再试！', icon: 'none' });
+    //     notifyToast({ title: '删除帖子失败，请稍后再试！', icon: 'none' });
     //   }
     // },
 

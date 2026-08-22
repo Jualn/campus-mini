@@ -1,22 +1,23 @@
 // pages/user/index.ts
-import { wxGetWindowInfo, wxNavigateBack, wxShowToast } from '../../../utils/wx-promise';
-import { postService, userService } from '../../../services/index';
+import { wxGetWindowInfo, wxNavigateBack } from '../../../utils/wx-promise';
 import type { UserProfileInfo } from '../../../types/business';
-import createLogger from '../../../utils/logger';
-import eventBus, { EVENTS } from '../../../utils/event-bus';
+import { createLogger } from '../../../utils/logger';
 import { TARGET_TYPES } from '../../../utils/constants';
 import { usePostActions } from '../../../behaviors/usePostActions';
 import { useListLoad } from '../../../behaviors/useListLoad';
+import { postAction, userAction } from '../../../actions/index';
+import definePage from '../../../utils/definePage';
+import { notifyToast } from '../../../utils/notify';
 
 const log = createLogger('UserPage');
 
-Page({
+definePage({
   _currentScrollTop: 0,
   _isPreviewingImage: false,
   _pullDownRefreshEnabled: false,
   _userId: '',
+  _navigateBackTimer: null as number | null,
   // _viewedPostIds: new Set<string>(),
-  _disposers: [] as (() => void)[],
   behaviors: [
     useListLoad({
       skeletonDelay: 120,
@@ -24,7 +25,9 @@ Page({
       defaultHasMore: false,
     }),
 
-    usePostActions(),
+    usePostActions({
+      postListKeys: ['posts', 'postsCache', 'likesCache'],
+    }),
   ],
   data: {
     // 骨架屏相关, 其中包含 posts 数据，避免重复定义
@@ -67,13 +70,6 @@ Page({
   onLoad(query: { userId: string }) {
     this._currentScrollTop = 0;
 
-    this._disposers.push(
-      eventBus.on(EVENTS.POST_UPDATED, (payload) => {
-        if (!payload.id) return;
-        this._applyPostPatch(payload);
-      }),
-    );
-
     this.setData({
       count: 1,
       behaviorLoading: true,
@@ -92,12 +88,13 @@ Page({
         hasMore: false,
       });
 
-      void wxShowToast({
+      notifyToast({
         title: '加载失败，请重试',
         icon: 'none',
       });
 
-      setTimeout(() => {
+      this._navigateBackTimer = setTimeout(() => {
+        this._navigateBackTimer = null;
         void wxNavigateBack();
       }, 1000);
       return;
@@ -113,18 +110,18 @@ Page({
     // }
   },
 
+  onUnload() {
+    if (this._navigateBackTimer !== null) {
+      clearTimeout(this._navigateBackTimer);
+      this._navigateBackTimer = null;
+    }
+  },
+
   onPageScroll(e) {
     // 弹窗打开时不更新，避免 fixed 定位触发的滚动干扰
     if (!this.data.showPopup) {
       this._currentScrollTop = e.scrollTop;
     }
-  },
-
-  onUnload() {
-    this._disposers.forEach((off) => {
-      off();
-    });
-    this._disposers = [];
   },
 
   onShareAppMessage(options): WechatMiniprogram.Page.ICustomShareContent {
@@ -153,12 +150,11 @@ Page({
     }
 
     try {
-      const result = await userService.getUserPageData(userId);
-      const { merged } = this._applyPostSyncCache(result.posts);
+      const result = await userAction.getUserPageData(userId);
 
       const patch: Record<string, unknown> = {
         userInfo: result.userInfo,
-        postsCache: merged,
+        postsCache: result.posts,
       };
 
       // if (typeof (result as { isFollowing?: boolean }).isFollowing === 'boolean') {
@@ -166,14 +162,14 @@ Page({
       // }
 
       if (this.data.activeTab === 'posts') {
-        patch.posts = merged;
+        patch.posts = result.posts;
       }
 
       this.setData(patch);
 
       const maybeHasMore = (result as { hasMore?: boolean }).hasMore;
       const hasMore = typeof maybeHasMore === 'boolean' ? maybeHasMore : false;
-      const hasContent = !!result.userInfo.id || merged.length > 0;
+      const hasContent = !!result.userInfo.id || result.posts.length > 0;
 
       if (scene === 'initial') {
         this._listLoadEndInitial({
@@ -206,7 +202,7 @@ Page({
           hasContent,
         });
 
-        void wxShowToast({
+        notifyToast({
           title: '刷新失败，请稍后再试',
           icon: 'none',
         });
@@ -349,17 +345,16 @@ Page({
       const userId = this.data.userInfo.id ?? this._userId;
       if (!userId) throw new Error('missing user id');
 
-      const result = await postService.getUserLikedPosts(userId);
-      const { merged } = this._applyPostSyncCache(result.list);
+      const result = await postAction.getUserLikedPosts(userId);
 
       const patch: Record<string, unknown> = {
-        likesCache: merged,
+        likesCache: result.list,
         likesLoaded: true,
         likesError: false,
       };
 
       if (this.data.activeTab === 'likes') {
-        patch.posts = merged;
+        patch.posts = result.list;
       }
 
       this.setData(patch);
@@ -377,7 +372,7 @@ Page({
 
       this.setData(patch);
 
-      void wxShowToast({
+      notifyToast({
         title: '加载失败，请稍后再试',
         icon: 'none',
       });

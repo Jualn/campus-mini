@@ -1,12 +1,12 @@
 // request.ts
 import config from '../config/index';
-import createLogger from './logger';
+import { createLogger } from './logger';
 import { BusinessError, NetworkError, HttpError, AuthError } from './error';
-import { wxHideLoading, wxShowLoading, wxShowToast } from './wx-promise';
+import { wxHideLoading, wxShowLoading } from './wx-promise';
 import { upload, download } from './transfer';
 import { stream } from './stream';
-import { authReady, ensureLogin } from '../services/auth';
-import storage, { STORAGE_KEYS } from './storage';
+import { authReady, refreshAuth } from './auth-session';
+import { storage, STORAGE_KEYS } from './storage';
 
 const TAG = 'Request';
 
@@ -23,9 +23,10 @@ export interface RequestOptions<D = unknown> {
 
 interface ResponseBody<T = unknown> {
   code: number;
-  msg: string;
+  message?: string;
+  msg?: string;
   data: T;
-  timestamp: number;
+  timestamp?: number;
 }
 
 interface Interceptor<T> {
@@ -38,6 +39,13 @@ const interceptors = {
   request: [] as Interceptor<RequestOptions>[],
   response: [] as Interceptor<unknown>[],
 };
+
+const SUCCESS_CODE = 200;
+const SILENT_CODES: number[] = [10010];
+
+function getResponseMessage(body: ResponseBody | undefined): string {
+  return body?.message ?? body?.msg ?? '操作失败';
+}
 
 // 对齐 axios 风格：addXxxInterceptor(fulfilled, rejected)
 export const addRequestInterceptor = (
@@ -67,7 +75,7 @@ function rawRequest<
 // ── 请求主函数 ────────────────────────────────────────────────────────
 async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Promise<T> {
   // 1. 等待 auth 就绪（确保登录状态已恢复或完成）
-  const {isLogin} = options;
+  const { isLogin } = options;
   if (!isLogin) await authReady;
 
   // 1. 执行请求拦截器（可在此注入 token、公参等）, 内部用any，拦截器不需要关心数据类型
@@ -109,7 +117,7 @@ async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Pr
     });
   } catch (err) {
     if (showLoading) void wxHideLoading();
-    throw new NetworkError(TAG + `✗ ${method} ${url} 网络异常，请检查网络连接`, err);
+    throw new NetworkError(`${TAG} ${method} ${url} network error`, err);
   }
 
   if (showLoading) void wxHideLoading();
@@ -122,26 +130,35 @@ async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Pr
     storage.remove(STORAGE_KEYS.TOKEN);
 
     if (!_retry) {
-      // 可在此触发静默重新登录后重试，目前仅示意
-      await ensureLogin();
-      return request<T, D>({ ...options, _retry: true }); // 重试，loading 不重复显示
+      const refreshed = await refreshAuth();
+      if (refreshed) {
+        return request<T, D>({ ...options, _retry: true }); // 重试，loading 不重复显示
+      }
     }
 
     // wx.redirectTo({ url: '/pages/login/login' });
-    throw new AuthError(TAG + '登录态失效');
+    throw new AuthError(`${TAG} auth expired`);
   }
 
   if (statusCode < 200 || statusCode >= 300) {
-    throw new HttpError(statusCode, TAG + `✗ HTTP ${statusCode.toString()}` + url);
+    throw new HttpError(statusCode, `${TAG} HTTP ${statusCode.toString()} ${url}`, {
+      raw: body,
+    });
+  }
+
+  if (typeof body.code !== 'number') {
+    throw new NetworkError(`${TAG} invalid response body`, body, {
+      userMessage: '服务响应异常，请稍后再试',
+    });
   }
 
   // 3. 业务层错误（后端 code 约定）
-  if (body.code !== 200) {
-    const SILENT_CODES: number[] = [10010];
-    if (!SILENT_CODES.includes(body.code)) {
-      void wxShowToast({ title: body.msg || '操作失败', icon: 'none' });
-    }
-    throw new BusinessError(body.code, TAG + `业务错误` + body.msg, body.data);
+  if (body.code !== SUCCESS_CODE) {
+    const userMessage = getResponseMessage(body);
+    throw new BusinessError(body.code, `${TAG} business error: ${userMessage}`, body.data, {
+      userMessage,
+      silent: SILENT_CODES.includes(body.code),
+    });
   }
 
   // 4. 执行响应拦截器
@@ -157,7 +174,7 @@ async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Pr
 type ExtraOpts = Omit<RequestOptions, 'url' | 'method' | 'data'>;
 
 // T 对于响应类型进行约束,D 对于请求data进行约束，作为unknow，通用，不做特别约束，进行调用时，交给业务层调用各自定义的interface，进行约束
-const http = {
+export const http = {
   get<T = unknown>(url: string, data?: unknown, opts?: ExtraOpts) {
     return request<T>({ url, method: 'GET', data, ...opts });
   },
@@ -227,5 +244,3 @@ const http = {
     return stream<T>({ url, data, showLoading, parser });
   },
 };
-
-export default http;

@@ -2,11 +2,18 @@
 
 import { wxGetWindowInfo, wxNavigateTo } from '../../utils/wx-promise';
 import defineComponent from '../../utils/defineComponent';
-import eventBus, { EVENTS } from '../../utils/event-bus';
+import { eventBus, EVENTS } from '../../utils/event-bus';
 import type { BannerMessage, BannerRouteMethod } from '../../types/business';
+import {
+  ROUTES,
+  buildActivityDetailRoute,
+  buildExamDetailRoute,
+  buildPostDetailRoute,
+} from '../../utils/routes';
 
 interface BannerPrivate {
   _timer?: ReturnType<typeof setTimeout>;
+  _nextTimer?: ReturnType<typeof setTimeout>;
   _queue?: BannerMessage[];
   _showing?: boolean;
   _current?: BannerMessage;
@@ -19,7 +26,6 @@ interface BannerPrivate {
   _skipNextTap?: boolean;
 }
 
-const MESSAGE_PAGE_ROUTE = '/pages/message/index';
 const HIDDEN_TRANSLATE_Y = -140;
 const DISMISS_DISTANCE_X = 90;
 const DISMISS_DISTANCE_Y = -52;
@@ -103,7 +109,7 @@ const resolveLocalRoute = (
 
   if (msg.isAggregate || targetType === 'notification' || targetType === 'notification_center') {
     return {
-      url: MESSAGE_PAGE_ROUTE,
+      url: ROUTES.MESSAGE,
       method: 'switchTab',
     };
   }
@@ -111,9 +117,9 @@ const resolveLocalRoute = (
   if (!targetType || targetType === 'none' || !targetId) return null;
 
   const routes: Record<string, string> = {
-    activity: `/subpkg_activity/pages/detail/detail?activityId=${targetId}`,
-    exam: `/subpkg_exam/pages/detail/detail?examId=${targetId}`,
-    post: `/subpkg_community/pages/detail/detail?postId=${targetId}`,
+    activity: buildActivityDetailRoute(targetId),
+    exam: buildExamDetailRoute(targetId),
+    post: buildPostDetailRoute(targetId),
   };
 
   const url = routes[targetType];
@@ -219,6 +225,7 @@ defineComponent<BannerPrivate>()({
       }
 
       this._clearTimer();
+      this._clearNextTimer();
       this._queue = [];
       this._showing = false;
       this._current = undefined;
@@ -364,6 +371,13 @@ defineComponent<BannerPrivate>()({
       }
     },
 
+    _clearNextTimer() {
+      if (this._nextTimer) {
+        clearTimeout(this._nextTimer);
+        this._nextTimer = undefined;
+      }
+    },
+
     _dismissCurrent(reason: 'auto' | 'close' | 'swipe' | 'tap') {
       this._clearTimer();
 
@@ -392,7 +406,9 @@ defineComponent<BannerPrivate>()({
         opacity: 0,
       });
 
-      setTimeout(() => {
+      this._clearNextTimer();
+      this._nextTimer = setTimeout(() => {
+        this._nextTimer = undefined;
         this.setData({
           translateX: 0,
           translateY: HIDDEN_TRANSLATE_Y,

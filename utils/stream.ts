@@ -1,8 +1,9 @@
 // stream.ts
 import config from '../config/index';
-import createLogger from './logger';
+import { createLogger } from './logger';
 import { NetworkError, HttpError, AuthError } from './error';
-import { wxGetStorageSync, wxHideLoading, wxShowLoading } from './wx-promise';
+import { wxHideLoading, wxShowLoading } from './wx-promise';
+import { storage, STORAGE_KEYS } from './storage';
 
 const TAG = 'Stream';
 const DONE_SIGNAL = '[DONE]';
@@ -167,7 +168,7 @@ export function stream<T = unknown, D = unknown>(options: StreamOptions<T, D>): 
       ? Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
       : data;
 
-  const token = (wxGetStorageSync('token') as string) || '';
+  const token = storage.get(STORAGE_KEYS.TOKEN) ?? '';
 
   let cache = '';
 
@@ -219,7 +220,7 @@ export function stream<T = unknown, D = unknown>(options: StreamOptions<T, D>): 
       const code = res.statusCode;
 
       if (code === 401) {
-        wx.removeStorageSync('token');
+        storage.remove(STORAGE_KEYS.TOKEN);
 
         const err = new AuthError(`${TAG} 登录态失效`);
 
