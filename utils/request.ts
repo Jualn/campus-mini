@@ -1,12 +1,11 @@
 // request.ts
 import config from '../config/index';
 import { createLogger } from './logger';
-import { BusinessError, NetworkError, HttpError, AuthError } from './error';
+import { BusinessError, NetworkError, HttpError, AuthError, getHttpErrorMessage } from './error';
 import { wxHideLoading, wxShowLoading } from './wx-promise';
 import { upload, download } from './transfer';
 import { stream } from './stream';
-import { authReady, refreshAuth } from './auth-session';
-import { storage, STORAGE_KEYS } from './storage';
+import { getAuthToken, recoverAuthToken, type AuthMode } from './auth-transport';
 
 const TAG = 'Request';
 
@@ -17,8 +16,8 @@ export interface RequestOptions<D = unknown> {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   data?: D;
   showLoading?: boolean;
+  auth?: AuthMode;
   _retry?: boolean;
-  isLogin?: boolean;
 }
 
 interface ResponseBody<T = unknown> {
@@ -45,6 +44,10 @@ const SILENT_CODES: number[] = [10010];
 
 function getResponseMessage(body: ResponseBody | undefined): string {
   return body?.message ?? body?.msg ?? '操作失败';
+}
+
+function getServerMessage(body: ResponseBody | undefined): string | undefined {
+  return body?.message ?? body?.msg;
 }
 
 // 对齐 axios 风格：addXxxInterceptor(fulfilled, rejected)
@@ -74,27 +77,26 @@ function rawRequest<
 
 // ── 请求主函数 ────────────────────────────────────────────────────────
 async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Promise<T> {
-  // 1. 等待 auth 就绪（确保登录状态已恢复或完成）
-  const { isLogin } = options;
-  if (!isLogin) await authReady;
-
-  // 1. 执行请求拦截器（可在此注入 token、公参等）, 内部用any，拦截器不需要关心数据类型
-  // any 接收赋值，如果作为unknow，后续赋值如果，限定为string = unknow就行不通，只能 string = any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let opts: RequestOptions<any> = { ...options };
+  // 1. 执行请求拦截器（可在此注入公参等）
+  let opts: RequestOptions = { ...options };
   for (const { fulfilled } of interceptors.request) {
     if (fulfilled) opts = await fulfilled(opts);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const { url, method = 'GET', data = {}, showLoading = false, _retry = false } = opts;
+  const {
+    url,
+    method = 'GET',
+    data = {},
+    showLoading = false,
+    auth = 'required',
+    _retry = false,
+  } = opts;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const cleanData =
+  const cleanData = (
     data && typeof data === 'object' && !Array.isArray(data)
-      ? // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
-      : data;
+      ? Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
+      : data
+  ) as string | WechatMiniprogram.IAnyObject | ArrayBuffer;
 
   // 只有非重试请求才显示 loading
   if (showLoading && !_retry) void wxShowLoading({ title: '加载中', mask: true });
@@ -102,17 +104,23 @@ async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Pr
   createLogger('Request').info(`→ ${method} ${url}`, cleanData);
 
   let res: WechatMiniprogram.RequestSuccessCallbackResult<ResponseBody<T>>;
+  let requestToken: string;
   try {
-    const token = storage.get(STORAGE_KEYS.TOKEN) ?? '';
+    requestToken = await getAuthToken(auth);
+  } catch (err) {
+    if (showLoading) void wxHideLoading();
+    throw err;
+  }
+
+  try {
     res = await rawRequest<ResponseBody<T>>({
       url: `${config.baseURL}${url}`,
       method,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: cleanData,
       timeout: config.timeout,
       header: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + token,
+        ...(requestToken ? { Authorization: `Bearer ${requestToken}` } : {}),
       },
     });
   } catch (err) {
@@ -127,22 +135,21 @@ async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Pr
 
   // 2. HTTP 层错误
   if (statusCode === 401) {
-    storage.remove(STORAGE_KEYS.TOKEN);
-
-    if (!_retry) {
-      const refreshed = await refreshAuth();
-      if (refreshed) {
-        return request<T, D>({ ...options, _retry: true }); // 重试，loading 不重复显示
-      }
+    if (!_retry && auth !== 'none' && requestToken) {
+      await recoverAuthToken(requestToken);
+      return request<T, D>({ ...options, _retry: true }); // 重试，loading 不重复显示
     }
 
-    // wx.redirectTo({ url: '/pages/login/login' });
-    throw new AuthError(`${TAG} auth expired`);
+    throw new AuthError(`${TAG} auth expired`, {
+      userMessage: getHttpErrorMessage(statusCode, getServerMessage(body)),
+      raw: body,
+    });
   }
 
   if (statusCode < 200 || statusCode >= 300) {
     throw new HttpError(statusCode, `${TAG} HTTP ${statusCode.toString()} ${url}`, {
       raw: body,
+      userMessage: getHttpErrorMessage(statusCode, getServerMessage(body)),
     });
   }
 

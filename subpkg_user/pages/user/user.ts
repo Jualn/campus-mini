@@ -1,5 +1,5 @@
 // pages/user/index.ts
-import { wxGetWindowInfo, wxNavigateBack } from '../../../utils/wx-promise';
+import { wxGetWindowInfo } from '../../../utils/wx-promise';
 import type { UserProfileInfo } from '../../../types/business';
 import { createLogger } from '../../../utils/logger';
 import { TARGET_TYPES } from '../../../utils/constants';
@@ -8,6 +8,7 @@ import { useListLoad } from '../../../behaviors/useListLoad';
 import { postAction, userAction } from '../../../actions/index';
 import definePage from '../../../utils/definePage';
 import { notifyToast } from '../../../utils/notify';
+import { navigateBackOrHome } from '../../../utils/navigation';
 
 const log = createLogger('UserPage');
 
@@ -95,7 +96,7 @@ definePage({
 
       this._navigateBackTimer = setTimeout(() => {
         this._navigateBackTimer = null;
-        void wxNavigateBack();
+        navigateBackOrHome();
       }, 1000);
       return;
     }
@@ -419,7 +420,7 @@ definePage({
    * user-profile -> bind:back 事件回调，返回上一页
    */
   onBack() {
-    void wxNavigateBack();
+    navigateBackOrHome();
   },
   /**
    * user-profile -> bind:more 事件回调，打开更多操作弹窗

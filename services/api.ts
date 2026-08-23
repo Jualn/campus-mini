@@ -4,7 +4,7 @@ import { http } from '../utils/request';
 export const api = {
   auth: {
     login: (payload: ApiTypes.LoginRequest) =>
-      http.post<ApiTypes.LoginVO>('/v1/auth/login', payload, { isLogin: true }),
+      http.post<ApiTypes.LoginVO>('/v1/auth/login', payload, { auth: 'none' }),
   },
 
   user: {

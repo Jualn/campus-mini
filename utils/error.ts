@@ -56,15 +56,30 @@ export class HttpError extends Error {
 }
 
 export class AuthError extends Error {
+  raw?: unknown;
   userMessage: string;
   silent: boolean;
 
   constructor(message = '登录状态已失效', options: AppErrorOptions = {}) {
     super(message);
     this.name = 'AuthError';
+    this.raw = options.raw;
     this.userMessage = options.userMessage ?? '登录状态已失效，请重新进入';
     this.silent = options.silent ?? false;
   }
+}
+
+export function getHttpErrorMessage(statusCode: number, serverMessage?: string): string {
+  const message = serverMessage?.trim();
+  if (message) return message;
+
+  if (statusCode === 401) return '登录状态已失效，请重试';
+  if (statusCode === 403) return '暂无权限执行此操作';
+  if (statusCode === 404) return '内容不存在或已被删除';
+  if (statusCode === 429) return '操作过于频繁，请稍后再试';
+  if (statusCode >= 500) return '服务暂时不可用，请稍后再试';
+
+  return '请求失败，请稍后再试';
 }
 
 export const isBusinessError = (e: unknown): e is BusinessError => e instanceof BusinessError;

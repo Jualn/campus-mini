@@ -87,7 +87,15 @@ const _doLogin = async () => {
   log.info('登录成功', { userId: userInfo.id, role: userInfo.role });
 };
 
-registerAuthRefreshHandler(ensureLogin);
+registerAuthRefreshHandler(async (failedToken) => {
+  const currentToken = getToken();
+
+  // 迟到的旧请求不能清除另一个刷新任务刚写入的新 token。
+  if (failedToken && currentToken && currentToken !== failedToken) return;
+
+  clearAuth();
+  await ensureLogin();
+});
 
 /**
  * 初始化用户信息（App启动时调用）

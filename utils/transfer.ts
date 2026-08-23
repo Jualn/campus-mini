@@ -1,9 +1,16 @@
 // transfer.ts
 import config from '../config/index';
 import { createLogger } from './logger';
-import { AuthError, BusinessError, HttpError, NetworkError } from './error';
+import {
+  AuthError,
+  BusinessError,
+  HttpError,
+  NetworkError,
+  getHttpErrorMessage,
+  isAuthError,
+} from './error';
 import { wxHideLoading, wxShowLoading } from './wx-promise';
-import { storage, STORAGE_KEYS } from './storage';
+import { getAuthToken, recoverAuthToken } from './auth-transport';
 
 const TAG_UP = 'Upload';
 const TAG_DOWN = 'Download';
@@ -54,6 +61,10 @@ function getResponseMessage(body: Partial<ResponseBody> | undefined): string {
   return '操作失败';
 }
 
+function getServerMessage(body: Partial<ResponseBody> | undefined): string | undefined {
+  return body?.message ?? body?.msg;
+}
+
 function unwrapResponse(rawBody: unknown, tag: string): unknown {
   if (!rawBody || typeof rawBody !== 'object' || !('code' in rawBody)) {
     throw new NetworkError(`${tag} invalid response body`, rawBody, {
@@ -84,79 +95,125 @@ function cleanFormData<D>(formData: D | undefined): D | Record<string, unknown> 
   return Object.fromEntries(Object.entries(formData).filter(([, value]) => value !== undefined));
 }
 
+function createAbortError(tag: string): NetworkError {
+  return new NetworkError(`${tag} aborted`, undefined, {
+    userMessage: '操作已取消',
+    silent: true,
+  });
+}
+
 export function upload<T = unknown, D = unknown>(options: UploadOptions<D>): CancellablePromise<T> {
   const { url, filePath, name = 'file', formData, showLoading = false, onProgress } = options;
 
   if (showLoading) void wxShowLoading({ title: '上传中', mask: true });
 
-  const token = storage.get(STORAGE_KEYS.TOKEN) ?? '';
   const log = createLogger(TAG_UP);
   const cleanData = cleanFormData(formData);
 
   log.info(`POST ${url}`, { filePath, name, formData: cleanData });
 
   let wxTask: WechatMiniprogram.UploadTask | null = null;
+  let aborted = false;
 
-  const promise = new Promise<T>((resolve, reject) => {
-    wxTask = wx.uploadFile({
-      url: `${config.baseURL}${url}`,
-      filePath,
-      name,
-      formData: cleanData as WechatMiniprogram.IAnyObject,
-      header: { Authorization: `Bearer ${token}` },
+  const runUpload = (token: string): Promise<T> =>
+    new Promise((resolve, reject) => {
+      if (aborted) {
+        reject(createAbortError(TAG_UP));
+        return;
+      }
 
-      success(res) {
-        if (showLoading) void wxHideLoading();
+      wxTask = wx.uploadFile({
+        url: `${config.baseURL}${url}`,
+        filePath,
+        name,
+        formData: cleanData as WechatMiniprogram.IAnyObject,
+        header: { Authorization: `Bearer ${token}` },
 
-        const { statusCode, data: rawData } = res;
-        log.info(`POST ${url} ${String(statusCode)}`);
+        success(res) {
+          const { statusCode, data: rawData } = res;
+          log.info(`POST ${url} ${String(statusCode)}`);
 
-        if (statusCode === 401) {
-          storage.remove(STORAGE_KEYS.TOKEN);
-          reject(new AuthError(`${TAG_UP} auth expired`));
-          return;
-        }
+          let body: ResponseBody<T> | undefined;
+          try {
+            body = JSON.parse(rawData) as ResponseBody<T>;
+          } catch {
+            body = undefined;
+          }
 
-        if (statusCode < 200 || statusCode >= 300) {
-          reject(new HttpError(statusCode, `${TAG_UP} HTTP ${String(statusCode)} ${url}`));
-          return;
-        }
+          if (statusCode === 401) {
+            reject(
+              new AuthError(`${TAG_UP} auth expired`, {
+                userMessage: getHttpErrorMessage(statusCode, getServerMessage(body)),
+                raw: body,
+              }),
+            );
+            return;
+          }
 
-        let body: ResponseBody<T>;
-        try {
-          body = JSON.parse(rawData) as ResponseBody<T>;
-        } catch {
+          if (statusCode < 200 || statusCode >= 300) {
+            reject(
+              new HttpError(statusCode, `${TAG_UP} HTTP ${String(statusCode)} ${url}`, {
+                raw: body ?? rawData,
+                userMessage: getHttpErrorMessage(statusCode, getServerMessage(body)),
+              }),
+            );
+            return;
+          }
+
+          if (!body) {
+            reject(
+              new NetworkError(`${TAG_UP} invalid JSON response`, rawData, {
+                userMessage: '服务响应异常，请稍后再试',
+              }),
+            );
+            return;
+          }
+
+          log.info('body', body);
+
+          try {
+            resolve(unwrapResponse(body, TAG_UP) as T);
+          } catch (err) {
+            reject(
+              err instanceof Error
+                ? err
+                : new NetworkError(`${TAG_UP} response handling failed`, err),
+            );
+          }
+        },
+
+        fail(err) {
           reject(
-            new NetworkError(`${TAG_UP} invalid JSON response`, rawData, {
-              userMessage: '服务响应异常，请稍后再试',
-            }),
+            aborted
+              ? createAbortError(TAG_UP)
+              : new NetworkError(`${TAG_UP} POST ${url} network error`, err),
           );
-          return;
-        }
+        },
+      });
 
-        log.info('body', body);
-
-        try {
-          resolve(unwrapResponse(body, TAG_UP) as T);
-        } catch (err) {
-          reject(
-            err instanceof Error
-              ? err
-              : new NetworkError(`${TAG_UP} response handling failed`, err),
-          );
-        }
-      },
-
-      fail(err) {
-        if (showLoading) void wxHideLoading();
-        reject(new NetworkError(`${TAG_UP} POST ${url} network error`, err));
-      },
+      if (onProgress) wxTask.onProgressUpdate(onProgress);
     });
 
-    if (onProgress) wxTask.onProgressUpdate(onProgress);
-  });
+  const promise = (async () => {
+    try {
+      let token = await getAuthToken('required');
 
-  return makeCancellable(promise, () => wxTask?.abort());
+      try {
+        return await runUpload(token);
+      } catch (err) {
+        if (!isAuthError(err)) throw err;
+        token = await recoverAuthToken(token);
+        return await runUpload(token);
+      }
+    } finally {
+      if (showLoading) void wxHideLoading();
+    }
+  })();
+
+  return makeCancellable(promise, () => {
+    aborted = true;
+    wxTask?.abort();
+  });
 }
 
 export function download(options: DownloadOptions): CancellablePromise<DownloadResult> {
@@ -164,45 +221,78 @@ export function download(options: DownloadOptions): CancellablePromise<DownloadR
 
   if (showLoading) void wxShowLoading({ title: '下载中', mask: true });
 
-  const token = storage.get(STORAGE_KEYS.TOKEN) ?? '';
   const log = createLogger(TAG_DOWN);
   log.info(`GET ${url}`);
 
   let wxTask: WechatMiniprogram.DownloadTask | null = null;
+  let aborted = false;
 
-  const promise = new Promise<DownloadResult>((resolve, reject) => {
-    wxTask = wx.downloadFile({
-      url: `${config.baseURL}${url}`,
-      header: { Authorization: `Bearer ${token}` },
+  const runDownload = (token: string): Promise<DownloadResult> =>
+    new Promise((resolve, reject) => {
+      if (aborted) {
+        reject(createAbortError(TAG_DOWN));
+        return;
+      }
 
-      success(res) {
-        if (showLoading) void wxHideLoading();
+      wxTask = wx.downloadFile({
+        url: `${config.baseURL}${url}`,
+        header: { Authorization: `Bearer ${token}` },
 
-        const { statusCode, tempFilePath, profile } = res;
-        log.info(`GET ${url} ${String(statusCode)}`, { tempFilePath });
+        success(res) {
+          const { statusCode, tempFilePath, profile } = res;
+          log.info(`GET ${url} ${String(statusCode)}`, { tempFilePath });
 
-        if (statusCode === 401) {
-          storage.remove(STORAGE_KEYS.TOKEN);
-          reject(new AuthError(`${TAG_DOWN} auth expired`));
-          return;
-        }
+          if (statusCode === 401) {
+            reject(
+              new AuthError(`${TAG_DOWN} auth expired`, {
+                userMessage: getHttpErrorMessage(statusCode),
+              }),
+            );
+            return;
+          }
 
-        if (statusCode < 200 || statusCode >= 300) {
-          reject(new HttpError(statusCode, `${TAG_DOWN} HTTP ${String(statusCode)} ${url}`));
-          return;
-        }
+          if (statusCode < 200 || statusCode >= 300) {
+            reject(
+              new HttpError(statusCode, `${TAG_DOWN} HTTP ${String(statusCode)} ${url}`, {
+                userMessage: getHttpErrorMessage(statusCode),
+              }),
+            );
+            return;
+          }
 
-        resolve({ tempFilePath, profile });
-      },
+          resolve({ tempFilePath, profile });
+        },
 
-      fail(err) {
-        if (showLoading) void wxHideLoading();
-        reject(new NetworkError(`${TAG_DOWN} GET ${url} network error`, err));
-      },
+        fail(err) {
+          reject(
+            aborted
+              ? createAbortError(TAG_DOWN)
+              : new NetworkError(`${TAG_DOWN} GET ${url} network error`, err),
+          );
+        },
+      });
+
+      if (onProgress) wxTask.onProgressUpdate(onProgress);
     });
 
-    if (onProgress) wxTask.onProgressUpdate(onProgress);
-  });
+  const promise = (async () => {
+    try {
+      let token = await getAuthToken('required');
 
-  return makeCancellable(promise, () => wxTask?.abort());
+      try {
+        return await runDownload(token);
+      } catch (err) {
+        if (!isAuthError(err)) throw err;
+        token = await recoverAuthToken(token);
+        return await runDownload(token);
+      }
+    } finally {
+      if (showLoading) void wxHideLoading();
+    }
+  })();
+
+  return makeCancellable(promise, () => {
+    aborted = true;
+    wxTask?.abort();
+  });
 }

@@ -1,6 +1,6 @@
 // subpkg_activity/pages/detail/detail.ts
 
-import { wxNavigateBack, wxShowActionSheet } from '../../../utils/wx-promise';
+import { wxShowActionSheet } from '../../../utils/wx-promise';
 import { createLogger } from '../../../utils/logger';
 import type { ActivityDetail } from '../../../types/business';
 import { drawActivityPoster } from '../../utils/activityPoster';
@@ -8,6 +8,7 @@ import { activityAction } from '../../../actions/index';
 import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
 import { showInfoToast, showSuccessToast } from '../../../utils/notify';
+import { navigateBackOrHome } from '../../../utils/navigation';
 
 const log = createLogger('ActivityDetailPage');
 
@@ -329,6 +330,6 @@ definePage({
   },
 
   onBack() {
-    void wxNavigateBack();
+    navigateBackOrHome();
   },
 });

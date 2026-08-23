@@ -1,9 +1,9 @@
 // stream.ts
 import config from '../config/index';
 import { createLogger } from './logger';
-import { NetworkError, HttpError, AuthError } from './error';
+import { NetworkError, HttpError, AuthError, getHttpErrorMessage } from './error';
 import { wxHideLoading, wxShowLoading } from './wx-promise';
-import { storage, STORAGE_KEYS } from './storage';
+import { getAuthToken, recoverAuthToken } from './auth-transport';
 
 const TAG = 'Stream';
 const DONE_SIGNAL = '[DONE]';
@@ -168,16 +168,13 @@ export function stream<T = unknown, D = unknown>(options: StreamOptions<T, D>): 
       ? Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
       : data;
 
-  const token = storage.get(STORAGE_KEYS.TOKEN) ?? '';
-
   let cache = '';
-
   let aborted = false;
-
+  let settled = false;
+  let loadingVisible = showLoading;
+  let attemptId = 0;
   let requestTask: WechatMiniprogram.RequestTask | null = null;
-
   const queue = createQueue<T>();
-
   let resolveDone!: () => void;
   let rejectDone!: (e: unknown) => void;
 
@@ -188,125 +185,118 @@ export function stream<T = unknown, D = unknown>(options: StreamOptions<T, D>): 
 
   createLogger(TAG).info(`→ ${method} ${url} [stream]`, data);
 
-  requestTask = wx.request({
-    url: `${config.baseURL}${url}`,
+  const finishLoading = () => {
+    if (!loadingVisible) return;
+    loadingVisible = false;
+    void wxHideLoading();
+  };
 
-    method,
+  const settleDone = () => {
+    if (settled) return;
+    settled = true;
+    finishLoading();
+    queue.push({ type: 'done' });
+    resolveDone();
+  };
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    data: cleanData,
+  const settleError = (error: unknown) => {
+    if (settled || aborted) return;
+    settled = true;
+    finishLoading();
+    queue.push({ type: 'error', error });
+    rejectDone(error);
+  };
 
-    enableChunked: true,
-
-    responseType: 'text',
-
-    header: {
-      Authorization: `Bearer ${token}`,
-
-      Accept: 'text/event-stream',
-
-      'Content-Type': 'application/json',
-
-      'Cache-Control': 'no-cache',
-    },
-
-    success(res) {
-      if (showLoading) {
-        void wxHideLoading();
-      }
-
-      if (aborted) return;
-
-      const code = res.statusCode;
-
-      if (code === 401) {
-        storage.remove(STORAGE_KEYS.TOKEN);
-
-        const err = new AuthError(`${TAG} 登录态失效`);
-
-        queue.push({
-          type: 'error',
-          error: err,
-        });
-
-        rejectDone(err);
-
-        return;
-      }
-
-      if (code < 200 || code >= 300) {
-        const err = new HttpError(code, `${TAG} HTTP ${String(code)}`);
-
-        queue.push({
-          type: 'error',
-          error: err,
-        });
-
-        rejectDone(err);
-
-        return;
-      }
-
-      queue.push({
-        type: 'done',
-      });
-
-      resolveDone();
-    },
-
-    fail(err) {
-      if (showLoading) {
-        void wxHideLoading();
-      }
-
-      if (aborted) return;
-
-      const error = new NetworkError(`${TAG} 网络异常`, err);
-
-      queue.push({
-        type: 'error',
-        error,
-      });
-
-      rejectDone(error);
-    },
-  });
-
-  requestTask.onChunkReceived((chunk) => {
-    if (aborted) return;
-
-    const result = flushSSELines(cache, chunk.data);
-
-    cache = result.rest;
-
-    for (const payload of result.payloads) {
-      if (payload === DONE_SIGNAL) {
-        continue;
-      }
-
-      try {
-        const parsed = parser(payload);
-
-        if (parsed !== null) {
-          queue.push({
-            type: 'value',
-            value: parsed,
-          });
-        }
-      } catch (err) {
-        queue.push({
-          type: 'error',
-          error: err,
-        });
-
-        rejectDone(err);
-
-        requestTask.abort();
-
-        return;
-      }
+  const start = async (retried: boolean, recoveredToken?: string): Promise<void> => {
+    let token: string;
+    try {
+      token = recoveredToken ?? (await getAuthToken('required'));
+    } catch (err) {
+      settleError(err);
+      return;
     }
-  });
+
+    if (aborted || settled) return;
+
+    cache = '';
+    const currentAttempt = ++attemptId;
+    const task = wx.request({
+      url: `${config.baseURL}${url}`,
+      method,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      data: cleanData,
+      enableChunked: true,
+      responseType: 'text',
+      header: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'text/event-stream',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+
+      success(res) {
+        if (aborted || settled || currentAttempt !== attemptId) return;
+
+        const code = res.statusCode;
+        if (code === 401 && !retried) {
+          attemptId += 1;
+          void recoverAuthToken(token)
+            .then((nextToken) => start(true, nextToken))
+            .catch(settleError);
+          return;
+        }
+
+        if (code === 401) {
+          settleError(
+            new AuthError(`${TAG} 登录态失效`, {
+              userMessage: getHttpErrorMessage(code),
+            }),
+          );
+          return;
+        }
+
+        if (code < 200 || code >= 300) {
+          settleError(
+            new HttpError(code, `${TAG} HTTP ${String(code)}`, {
+              userMessage: getHttpErrorMessage(code),
+            }),
+          );
+          return;
+        }
+
+        settleDone();
+      },
+
+      fail(err) {
+        if (aborted || settled || currentAttempt !== attemptId) return;
+        settleError(new NetworkError(`${TAG} 网络异常`, err));
+      },
+    });
+
+    requestTask = task;
+    task.onChunkReceived((chunk) => {
+      if (aborted || settled || currentAttempt !== attemptId) return;
+      finishLoading();
+
+      const result = flushSSELines(cache, chunk.data);
+      cache = result.rest;
+
+      for (const payload of result.payloads) {
+        if (payload === DONE_SIGNAL) continue;
+
+        try {
+          const parsed = parser(payload);
+          if (parsed !== null) queue.push({ type: 'value', value: parsed });
+        } catch (err) {
+          settleError(err);
+          task.abort();
+          return;
+        }
+      }
+    });
+  };
+
+  void start(false);
 
   const iterable: AsyncIterable<T> = {
     [Symbol.asyncIterator]() {
@@ -333,14 +323,8 @@ export function stream<T = unknown, D = unknown>(options: StreamOptions<T, D>): 
 
         return(): Promise<IteratorResult<T>> {
           aborted = true;
-
-          requestTask.abort();
-
-          queue.push({
-            type: 'done',
-          });
-
-          resolveDone();
+          requestTask?.abort();
+          settleDone();
 
           return Promise.resolve({
             value: undefined,
@@ -354,14 +338,8 @@ export function stream<T = unknown, D = unknown>(options: StreamOptions<T, D>): 
   return Object.assign(iterable, {
     abort() {
       aborted = true;
-
-      requestTask.abort();
-
-      queue.push({
-        type: 'done',
-      });
-
-      resolveDone();
+      requestTask?.abort();
+      settleDone();
     },
 
     done,

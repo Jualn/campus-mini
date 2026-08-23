@@ -1,6 +1,6 @@
 // subpkg_exam/pages/detail/detail.ts
 
-import { wxNavigateBack, wxSetClipboardData } from '../../../utils/wx-promise';
+import { wxSetClipboardData } from '../../../utils/wx-promise';
 import { examAction } from '../../../actions/index';
 import { createLogger } from '../../../utils/logger';
 import type { ExamDetail } from '../../../types/business';
@@ -8,6 +8,7 @@ import { drawExamPoster } from '../../utils/examPoster';
 import { showErrorToast, showSuccessToast } from '../../../utils/notify';
 import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
+import { navigateBackOrHome } from '../../../utils/navigation';
 
 const log = createLogger('ExamDetailPage');
 
@@ -122,6 +123,6 @@ definePage({
   },
 
   onBack() {
-    void wxNavigateBack();
+    navigateBackOrHome();
   },
 });

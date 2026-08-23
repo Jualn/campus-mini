@@ -1,6 +1,7 @@
-type AuthRefreshHandler = () => Promise<void>;
+type AuthRefreshHandler = (failedToken?: string) => Promise<void>;
 
 let authRefreshHandler: AuthRefreshHandler | null = null;
+let authRefreshPromise: Promise<void> | null = null;
 let authReadyResolved = false;
 let resolveAuthReady: () => void;
 
@@ -26,8 +27,33 @@ export function registerAuthRefreshHandler(handler: AuthRefreshHandler): () => v
   };
 }
 
-export async function refreshAuth(): Promise<boolean> {
+/** 等待启动认证和运行期重新认证全部稳定后再发请求。 */
+export async function waitForAuthStable(): Promise<void> {
+  await authReady;
+
+  while (authRefreshPromise) {
+    await authRefreshPromise;
+  }
+}
+
+/**
+ * 运行期重新认证。所有并发 401 共用同一个任务，failedToken 用于识别迟到的旧请求。
+ */
+export async function refreshAuth(failedToken?: string): Promise<boolean> {
   if (!authRefreshHandler) return false;
-  await authRefreshHandler();
-  return true;
+
+  if (authRefreshPromise) {
+    await authRefreshPromise;
+    return true;
+  }
+
+  const refreshPromise = Promise.resolve().then(() => authRefreshHandler?.(failedToken));
+  authRefreshPromise = refreshPromise;
+
+  try {
+    await refreshPromise;
+    return true;
+  } finally {
+    if (authRefreshPromise === refreshPromise) authRefreshPromise = null;
+  }
 }

@@ -72,15 +72,11 @@ definePage({
       isShareEntry,
     });
 
-    const myAvatar = getUserInfo('avatarUrl');
-
     this.setData({
-      myAvatar: myAvatar ?? '',
       targetId: query.postId || '',
     });
 
     this._loadPost(query.postId);
-    this._scheduleViewReport(query.postId);
 
     // 监听键盘高度，输入栏跟随上移
     wxOnKeyboardHeightChange((res) => {
@@ -169,11 +165,13 @@ definePage({
 
         this.setData({
           post: merged,
+          myAvatar: getUserInfo('avatarUrl') ?? '',
           currentCommentCount: merged.commentCount,
           targetId: merged.id,
         });
 
         this._asyncLoadSuccess();
+        this._scheduleViewReport(merged.id);
         void this._drawPostPoster();
       })
       .catch((err: unknown) => {
