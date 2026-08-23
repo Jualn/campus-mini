@@ -1,151 +1,172 @@
 <!-- subpkg_activity/pages/list/index.wxml -->
 <view class="activity-list-page">
-
-<!-- 顶部导航 -->
-<view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
-  <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
-    <view class="top-bar__back" bindtap="onBack">
-      <text class="top-bar__back-icon">‹</text>
-    </view>
-    <text class="top-bar__title">校园活动</text>
-  </view>
-  <!-- 搜索框 -->
-  <view class="search-bar-wrap">
-    <view class="search-bar">
-      <view class="search-bar__icon-wrap">
-        <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
+  <!-- 顶部导航 -->
+  <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
+      <view class="top-bar__back" bindtap="onBack">
+        <text class="top-bar__back-icon">‹</text>
       </view>
-      <input class="search-bar__input" placeholder="搜索名称、类型、主办方…" placeholder-class="search-bar__placeholder"
-        value="{{keyword}}" bindinput="onSearch" bindconfirm="onSearchConfirm" confirm-type="search" />
-      <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClearSearch">
-        <text class="search-bar__clear-icon">✕</text>
-      </view>
+      <text class="top-bar__title">校园活动</text>
     </view>
-  </view>
-</view>
-
-<!-- 筛选栏 -->
-<view class="filter-bar"
-  wx:if="{{!keyword && !listLoad.skeletonVisible && !listLoad.initialError && listLoad.phase!='initial'}}">
-  <!-- 状态 Tab -->
-  <scroll-view class="status-scroll" scroll-x enable-flex>
-    <view wx:for="{{statusTabs}}" wx:key="id" class="status-tab {{activeStatus===item.id?'status-tab--active':''}}"
-      bindtap="onSwitchStatus" data-id="{{item.id}}">
-      <text class="status-tab__label">{{item.label}}</text>
-    </view>
-  </scroll-view>
-  <!-- 范围筛选 -->
-  <view class="scope-filter" bindtap="onShowScopeFilter">
-    <text class="scope-filter__text">{{activeScope || '全院'}}</text>
-    <text class="scope-filter__arrow">▼</text>
-  </view>
-</view>
-
-<!-- 加载骨架：只保留筛选胶囊 + 活动卡片骨架 -->
-<block wx:if="{{listLoad.skeletonVisible && !keyword}}">
-  <view class="filter-skeleton">
-    <view class="skeleton-block skeleton-radius-lg filter-skeleton__chip filter-skeleton__chip--wide" />
-    <view class="skeleton-block skeleton-radius-lg filter-skeleton__chip" />
-    <view class="skeleton-block skeleton-radius-lg filter-skeleton__scope" />
-  </view>
-
-  <view class="list-skeleton">
-    <view wx:for="{{skeletonItems}}" wx:key="*this" class="list-skeleton-card">
-      <view class="skeleton-block skeleton-radius-lg list-skeleton-card__cover" />
-      <view class="list-skeleton-card__body">
-        <view class="skeleton-block skeleton-radius-md list-skeleton-card__title" />
-        <view class="skeleton-block skeleton-radius-md list-skeleton-card__line" />
-        <view class="list-skeleton-card__meta">
-          <view class="skeleton-block skeleton-radius-md list-skeleton-card__pill" />
-          <view class="skeleton-block skeleton-radius-md list-skeleton-card__pill list-skeleton-card__pill--short" />
+    <!-- 搜索框 -->
+    <view class="search-bar-wrap">
+      <view class="search-bar">
+        <view class="search-bar__icon-wrap">
+          <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
+        </view>
+        <input
+          class="search-bar__input"
+          placeholder="搜索名称、类型、主办方…"
+          placeholder-class="search-bar__placeholder"
+          value="{{keyword}}"
+          bindinput="onSearch"
+          bindconfirm="onSearchConfirm"
+          confirm-type="search"
+        />
+        <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClearSearch">
+          <text class="search-bar__clear-icon">✕</text>
         </view>
       </view>
     </view>
   </view>
-</block>
 
-<!-- 首屏加载失败 -->
-<view wx:if="{{listLoad.initialError && !keyword}}" class="load-state load-state--initial-error">
-  <image class="load-state__icon" src="/assets/icons/detail/warning.svg" mode="aspectFit" />
-  <text class="load-state__title">活动加载失败</text>
-  <text class="load-state__desc">网络开小差了，请稍后重试</text>
-  <view class="load-state__btn" bindtap="onRetryInitial">
-    <text class="load-state__btn-text">重新加载</text>
-  </view>
-</view>
-
-<!-- 搜索结果：走 searchService.searchActivities 接口 -->
-<block wx:if="{{keyword}}">
-  <view class="result-hint">
-    <block wx:if="{{searchLoading && !searchLoaded}}">正在搜索“{{keyword}}”…</block>
-    <block wx:else>找到 <text class="result-hint__count">{{searchResult.length}}</text> 个活动</block>
-  </view>
-
-  <view wx:if="{{searchResult.length}}" class="list-wrap">
-    <block wx:for="{{searchResult}}" wx:key="id" wx:for-item="activity">
-      <activity-card activity="{{activity}}" />
-    </block>
-  </view>
-
-  <view wx:elif="{{!searchLoading && searchLoaded}}" class="empty-wrap">
-    <image class="empty-icon" src="/assets/icons/common/search.svg" mode="aspectFit" />
-    <text class="empty-text">没有找到“{{keyword}}”相关活动</text>
-    <text class="empty-sub">试试搜索活动名称、类型或主办方</text>
-  </view>
-
-  <view class="list-footer" wx:if="{{searchResult.length}}">
-    <view wx:if="{{searchLoading}}" class="footer-loading">
-      <text class="footer-loading__dot" />
-      <text class="footer-text">加载中...</text>
-    </view>
-    <text wx:elif="{{!searchHasMore}}" class="footer-text">— 已经到底啦 —</text>
-  </view>
-</block>
-
-<!-- 正常列表 -->
-<block wx:if="{{!listLoad.skeletonVisible && !listLoad.initialError && listLoad.phase!='initial' && !keyword}}">
-  <!-- 系列活动入口 -->
-  <view class="series-section" wx:if="{{seriesList.length}}">
-    <view class="section-header">
-      <text class="section-title">📦 系列活动</text>
-    </view>
-    <scroll-view class="series-scroll" scroll-x enable-flex>
-      <view wx:for="{{seriesList}}" wx:key="series_id"
-        class="series-tag {{activeSeries===item.series_id?'series-tag--active':''}}" bindtap="onFilterSeries"
-        data-id="{{item.series_id}}">
-        <text class="series-tag__dot" />
-        <!-- <text class="series-tag__label">{{item.series_name}}</text> -->
-        <text class="series-tag__count">{{item.count}}个</text>
+  <!-- 筛选栏 -->
+  <view
+    class="filter-bar"
+    wx:if="{{!keyword && !listLoad.skeletonVisible && !listLoad.initialError && listLoad.phase!='initial'}}"
+  >
+    <!-- 状态 Tab -->
+    <scroll-view class="status-scroll" scroll-x enable-flex>
+      <view
+        wx:for="{{statusTabs}}"
+        wx:key="id"
+        class="status-tab {{activeStatus===item.id?'status-tab--active':''}}"
+        bindtap="onSwitchStatus"
+        data-id="{{item.id}}"
+      >
+        <text class="status-tab__label">{{item.label}}</text>
       </view>
     </scroll-view>
-  </view>
-
-  <!-- 活动卡片列表 -->
-  <view class="list-wrap" wx:if="{{filteredList.length}}">
-    <block wx:for="{{filteredList}}" wx:key="id" wx:for-item="activity">
-      <activity-card activity="{{activity}}" />
-    </block>
-
-  </view>
-
-  <view wx:else class="empty-wrap">
-    <text class="empty-icon">📭</text>
-    <text class="empty-text">暂无活动</text>
-  </view>
-
-  <view class="list-footer" wx:if="{{filteredList.length}}">
-    <view wx:if="{{listLoad.loadingMore}}" class="footer-loading">
-      <text class="footer-loading__dot" />
-      <text class="footer-text">加载中...</text>
+    <!-- 范围筛选 -->
+    <view class="scope-filter" bindtap="onShowScopeFilter">
+      <text class="scope-filter__text">{{activeScope || '全院'}}</text>
+      <text class="scope-filter__arrow">▼</text>
     </view>
-    <view wx:elif="{{listLoad.loadMoreError}}" class="footer-retry" bindtap="onRetryMore">
-      <text class="footer-text footer-text--error">加载失败，点击重试</text>
-    </view>
-    <text wx:elif="{{!listLoad.hasMore}}" class="footer-text">— 已经到底啦 —</text>
   </view>
 
-</block>
+  <!-- 加载骨架：只保留筛选胶囊 + 活动卡片骨架 -->
+  <block wx:if="{{listLoad.skeletonVisible && !keyword}}">
+    <view class="filter-skeleton">
+      <view class="skeleton-block skeleton-radius-lg filter-skeleton__chip filter-skeleton__chip--wide" />
+      <view class="skeleton-block skeleton-radius-lg filter-skeleton__chip" />
+      <view class="skeleton-block skeleton-radius-lg filter-skeleton__scope" />
+    </view>
 
+    <view class="list-skeleton">
+      <view wx:for="{{skeletonItems}}" wx:key="*this" class="list-skeleton-card">
+        <view class="skeleton-block skeleton-radius-lg list-skeleton-card__cover" />
+        <view class="list-skeleton-card__body">
+          <view class="skeleton-block skeleton-radius-md list-skeleton-card__title" />
+          <view class="skeleton-block skeleton-radius-md list-skeleton-card__line" />
+          <view class="list-skeleton-card__meta">
+            <view class="skeleton-block skeleton-radius-md list-skeleton-card__pill" />
+            <view class="skeleton-block skeleton-radius-md list-skeleton-card__pill list-skeleton-card__pill--short" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 首屏加载失败 -->
+  <load-state
+    wx:if="{{listLoad.initialError && !keyword}}"
+    mode="{{listLoad.refreshing ? 'loading' : 'error'}}"
+    title="{{listLoad.refreshing ? '正在重新加载' : '暂时无法加载'}}"
+    description="{{listLoad.refreshing ? '' : '网络可能暂时不可用，请稍后再试'}}"
+    action-text="{{listLoad.refreshing ? '' : '重新加载'}}"
+    fill-viewport
+    viewport-offset="230"
+    bind:action="onRetryInitial"
+  />
+
+  <!-- 搜索结果：走 searchService.searchActivities 接口 -->
+  <block wx:if="{{keyword}}">
+    <view class="result-hint">
+      <block wx:if="{{searchLoading && !searchLoaded}}">正在搜索“{{keyword}}”…</block>
+      <block wx:else>找到 <text class="result-hint__count">{{searchResult.length}}</text> 个活动</block>
+    </view>
+
+    <view wx:if="{{searchResult.length}}" class="list-wrap">
+      <block wx:for="{{searchResult}}" wx:key="id" wx:for-item="activity">
+        <activity-card activity="{{activity}}" />
+      </block>
+    </view>
+
+    <view wx:elif="{{!searchLoading && searchLoaded}}" class="empty-wrap">
+      <image class="empty-icon" src="/assets/icons/common/search.svg" mode="aspectFit" />
+      <text class="empty-text">没有找到“{{keyword}}”相关活动</text>
+      <text class="empty-sub">试试搜索活动名称、类型或主办方</text>
+    </view>
+
+    <view class="list-footer" wx:if="{{searchResult.length}}">
+      <view wx:if="{{searchLoading}}" class="footer-loading">
+        <text class="footer-loading__dot" />
+        <text class="footer-text">加载中...</text>
+      </view>
+      <text wx:elif="{{!searchHasMore}}" class="footer-text">— 已经到底啦 —</text>
+    </view>
+  </block>
+
+  <!-- 正常列表 -->
+  <block wx:if="{{!listLoad.skeletonVisible && !listLoad.initialError && listLoad.phase!='initial' && !keyword}}">
+    <!-- 系列活动入口 -->
+    <view class="series-section" wx:if="{{seriesList.length}}">
+      <view class="section-header">
+        <text class="section-title">📦 系列活动</text>
+      </view>
+      <scroll-view class="series-scroll" scroll-x enable-flex>
+        <view
+          wx:for="{{seriesList}}"
+          wx:key="series_id"
+          class="series-tag {{activeSeries===item.series_id?'series-tag--active':''}}"
+          bindtap="onFilterSeries"
+          data-id="{{item.series_id}}"
+        >
+          <text class="series-tag__dot" />
+          <!-- <text class="series-tag__label">{{item.series_name}}</text> -->
+          <text class="series-tag__count">{{item.count}}个</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 活动卡片列表 -->
+    <view class="list-wrap" wx:if="{{filteredList.length}}">
+      <block wx:for="{{filteredList}}" wx:key="id" wx:for-item="activity">
+        <activity-card activity="{{activity}}" />
+      </block>
+    </view>
+
+    <view wx:else class="empty-wrap">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无活动</text>
+    </view>
+
+    <view class="list-footer" wx:if="{{filteredList.length}}">
+      <view wx:if="{{listLoad.loadingMore}}" class="footer-loading">
+        <text class="footer-loading__dot" />
+        <text class="footer-text">加载中...</text>
+      </view>
+      <load-state
+        wx:elif="{{listLoad.loadMoreError}}"
+        mode="error"
+        variant="inline"
+        title="加载失败"
+        action-text="点击重试"
+        bind:action="onRetryMore"
+      />
+      <text wx:elif="{{!listLoad.hasMore}}" class="footer-text">— 已经到底啦 —</text>
+    </view>
+  </block>
 </view>
 
 <in-app-banner />

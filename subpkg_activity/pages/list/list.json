@@ -1,5 +1,6 @@
 {
   "usingComponents": {
-    "activity-card": "/components/activity-card/index"
+    "activity-card": "/components/activity-card/index",
+    "load-state": "/components/load-state/index"
   }
 }

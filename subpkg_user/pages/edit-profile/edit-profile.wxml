@@ -1,24 +1,25 @@
 <!-- subpkg_user/pages/edit-profile/index.wxml -->
 
 <view class="edit-page">
-
-<!-- 加载态 -->
-<view wx:if="{{loading}}" class="page-mask">
-  <view class="loading-card">
-    <view class="skeleton-block skeleton-radius-lg skeleton-avatar"></view>
-    <view class="skeleton-block skeleton-radius-md skeleton-title"></view>
-    <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
-    <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
+  <!-- 加载阶段始终遮住未准备好的表单，慢请求才显示骨架。 -->
+  <view wx:if="{{asyncLoad.phase === 'idle' || asyncLoad.phase === 'loading'}}" class="page-mask">
+    <view wx:if="{{asyncLoad.skeletonVisible}}" class="loading-card" aria-role="status" aria-label="个人资料加载中">
+      <view class="skeleton-block skeleton-radius-lg skeleton-avatar"></view>
+      <view class="skeleton-block skeleton-radius-md skeleton-title"></view>
+      <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
+      <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
+    </view>
   </view>
-</view>
 
-<!-- 错误态 -->
-<view wx:elif="{{loadError}}" class="page-mask">
-  <view class="error-box">
-    <text class="error-text">加载失败</text>
-    <view class="retry-btn" bindtap="onRetry">重试</view>
+  <view wx:elif="{{asyncLoad.phase === 'error'}}" class="page-mask">
+    <load-state
+      mode="{{asyncLoad.loading ? 'loading' : 'error'}}"
+      title="{{asyncLoad.loading ? '正在重新加载' : '暂时无法加载'}}"
+      description="{{asyncLoad.loading ? '' : (asyncLoad.errorMessage || '网络可能暂时不可用，请稍后再试')}}"
+      action-text="{{asyncLoad.loading ? '' : '重新加载'}}"
+      bind:action="onRetry"
+    />
   </view>
-</view>
 
   <!-- 导航栏 -->
   <view class="nav-bar" style="padding-top:{{statusBarHeight}}px;">
@@ -50,12 +51,18 @@
 
   <!-- 表单卡片 -->
   <view class="form-card">
-
     <view class="form-item">
       <text class="form-label">昵称</text>
       <view class="form-right">
-        <input class="form-input" value="{{form.nickname}}" placeholder="填写你的昵称" placeholder-class="form-placeholder"
-          maxlength="20" bindinput="onInput" data-field="nickname" />
+        <input
+          class="form-input"
+          value="{{form.nickname}}"
+          placeholder="填写你的昵称"
+          placeholder-class="form-placeholder"
+          maxlength="20"
+          bindinput="onInput"
+          data-field="nickname"
+        />
         <text class="form-count">{{form.nickname.length}}/20</text>
       </view>
     </view>
@@ -64,9 +71,19 @@
     <view class="form-item form-item--top">
       <text class="form-label">简介</text>
       <view class="form-right form-right--col">
-        <textarea class="form-textarea" value="{{form.bio}}" placeholder="介绍一下自己吧" placeholder-class="form-placeholder"
-          maxlength="80" auto-height show-confirm-bar="{{false}}" adjust-position="{{false}}" cursor-spacing="20"
-          bindinput="onInput" data-field="bio" />
+        <textarea
+          class="form-textarea"
+          value="{{form.bio}}"
+          placeholder="介绍一下自己吧"
+          placeholder-class="form-placeholder"
+          maxlength="80"
+          auto-height
+          show-confirm-bar="{{false}}"
+          adjust-position="{{false}}"
+          cursor-spacing="20"
+          bindinput="onInput"
+          data-field="bio"
+        />
         <text class="form-count">{{form.bio.length}}/80</text>
       </view>
     </view>
@@ -123,11 +140,9 @@
         </view>
       </view>
     </view> -->
-
   </view>
 
   <view class="bottom-safe" />
-
 </view>
 
 <!-- 底部固定保存栏 -->

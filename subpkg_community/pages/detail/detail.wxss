@@ -1,8 +1,79 @@
 /* subpkg_community/pages/detail/index.wxss */
+@import "../../../styles/skeleton.wxss";
 
 .detail-page {
   min-height: 100vh;
   background: var(--color-bg-page);
+}
+
+/* 首屏骨架只描述本页布局，动画与颜色来自 styles/skeleton.wxss。 */
+.post-detail-skeleton {
+  margin: 24rpx;
+  padding: 30rpx 28rpx;
+  border-radius: var(--radius-md);
+  background: var(--skeleton-card-bg);
+  border: 1rpx solid var(--color-border-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.post-detail-skeleton__author {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-bottom: 30rpx;
+}
+
+.post-detail-skeleton__avatar {
+  width: 80rpx;
+  height: 80rpx;
+  flex-shrink: 0;
+}
+
+.post-detail-skeleton__author-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.post-detail-skeleton__name {
+  width: 34%;
+  height: 28rpx;
+}
+
+.post-detail-skeleton__time {
+  width: 22%;
+  height: 18rpx;
+}
+
+.post-detail-skeleton__line {
+  width: 96%;
+  height: 26rpx;
+  margin-bottom: 16rpx;
+}
+
+.post-detail-skeleton__line--medium {
+  width: 68%;
+}
+
+.post-detail-skeleton__media {
+  width: 100%;
+  height: 360rpx;
+  margin-top: 28rpx;
+}
+
+.post-detail-skeleton__stats {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20rpx;
+  margin-top: 30rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid var(--color-hairline);
+}
+
+.post-detail-skeleton__stat {
+  width: 76rpx;
+  height: 20rpx;
 }
 
 /* =====================================================

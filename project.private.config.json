@@ -18,8 +18,8 @@
           "name": "subpkg_red/pages/index/index",
           "pathName": "subpkg_red/pages/index/index",
           "query": "",
-          "scene": null,
-          "launchMode": "default"
+          "launchMode": "default",
+          "scene": null
         },
         {
           "name": "subpkg_setting/pages/setting/setting",
@@ -108,27 +108,6 @@
         {
           "name": "subpkg_user/pages/user/user",
           "pathName": "subpkg_user/pages/user/user",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/feed/feed",
-          "pathName": "pages/feed/feed",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/post-detail/index",
-          "pathName": "pages/post-detail/index",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/feed/index",
-          "pathName": "pages/feed/index",
           "query": "",
           "launchMode": "default",
           "scene": null

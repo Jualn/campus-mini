@@ -1,31 +1,22 @@
-/* styles/skeleton.wxss
- * 项目级骨架基础样式：颜色、圆角、动画速度统一从这里来。
+/*
+ * 项目级骨架 primitive。
+ *
+ * 这里只维护颜色、圆角和动画，不放任何页面布局。页面骨架应尽量贴近
+ * 真实内容的轮廓，列表/个人主页等重复结构再抽成业务骨架组件。
+ * 变量统一定义在 app.wxss，避免 import 后覆盖全局主题。
  */
-/* styles/skeleton.wxss */
-
-page {
-  --skeleton-base: rgba(28, 45, 68, 0.055);
-  --skeleton-highlight: rgba(28, 45, 68, 0.105);
-  --skeleton-container: rgba(28, 45, 68, 0.035);
-
-  --skeleton-radius-sm: 8rpx;
-  --skeleton-radius-md: 16rpx;
-  --skeleton-radius-lg: 24rpx;
-
-  --skeleton-duration: 1.2s;
-}
 
 .skeleton-block {
   position: relative;
   overflow: hidden;
   background-image: linear-gradient(
     100deg,
-    var(--skeleton-base) 20%,
+    var(--skeleton-bg) 20%,
     var(--skeleton-highlight) 38%,
-    var(--skeleton-base) 56%
+    var(--skeleton-bg) 56%
   );
   background-size: 220% 100%;
-  animation: skeletonShimmer var(--skeleton-duration) linear infinite;
+  animation: skeleton-shimmer var(--skeleton-duration) linear infinite;
 }
 
 .skeleton-circle {
@@ -44,12 +35,29 @@ page {
   border-radius: var(--skeleton-radius-lg);
 }
 
-@keyframes skeletonShimmer {
+.skeleton-pill {
+  border-radius: var(--radius-full);
+}
+
+.skeleton-card {
+  background: var(--skeleton-card-bg);
+  border: 1rpx solid var(--color-border-light);
+  box-shadow: var(--shadow-xs);
+}
+
+@keyframes skeleton-shimmer {
   0% {
     background-position: 120% 0;
   }
 
   100% {
     background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block {
+    animation: none;
+    background: var(--skeleton-bg);
   }
 }

@@ -177,8 +177,9 @@ page {
   --transition-normal: 0.22s ease;
 
   /* 骨架 */
-  --skeleton-bg: #f2f3f5;
-  --skeleton-highlight: rgba(255, 255, 255, 0.56);
+  --skeleton-bg: #eaf0f7;
+  --skeleton-highlight: #f8fbff;
+  --skeleton-container: rgba(47, 124, 246, 0.035);
   --skeleton-card-bg: var(--color-bg-card);
   --skeleton-radius-sm: 8rpx;
   --skeleton-radius-md: 16rpx;

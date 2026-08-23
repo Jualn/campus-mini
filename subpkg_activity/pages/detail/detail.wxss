@@ -125,11 +125,11 @@
 
 /* 拉手条 */
 .info-card::before {
-  content: '';
+  content: "";
   display: block;
   width: 64rpx;
   height: 8rpx;
-  background: #E0E0E0;
+  background: #e0e0e0;
   border-radius: 4rpx;
   margin: 0 auto 28rpx;
 }
@@ -152,7 +152,7 @@
 }
 
 .hero-status--enrolling {
-  background: #E8FFF0;
+  background: #e8fff0;
 }
 
 .hero-status--upcoming {
@@ -160,7 +160,7 @@
 }
 
 .hero-status--ongoing {
-  background: #FFF5E8;
+  background: #fff5e8;
 }
 
 .hero-status--ended {
@@ -168,11 +168,11 @@
 }
 
 .hero-status--cancelled {
-  background: #FFEBEB;
+  background: #ffebeb;
 }
 
 .hero-status--preview {
-  background: #F0EEFF;
+  background: #f0eeff;
 }
 
 .hero-status--unknown {
@@ -183,13 +183,12 @@
   width: 10rpx;
   height: 10rpx;
   border-radius: 50%;
-  background: #34C759;
+  background: #34c759;
   display: block;
   animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -206,7 +205,7 @@
 }
 
 .hero-status--enrolling .hero-status__text {
-  color: #34C759;
+  color: #34c759;
 }
 
 .hero-status--upcoming .hero-status__text {
@@ -214,7 +213,7 @@
 }
 
 .hero-status--ongoing .hero-status__text {
-  color: #FF9500;
+  color: #ff9500;
 }
 
 .hero-status--ended .hero-status__text {
@@ -222,11 +221,11 @@
 }
 
 .hero-status--cancelled .hero-status__text {
-  color: #FF3B30;
+  color: #ff3b30;
 }
 
 .hero-status--preview .hero-status__text {
-  color: #5856D6;
+  color: #5856d6;
 }
 
 .hero-status--unknown .hero-status__text {
@@ -289,7 +288,7 @@
 
 .info-card__divider {
   height: 1rpx;
-  background: #F0F0F0;
+  background: #f0f0f0;
   margin-bottom: 24rpx;
 }
 
@@ -315,7 +314,7 @@
 }
 
 .info-stat__value--deadline {
-  color: #FF3B30;
+  color: #ff3b30;
 }
 
 .info-stat__label {
@@ -326,7 +325,7 @@
 .info-stat__sep {
   width: 1rpx;
   height: 60rpx;
-  background: #F0F0F0;
+  background: #f0f0f0;
   flex-shrink: 0;
 }
 
@@ -383,11 +382,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #FFF8F0;
+  background: #fff8f0;
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
-  border: 1rpx solid #FFE0B2;
+  border: 1rpx solid #ffe0b2;
 }
 
 .deadline-left {
@@ -398,7 +397,7 @@
 
 .deadline-label {
   font-size: 24rpx;
-  color: #FF9500;
+  color: #ff9500;
   font-weight: 600;
 }
 
@@ -417,13 +416,13 @@
 .deadline-days {
   font-size: 56rpx;
   font-weight: 900;
-  color: #FF3B30;
+  color: #ff3b30;
   line-height: 1;
 }
 
 .deadline-days-unit {
   font-size: 22rpx;
-  color: #FF3B30;
+  color: #ff3b30;
 }
 
 .deadline-expired-text {
@@ -459,7 +458,7 @@
 }
 
 .tl-dot--done {
-  background: #34C759;
+  background: #34c759;
 }
 
 .tl-dot--active {
@@ -468,11 +467,11 @@
 }
 
 .tl-dot--future {
-  background: #D0D0D0;
+  background: #d0d0d0;
 }
 
 .tl-dot--unknown {
-  background: #E8E8E8;
+  background: #e8e8e8;
   border: 2rpx dashed #bbb;
 }
 
@@ -482,7 +481,7 @@
   top: 26rpx;
   bottom: 0;
   width: 2rpx;
-  background: #F0F0F0;
+  background: #f0f0f0;
 }
 
 .tl-content {
@@ -540,7 +539,7 @@
 .tl-note {
   display: block;
   font-size: 23rpx;
-  color: #FF9500;
+  color: #ff9500;
   margin-top: 6rpx;
   line-height: 1.5;
 }
@@ -621,7 +620,7 @@
 
 .reward-prize {
   font-size: 26rpx;
-  color: #FF9500;
+  color: #ff9500;
   font-weight: 600;
 }
 
@@ -633,26 +632,26 @@
 /* =====================================================
    报名方式
    ===================================================== */
-   .join-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20rpx;
-  }
-  
-  .join-qrcode {
-    width: 320rpx;
-    height: 320rpx;
-    border-radius: 16rpx;
-  }
-  
-  .join-desc {
-    font-size: 28rpx;
-    color: var(--color-text-secondary);
-    line-height: 1.7;
-    align-self: flex-start;
-    white-space: pre-wrap;
-  }
+.join-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.join-qrcode {
+  width: 320rpx;
+  height: 320rpx;
+  border-radius: 16rpx;
+}
+
+.join-desc {
+  font-size: 28rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  align-self: flex-start;
+  white-space: pre-wrap;
+}
 
 /* =====================================================
    联系人
@@ -668,7 +667,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 20rpx;
-  background: #F8F9FA;
+  background: #f8f9fa;
   border-radius: 16rpx;
 }
 
@@ -715,7 +714,7 @@
 .contact-role {
   font-size: 22rpx;
   color: var(--color-text-tertiary);
-  background: #EBEBEB;
+  background: #ebebeb;
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
 }
@@ -824,99 +823,99 @@
 /* =====================================================
    底部按钮
    ===================================================== */
-   .bottom-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 16rpx 30rpx;
-    padding-bottom: calc(20rpx + 16px);
-    padding-bottom: calc(constant(safe-area-inset-bottom) + 16px);
-    padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
-    display: flex;
-    align-items: center;
-    gap: 20rpx;
-  }
-  
-  /* 分享按钮 */
-  .share-btn {
-    width: 96rpx;
-    height: 96rpx;
-    border-radius: 48rpx;
-    background: #F0F0F0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    padding: 0;
-    margin: 0;
-    border: none;
-    line-height: 1;
-    gap: 4rpx;
-  }
-  
-  .share-btn::after {
-    border: none;
-  }
-  
-  .share-btn__icon {
-    font-size: 30rpx;
-    color: var(--color-text-primary);
-    line-height: 1;
-  }
-  
-  .share-btn__text {
-    font-size: 20rpx;
-    color: var(--color-text-secondary);
-    line-height: 1;
-  }
-  
-  .enroll-btn {
-    flex: 1;
-    height: 96rpx;
-    border-radius: 48rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .enroll-btn--enrolling {
-    background: var(--color-text-primary);
-  }
-  
-  .enroll-btn--not_started,
-  .enroll-btn--ended,
-  .enroll-btn--cancelled {
-    background: #EBEBEB;
-  }
-  
-  .enroll-btn--ongoing {
-    background: linear-gradient(135deg, #FF9500, #FF6B00);
-  }
-  
-  .enroll-btn--preview {
-    background: linear-gradient(135deg, #5856D6, #007AFF);
-  }
-  
-  .enroll-btn__text {
-    font-size: 32rpx;
-    font-weight: 700;
-    color: var(--color-text-inverse);
-    letter-spacing: 2rpx;
-    text-align: center;
-    width: 100%;
-  }
-  
-  .enroll-btn--upcoming .enroll-btn__text,
-  .enroll-btn--ended .enroll-btn__text,
-  .enroll-btn--cancelled .enroll-btn__text {
-    color: #aaa;
-  }
-  
-  .bottom-safe {
-    height: 180rpx;
-  }
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16rpx 30rpx;
+  padding-bottom: calc(20rpx + 16px);
+  padding-bottom: calc(constant(safe-area-inset-bottom) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+/* 分享按钮 */
+.share-btn {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 48rpx;
+  background: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  line-height: 1;
+  gap: 4rpx;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.share-btn__icon {
+  font-size: 30rpx;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.share-btn__text {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.enroll-btn {
+  flex: 1;
+  height: 96rpx;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enroll-btn--enrolling {
+  background: var(--color-text-primary);
+}
+
+.enroll-btn--not_started,
+.enroll-btn--ended,
+.enroll-btn--cancelled {
+  background: #ebebeb;
+}
+
+.enroll-btn--ongoing {
+  background: linear-gradient(135deg, #ff9500, #ff6b00);
+}
+
+.enroll-btn--preview {
+  background: linear-gradient(135deg, #5856d6, #007aff);
+}
+
+.enroll-btn__text {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text-inverse);
+  letter-spacing: 2rpx;
+  text-align: center;
+  width: 100%;
+}
+
+.enroll-btn--upcoming .enroll-btn__text,
+.enroll-btn--ended .enroll-btn__text,
+.enroll-btn--cancelled .enroll-btn__text {
+  color: #aaa;
+}
+
+.bottom-safe {
+  height: 180rpx;
+}
 
 /* 普通行内小图标 */
 .inline-icon {
@@ -1033,7 +1032,6 @@
   margin-bottom: 0;
 }
 
-
 /* =====================================================
    详情加载失败状态
    ===================================================== */
@@ -1062,52 +1060,4 @@
   color: var(--color-text-primary);
   line-height: 1;
   margin-top: -12rpx;
-}
-
-.detail-error__body {
-  margin: 200rpx 16rpx 0;
-  padding: 64rpx 36rpx;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-card);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.detail-error__icon {
-  font-size: 60rpx;
-  line-height: 1;
-  margin-bottom: 24rpx;
-}
-
-.detail-error__title {
-  font-size: 30rpx;
-  font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
-  margin-bottom: 10rpx;
-}
-
-.detail-error__desc {
-  font-size: 24rpx;
-  color: var(--color-text-tertiary);
-  line-height: 1.6;
-  margin-bottom: 30rpx;
-}
-
-.detail-error__btn {
-  height: 66rpx;
-  padding: 0 36rpx;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.detail-error__btn-text {
-  font-size: 26rpx;
-  font-weight: var(--weight-bold);
-  color: var(--color-text-inverse);
 }

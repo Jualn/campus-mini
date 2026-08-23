@@ -4,7 +4,12 @@
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; min-height: {{navHeight}}px;">
       <view class="top-bar__tools" wx:if="{{unreadCount > 0}}">
-        <view class="top-bar__read-all" hover-class="top-bar__read-all--hover" hover-stay-time="80" bindtap="onMarkAllRead">
+        <view
+          class="top-bar__read-all"
+          hover-class="top-bar__read-all--hover"
+          hover-stay-time="80"
+          bindtap="onMarkAllRead"
+        >
           <text class="top-bar__read-all-text">全部已读</text>
         </view>
       </view>
@@ -19,8 +24,13 @@
 
     <view class="message-summary">
       <view class="message-summary__main">
-        <text class="message-summary__title">{{unreadCount > 0 ? '还有 ' + unreadCount + ' 条消息待处理' : '当前没有未读消息'}}</text>
-        <text class="message-summary__desc">{{isRefreshing ? '正在同步最新消息…' : (totalCount > 0 ? '共 ' + totalCount + ' 条消息，点击消息后自动标记已读' : '新消息会在这里集中展示')}}</text>
+        <text class="message-summary__title"
+          >{{unreadCount > 0 ? '还有 ' + unreadCount + ' 条消息待处理' : '当前没有未读消息'}}</text
+        >
+        <text class="message-summary__desc"
+          >{{listLoad.refreshing ? '正在同步最新消息…' : (totalCount > 0 ? '共 ' + totalCount +
+          '条消息，点击消息后自动标记已读' : '新消息会在这里集中展示')}}
+        </text>
       </view>
       <view class="message-summary__status {{unreadCount > 0 ? 'message-summary__status--active' : ''}}">
         <text class="message-summary__status-text">{{unreadCount > 0 ? '未读' : '已清空'}}</text>
@@ -50,17 +60,30 @@
     </scroll-view>
   </view>
 
-  <!-- 首屏骨架屏 -->
-  <view class="skeleton-list" wx:if="{{isLoading && !allMessages.length}}">
-    <view wx:for="{{skeletonRows}}" wx:key="*this" class="skeleton-card">
-      <view class="skeleton-card__icon"></view>
-      <view class="skeleton-card__body">
-        <view class="skeleton-line skeleton-line--sm"></view>
-        <view class="skeleton-line skeleton-line--lg"></view>
-        <view class="skeleton-line skeleton-line--md"></view>
+  <!-- 首屏阶段始终阻断空态；慢请求才显示骨架，快请求不会闪。 -->
+  <block wx:if="{{listLoad.phase === 'initial'}}">
+    <view wx:if="{{listLoad.skeletonVisible}}" class="message-skeleton" aria-role="status" aria-label="消息加载中">
+      <view wx:for="{{skeletonRows}}" wx:key="*this" class="message-skeleton__card skeleton-card">
+        <view class="message-skeleton__icon skeleton-block skeleton-radius-lg"></view>
+        <view class="message-skeleton__body">
+          <view class="message-skeleton__line message-skeleton__line--sm skeleton-block skeleton-pill"></view>
+          <view class="message-skeleton__line message-skeleton__line--lg skeleton-block skeleton-pill"></view>
+          <view class="message-skeleton__line message-skeleton__line--md skeleton-block skeleton-pill"></view>
+        </view>
       </view>
     </view>
-  </view>
+  </block>
+
+  <load-state
+    wx:elif="{{listLoad.initialError}}"
+    mode="{{listLoad.refreshing ? 'loading' : 'error'}}"
+    title="{{listLoad.refreshing ? '正在重新加载' : '暂时无法加载'}}"
+    description="{{listLoad.refreshing ? '' : '网络可能暂时不可用，请稍后再试'}}"
+    action-text="{{listLoad.refreshing ? '' : '重新加载'}}"
+    fill-viewport
+    viewport-offset="520"
+    bind:action="onRetryInitialLoad"
+  />
 
   <!-- 消息列表 -->
   <view class="msg-list" wx:elif="{{groupedMessages.length}}">

@@ -60,8 +60,6 @@ definePage({
     currentSharePath: '',
     reportTargetType: '',
     reportTargetId: '',
-    isLoading: true,
-    loadError: false,
   },
 
   onLoad(query: { postId: string; from?: string }) {
@@ -148,15 +146,13 @@ definePage({
     });
   },
 
-  _loadPost(id: string) {
+  _loadPost(id: string, options: { preserveError?: boolean } = {}) {
     if (!id) {
       this._asyncLoadFail('帖子不存在');
-      this.setData({ isLoading: false, loadError: true });
       return;
     }
 
-    this._asyncLoadBegin();
-    this.setData({ isLoading: true, loadError: false });
+    this._asyncLoadBegin(options);
 
     postAction
       .getPostDetail(id)
@@ -175,21 +171,19 @@ definePage({
           post: merged,
           currentCommentCount: merged.commentCount,
           targetId: merged.id,
-          isLoading: false,
-          loadError: false,
         });
 
         this._asyncLoadSuccess();
         void this._drawPostPoster();
       })
       .catch((err: unknown) => {
-        this._asyncLoadFail('加载帖子失败');
-        this.setData({ isLoading: false, loadError: true });
+        this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
         log.error('_loadPost', '加载帖子失败', err);
-        showErrorToast(err, {
-          fallback: '加载失败',
-        });
       });
+  },
+
+  onRetryLoad() {
+    this._loadPost(this.data.targetId, { preserveError: true });
   },
 
   _emitPostUpdate(patch: {

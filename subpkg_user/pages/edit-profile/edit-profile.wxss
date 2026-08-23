@@ -85,7 +85,7 @@ page {
   background: var(--color-bg-card);
   padding: 16rpx 40rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -1rpx 0 #F1F2F6;
+  box-shadow: 0 -1rpx 0 #f1f2f6;
   /* 修复：防止内容被 z-index 更高的元素遮住 */
   z-index: 100;
 }
@@ -94,7 +94,7 @@ page {
   width: 100%;
   height: 96rpx;
   border-radius: var(--radius-xl);
-  background: #CFD3D8;
+  background: #cfd3d8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,7 +220,7 @@ page {
 
 .form-item {
   display: flex;
-  align-items: center;   /* 对齐 label 盒子和 form-right 盒子的中线 */
+  align-items: center; /* 对齐 label 盒子和 form-right 盒子的中线 */
   padding: 0 30rpx;
   min-height: 104rpx;
   box-sizing: border-box;
@@ -260,8 +260,8 @@ page {
 .form-right {
   flex: 1;
   display: flex;
-  flex-direction: row;   /* ← 改为横向 */
-  align-items: center;   /* ← input 和 count 垂直居中 */
+  flex-direction: row; /* ← 改为横向 */
+  align-items: center; /* ← input 和 count 垂直居中 */
   gap: 8rpx;
   overflow: hidden;
 }
@@ -319,15 +319,15 @@ page {
 }
 
 .form-placeholder {
-  color: #CFD3D8;
+  color: #cfd3d8;
 }
 
 .form-count {
   font-size: 22rpx;
-  color: #CFD3D8;
+  color: #cfd3d8;
   flex-shrink: 0;
   white-space: nowrap;
-  line-height: 44rpx;   /* ← 和 input 等高，视觉对齐 */
+  line-height: 44rpx; /* ← 和 input 等高，视觉对齐 */
 }
 
 .form-value {
@@ -337,12 +337,12 @@ page {
 }
 
 .form-value--placeholder {
-  color: #CFD3D8;
+  color: #cfd3d8;
 }
 
 .form-arrow {
   font-size: 36rpx;
-  color: #CFD3D8;
+  color: #cfd3d8;
   /* 修复：› 符号视觉偏上，微调 */
   line-height: 1;
   margin-top: 2rpx;
@@ -375,7 +375,7 @@ page {
   padding: 14rpx 20rpx;
   border-radius: var(--radius-xl);
   border: 1.5rpx solid var(--color-border);
-  background: #F9FAFB;
+  background: #f9fafb;
   /* 修复：等宽排列，防止不同文字长度导致按钮宽度不一 */
   flex: 1;
   box-sizing: border-box;
@@ -413,8 +413,6 @@ page {
 .bottom-safe {
   height: calc(96rpx + 32rpx + 32rpx + env(safe-area-inset-bottom));
 }
-
-
 
 /* =====================================================
     加载中 / 错误提示
@@ -455,21 +453,4 @@ page {
   height: 120rpx;
   border-radius: 50%;
   margin-bottom: 40rpx;
-}
-
-.error-box {
-  text-align: center;
-}
-
-.error-text {
-  font-size: 28rpx;
-  color: #999;
-  margin-bottom: 20rpx;
-}
-
-.retry-btn {
-  padding: 16rpx 32rpx;
-  background: #000;
-  color: #fff;
-  border-radius: 16rpx;
 }

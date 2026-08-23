@@ -343,7 +343,7 @@ page {
 }
 
 .status-pill--enrolling {
-  background: #E8FFF0;
+  background: #e8fff0;
 }
 
 .status-pill--upcoming {
@@ -351,7 +351,7 @@ page {
 }
 
 .status-pill--ongoing {
-  background: #FFF5E8;
+  background: #fff5e8;
 }
 
 .status-pill--ended {
@@ -359,11 +359,11 @@ page {
 }
 
 .status-pill--cancelled {
-  background: #FFEBEB;
+  background: #ffebeb;
 }
 
 .status-pill--preview {
-  background: #F0EEFF;
+  background: #f0eeff;
 }
 
 .status-pill--unknown {
@@ -405,7 +405,7 @@ page {
 }
 
 .status-pill--preview .status-pill__text {
-  color: #5856D6;
+  color: #5856d6;
 }
 
 .status-pill--unknown .status-pill__text {
@@ -413,7 +413,6 @@ page {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -447,11 +446,13 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom,
-      rgba(0, 0, 0, 0.05) 0%,
-      rgba(0, 0, 0, 0.00) 30%,
-      rgba(0, 0, 0, 0.65) 70%,
-      rgba(0, 0, 0, 0.85) 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0) 30%,
+    rgba(0, 0, 0, 0.65) 70%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -505,7 +506,7 @@ page {
 }
 
 .card-img__meta-urgent {
-  color: #FFD60A;
+  color: #ffd60a;
   font-weight: var(--weight-bold);
 }
 
@@ -677,7 +678,7 @@ page {
 }
 
 .search-hl--dark {
-  color: #FFD60A;
+  color: #ffd60a;
   background: rgba(255, 214, 10, 0.18);
 }
 
@@ -816,73 +817,20 @@ page {
 }
 
 /* =====================================================
-   加载失败 / 底部加载状态
+   底部分页加载状态
    ===================================================== */
-   .load-state {
-    margin: 140rpx 40rpx 0;
-    padding: 56rpx 36rpx;
-    border-radius: var(--radius-lg);
-    background: var(--color-bg-card);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .load-state__icon {
-    font-size: 56rpx;
-    line-height: 1;
-    margin-bottom: 22rpx;
-  }
-  
-  .load-state__title {
-    font-size: 30rpx;
-    font-weight: var(--weight-bold);
-    color: var(--color-text-primary);
-    margin-bottom: 10rpx;
-  }
-  
-  .load-state__desc {
-    font-size: 24rpx;
-    color: var(--color-text-tertiary);
-    margin-bottom: 28rpx;
-  }
-  
-  .load-state__btn {
-    height: 64rpx;
-    padding: 0 34rpx;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .load-state__btn-text {
-    font-size: 26rpx;
-    font-weight: var(--weight-bold);
-    color: var(--color-text-inverse);
-  }
-  
-  .footer-loading,
-  .footer-retry {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10rpx;
-  }
-  
-  .footer-loading__dot {
-    width: 18rpx;
-    height: 18rpx;
-    border-radius: 50%;
-    background: var(--color-primary);
-    opacity: 0.55;
-    animation: pulse 1.2s infinite;
-  }
-  
-  .footer-text--error {
-    color: var(--color-danger);
-  }
-  
+.footer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.footer-loading__dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.55;
+  animation: pulse 1.2s infinite;
+}

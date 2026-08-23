@@ -1,9 +1,8 @@
 <!-- subpkg_activity/pages/detail/index.wxml -->
 <view class="detail-page">
-
   <!-- 加载骨架：封面 + 信息卡 + 内容卡片 -->
-  <block wx:if="{{isLoading}}">
-    <view class="detail-skeleton">
+  <block wx:if="{{asyncLoad.phase === 'idle' || asyncLoad.phase === 'loading'}}">
+    <view wx:if="{{asyncLoad.skeletonVisible}}" class="detail-skeleton" aria-role="status" aria-label="活动详情加载中">
       <view class="skeleton-block detail-skeleton__cover" />
 
       <view class="detail-skeleton__info">
@@ -29,24 +28,24 @@
     </view>
   </block>
 
-  <block wx:if="{{loadError && !isLoading}}">
+  <block wx:elif="{{asyncLoad.phase === 'error'}}">
     <view class="detail-error" style="padding-top:{{statusBarHeight}}px;">
       <view class="detail-error__back" bindtap="onBack">
         <text class="detail-error__back-icon">‹</text>
       </view>
-      <view class="detail-error__body">
-        <image class="detail-error__icon" src="/assets/icons/detail/warning.svg" mode="aspectFit" />
-        <text class="detail-error__title">活动详情加载失败</text>
-        <text class="detail-error__desc">可能是网络异常或活动不存在，请稍后重试</text>
-        <view class="detail-error__btn" bindtap="onRetryDetail">
-          <text class="detail-error__btn-text">重新加载</text>
-        </view>
-      </view>
+      <load-state
+        mode="{{asyncLoad.loading ? 'loading' : 'error'}}"
+        title="{{asyncLoad.loading ? '正在重新加载' : '暂时无法加载'}}"
+        description="{{asyncLoad.loading ? '' : (asyncLoad.errorMessage || '网络可能暂时不可用，请稍后再试')}}"
+        action-text="{{asyncLoad.loading ? '' : '重新加载'}}"
+        fill-viewport
+        viewport-offset="150"
+        bind:action="onRetryDetail"
+      />
     </view>
   </block>
 
-  <block wx:if="{{!isLoading && !loadError}}">
-
+  <block wx:else>
     <!-- 封面区：固定比例，返回按钮浮在上面 -->
     <view class="cover-section">
       <!-- 有封面图 -->
@@ -97,7 +96,8 @@
       <view class="info-card__stats">
         <view class="info-stat" wx:if="{{activity.enroll_deadline}}">
           <text class="info-stat__value info-stat__value--deadline">
-            {{activity.daysToDeadline >= 0 && activity.daysToDeadline !== null ? activity.daysToDeadline + '天' : '已截止'}}
+            {{activity.daysToDeadline >= 0 && activity.daysToDeadline !== null ? activity.daysToDeadline + '天' :
+            '已截止'}}
           </text>
           <text class="info-stat__label">报名截止</text>
         </view>
@@ -112,8 +112,10 @@
           <text class="info-stat__label">人数限制</text>
         </view>
         <!-- 三项都没有时显示发布时间 -->
-        <view class="info-stat"
-          wx:if="{{!activity.enroll_deadline && !activity.start_time && !activity.max_participants}}">
+        <view
+          class="info-stat"
+          wx:if="{{!activity.enroll_deadline && !activity.start_time && !activity.max_participants}}"
+        >
           <text class="info-stat__value">{{activity.published_at}}</text>
           <text class="info-stat__label">发布时间</text>
         </view>
@@ -144,8 +146,11 @@
 
       <!-- 其他时间线 -->
       <view class="timeline" wx:if="{{activity.timeline && activity.timeline.length}}">
-        <view wx:for="{{activity.timeline}}" wx:key="label"
-          class="tl-item {{index===activity.timeline.length-1?'tl-item--last':''}}">
+        <view
+          wx:for="{{activity.timeline}}"
+          wx:key="label"
+          class="tl-item {{index===activity.timeline.length-1?'tl-item--last':''}}"
+        >
           <view class="tl-dot tl-dot--{{item.status}}" />
           <view class="tl-line" wx:if="{{index<activity.timeline.length-1}}" />
           <view class="tl-content">
@@ -169,7 +174,8 @@
           <image class="inline-icon" src="/assets/icons/detail/exam_time.svg" mode="aspectFit" />
           <view class="time-row__body">
             <text class="time-row__label">活动时间</text>
-            <text class="time-row__value">{{activity.start_time}}{{activity.end_time ? ' — ' + activity.end_time : ''}}
+            <text class="time-row__value"
+              >{{activity.start_time}}{{activity.end_time ? ' — ' + activity.end_time : ''}}
             </text>
           </view>
         </view>
@@ -223,8 +229,13 @@
 
       <view class="join-body">
         <!-- 二维码 -->
-        <image wx:if="{{activity.qrcode_url}}" class="join-qrcode" src="{{activity.qrcode_url}}" mode="aspectFit"
-          show-menu-by-longpress="{{true}}" />
+        <image
+          wx:if="{{activity.qrcode_url}}"
+          class="join-qrcode"
+          src="{{activity.qrcode_url}}"
+          mode="aspectFit"
+          show-menu-by-longpress="{{true}}"
+        />
 
         <!-- 说明文字 -->
         <text class="join-desc">{{activity.join_method}}</text>
@@ -251,8 +262,13 @@
             </view>
           </view>
           <view class="contact-actions">
-            <view class="contact-btn" bindtap="onCopy" data-text="{{item.phone}}" data-label="手机号"
-              wx:if="{{item.phone}}">
+            <view
+              class="contact-btn"
+              bindtap="onCopy"
+              data-text="{{item.phone}}"
+              data-label="手机号"
+              wx:if="{{item.phone}}"
+            >
               <text class="contact-btn__text">复制</text>
             </view>
             <view class="contact-btn" bindtap="onCopy" data-text="{{item.qq}}" data-label="QQ号" wx:if="{{item.qq}}">
@@ -271,8 +287,15 @@
       </view>
       <text class="section-disclaimer">以下文件为活动原始通知，可查看完整内容</text>
       <view class="attachment-list">
-        <view wx:for="{{activity.attachments}}" wx:key="name" class="attachment-item" bindtap="onOpenAttachment"
-          data-url="{{item.url}}" data-type="{{item.type}}" data-name="{{item.name}}">
+        <view
+          wx:for="{{activity.attachments}}"
+          wx:key="name"
+          class="attachment-item"
+          bindtap="onOpenAttachment"
+          data-url="{{item.url}}"
+          data-type="{{item.type}}"
+          data-name="{{item.name}}"
+        >
           <image class="attachment-icon-img" src="/assets/icons/detail/file_item.svg" mode="aspectFit" />
           <view class="attachment-body">
             <text class="attachment-name">{{item.name}}</text>
@@ -296,8 +319,8 @@
     <!-- 底部按钮栏 -->
     <view class="bottom-bar" wx:if="{{activity.join_method && activity.join_method.length}}">
       <view class="enroll-btn enroll-btn--{{activity.status}}" bindtap="onScrollToJoin">
-        <text
-          class="enroll-btn__text">{{activity.status==='enrolling'?'查看报名方式':activity.status==='not_started'?'报名已截止':activity.status==='ongoing'?'活动进行中':activity.status==='ended'?'活动已结束':''}}
+        <text class="enroll-btn__text"
+          >{{activity.status==='enrolling'?'查看报名方式':activity.status==='not_started'?'报名已截止':activity.status==='ongoing'?'活动进行中':activity.status==='ended'?'活动已结束':''}}
         </text>
       </view>
       <view class="share-btn" bind:tap="onShareOpen">
@@ -307,20 +330,32 @@
         </view>
       </view>
     </view>
-
   </block>
 </view>
 
 <view wx:if="{{showPopup}}" class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
 
-<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}"
-  z-index="999" bind:beforeleave="onPopupBeforeLeave" bind:leave="onPopupLeave" bind:afterleave="onPopupAfterLeave"
-  bind:clickoverlay="onOverlayTap">
+<page-container
+  show="{{showPopup}}"
+  position="bottom"
+  round
+  overlay="{{false}}"
+  close-on-slide-down="{{false}}"
+  z-index="999"
+  bind:beforeleave="onPopupBeforeLeave"
+  bind:leave="onPopupLeave"
+  bind:afterleave="onPopupAfterLeave"
+  bind:clickoverlay="onOverlayTap"
+>
   <!-- share弹窗 -->
-  <share-panel wx:if="{{popupType==='share'}}" share-path="{{currentSharePath}}"
-    share-image-path="{{currentShareImage}}" bind:close="onShareClose" />
+  <share-panel
+    wx:if="{{popupType==='share'}}"
+    share-path="{{currentSharePath}}"
+    share-image-path="{{currentShareImage}}"
+    bind:close="onShareClose"
+  />
 </page-container>
 
-<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px;"></canvas>
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px"></canvas>
 
 <in-app-banner />

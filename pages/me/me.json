@@ -9,6 +9,7 @@
     "report-panel": "/components/report-panel/index",
     "share-panel": "/components/share-panel/index",
     "profile-feed-skeleton": "/components/profile-feed-skeleton/index",
-    "post-card-skeleton": "/components/post-card-skeleton/index"
+    "post-card-skeleton": "/components/post-card-skeleton/index",
+    "load-state": "/components/load-state/index"
   }
 }

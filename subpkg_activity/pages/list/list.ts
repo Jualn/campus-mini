@@ -367,7 +367,7 @@ definePage({
   },
 
   onRetryInitial() {
-    this._loadActivities('initial');
+    this._loadActivities('refresh');
   },
 
   onPullDownRefresh() {

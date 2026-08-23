@@ -324,8 +324,9 @@ definePage({
 
   /** 页面级错误态的重试入口 */
   onRetryInitialLoad() {
-    if (this.data.listLoad.phase === 'initial') return;
-    void this._loadData({ scene: 'initial' });
+    if (this.data.listLoad.phase !== 'idle') return;
+    // 顶部考试看板与快捷入口是本地内容；重试只刷新动态区域，不重新进入整页骨架。
+    void this._loadData({ scene: 'refresh' });
   },
 
   async _loadMorePosts(forceRetry = false) {

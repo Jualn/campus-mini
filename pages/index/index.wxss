@@ -859,84 +859,6 @@
   border-top: 1rpx solid var(--color-border-light);
 }
 
-/* ---------- 通用空态 / 错误态 ---------- */
-.page-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 24rpx 24rpx 160rpx;
-  padding: 88rpx 48rpx 80rpx;
-  text-align: center;
-  background: var(--color-bg-card);
-  border-radius: 28rpx;
-  box-shadow: 0 10rpx 30rpx rgba(29, 45, 70, 0.045);
-}
-
-.page-state__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 112rpx;
-  height: 112rpx;
-  margin-bottom: 32rpx;
-  border-radius: 36rpx;
-  font-size: 46rpx;
-  font-weight: 600;
-}
-
-.page-state__icon--error {
-  color: #e7864d;
-  background: rgba(231, 134, 77, 0.11);
-}
-
-.page-state__icon--empty {
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-}
-
-.page-state__title {
-  color: var(--color-text-primary);
-  font-size: 31rpx;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.page-state__desc {
-  max-width: 480rpx;
-  margin-top: 14rpx;
-  color: var(--color-text-tertiary);
-  font-size: 25rpx;
-  line-height: 1.65;
-}
-
-.page-state__action {
-  min-width: 200rpx;
-  margin-top: 38rpx;
-  padding: 20rpx 34rpx;
-  box-sizing: border-box;
-  color: #fff;
-  font-size: 27rpx;
-  font-weight: 600;
-  line-height: 1;
-  background: var(--color-primary);
-  border-radius: 999rpx;
-  box-shadow: 0 8rpx 22rpx rgba(22, 119, 255, 0.18);
-  transition:
-    transform 0.18s ease,
-    opacity 0.18s ease;
-}
-
-.page-state__action--secondary {
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-  box-shadow: none;
-}
-
-.page-state__action--hover {
-  opacity: 0.86;
-  transform: scale(0.98);
-}
-
 /* ---------- 分页与底部状态 ---------- */
 .list-footer {
   min-height: 150rpx;
@@ -948,8 +870,7 @@
 }
 
 .footer-status,
-.footer-end,
-.footer-retry {
+.footer-end {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -979,29 +900,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-.footer-retry {
-  gap: 12rpx;
-  padding: 14rpx 24rpx;
-  border-radius: 999rpx;
-  background: rgba(47, 124, 246, 0.07);
-  transition: opacity 0.18s ease;
-}
-
-.footer-retry--hover {
-  opacity: 0.72;
-}
-
-.footer-retry__title {
-  color: var(--color-text-tertiary);
-  font-size: 24rpx;
-}
-
-.footer-retry__action {
-  color: var(--color-primary);
-  font-size: 24rpx;
-  font-weight: 600;
 }
 
 .footer-end {

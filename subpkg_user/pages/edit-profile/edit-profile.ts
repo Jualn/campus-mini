@@ -13,19 +13,20 @@ import { type SelectedMediaFile } from '../../../actions/media';
 import { TARGET_TYPES } from '../../../utils/constants';
 import { mediaAction, userAction } from '../../../actions/index';
 import { notifyToast } from '../../../utils/notify';
+import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import definePage from '../../../utils/definePage';
 
 const log = createLogger('EditProfilePage');
 
-Page({
+definePage({
+  behaviors: [useAsyncLoad()],
+
   _selectedAvatarFile: [] as SelectedMediaFile[],
   _selectedBannerFile: [] as SelectedMediaFile[],
 
   data: {
     statusBarHeight: 20,
     navBarHeight: 88, // rpx → 将在 onLoad 中转为 px
-
-    loading: false,
-    loadError: false,
 
     hasChanged: false,
 
@@ -49,35 +50,19 @@ Page({
     void this._loadProfile();
   },
 
-  async _loadProfile() {
-    this.setData({
-      loading: true,
-      loadError: false,
-    });
-    const start = Date.now();
+  async _loadProfile(options: { preserveError?: boolean } = {}) {
+    this._asyncLoadBegin(options);
     try {
       const form = await userAction.getEditProfileForm();
-
-      const cost = Date.now() - start;
-      const min = 300;
-
-      if (cost < min) {
-        await new Promise((r) => setTimeout(r, min - cost));
-      }
 
       this.setData({
         form: { ...form },
         _original: { ...form },
-        loading: false,
-        loadError: false,
       });
+      this._asyncLoadSuccess();
     } catch (err: unknown) {
       log.error('_loadProfile', '加载资料失败:', err);
-
-      this.setData({
-        loading: false,
-        loadError: true,
-      });
+      this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
     }
   },
 
@@ -152,7 +137,7 @@ Page({
   },
 
   onRetry() {
-    void this._loadProfile();
+    void this._loadProfile({ preserveError: true });
   },
 
   _checkChanged() {

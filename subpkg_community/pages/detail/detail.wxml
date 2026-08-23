@@ -1,6 +1,5 @@
 <!-- subpkg_community/pages/detail/detail.wxml -->
 <view class="detail-page" style="padding-bottom:{{bottomPad}}px;">
-
   <!-- 顶部导航 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav">
@@ -13,100 +12,152 @@
     </view>
   </view>
 
-  <!-- ===== 帖子主体 ===== -->
-  <view class="post-wrap">
-
-    <!-- 作者信息 -->
-    <view class="author-row">
-      <view class="author-avatar" catchtap="goToUser" data-id="{{post.userId}}" style="background:{{post._avatarBg}}">
-        <image wx:if="{{post.avatar}}" class="author-avatar_img" src="{{post.avatar}}" mode="aspectFill" />
-        <text wx:else class="author-avatar__char">{{post._avatarChar}}</text>
+  <!-- 首屏只在慢请求时显示与真实帖子结构一致的骨架。 -->
+  <block wx:if="{{asyncLoad.phase === 'idle' || asyncLoad.phase === 'loading'}}">
+    <view wx:if="{{asyncLoad.skeletonVisible}}" class="post-detail-skeleton" aria-role="status" aria-label="动态加载中">
+      <view class="post-detail-skeleton__author">
+        <view class="skeleton-block skeleton-circle post-detail-skeleton__avatar" />
+        <view class="post-detail-skeleton__author-copy">
+          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__name" />
+          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__time" />
+        </view>
       </view>
-      <view class="author-info">
-        <view class="author-name-row">
-          <text class="author-name">{{post.nickname}}</text>
-          <view class="author-badge" wx:if="{{post.verified}}">
-            <text class="author-badge__text">✓</text>
+      <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__line" />
+      <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__line post-detail-skeleton__line--medium" />
+      <view class="skeleton-block skeleton-radius-md post-detail-skeleton__media" />
+      <view class="post-detail-skeleton__stats">
+        <view class="skeleton-block skeleton-pill post-detail-skeleton__stat" />
+        <view class="skeleton-block skeleton-pill post-detail-skeleton__stat" />
+        <view class="skeleton-block skeleton-pill post-detail-skeleton__stat" />
+      </view>
+    </view>
+  </block>
+
+  <load-state
+    wx:elif="{{asyncLoad.phase === 'error'}}"
+    mode="{{asyncLoad.loading ? 'loading' : 'error'}}"
+    title="{{asyncLoad.loading ? '正在重新加载' : '暂时无法加载'}}"
+    description="{{asyncLoad.loading ? '' : (asyncLoad.errorMessage || '网络可能暂时不可用，请稍后再试')}}"
+    action-text="{{asyncLoad.loading ? '' : '重新加载'}}"
+    fill-viewport
+    viewport-offset="150"
+    bind:action="onRetryLoad"
+  />
+
+  <block wx:else>
+    <!-- ===== 帖子主体 ===== -->
+    <view class="post-wrap">
+      <!-- 作者信息 -->
+      <view class="author-row">
+        <view class="author-avatar" catchtap="goToUser" data-id="{{post.userId}}" style="background:{{post._avatarBg}}">
+          <image wx:if="{{post.avatar}}" class="author-avatar_img" src="{{post.avatar}}" mode="aspectFill" />
+          <text wx:else class="author-avatar__char">{{post._avatarChar}}</text>
+        </view>
+        <view class="author-info">
+          <view class="author-name-row">
+            <text class="author-name">{{post.nickname}}</text>
+            <view class="author-badge" wx:if="{{post.verified}}">
+              <text class="author-badge__text">✓</text>
+            </view>
+          </view>
+          <view class="author-meta">
+            <!-- <text class="author-handle" wx:if="{{post.handle}}">@{{post.handle}}</text> -->
+            <!-- <text class="author-sep" wx:if="{{post.handle}}">·</text> -->
+            <text class="author-time">{{post.createdAtText}}</text>
+            <!-- <text class="author-sep" wx:if="{{post.ipLocation}}">·</text> -->
+            <!-- <text class="author-ip" wx:if="{{post.ipLocation}}">{{post.ipLocation}}</text> -->
           </view>
         </view>
-        <view class="author-meta">
-          <!-- <text class="author-handle" wx:if="{{post.handle}}">@{{post.handle}}</text> -->
-          <!-- <text class="author-sep" wx:if="{{post.handle}}">·</text> -->
-          <text class="author-time">{{post.createdAtText}}</text>
-          <!-- <text class="author-sep" wx:if="{{post.ipLocation}}">·</text> -->
-          <!-- <text class="author-ip" wx:if="{{post.ipLocation}}">{{post.ipLocation}}</text> -->
+        <view class="post-more" catchtap="onMore">
+          <image class="post-more__icon" src="/assets/icons/common/more.svg" mode="aspectFit" />
         </view>
-      </view>
-      <view class="post-more" catchtap="onMore">
-        <image class="post-more__icon" src="/assets/icons/common/more.svg" mode="aspectFit" />
-      </view>
-      <!-- 关注按钮（非本人） -->
-      <!-- <view wx:if="{{!post.isSelf}}" class="follow-btn {{post.isFollowing?'follow-btn--on':''}}"
+        <!-- 关注按钮（非本人） -->
+        <!-- <view wx:if="{{!post.isSelf}}" class="follow-btn {{post.isFollowing?'follow-btn--on':''}}"
         catchtap="onToggleFollow">
         <text class="follow-btn__text">{{post.isFollowing ? '已关注' : '+ 关注'}}</text>
       </view> -->
-    </view>
+      </view>
 
-    <!-- 正文 -->
-    <text class="post-text" user-select="true">{{post.content}}</text>
+      <!-- 正文 -->
+      <text class="post-text" user-select="true">{{post.content}}</text>
 
-    <!-- 图片（复用 grid-image 组件） -->
-    <grid-image images="{{post.images || []}}" />
+      <!-- 图片（复用 grid-image 组件） -->
+      <grid-image images="{{post.images || []}}" />
 
-    <!-- 话题标签 -->
-    <!-- <view class="post-topics" wx:if="{{post.topics && post.topics.length}}">
+      <!-- 话题标签 -->
+      <!-- <view class="post-topics" wx:if="{{post.topics && post.topics.length}}">
       <text wx:for="{{post.topics}}" wx:key="*this" class="topic-tag" catchtap="onTapTopic" data-topic="{{item}}">#{{item}}</text>
     </view> -->
 
-    <!-- 数据统计 -->
-    <view class="post-stats">
-      <text class="post-stats__item" wx:if="{{post.viewCount}}">{{post.viewCount}} 浏览</text>
-      <text class="post-stats__sep" wx:if="{{post.viewCount}}">·</text>
-      <text class="post-stats__item">{{post.likeCount}} 点赞</text>
-      <text class="post-stats__sep">·</text>
-      <text class="post-stats__item">{{post.commentCount}} 评论</text>
-    </view>
+      <!-- 数据统计 -->
+      <view class="post-stats">
+        <text class="post-stats__item" wx:if="{{post.viewCount}}">{{post.viewCount}} 浏览</text>
+        <text class="post-stats__sep" wx:if="{{post.viewCount}}">·</text>
+        <text class="post-stats__item">{{post.likeCount}} 点赞</text>
+        <text class="post-stats__sep">·</text>
+        <text class="post-stats__item">{{post.commentCount}} 评论</text>
+      </view>
 
-    <!-- 操作栏 -->
-    <view class="post-actions">
-      <view class="action-item" catchtap="onLike">
-        <view class="action-icon {{post.isLiked ? 'liked' : ''}}">
-          <image class="icon like-off" src="/images/interact/like.svg" />
-          <image class="icon like-on" src="/images/interact/like-fill.svg" />
+      <!-- 操作栏 -->
+      <view class="post-actions">
+        <view class="action-item" catchtap="onLike">
+          <view class="action-icon {{post.isLiked ? 'liked' : ''}}">
+            <image class="icon like-off" src="/images/interact/like.svg" />
+            <image class="icon like-on" src="/images/interact/like-fill.svg" />
+          </view>
+          <text class="action-count {{post.isLiked?'action-label--liked':''}}">{{post.likeCount || '点赞'}} </text>
         </view>
-        <text class="action-count {{post.isLiked?'action-label--liked':''}}">{{post.likeCount || '点赞'}}
-        </text>
-      </view>
-      <view class="action-item" catchtap="onComment">
-        <image class="action-icon" src="/images/interact/comment.svg" />
-        <text class="action-count">{{post.commentCount || '评论'}}</text>
-      </view>
-      <view class="action-item" catchtap="onShare">
-        <image class="action-icon" src="/images/interact/share.svg" />
-        <text class="action-count">分享</text>
+        <view class="action-item" catchtap="onComment">
+          <image class="action-icon" src="/images/interact/comment.svg" />
+          <text class="action-count">{{post.commentCount || '评论'}}</text>
+        </view>
+        <view class="action-item" catchtap="onShare">
+          <image class="action-icon" src="/images/interact/share.svg" />
+          <text class="action-count">分享</text>
+        </view>
       </view>
     </view>
 
-  </view>
-
-  <!-- ===== 评论区：comment-panel inline 模式 ===== -->
-  <view class="comment-wrap">
-    <comment-panel id="post-detail-comment-panel" mode="inline" target-id="{{targetId}}" target-type="{{targetType}}"
-      total-count="{{currentCommentCount}}" bind:countchange="onCommentCountChange" bind:report="onCommentReport" />
-  </view>
-
+    <!-- ===== 评论区：comment-panel inline 模式 ===== -->
+    <view class="comment-wrap">
+      <comment-panel
+        id="post-detail-comment-panel"
+        mode="inline"
+        target-id="{{targetId}}"
+        target-type="{{targetType}}"
+        total-count="{{currentCommentCount}}"
+        bind:countchange="onCommentCountChange"
+        bind:report="onCommentReport"
+      />
+    </view>
+  </block>
 </view>
 
-<page-container show="{{showPopup}}" position="bottom" round overlay="{{false}}" close-on-slide-down="{{false}}"
-  z-index="999" bind:leave="onPopupLeave">
+<page-container
+  show="{{showPopup}}"
+  position="bottom"
+  round
+  overlay="{{false}}"
+  close-on-slide-down="{{false}}"
+  z-index="999"
+  bind:leave="onPopupLeave"
+>
   <!-- share弹窗 -->
-  <share-panel wx:if="{{popupType==='share'}}" share-path="{{currentSharePath}}"
-    share-image-path="{{currentShareImage}}" bind:close="onShareClose" />
+  <share-panel
+    wx:if="{{popupType==='share'}}"
+    share-path="{{currentSharePath}}"
+    share-image-path="{{currentShareImage}}"
+    bind:close="onShareClose"
+  />
   <!-- report弹窗 -->
-  <report-panel wx:elif="{{popupType === 'report'}}" target-type="{{reportTargetType}}" target-id="{{reportTargetId}}"
-    bind:close="onCloseReport" />
+  <report-panel
+    wx:elif="{{popupType === 'report'}}"
+    target-type="{{reportTargetType}}"
+    target-id="{{reportTargetId}}"
+    bind:close="onCloseReport"
+  />
 </page-container>
 
-<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px;"></canvas>
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px"></canvas>
 
 <in-app-banner />

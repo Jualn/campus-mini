@@ -1,6 +1,5 @@
 <!-- pages/me/index.wxml -->
 <view class="page">
-
   <!-- 首屏加载：phase 阻断真实内容，skeletonVisible 只控制是否显示骨架，避免快速接口闪屏 -->
   <block wx:if="{{listLoad.phase === 'initial'}}">
     <profile-feed-skeleton
@@ -13,11 +12,16 @@
   </block>
 
   <!-- 首屏失败 -->
-  <view wx:elif="{{listLoad.initialError}}" class="state-wrap">
-    <text class="state-title">加载失败</text>
-    <text class="state-desc">个人主页加载失败，请稍后重试</text>
-    <view class="state-btn" bindtap="retryInitial">重新加载</view>
-  </view>
+  <load-state
+    wx:elif="{{listLoad.initialError}}"
+    mode="{{listLoad.refreshing ? 'loading' : 'error'}}"
+    title="{{listLoad.refreshing ? '正在重新加载' : '暂时无法加载'}}"
+    description="{{listLoad.refreshing ? '' : '网络可能暂时不可用，请稍后再试'}}"
+    action-text="{{listLoad.refreshing ? '' : '重新加载'}}"
+    fill-viewport
+    viewport-offset="112"
+    bind:action="retryInitial"
+  />
 
   <block wx:else>
     <user-profile
@@ -37,14 +41,15 @@
     />
 
     <!-- likes tab 加载失败 -->
-    <view
+    <load-state
       wx:elif="{{activeTab === 'likes' && likesError}}"
-      class="state-wrap state-wrap--list"
-    >
-      <text class="state-title">加载失败</text>
-      <text class="state-desc">点赞列表加载失败</text>
-      <view class="state-btn" bindtap="retryLikes">重试</view>
-    </view>
+      mode="error"
+      variant="section"
+      title="暂时无法加载"
+      description="点赞内容没有加载成功"
+      action-text="重新加载"
+      bind:action="retryLikes"
+    />
 
     <!-- 列表内容 -->
     <block wx:elif="{{posts.length > 0}}">
@@ -61,27 +66,25 @@
     </block>
 
     <!-- 空态 -->
-    <view wx:else class="empty-wrap">
-      <text class="empty-title">
-        {{activeTab === 'posts' ? '还没有发布动态' : '还没有点赞内容'}}
-      </text>
-    </view>
-
-    <!-- 分页加载 -->
-    <post-card-skeleton
-      wx:if="{{listLoad.loadingMore}}"
-      count="{{2}}"
-      media-mode="auto"
+    <load-state
+      wx:else
+      mode="empty"
+      variant="section"
+      title="{{activeTab === 'posts' ? '还没有发布动态' : '还没有点赞内容'}}"
     />
 
+    <!-- 分页加载 -->
+    <post-card-skeleton wx:if="{{listLoad.loadingMore}}" count="{{2}}" media-mode="auto" />
+
     <!-- 分页失败 -->
-    <view
+    <load-state
       wx:if="{{listLoad.loadMoreError}}"
-      class="list-footer list-footer--retry"
-      bindtap="retryLoadMore"
-    >
-      <text class="footer-text">加载失败，点击重试</text>
-    </view>
+      mode="error"
+      variant="inline"
+      title="加载失败"
+      action-text="点击重试"
+      bind:action="retryLoadMore"
+    />
 
     <!-- 没有更多 -->
     <view
@@ -91,7 +94,6 @@
       <text class="footer-text">— 已经到底啦 —</text>
     </view>
   </block>
-
 </view>
 
 <page-container

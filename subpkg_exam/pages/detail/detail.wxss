@@ -1,4 +1,5 @@
 /* subpkg_exam/pages/detail/index.wxss */
+@import "../../../styles/skeleton.wxss";
 
 page {
   background: var(--color-bg-page);
@@ -8,6 +9,78 @@ page {
   min-height: 100vh;
   background: var(--color-bg-page);
   padding-bottom: 160rpx;
+}
+
+.exam-detail-skeleton__hero {
+  min-height: 400rpx;
+  padding-left: 28rpx;
+  padding-right: 28rpx;
+  padding-bottom: 36rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(160deg, #e5f1ff 0%, #d9f4ff 100%);
+}
+
+.exam-detail-skeleton__back,
+.exam-detail-error__back {
+  align-self: flex-start;
+  width: 64rpx;
+  height: 64rpx;
+  margin: 14rpx 0 24rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-primary);
+  font-size: 44rpx;
+}
+
+.exam-detail-skeleton__hero-icon {
+  width: 116rpx;
+  height: 116rpx;
+}
+
+.exam-detail-skeleton__hero-title {
+  width: 40%;
+  height: 44rpx;
+  margin-top: 26rpx;
+}
+
+.exam-detail-skeleton__hero-line {
+  width: 56%;
+  height: 22rpx;
+  margin-top: 18rpx;
+}
+
+.exam-detail-skeleton__card {
+  margin: 24rpx 20rpx 0;
+  padding: 30rpx 28rpx;
+  border-radius: var(--radius-md);
+}
+
+.exam-detail-skeleton__card-title {
+  width: 34%;
+  height: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.exam-detail-skeleton__line {
+  width: 100%;
+  height: 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.exam-detail-skeleton__line--short {
+  width: 68%;
+}
+
+.exam-detail-error {
+  min-height: calc(100vh - 160rpx);
+  padding-left: 28rpx;
+  padding-right: 28rpx;
 }
 
 /* =====================================================
@@ -155,7 +228,6 @@ page {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -235,7 +307,7 @@ page {
   display: flex;
   align-items: flex-start;
   gap: 10rpx;
-  background: #F8F9FA;
+  background: #f8f9fa;
   border-radius: 14rpx;
   padding: 16rpx 20rpx;
   margin-bottom: 28rpx;
@@ -279,7 +351,7 @@ page {
 }
 
 .tl-dot--done {
-  background: #34C759;
+  background: #34c759;
 }
 
 .tl-dot--active {
@@ -288,11 +360,11 @@ page {
 }
 
 .tl-dot--future {
-  background: #D0D0D0;
+  background: #d0d0d0;
 }
 
 .tl-dot--unknown {
-  background: #E8E8E8;
+  background: #e8e8e8;
   border: 2rpx dashed #bbb;
 }
 
@@ -302,7 +374,7 @@ page {
   top: 28rpx;
   bottom: 0;
   width: 2rpx;
-  background: #F0F0F0;
+  background: #f0f0f0;
 }
 
 .tl-content {
@@ -367,7 +439,7 @@ page {
 .tl-note {
   display: block;
   font-size: 23rpx;
-  color: #FF9500;
+  color: #ff9500;
   margin-top: 6rpx;
   line-height: 1.5;
 }
@@ -377,10 +449,10 @@ page {
   display: flex;
   align-items: flex-start;
   gap: 10rpx;
-  background: #FFFBF0;
+  background: #fffbf0;
   border-radius: 14rpx;
   padding: 16rpx 20rpx;
-  border: 1rpx solid #FFE58F;
+  border: 1rpx solid #ffe58f;
   margin-top: 4rpx;
 }
 
@@ -511,7 +583,7 @@ page {
 
 .mustknow-dot {
   font-size: 32rpx;
-  color: #FF9500;
+  color: #ff9500;
   line-height: 1.4;
   flex-shrink: 0;
 }
@@ -544,7 +616,7 @@ page {
 
 /* 主要链接（报名入口）加底色突出 */
 .link-item--primary {
-  background: #F8F9FA;
+  background: #f8f9fa;
   margin: 0 -28rpx;
   padding: 24rpx 28rpx;
   border-radius: 16rpx;
@@ -606,7 +678,7 @@ page {
   width: 96rpx;
   height: 96rpx;
   border-radius: 48rpx;
-  background: #F0F0F0;
+  background: #f0f0f0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -670,7 +742,7 @@ page {
 .enroll-btn--upcoming,
 .enroll-btn--closed,
 .enroll-btn--unknown {
-  background: #EBEBEB;
+  background: #ebebeb;
 }
 
 .enroll-btn__text {

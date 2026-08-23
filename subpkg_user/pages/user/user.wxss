@@ -7,70 +7,10 @@ page {
   background: var(--color-bg-card);
 }
 
-.state-wrap {
-  min-height: 100vh;
-  padding: 220rpx 48rpx 80rpx;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--color-bg-card);
-}
-
-.state-wrap--list {
-  min-height: 360rpx;
-  padding-top: 120rpx;
-}
-
-.state-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 14rpx;
-}
-
-.state-desc {
-  font-size: 26rpx;
-  color: var(--color-text-secondary);
-  margin-bottom: 32rpx;
-}
-
-.state-btn {
-  height: 64rpx;
-  padding: 0 34rpx;
-  border-radius: 34rpx;
-  border: 1.5rpx solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26rpx;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  background: var(--color-bg-card);
-}
-
-.empty-wrap {
-  min-height: 360rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80rpx 40rpx;
-  box-sizing: border-box;
-}
-
-.empty-title {
-  font-size: 26rpx;
-  color: var(--color-text-tertiary);
-}
-
 .list-footer {
   padding: 50rpx 0 120rpx;
   display: flex;
   justify-content: center;
-}
-
-.list-footer--retry {
-  padding-top: 36rpx;
 }
 
 .footer-text {

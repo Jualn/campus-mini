@@ -191,8 +191,6 @@ definePage({
     lockScrollTop: 0,
     currentShareImage: '',
     currentSharePath: '',
-    isLoading: true,
-    loadError: false,
     currentActivityId: '',
     skeletonSections: [1, 2, 3],
   },
@@ -257,18 +255,13 @@ definePage({
   },
 
   // ── 数据加载 ──────────────────────────────────────────────
-  _loadActivity(id: string) {
+  _loadActivity(id: string, options: { preserveError?: boolean } = {}) {
     if (!id) {
       this._asyncLoadFail('活动不存在');
-      this.setData({ isLoading: false, loadError: true });
       return;
     }
 
-    this._asyncLoadBegin();
-    this.setData({
-      isLoading: true,
-      loadError: false,
-    });
+    this._asyncLoadBegin(options);
 
     activityAction
       .getActivityDetail(id)
@@ -276,8 +269,6 @@ definePage({
         this.setData(
           {
             activity: res,
-            isLoading: false,
-            loadError: false,
           },
           () => {
             this._asyncLoadSuccess();
@@ -287,8 +278,7 @@ definePage({
         );
       })
       .catch((err: unknown) => {
-        this._asyncLoadFail('加载活动失败');
-        this.setData({ isLoading: false, loadError: true });
+        this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
         log.error('_loadActivity', '加载活动失败', err);
       });
   },
@@ -315,7 +305,7 @@ definePage({
 
   // ── 用户操作 ──────────────────────────────────────────────
   onRetryDetail() {
-    this._loadActivity(this.data.currentActivityId);
+    this._loadActivity(this.data.currentActivityId, { preserveError: true });
   },
 
   onEnroll() {

@@ -202,10 +202,12 @@ definePage({
           hasContent,
         });
 
-        notifyToast({
-          title: '刷新失败，请稍后再试',
-          icon: 'none',
-        });
+        if (hasContent) {
+          notifyToast({
+            title: '刷新失败，请稍后再试',
+            icon: 'none',
+          });
+        }
       }
     }
   },
@@ -454,7 +456,7 @@ definePage({
 
   retryInitial() {
     if (!this._userId) return;
-    void this._loadUserProfile(this._userId, 'initial');
+    void this._loadUserProfile(this._userId, 'refresh');
   },
 
   retryLikes() {

@@ -1,0 +1,28 @@
+<view
+  class="load-state load-state--{{mode}} load-state--{{variant}} {{fillViewport ? 'load-state--viewport' : ''}} {{compact ? 'load-state--compact' : ''}}"
+  style="--load-state-viewport-offset: {{viewportOffset}}rpx;"
+  aria-role="status"
+  aria-label="{{title || description || '内容状态'}}"
+>
+  <view wx:if="{{mode === 'loading'}}" class="load-state__spinner" />
+  <view wx:elif="{{variant !== 'inline' && !compact}}" class="load-state__visual load-state__visual--{{mode}}">
+    <view class="load-state__symbol load-state__symbol--{{mode}}">
+      <view class="load-state__symbol-line" />
+      <view class="load-state__symbol-dot" />
+    </view>
+  </view>
+
+  <view class="load-state__copy">
+    <text wx:if="{{title}}" class="load-state__title">{{title}}</text>
+    <text wx:if="{{description}}" class="load-state__description">{{description}}</text>
+  </view>
+  <view
+    wx:if="{{actionText}}"
+    class="load-state__action"
+    hover-class="load-state__action--hover"
+    aria-role="button"
+    bindtap="onAction"
+  >
+    <text>{{actionText}}</text>
+  </view>
+</view>

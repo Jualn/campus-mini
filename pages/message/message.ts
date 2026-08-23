@@ -10,6 +10,8 @@ import {
   buildExamDetailRoute,
   buildPostDetailRoute,
 } from '../../utils/routes';
+import { useListLoad } from '../../behaviors/useListLoad';
+import definePage from '../../utils/definePage';
 
 const MESSAGE_TAB_INDEX = 1;
 
@@ -22,7 +24,15 @@ type LoadOptions = Partial<{
   silent: boolean;
 }>;
 
-Page({
+definePage({
+  behaviors: [
+    useListLoad({
+      skeletonDelay: 140,
+      minSkeletonDuration: 280,
+      defaultHasMore: false,
+    }),
+  ],
+
   data: {
     // pageCopy: messageAction.getMessagePageCopy(),
     statusBarHeight: 20,
@@ -30,9 +40,7 @@ Page({
     navHeight: 32,
     bannerTop: 80,
 
-    /** 加载骨架设置 */
-    isLoading: false,
-    isRefreshing: false,
+    /** 消息卡片骨架数量。 */
     skeletonRows: [1, 2, 3],
 
     activeFilter: '',
@@ -92,12 +100,9 @@ Page({
   _loadMessages(options: LoadOptions = {}) {
     if (loadingTask) return loadingTask;
 
-    const showSkeleton = !options.fromPullDown && !this.data.allMessages.length;
-
-    this.setData({
-      isLoading: showSkeleton,
-      isRefreshing: !!options.fromPullDown,
-    });
+    const isInitial = !options.fromPullDown && !this.data.allMessages.length;
+    if (isInitial) this._listLoadBeginInitial();
+    else this._listLoadBeginRefresh();
 
     loadingTask = messageAction
       .getMessageFeedData()
@@ -116,22 +121,45 @@ Page({
           totalCount,
           unreadCount,
         });
+
+        if (isInitial) {
+          this._listLoadEndInitial({
+            success: true,
+            hasContent: allMessages.length > 0,
+            hasMore: false,
+          });
+        } else {
+          this._listLoadEndRefresh({
+            success: true,
+            hasContent: allMessages.length > 0,
+            hasMore: false,
+          });
+        }
       })
       .catch((err: unknown) => {
         log.error('_loadMessages', '加载消息失败', err);
-        if (!options.silent) {
+        const hasContent = this.data.allMessages.length > 0;
+
+        if (isInitial) {
+          this._listLoadEndInitial({ success: false, hasContent, hasMore: false });
+        } else {
+          this._listLoadEndRefresh({ success: false, hasContent, hasMore: false });
+        }
+
+        // 首屏已有可操作的错误态，不再叠加 Toast；保留内容时用 Toast 反馈刷新失败。
+        if (!options.silent && (!isInitial || hasContent)) {
           showErrorToast(err, { fallback: '消息加载失败，请稍后重试' });
         }
       })
       .finally(() => {
-        this.setData({
-          isLoading: false,
-          isRefreshing: false,
-        });
         loadingTask = null;
       });
 
     return loadingTask;
+  },
+
+  onRetryInitialLoad() {
+    void this._loadMessages({ fromPullDown: true });
   },
 
   _resolveActiveFilter(filterTabs: FilterTab[]) {

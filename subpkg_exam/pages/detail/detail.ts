@@ -6,37 +6,55 @@ import { createLogger } from '../../../utils/logger';
 import type { ExamDetail } from '../../../types/business';
 import { drawExamPoster } from '../../utils/examPoster';
 import { showErrorToast, showSuccessToast } from '../../../utils/notify';
+import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import definePage from '../../../utils/definePage';
 
 const log = createLogger('ExamDetailPage');
 
-Page({
+definePage({
+  behaviors: [useAsyncLoad()],
+
   data: {
     statusBarHeight: 20,
+    examId: '',
     exam: {} as ExamDetail,
+    skeletonSections: [1, 2, 3],
 
     // currentShareImage: '',
     // currentSharePath: '',
   },
 
-  async onLoad(query: { examId: string; from?: string }) {
+  onLoad(query: { examId: string; from?: string }) {
     const sys = wx.getWindowInfo();
     this.setData({
       statusBarHeight: sys.statusBarHeight,
+      examId: query.examId || '',
     });
 
-    const examId = query.examId;
+    void this._loadExam(query.examId);
+  },
+
+  async _loadExam(examId: string, options: { preserveError?: boolean } = {}) {
     if (!examId) {
+      this._asyncLoadFail('考试信息不存在');
       return;
     }
+
+    this._asyncLoadBegin(options);
     try {
       const detail = await examAction.getExamDetail(examId);
       this.setData({
         exam: detail,
       });
+      this._asyncLoadSuccess();
     } catch (err) {
+      this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
       log.error('onLoad', `加载考试详情失败 [${examId}]`, err);
-      showErrorToast(err, { fallback: '加载考试详情失败' });
     }
+  },
+
+  onRetryLoad() {
+    void this._loadExam(this.data.examId, { preserveError: true });
   },
 
   // onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
