@@ -28,6 +28,7 @@ function transformReplyItem(reply: ReplyVO): ReplyItem {
     likeCount: reply.likeCount,
     isLiked: reply.liked || false,
     replyToName: reply.replyToUser.nickname || '',
+    replyToUserId: reply.replyToUser.id,
     _avatarChar: getAvatarInfo(reply.author.nickname).char,
     _avatarBg: getAvatarInfo(reply.author.nickname).bg,
   };

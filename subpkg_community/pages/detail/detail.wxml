@@ -1,5 +1,5 @@
 <!-- subpkg_community/pages/detail/detail.wxml -->
-<view class="detail-page" style="padding-bottom:{{bottomPad}}px;">
+<view class="detail-page">
   <!-- 顶部导航 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav">
@@ -12,23 +12,61 @@
     </view>
   </view>
 
-  <!-- 首屏只在慢请求时显示与真实帖子结构一致的骨架。 -->
+  <!-- 慢请求才展示骨架；共用帖子布局，未知的配图不预设高度。 -->
   <block wx:if="{{asyncLoad.phase === 'idle' || asyncLoad.phase === 'loading'}}">
     <view wx:if="{{asyncLoad.skeletonVisible}}" class="post-detail-skeleton" aria-role="status" aria-label="动态加载中">
-      <view class="post-detail-skeleton__author">
-        <view class="skeleton-block skeleton-circle post-detail-skeleton__avatar" />
-        <view class="post-detail-skeleton__author-copy">
-          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__name" />
-          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__time" />
+      <view class="post-wrap" aria-hidden="true">
+        <view class="author-row">
+          <view class="post-detail-skeleton__avatar skeleton-block skeleton-circle" />
+          <view class="author-info post-detail-skeleton__author-copy">
+            <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__name" />
+            <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__time" />
+          </view>
+          <view class="post-more post-detail-skeleton__muted">
+            <image class="post-more__icon" src="/assets/icons/common/more.svg" mode="aspectFit" />
+          </view>
+        </view>
+        <view class="post-text post-detail-skeleton__text">
+          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__line" />
+          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__line" />
+          <view
+            class="skeleton-block skeleton-radius-sm post-detail-skeleton__line post-detail-skeleton__line--short"
+          />
+        </view>
+        <view class="post-stats">
+          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__stat" />
+          <text class="post-stats__sep">·</text>
+          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__stat" />
+          <text class="post-stats__sep">·</text>
+          <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__stat" />
+        </view>
+        <view class="post-actions post-detail-skeleton__muted">
+          <view class="action-item">
+            <image class="action-icon" src="/images/interact/like.svg" />
+            <text class="action-count">点赞</text>
+          </view>
+          <view class="action-item">
+            <image class="action-icon" src="/images/interact/comment.svg" />
+            <text class="action-count">评论</text>
+          </view>
+          <view class="action-item">
+            <image class="action-icon" src="/images/interact/share.svg" />
+            <text class="action-count">分享</text>
+          </view>
         </view>
       </view>
-      <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__line" />
-      <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__line post-detail-skeleton__line--medium" />
-      <view class="skeleton-block skeleton-radius-md post-detail-skeleton__media" />
-      <view class="post-detail-skeleton__stats">
-        <view class="skeleton-block skeleton-pill post-detail-skeleton__stat" />
-        <view class="skeleton-block skeleton-pill post-detail-skeleton__stat" />
-        <view class="skeleton-block skeleton-pill post-detail-skeleton__stat" />
+      <view class="comment-wrap" aria-hidden="true">
+        <view class="post-detail-skeleton__comment-header">评论</view>
+        <view class="post-detail-skeleton__comment">
+          <view class="skeleton-block skeleton-circle post-detail-skeleton__comment-avatar" />
+          <view class="post-detail-skeleton__comment-copy">
+            <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__time" />
+            <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__comment-line" />
+            <view
+              class="skeleton-block skeleton-radius-sm post-detail-skeleton__comment-line post-detail-skeleton__line--short"
+            />
+          </view>
+        </view>
       </view>
     </view>
   </block>
@@ -145,8 +183,10 @@
   <!-- share弹窗 -->
   <share-panel
     wx:if="{{popupType==='share'}}"
-    share-path="{{currentSharePath}}"
     share-image-path="{{currentShareImage}}"
+    status="{{shareStatus}}"
+    bind:retry="onRetryShare"
+    bind:previewerror="onSharePreviewError"
     bind:close="onShareClose"
   />
   <!-- report弹窗 -->

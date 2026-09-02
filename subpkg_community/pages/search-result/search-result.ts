@@ -3,22 +3,18 @@
 import type { ActivityCard, PostCardItem } from '../../../types/business';
 import { createLogger } from '../../../utils/logger';
 import { wxNavigateBack } from '../../../utils/wx-promise';
-import { searchAction } from '../../../actions/index';
-import { notifyToast } from '../../../utils/notify';
+import * as searchAction from '../../actions/search';
 
 const log = createLogger('SearchResultPage');
 
-type SearchTab = 'all' | 'activity' | 'exam';
+type SearchTab = 'all' | 'activity';
 
 const PAGE_SIZE = 10;
 
 const TAB_LIST: { id: SearchTab; label: string }[] = [
-  { id: 'all', label: '综合' },
+  { id: 'all', label: '动态' },
   { id: 'activity', label: '活动' },
-  { id: 'exam', label: '考试' },
 ];
-
-let requestSeq = 0;
 
 function safeDecode(value?: string) {
   if (!value) return '';
@@ -30,6 +26,9 @@ function safeDecode(value?: string) {
 }
 
 Page({
+  // 请求归属当前页面实例；切换条件或卸载后，旧响应不再更新页面。
+  _requestSeq: 0,
+
   /**
    * 页面的初始数据
    */
@@ -42,26 +41,28 @@ Page({
     activeTab: 'all',
 
     keyword: '',
+    searchKeyword: '',
     inputFocus: false,
 
     postList: [] as PostCardItem[],
     postHasMore: true,
     postNextCursor: '',
+    postLoaded: false,
 
     activityList: [] as ActivityCard[],
     activityHasMore: true,
     activityNextCursor: '',
-
-    examList: [],
+    activityLoaded: false,
 
     loading: false,
     loaded: false,
+    error: false,
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
-  onLoad(options: { keyword?: string; tab?: SearchTab }) {
+  onLoad(options: { keyword?: string; tab?: string }) {
     const sys = wx.getWindowInfo();
     const menuButton =
       typeof wx.getMenuButtonBoundingClientRect === 'function'
@@ -78,13 +79,15 @@ Page({
     }
 
     const keyword = safeDecode(options.keyword).trim();
-    const activeTab = options.tab ?? 'all';
+    // 兼容旧考试链接及未知参数，统一回到已接入的动态搜索。
+    const activeTab: SearchTab = options.tab === 'activity' ? 'activity' : 'all';
 
     this.setData({
       statusBarHeight,
       navTopGap,
       navHeight,
       keyword,
+      searchKeyword: keyword,
       activeTab,
     });
 
@@ -119,7 +122,7 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
-    /* empty */
+    this._requestSeq++;
   },
 
   /**
@@ -133,15 +136,10 @@ Page({
    * 页面上拉触底事件的处理函数
    */
   onReachBottom() {
-    if (this.data.loading) return;
+    if (this.data.loading || !this.data.loaded || this.data.error) return;
 
     const { activeTab } = this.data;
-    const hasMore =
-      activeTab === 'all'
-        ? this.data.postHasMore
-        : activeTab === 'activity'
-          ? this.data.activityHasMore
-          : false;
+    const hasMore = activeTab === 'all' ? this.data.postHasMore : this.data.activityHasMore;
 
     if (!hasMore) return;
 
@@ -160,9 +158,11 @@ Page({
    * 这里只同步输入值，不实时请求接口，避免每个字都触发搜索。
    */
   onInput(e: WechatMiniprogram.Input) {
+    const keyword = e.detail.value || '';
     this.setData({
-      keyword: e.detail.value || '',
+      keyword,
     });
+    if (!keyword.trim()) this._resetAll();
   },
 
   /**
@@ -175,6 +175,7 @@ Page({
 
     searchAction.recordSearchKeyword(keyword);
     this._resetAll();
+    this.setData({ keyword, searchKeyword: keyword });
     void this._search(true);
   },
 
@@ -196,24 +197,25 @@ Page({
    */
   onSwitchTab(e: WechatMiniprogram.TouchEvent) {
     const activeTab = e.currentTarget.dataset.id as SearchTab;
+    if (!TAB_LIST.some((tab) => tab.id === activeTab)) return;
     if (activeTab === this.data.activeTab) return;
 
+    this._requestSeq++;
+    const loaded = activeTab === 'all' ? this.data.postLoaded : this.data.activityLoaded;
     this.setData({
       activeTab,
+      loaded,
+      loading: false,
+      error: false,
     });
 
-    if (!this.data.keyword.trim()) return;
-
-    const needLoad =
-      activeTab === 'all'
-        ? !this.data.postList.length
-        : activeTab === 'activity'
-          ? !this.data.activityList.length
-          : !this.data.examList.length;
-
-    if (needLoad) {
+    if (this.data.searchKeyword && !loaded) {
       void this._search(true);
     }
+  },
+
+  onRetry() {
+    void this._search(!this.data.loaded);
   },
 
   /**
@@ -225,17 +227,18 @@ Page({
 
   /**
    * 执行搜索。
-   * 综合 Tab 先按动态处理；活动 Tab 请求活动；考试 Tab 先预留空态。
+   * 使用已提交关键词，编辑输入框不会改变旧结果的分页条件。
    */
   async _search(reset = false) {
-    const keyword = this.data.keyword.trim();
+    const keyword = this.data.searchKeyword;
     if (!keyword || this.data.loading) return;
 
-    const currentRequest = ++requestSeq;
+    const currentRequest = ++this._requestSeq;
     const { activeTab } = this.data;
 
     this.setData({
       loading: true,
+      error: false,
     });
 
     try {
@@ -246,13 +249,14 @@ Page({
           pageSize: PAGE_SIZE,
         });
 
-        if (currentRequest !== requestSeq) return;
+        if (currentRequest !== this._requestSeq) return;
 
         this.setData({
           postList: reset ? res.list : [...this.data.postList, ...res.list],
           postHasMore: res.hasMore,
           postNextCursor: res.nextCursor ?? '',
           loaded: true,
+          postLoaded: true,
         });
 
         return;
@@ -265,33 +269,24 @@ Page({
           pageSize: PAGE_SIZE,
         });
 
-        if (currentRequest !== requestSeq) return;
+        if (currentRequest !== this._requestSeq) return;
 
         this.setData({
           activityList: reset ? res.list : [...this.data.activityList, ...res.list],
           activityHasMore: res.hasMore,
           activityNextCursor: res.nextCursor ?? '',
           loaded: true,
+          activityLoaded: true,
         });
 
         return;
       }
-
-      if (activeTab === 'exam') {
-        // 考试搜索接口接入后，在这里替换成 searchExams。
-        this.setData({
-          examList: [],
-          loaded: true,
-        });
-      }
     } catch (err: unknown) {
+      if (currentRequest !== this._requestSeq) return;
       log.error('_search', '搜索失败', err);
-      notifyToast({
-        title: '搜索失败，请稍后再试',
-        icon: 'none',
-      });
+      this.setData({ error: true });
     } finally {
-      if (currentRequest === requestSeq) {
+      if (currentRequest === this._requestSeq) {
         this.setData({
           loading: false,
         });
@@ -304,16 +299,20 @@ Page({
    * 用于换关键词重新搜索。
    */
   _resetAll() {
+    this._requestSeq++;
     this.setData({
+      searchKeyword: '',
+      loading: false,
+      error: false,
       postList: [],
       postHasMore: true,
       postNextCursor: '',
+      postLoaded: false,
 
       activityList: [],
       activityHasMore: true,
       activityNextCursor: '',
-
-      examList: [],
+      activityLoaded: false,
       loaded: false,
     });
   },

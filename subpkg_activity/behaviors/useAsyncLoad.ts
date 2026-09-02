@@ -1,4 +1,5 @@
-import defineBehavior from '../utils/defineBehavior';
+// 分包本地副本；修改时同步其他分包同名文件，audit:packages 会校验一致性。
+import defineBehavior from '../../utils/defineBehavior';
 
 export type AsyncLoadPhase = 'idle' | 'loading' | 'success' | 'error';
 

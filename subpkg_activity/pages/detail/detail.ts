@@ -1,16 +1,30 @@
+import { useSharePoster } from '../../../behaviors/useSharePoster';
 // subpkg_activity/pages/detail/detail.ts
 
-import { wxShowActionSheet } from '../../../utils/wx-promise';
+import {
+  wxDownloadFile,
+  wxPageScrollTo,
+  wxPreviewImage,
+  wxSetClipboardData,
+  wxShowActionSheet,
+  wxShowModal,
+} from '../../../utils/wx-promise';
 import { createLogger } from '../../../utils/logger';
 import type { ActivityDetail } from '../../../types/business';
 import { drawActivityPoster } from '../../utils/activityPoster';
-import { activityAction } from '../../../actions/index';
-import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import * as activityAction from '../../actions/activity';
+import { useAsyncLoad } from '../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
 import { showInfoToast, showSuccessToast } from '../../../utils/notify';
-import { navigateBackOrHome } from '../../../utils/navigation';
+import { navigateBackOrHome } from '../../utils/navigation';
 
 const log = createLogger('ActivityDetailPage');
+const DOCUMENT_TYPES = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'] as const;
+const IMAGE_TYPES = ['image', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+
+function isDocumentType(type: string): type is (typeof DOCUMENT_TYPES)[number] {
+  return DOCUMENT_TYPES.some((item) => item === type);
+}
 
 // ============================================================
 // § 1  基础子类型
@@ -179,10 +193,12 @@ export interface ActivityDetailResponse {
 // ============================================================
 
 definePage({
-  behaviors: [useAsyncLoad()],
+  behaviors: [useAsyncLoad(), useSharePoster()],
 
   /** 滚动位置快照，用于弹窗锁定页面时记录当前位置 */
   _currentScrollTop: 0,
+  _openingAttachment: false,
+  _unloaded: false,
 
   data: {
     statusBarHeight: 20,
@@ -190,8 +206,6 @@ definePage({
     showPopup: false,
     popupType: '',
     lockScrollTop: 0,
-    currentShareImage: '',
-    currentSharePath: '',
     currentActivityId: '',
     skeletonSections: [1, 2, 3],
   },
@@ -220,6 +234,8 @@ definePage({
   // ── 生命周期 ──────────────────────────────────────────────
   onLoad(options: { activityId: string; from?: string }) {
     this._currentScrollTop = 0;
+    this._openingAttachment = false;
+    this._unloaded = false;
 
     const { statusBarHeight } = wx.getWindowInfo();
     this.setData({
@@ -230,28 +246,25 @@ definePage({
     this._loadActivity(options.activityId);
   },
 
+  onUnload() {
+    this._unloaded = true;
+    if (this._openingAttachment) void wx.hideLoading();
+  },
+
   onPageScroll(e: WechatMiniprogram.Page.IPageScrollOption) {
     if (this.data.showPopup) return;
     this._currentScrollTop = e.scrollTop;
   },
 
   onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
-    const { id } = this.data.activity;
-    const currentShareImage = this.data.currentShareImage;
-    return {
-      // title: content.slice(0, 30) || '校园圈动态',
-      path: `/subpkg_activity/pages/detail/detail?activityId=${id}&from=share`,
-      imageUrl: currentShareImage || '',
-    };
+    return this._getShareContent();
   },
 
   onShareTimeline(): WechatMiniprogram.Page.ICustomTimelineContent {
     const { id } = this.data.activity;
-    const currentShareImage = this.data.currentShareImage;
     return {
-      // title: content.slice(0, 30) || '校园圈动态',
       query: `activityId=${id}&from=share`,
-      imageUrl: currentShareImage || '',
+      imageUrl: this._getShareContent().imageUrl,
     };
   },
 
@@ -270,11 +283,12 @@ definePage({
         this.setData(
           {
             activity: res,
+            currentSharePath: `/subpkg_activity/pages/detail/detail?activityId=${res.id}&from=share`,
           },
           () => {
             this._asyncLoadSuccess();
             void wx.setNavigationBarTitle({ title: res.title });
-            void this._drawActivityPoster();
+            this._prepareActivityShare();
           },
         );
       })
@@ -284,7 +298,7 @@ definePage({
       });
   },
 
-  async _drawActivityPoster() {
+  _prepareActivityShare() {
     const activity = this.data.activity;
     if (!activity.id) return;
 
@@ -296,11 +310,10 @@ definePage({
       cover: activity.cover ?? '',
     };
 
-    await drawActivityPoster(this, activityData, (posterPath) => {
-      this.setData({
-        currentShareImage: posterPath,
-        currentSharePath: `/subpkg_activity/pages/detail/detail?activityId=${activity.id}&from=share`,
-      });
+    this._prepareShare({
+      key: JSON.stringify([activity.id, activityData]),
+      path: `/subpkg_activity/pages/detail/detail?activityId=${activity.id}&from=share`,
+      render: (scope) => drawActivityPoster(scope, activityData),
     });
   },
 
@@ -309,11 +322,131 @@ definePage({
     this._loadActivity(this.data.currentActivityId, { preserveError: true });
   },
 
+  async _copyText(text: string, label: string) {
+    if (!text.trim()) {
+      showInfoToast(`暂无${label}`);
+      return;
+    }
+    try {
+      await wxSetClipboardData({ data: text });
+      showSuccessToast(`${label}已复制`);
+    } catch (err) {
+      log.warn('_copyText', '复制失败', err);
+      showInfoToast('复制失败，请重试');
+    }
+  },
+
+  onCopy(e: WechatMiniprogram.TouchEvent) {
+    const { text, label } = e.currentTarget.dataset as { text?: string; label?: string };
+    return this._copyText(text ?? '', label ?? '内容');
+  },
+
+  async _offerAttachmentLink(url: string, content: string) {
+    try {
+      const result = await wxShowModal({
+        title: '查看附件',
+        content,
+        confirmText: '复制链接',
+        cancelText: '取消',
+      });
+      if (result.confirm && !this._unloaded) await this._copyText(url, '附件链接');
+    } catch (err) {
+      log.warn('_offerAttachmentLink', '显示附件提示失败', err);
+    }
+  },
+
+  async onOpenAttachment(e: WechatMiniprogram.TouchEvent) {
+    if (this._openingAttachment) return;
+    const index = Number(e.currentTarget.dataset.index);
+    const attachment = this.data.activity.attachments.find((_, itemIndex) => itemIndex === index);
+    if (!attachment?.url.trim()) {
+      showInfoToast('附件地址未提供');
+      return;
+    }
+
+    const url = attachment.url.trim();
+    const type = attachment.type.toLowerCase();
+    if (!IMAGE_TYPES.includes(type) && !isDocumentType(type)) {
+      await this._offerAttachmentLink(
+        url,
+        '该附件暂不支持在小程序内预览，可复制链接到浏览器查看。',
+      );
+      return;
+    }
+
+    this._openingAttachment = true;
+    let failureMessage = '';
+    try {
+      if (IMAGE_TYPES.includes(type)) {
+        await wxPreviewImage({
+          current: url,
+          urls: this.data.activity.attachments
+            .filter((item) => IMAGE_TYPES.includes(item.type.toLowerCase()) && item.url.trim())
+            .map((item) => item.url.trim()),
+        });
+      } else if (isDocumentType(type)) {
+        void wx.showLoading({ title: '正在下载附件', mask: true });
+        const result = await wxDownloadFile({ url });
+        if (this._unloaded) return;
+        if (result.statusCode !== 200 || !result.tempFilePath) {
+          throw new Error(`附件下载失败：HTTP ${String(result.statusCode)}`);
+        }
+        void wx.hideLoading();
+        await wx.openDocument({
+          filePath: result.tempFilePath,
+          fileType: type,
+          showMenu: true,
+        });
+      }
+    } catch (err) {
+      log.warn('onOpenAttachment', '附件查看失败', err);
+      failureMessage = '附件暂时无法打开，请稍后重试，或复制链接到浏览器查看。';
+    } finally {
+      if (!this._unloaded && isDocumentType(type)) void wx.hideLoading();
+      this._openingAttachment = false;
+    }
+    if (failureMessage && !this._unloaded) await this._offerAttachmentLink(url, failureMessage);
+  },
+
+  async onPreviewQRCode() {
+    const url = this.data.activity.qrcode_url;
+    if (!url) return;
+    try {
+      await wxPreviewImage({ current: url, urls: [url] });
+    } catch (err) {
+      log.warn('onPreviewQRCode', '二维码预览失败', err);
+      showInfoToast('二维码暂时无法预览，请重试');
+    }
+  },
+
+  async onScrollToJoin() {
+    try {
+      await wxPageScrollTo({ selector: '#join-section', duration: 300 });
+    } catch (err) {
+      log.warn('onScrollToJoin', '定位报名方式失败', err);
+      showInfoToast('请向下滑动查看报名方式');
+    }
+  },
+
+  onOverlayTap() {
+    this._closePopup();
+  },
+
+  onShareClose() {
+    this._closePopup();
+  },
+
+  onPopupAfterLeave() {
+    this._closePopup(true);
+  },
+
   onEnroll() {
     showSuccessToast('报名成功');
   },
 
   onShare() {
+    if (!this.data.activity.id) return;
+    this._prepareActivityShare();
     this._openPopup({
       popupType: 'share',
     });

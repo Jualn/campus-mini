@@ -1,10 +1,17 @@
-import { userService } from '../services/index';
+import * as userService from '../services/user';
 import * as postAction from './post';
 import { storage, STORAGE_KEYS } from '../utils/storage';
 import { appStore } from '../stores/index';
-import type { EditProfileForm, MePageData, Settings, UserPageData } from '../types/business';
-import type { UserInfoDTO, UserSettingUpdateRequest } from '../types/api';
+import type {
+  EditProfileForm,
+  EditProfileUpdate,
+  MePageData,
+  Settings,
+  UserPageData,
+} from '../types/business';
+import type { UserSettingUpdateRequest } from '../types/api';
 import { getUserInfo } from '../stores/helper';
+import { getCurrentProfile, peekCurrentProfile, saveCurrentProfile } from './current-user';
 
 type NotifyKey = keyof Settings['notify'];
 
@@ -14,18 +21,6 @@ const NOTIFY_FIELD_MAP: Record<NotifyKey, (keyof UserSettingUpdateRequest)[]> = 
   interaction: ['notifyComment', 'notifyReply', 'notifyLike'],
   system: ['notifySystem'],
   audit: ['notifyAuditResult'],
-};
-
-const updateLocalUserInfo = (patch: Partial<UserInfoDTO>): void => {
-  const current = appStore.get('userInfo');
-
-  const nextUserInfo = {
-    ...current,
-    ...patch,
-  };
-
-  appStore.set('userInfo', nextUserInfo);
-  storage.set(STORAGE_KEYS.USER_INFO, nextUserInfo);
 };
 
 const toEditProfileForm = (profile: {
@@ -41,69 +36,41 @@ const toEditProfileForm = (profile: {
 });
 
 export const getEditProfileForm = async (): Promise<EditProfileForm> => {
-  const profile = await userService.getCurrentProfile();
+  const profile = await getCurrentProfile();
   return toEditProfileForm(profile);
 };
 
-export const saveEditProfileAndSync = async (data: Partial<EditProfileForm>): Promise<void> => {
-  const payload = await userService.updateUserInfo(data);
-
-  const patch: Partial<UserInfoDTO> = {};
-
-  if (payload.nickname !== undefined) {
-    patch.nickname = payload.nickname;
-  }
-
-  if (payload.avatarUrl !== undefined) {
-    patch.avatarUrl = payload.avatarUrl;
-  }
-
-  if (Object.keys(patch).length > 0) {
-    updateLocalUserInfo(patch);
-  }
+export const saveEditProfileAndSync = async (data: EditProfileUpdate): Promise<void> => {
+  await saveCurrentProfile(data);
 };
 
-export const getMePageData = async (): Promise<MePageData> => {
-  let userId = getUserInfo('id');
-  if (!userId) {
-    const user = storage.get(STORAGE_KEYS.USER_INFO);
-    if (!user) {
-      return Promise.reject(new Error('user not logged in'));
-    }
-    userId = user.id;
-  }
-
-  const [profile, postsResult] = await Promise.all([
-    userService.getCurrentProfile(),
-    postAction.getUserPosts(userId, { pageSize: 20 }),
-  ]);
-
-  const patch: Partial<UserInfoDTO> = {
-    nickname: profile.nickname,
-    role: profile.role,
-  };
-
-  if (profile.avatarUrl !== undefined) {
-    patch.avatarUrl = profile.avatarUrl;
-  }
-
-  updateLocalUserInfo(patch);
+export const getMePageData = async (options: { force?: boolean } = {}): Promise<MePageData> => {
+  const profile = await getCurrentProfile(options);
+  const userId = profile.id;
+  if (!userId) throw new Error('用户资料缺少身份信息');
+  const postsResult = await postAction.getUserPosts(userId, { pageSize: 20 });
+  if (getUserInfo('id') !== userId) throw new Error('登录状态已变化，请重试');
 
   return {
-    userInfo: { ...profile, id: userId },
+    userInfo: peekCurrentProfile() ?? profile,
     posts: postsResult.list,
     activeTab: 'posts',
   };
 };
 
-export const getUserPageData = async (userId: string): Promise<UserPageData> => {
+export const getUserPageData = async (
+  userId: string,
+  options: { force?: boolean } = {},
+): Promise<UserPageData> => {
+  if (userId === getUserInfo('id')) return getMePageData(options);
   const [profile, postsResult] = await Promise.all([
     userService.getPublicProfile(userId),
     postAction.getUserPosts(userId, { pageSize: 20 }),
   ]);
 
+  const current = peekCurrentProfile();
   return {
-    userInfo: { ...profile, id: userId },
+    userInfo: current?.id === userId ? current : { ...profile, id: userId },
     posts: postsResult.list,
     activeTab: 'posts',
   };

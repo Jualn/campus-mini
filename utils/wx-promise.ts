@@ -49,6 +49,9 @@ export const wxGetUserProfile = wrap<WechatMiniprogram.GetUserProfileOption>((o)
 export const wxCheckSession = wrap<WechatMiniprogram.CheckSessionOption>((o) => {
   void wx.checkSession(o);
 });
+export const wxScanCode = wrap<WechatMiniprogram.ScanCodeOption>((o) => {
+  void wx.scanCode(o);
+});
 
 // 存储
 export const wxGetStorage = wrap<WechatMiniprogram.GetStorageOption>((o) => {
@@ -81,6 +84,9 @@ export const wxChooseMessageFile = wrap<WechatMiniprogram.ChooseMessageFileOptio
 });
 export const wxChooseMedia = wrap<WechatMiniprogram.ChooseMediaOption>((o) => {
   void wx.chooseMedia(o);
+});
+export const wxCompressImage = wrap<WechatMiniprogram.CompressImageOption>((o) => {
+  void wx.compressImage(o);
 });
 export const wxGetImageInfo = wrap<WechatMiniprogram.GetImageInfoOption>((o) => {
   void wx.getImageInfo(o);
@@ -195,8 +201,13 @@ export const showConfirm = async ({ title, content }: ConfirmOptions): Promise<b
   return res.confirm;
 };
 
-// 选图片（返回临时路径数组）
-export const chooseImages = async (count = 1): Promise<string[]> => {
+export interface ChosenImageFile {
+  path: string;
+  size: number;
+}
+
+// 选图片（保留大小，供上传前压缩和限额判断）
+export const chooseImages = async (count = 1): Promise<ChosenImageFile[]> => {
   try {
     const res = await wxChooseMedia({
       count,
@@ -204,7 +215,7 @@ export const chooseImages = async (count = 1): Promise<string[]> => {
       sourceType: ['album', 'camera'],
     });
 
-    return res.tempFiles.map((f) => f.tempFilePath);
+    return res.tempFiles.map((f) => ({ path: f.tempFilePath, size: f.size }));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
@@ -214,12 +225,6 @@ export const chooseImages = async (count = 1): Promise<string[]> => {
 
     throw e; // 不要吞真正错误
   }
-  const res = await wxChooseMedia({
-    count,
-    mediaType: ['image'],
-    sourceType: ['album', 'camera'],
-  });
-  return res.tempFiles.map((f) => f.tempFilePath);
 };
 
 interface ChooseMessageFileOptions {

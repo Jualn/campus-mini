@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit --ignoreDeprecations 6.0",
     "lint": "eslint . --ext .ts",
+    "audit:packages": "node scripts/audit-packages.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -20,8 +21,7 @@
   },
   "type": "module",
   "dependencies": {
-    "cos-wx-sdk-v5": "^1.8.0",
-    "miniprogram-api-promise": "^1.0.4"
+    "cos-wx-sdk-v5": "^1.8.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

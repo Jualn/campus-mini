@@ -1,12 +1,8 @@
 // posterCanvas.ts
 
-import { createLogger } from '../logger';
-
 export const W = 1080;
 export const H = 864;
 export const BLUE = '#1677ff';
-
-const log = createLogger('PosterCanvas');
 
 // ── 类型定义 ──────────────────────────────────────────────────────────
 
@@ -16,7 +12,7 @@ export interface WxGradient {
 }
 
 /** WX Canvas 2D 上下文的最小接口（只声明本文件实际用到的方法） */
-interface Ctx2D {
+export interface Ctx2D {
   fillStyle: string | WxGradient; // 原来是 string，改为支持渐变
   strokeStyle: string | WxGradient;
   lineWidth: number;
@@ -48,7 +44,11 @@ interface Ctx2D {
     dh: number,
   ): void;
   drawImage(image: WechatMiniprogram.Image, dx: number, dy: number, dw: number, dh: number): void;
-  measureText(text: string): { width: number };
+  measureText(text: string): {
+    width: number;
+    actualBoundingBoxAscent?: number;
+    actualBoundingBoxDescent?: number;
+  };
   font: string;
   textAlign: 'left' | 'right' | 'center' | 'start' | 'end';
   textBaseline: 'top' | 'hanging' | 'middle' | 'alphabetic' | 'ideographic' | 'bottom';
@@ -69,7 +69,8 @@ interface CanvasInit {
 // ── 初始化 ────────────────────────────────────────────────────────────
 
 export function initCanvas(canvasNode: WechatMiniprogram.Canvas): CanvasInit {
-  const dpr = wx.getWindowInfo().pixelRatio;
+  // 设计坐标即输出像素，不再按设备 DPR 重复放大 1080px 海报。
+  const dpr = 1;
   const ctx = canvasNode.getContext('2d') as unknown as Ctx2D;
   canvasNode.width = W * dpr;
   canvasNode.height = H * dpr;
@@ -79,20 +80,21 @@ export function initCanvas(canvasNode: WechatMiniprogram.Canvas): CanvasInit {
 
 export function getCanvasNode(selector: string, scope: WxScope): Promise<WechatMiniprogram.Canvas> {
   return new Promise((resolve, reject) => {
-    wx.createSelectorQuery()
-      .in(scope)
-      .select(selector)
-      .fields({ node: true, size: true })
-      .exec((res) => {
-        const result = res as unknown as { node?: WechatMiniprogram.Canvas }[];
-        const canvas = result[0]?.node;
-
-        if (canvas) {
-          resolve(canvas);
-        } else {
-          reject(new Error('Canvas 节点未找到'));
-        }
-      });
+    const timer = setTimeout(() => {
+      reject(new Error('画布初始化超时'));
+    }, 3000);
+    wx.nextTick(() => {
+      wx.createSelectorQuery()
+        .in(scope)
+        .select(selector)
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          clearTimeout(timer);
+          const canvas = (res as unknown as { node?: WechatMiniprogram.Canvas }[])[0]?.node;
+          if (canvas) resolve(canvas);
+          else reject(new Error('Canvas 节点未找到'));
+        });
+    });
   });
 }
 
@@ -101,14 +103,42 @@ export function getCanvasNode(selector: string, scope: WxScope): Promise<WechatM
 export function loadImage(canvasNode: WechatMiniprogram.Canvas, src: string): Promise<WxImage> {
   return new Promise((resolve, reject) => {
     const img = canvasNode.createImage();
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('图片加载超时'));
+    }, 8000);
+    const cleanup = () => {
+      clearTimeout(timer);
+      img.onload = () => {
+        /* ignore late events */
+      };
+      img.onerror = () => {
+        /* ignore late events */
+      };
+    };
     img.onload = () => {
+      cleanup();
       resolve(img);
     };
     img.onerror = () => {
-      reject(new Error(`图片加载失败: ${src}`));
+      cleanup();
+      reject(new Error('图片加载失败'));
     };
     img.src = src;
   });
+}
+
+/** 可选图片加载失败时返回 null，由模板选择占位或纯文字布局。 */
+export async function optionalImage(
+  canvasNode: WechatMiniprogram.Canvas,
+  src?: string,
+): Promise<WechatMiniprogram.Image | null> {
+  if (!src) return null;
+  try {
+    return await loadImage(canvasNode, src);
+  } catch {
+    return null;
+  }
 }
 
 export function drawCover(
@@ -151,7 +181,7 @@ export async function drawCircleImage(
     ctx.beginPath();
     ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
     ctx.clip();
-    ctx.drawImage(img, x, y, size, size);
+    drawCover(ctx, img, x, y, size, size);
     ctx.restore();
   } catch {
     ctx.fillStyle = '#dddddd';
@@ -162,6 +192,30 @@ export async function drawCircleImage(
 }
 
 // ── 文字与图形 ────────────────────────────────────────────────────────
+
+/** 以可见字形而不是字体 em 框居中；旧运行时缺少边界指标时使用字号兜底。 */
+export function drawVerticallyCenteredText(
+  ctx: Ctx2D,
+  value: string,
+  x: number,
+  centerY: number,
+  fontSize: number,
+): void {
+  ctx.save();
+  ctx.textBaseline = 'alphabetic';
+  const { actualBoundingBoxAscent: ascent, actualBoundingBoxDescent: descent } =
+    ctx.measureText(value);
+  const offset =
+    typeof ascent === 'number' &&
+    typeof descent === 'number' &&
+    Number.isFinite(ascent) &&
+    Number.isFinite(descent) &&
+    ascent + descent > 0
+      ? (ascent - descent) / 2
+      : fontSize * 0.35;
+  ctx.fillText(value, x, centerY + offset);
+  ctx.restore();
+}
 
 export function drawTextAvatar(
   ctx: Ctx2D,
@@ -180,11 +234,11 @@ export function drawTextAvatar(
   ctx.fillStyle = bgColor;
   ctx.fill();
 
-  ctx.font = `bold ${String(size * 0.35)}px sans-serif`;
+  const fontSize = size * 0.35;
+  ctx.font = `bold ${String(fontSize)}px sans-serif`;
   ctx.fillStyle = '#FFFFFF';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text.charAt(0), cx, cy + size * 0.05);
+  drawVerticallyCenteredText(ctx, Array.from(text)[0] ?? '?', cx, cy, fontSize);
   ctx.restore();
 }
 
@@ -198,6 +252,45 @@ export function roundRect(ctx: Ctx2D, x: number, y: number, w: number, h: number
   ctx.closePath();
 }
 
+/** 支持显式换行及 Unicode 码点，最后一行按真实宽度留出省略号。 */
+export function wrapText(
+  ctx: Pick<Ctx2D, 'measureText'>,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+): string[] {
+  if (!text || maxWidth <= 0 || maxLines <= 0) return [];
+  const chars = Array.from(text.replace(/\r\n?/g, '\n'));
+  const lines: string[] = [];
+  let line = '';
+  let overflow = false;
+  for (const char of chars) {
+    if (char === '\n' || (line && ctx.measureText(line + char).width > maxWidth)) {
+      let carry = '';
+      if (char !== '\n' && /^[，。！？、：；）》」』】…,.!?;:%]$/.test(char)) {
+        const previous = Array.from(line);
+        carry = previous.pop() ?? '';
+        line = previous.join('');
+      }
+      lines.push(line);
+      if (lines.length === maxLines) {
+        overflow = true;
+        break;
+      }
+      line = char === '\n' ? '' : carry + char;
+    } else {
+      line += char;
+    }
+  }
+  if (lines.length < maxLines) lines.push(line);
+  if (overflow) {
+    const last = Array.from(lines[lines.length - 1]);
+    while (last.length && ctx.measureText(last.join('') + '…').width > maxWidth) last.pop();
+    lines[lines.length - 1] = last.join('') + '…';
+  }
+  return lines;
+}
+
 export function drawText(
   ctx: Ctx2D,
   text: string,
@@ -207,46 +300,15 @@ export function drawText(
   lineHeight: number,
   maxLines: number,
 ): number {
-  let line = '';
-  let lineCount = 0;
-  let currentY = y;
-
-  const safeText = text;
-
-  if (!safeText) {
-    return y;
-  }
-
-  for (let n = 0; n < safeText.length; n++) {
-    const testLine = line + safeText[n];
-    if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-      lineCount++;
-      if (lineCount === maxLines) {
-        let t = line;
-        while (ctx.measureText(t + '...').width > maxWidth && t.length > 0) {
-          t = t.slice(0, -1);
-        }
-        ctx.fillText(t + '...', x, currentY);
-        return currentY + lineHeight;
-      }
-      ctx.fillText(line, x, currentY);
-      line = safeText[n];
-      currentY += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line, x, currentY);
-  return currentY + lineHeight;
+  const lines = wrapText(ctx, text, maxWidth, maxLines);
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+  return y + lines.length * lineHeight;
 }
 
 export function truncateText(ctx: Ctx2D, text: string, maxWidth: number): string {
-  if (ctx.measureText(text).width <= maxWidth) return text;
-  let t = text;
-  while (ctx.measureText(t + '...').width > maxWidth && t.length > 0) {
-    t = t.slice(0, -1);
-  }
-  return t + '...';
+  return wrapText(ctx, text.replace(/\s+/g, ' '), maxWidth, 1)[0] || '';
 }
 
 // ── 绘制工具 ─────────────────────────────────────────────────────────
@@ -258,29 +320,28 @@ export function drawTopBar(ctx: Ctx2D, color: string = BLUE): void {
 
 // ── 保存与收尾 ────────────────────────────────────────────────────────
 
-function saveToTempFile(
-  canvasNode: WechatMiniprogram.Canvas,
-  scope: WxScope,
-  success: (tempFilePath: string) => void,
-): void {
-  wx.canvasToTempFilePath(
-    {
-      canvas: canvasNode,
-      success: (res) => {
-        success(res.tempFilePath);
+/** Promise 覆盖绘制后的导出过程；失败可由页面展示重试。 */
+export function finalize(canvasNode: WechatMiniprogram.Canvas, scope: WxScope): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('分享图片导出超时'));
+    }, 8000);
+    wx.canvasToTempFilePath(
+      {
+        canvas: canvasNode,
+        destWidth: W,
+        destHeight: H,
+        fileType: 'png',
+        success: (res) => {
+          clearTimeout(timer);
+          resolve(res.tempFilePath);
+        },
+        fail: (err) => {
+          clearTimeout(timer);
+          reject(new Error(err.errMsg || '分享图片导出失败'));
+        },
       },
-      fail: (err) => {
-        log.error('saveToTempFile', '保存失败', err);
-      },
-    },
-    scope,
-  );
-}
-
-export function finalize(
-  canvasNode: WechatMiniprogram.Canvas,
-  scope: WxScope,
-  onSuccess: (tempFilePath: string) => void,
-): void {
-  saveToTempFile(canvasNode, scope, onSuccess);
+      scope,
+    );
+  });
 }

@@ -1,7 +1,7 @@
-import type { ActivityCard, PostCardItem, ServiceCursorPage } from '../types/business';
-import { api } from './api';
-import { mapPostListItem } from './post';
-import { toCard } from './activity';
+import type { ActivityCard, PostCardItem, ServiceCursorPage } from '../../types/business';
+import { api } from '../../services/api';
+import { mapPostListItem } from '../../services/post';
+import { toCard } from './activity-mapper';
 
 export const searchPosts = async (query: {
   keyword: string;

@@ -1,4 +1,4 @@
-import { messageService } from '../services/index';
+import * as messageService from '../services/message';
 import type { NotificationPageQuery } from '../types/api';
 import type { MessageItem } from '../types/business';
 

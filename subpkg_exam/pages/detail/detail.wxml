@@ -211,10 +211,8 @@
         </text>
       </view>
       <view class="share-btn" bind:tap="onShareOpen">
-        <view class="share-btn" bind:tap="onShareOpen">
-          <image class="share-btn__icon-img" src="/assets/icons/detail/share.svg" mode="aspectFit" />
-          <text class="share-btn__text">分享</text>
-        </view>
+        <image class="share-btn__icon-img" src="/assets/icons/detail/share.svg" mode="aspectFit" />
+        <text class="share-btn__text">分享</text>
       </view>
     </view>
   </block>
@@ -229,16 +227,16 @@
   overlay="{{false}}"
   close-on-slide-down="{{false}}"
   z-index="999"
-  bind:beforeleave="onPopupBeforeLeave"
-  bind:leave="onPopupLeave"
   bind:afterleave="onPopupAfterLeave"
   bind:clickoverlay="onOverlayTap"
 >
   <!-- share弹窗 -->
   <share-panel
     wx:if="{{popupType==='share'}}"
-    share-path="{{currentSharePath}}"
     share-image-path="{{currentShareImage}}"
+    status="{{shareStatus}}"
+    bind:retry="onRetryShare"
+    bind:previewerror="onSharePreviewError"
     bind:close="onShareClose"
   />
 </page-container>

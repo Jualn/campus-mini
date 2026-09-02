@@ -1,5 +1,5 @@
-import { searchService } from '../services/index';
-import type { ActivityCard, PostCardItem, ServiceCursorPage } from '../types/business';
+import * as searchService from '../services/search';
+import type { ActivityCard, PostCardItem, ServiceCursorPage } from '../../types/business';
 import { addSearchHistory } from '../utils/search-history';
 
 export const recordSearchKeyword = (keyword: string): void => {

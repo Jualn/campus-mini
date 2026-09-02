@@ -4,7 +4,7 @@ import { createLogger } from '../../utils/logger';
 import { notifyToast } from '../../utils/notify';
 import { REPORT_REASONS, type TargetType, type ReportReason } from '../../utils/constants';
 import { useSheet } from '../../behaviors/sheet-mixin';
-import { reportAction } from '../../actions/index';
+import * as reportAction from '../../actions/report';
 
 interface ReportPanelPrivate {
   _sheetDismiss?: () => void;

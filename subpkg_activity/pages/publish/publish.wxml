@@ -438,7 +438,7 @@
       <view class="upload-icon">＋</view>
       <view class="upload-title">上传活动附件</view>
       <view class="upload-desc">
-        已上传 {{attachmentFiles.length}} / {{maxAttachmentCount}}
+        已选择 {{attachmentFiles.length}} / {{maxAttachmentCount}}
       </view>
     </view>
 
@@ -455,7 +455,9 @@
           ? '上传中'
           : item.status === 'uploaded'
             ? '已上传'
-            : '上传失败'}}
+            : item.status === 'local'
+              ? '待发布上传'
+              : '上传失败'}}
         </view>
 
         <view class="file-actions">
@@ -469,7 +471,7 @@
     </view>
   </view>
 
-  <button class="submit-btn" bindtap="submitActivity">
-      <text class="submit-btn-text">发布活动</text>
+  <button class="submit-btn" bindtap="submitActivity" loading="{{submitting}}" disabled="{{submitting}}">
+      <text class="submit-btn-text">{{submitting ? '发布中' : '发布活动'}}</text>
   </button>
 </view>

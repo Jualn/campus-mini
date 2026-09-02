@@ -6,11 +6,15 @@ import {
   wxNavigateBack,
   wxNavigateTo,
   wxSetClipboardData,
+  showConfirm,
 } from '../../../utils/wx-promise';
-import { authAction, userAction } from '../../../actions/index';
+import * as adminAuthAction from '../../actions/admin-auth';
+import * as authAction from '../../../actions/auth';
+import * as userAction from '../../../actions/user';
 import type { Settings } from '../../../types/business';
 import { createLogger } from '../../../utils/logger';
-import { notifyToast } from '../../../utils/notify';
+import { notifyToast, showErrorToast, showSuccessToast } from '../../../utils/notify';
+import { hasRole, ROLES } from '../../../stores/helper';
 
 const log = createLogger('SettingPage');
 
@@ -36,6 +40,8 @@ Page({
     statusBarHeight: 20,
     wxNumber: 'chan50813',
     version: '1.0.0',
+    canUseAdminLogin: false,
+    adminLoginPending: false,
 
     // 通知设置
     notify: {
@@ -53,6 +59,7 @@ Page({
     const sys = wxGetWindowInfo();
     this.setData({
       statusBarHeight: sys.statusBarHeight,
+      canUseAdminLogin: hasRole([ROLES.OPERATOR, ROLES.ADMIN]),
     });
     await this._loadSettings();
   },
@@ -64,6 +71,7 @@ Page({
     this.setData({
       ...(cached?.notify ? { notify: cached.notify } : {}),
       notifyPending: createFlagMap(false), // 离开期间发出的请求此时一定已有结果，清掉可能卡住的 spinner
+      canUseAdminLogin: hasRole([ROLES.OPERATOR, ROLES.ADMIN]),
     });
   },
 
@@ -85,6 +93,7 @@ Page({
     this.setData({
       notify: setting.notify,
       version: accountInfo.miniProgram.version || '开发版',
+      canUseAdminLogin: hasRole([ROLES.OPERATOR, ROLES.ADMIN]),
     });
   },
 
@@ -182,6 +191,32 @@ Page({
     void wxNavigateTo({
       url: '/subpkg_user/pages/edit-profile/edit-profile',
     });
+  },
+
+  async onScanAdminLogin() {
+    if (this.data.adminLoginPending) return;
+    this.setData({ adminLoginPending: true });
+
+    try {
+      const sessionId = await adminAuthAction.scanAdminLoginQr();
+      if (!sessionId) return;
+
+      const confirmed = await showConfirm({
+        title: '确认登录管理端',
+        content: '将使用当前小程序账号登录管理端，请确认二维码来自你正在操作的页面。',
+      });
+      if (!confirmed) return;
+
+      const result = await adminAuthAction.confirmAdminLogin(sessionId);
+      showSuccessToast(
+        result.displayName ? `${result.displayName}，登录已确认` : '管理端登录已确认',
+      );
+    } catch (err) {
+      log.error('onScanAdminLogin', '管理端扫码登录确认失败', err);
+      showErrorToast(err, { fallback: '扫码确认失败，请稍后重试' });
+    } finally {
+      this.setData({ adminLoginPending: false });
+    }
   },
 
   onGoAgreement() {

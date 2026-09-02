@@ -6,8 +6,9 @@ page {
 
 .search-result-page {
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, #f7fbff 0%, #eef5ff 46%, #f8fbff 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-page);
 }
 
 /* 顶部区域 */
@@ -15,24 +16,10 @@ page {
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 14rpx 24rpx 22rpx;
-  background: rgba(247, 251, 255, 0.94);
-  border-bottom: 1rpx solid rgba(47, 124, 246, 0.08);
-  box-shadow: 0 6rpx 20rpx rgba(47, 124, 246, 0.06);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
-
-/* 安卓低端机 backdrop-filter 不明显时，靠背景和阴影兜底 */
-.search-top::after {
-  content: '';
-  position: absolute;
-  left: 24rpx;
-  right: 24rpx;
-  bottom: 0;
-  height: 1rpx;
-  background: rgba(47, 124, 246, 0.06);
-  pointer-events: none;
+  flex-shrink: 0;
+  padding: 14rpx 24rpx 0;
+  background: var(--color-bg-page);
+  border-bottom: 1rpx solid var(--color-border-light);
 }
 
 .search-nav {
@@ -163,22 +150,21 @@ page {
 }
 
 /* 分类 tab */
-.tab-scroll {
-  margin-top: 22rpx;
-  white-space: nowrap;
+.result-tabs {
+  display: flex;
+  gap: 40rpx;
+  margin-top: 16rpx;
+  padding: 0 12rpx;
 }
 
 .tab-item {
-  display: inline-flex;
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 62rpx;
-  padding: 0 30rpx;
-  border-radius: var(--radius-full);
-  background: #ffffff;
-  border: 1rpx solid rgba(47, 124, 246, 0.10);
-  margin-right: 16rpx;
-  box-shadow: 0 4rpx 14rpx rgba(47, 124, 246, 0.045);
+  height: 80rpx;
+  min-width: 96rpx;
+  padding: 0 12rpx;
 }
 
 .tab-item:active {
@@ -186,25 +172,39 @@ page {
   transform: scale(0.98);
 }
 
-.tab-item--active {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-blue-2) 100%);
-  border-color: transparent;
-  box-shadow: 0 8rpx 22rpx rgba(47, 124, 246, 0.22);
+.tab-item--active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 32rpx;
+  height: 5rpx;
+  transform: translateX(-50%);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
 }
 
 .tab-item__label {
-  font-size: var(--font-base);
+  font-size: var(--font-md);
   color: var(--color-text-secondary);
 }
 
 .tab-item--active .tab-item__label {
-  color: var(--color-text-inverse);
+  color: var(--color-primary);
   font-weight: var(--weight-bold);
 }
 
 /* 结果内容 */
 .result-content {
+  flex: 1;
   padding: 1rpx 0 var(--space-xl);
+}
+
+.result-content--state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 0 env(safe-area-inset-bottom);
 }
 
 .post-result-list {
@@ -222,65 +222,32 @@ page {
 
 /* 空状态 */
 .result-empty {
-  margin: 84rpx 4rpx 0;
-  border-radius: var(--radius-xl);
-  background: #ffffff;
-  border: 1rpx solid rgba(47, 124, 246, 0.08);
-  box-shadow: var(--shadow-card);
-  padding: 76rpx 32rpx;
+  min-height: 440rpx;
+  padding: 96rpx 40rpx 120rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18rpx;
-}
-
-.result-empty__visual {
-  width: 104rpx;
-  height: 104rpx;
-  border-radius: 34rpx;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.28) 46%),
-    linear-gradient(135deg, rgba(47, 124, 246, 0.15), rgba(85, 207, 255, 0.12));
-  border: 1rpx solid rgba(255, 255, 255, 0.9);
-  box-shadow:
-    0 14rpx 32rpx rgba(47, 124, 246, 0.14),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.96);
-  display: flex;
-  align-items: center;
   justify-content: center;
+  text-align: center;
 }
 
 .result-empty__svg {
-  width: 44rpx;
-  height: 44rpx;
-  opacity: 0.86;
-}
-
-/* 兼容旧版 emoji 空状态 */
-.result-empty__icon {
-  width: 104rpx;
-  height: 104rpx;
-  border-radius: 34rpx;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.28) 46%),
-    linear-gradient(135deg, rgba(47, 124, 246, 0.15), rgba(85, 207, 255, 0.12));
-  border: 1rpx solid rgba(255, 255, 255, 0.9);
-  box-shadow:
-    0 14rpx 32rpx rgba(47, 124, 246, 0.14),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.96);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 50rpx;
+  width: 64rpx;
+  height: 64rpx;
+  margin-bottom: 28rpx;
+  opacity: 0.48;
 }
 
 .result-empty__title {
-  font-size: 32rpx;
-  font-weight: var(--weight-heavy);
-  color: var(--color-text-primary);
+  font-size: 30rpx;
+  line-height: 1.4;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
 }
 
 .result-empty__desc {
+  max-width: 520rpx;
+  margin-top: 12rpx;
   font-size: var(--font-sm);
   color: var(--color-text-tertiary);
   text-align: center;

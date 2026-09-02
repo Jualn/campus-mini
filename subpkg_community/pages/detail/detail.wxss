@@ -1,26 +1,21 @@
-/* subpkg_community/pages/detail/index.wxss */
+/* subpkg_community/pages/detail/detail.wxss */
 @import "../../../styles/skeleton.wxss";
 
 .detail-page {
   min-height: 100vh;
-  background: var(--color-bg-page);
-}
-
-/* 首屏骨架只描述本页布局，动画与颜色来自 styles/skeleton.wxss。 */
-.post-detail-skeleton {
-  margin: 24rpx;
-  padding: 30rpx 28rpx;
-  border-radius: var(--radius-md);
-  background: var(--skeleton-card-bg);
-  border: 1rpx solid var(--color-border-light);
-  box-shadow: var(--shadow-xs);
-}
-
-.post-detail-skeleton__author {
+  box-sizing: border-box;
   display: flex;
-  align-items: center;
-  gap: 18rpx;
-  margin-bottom: 30rpx;
+  flex-direction: column;
+  /* 底部输入栏占位也延续评论区白底，短内容时不露出页面蓝底。 */
+  background: var(--color-bg-card);
+}
+
+/* 复用正文的通栏、作者行、统计与操作栏，避免加载完成时外框跳变。 */
+.post-detail-skeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
 }
 
 .post-detail-skeleton__avatar {
@@ -30,49 +25,80 @@
 }
 
 .post-detail-skeleton__author-copy {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 12rpx;
+  padding-top: 8rpx;
 }
 
 .post-detail-skeleton__name {
-  width: 34%;
+  width: 160rpx;
+  max-width: 70%;
   height: 28rpx;
 }
 
 .post-detail-skeleton__time {
-  width: 22%;
+  width: 104rpx;
+  max-width: 50%;
   height: 18rpx;
 }
 
-.post-detail-skeleton__line {
-  width: 96%;
-  height: 26rpx;
-  margin-bottom: 16rpx;
-}
-
-.post-detail-skeleton__line--medium {
-  width: 68%;
-}
-
-.post-detail-skeleton__media {
-  width: 100%;
-  height: 360rpx;
-  margin-top: 28rpx;
-}
-
-.post-detail-skeleton__stats {
+.post-text.post-detail-skeleton__text {
   display: flex;
-  justify-content: flex-end;
-  gap: 20rpx;
-  margin-top: 30rpx;
-  padding-top: 24rpx;
-  border-top: 1rpx solid var(--color-hairline);
+  flex-direction: column;
+  gap: 30rpx;
+  padding: 16rpx 0;
+}
+
+.post-detail-skeleton__line {
+  width: 100%;
+  height: 26rpx;
+}
+
+.post-detail-skeleton__line--short {
+  width: 58%;
 }
 
 .post-detail-skeleton__stat {
-  width: 76rpx;
+  width: 80rpx;
+  height: 20rpx;
+}
+
+.post-detail-skeleton__muted {
+  opacity: 0.3;
+}
+
+/* 与 comment-panel 的 inline 头部和首条评论对齐；只占位，不提前发评论请求。 */
+.post-detail-skeleton__comment-header {
+  padding: 28rpx 32rpx 20rpx;
+  border-bottom: 1rpx solid #e4e6eb;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1c1e21;
+}
+
+.post-detail-skeleton__comment {
+  display: flex;
+  gap: 20rpx;
+  padding: 24rpx 32rpx;
+}
+
+.post-detail-skeleton__comment-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  flex-shrink: 0;
+}
+
+.post-detail-skeleton__comment-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding-top: 6rpx;
+}
+
+.post-detail-skeleton__comment-line {
   height: 20rpx;
 }
 
@@ -80,6 +106,7 @@
    顶部导航
    ===================================================== */
 .top-bar {
+  flex-shrink: 0;
   background: var(--color-bg-card);
   padding: 0 16rpx 0;
   box-shadow: 0 1rpx 0 var(--color-border-light);
@@ -126,9 +153,10 @@
    帖子主体
    ===================================================== */
 .post-wrap {
+  flex-shrink: 0;
   background: var(--color-bg-card);
   padding: 24rpx 28rpx 0;
-  margin-bottom: 16rpx;
+  border-bottom: 16rpx solid var(--color-bg-page);
 }
 
 /* 作者行 */
@@ -396,6 +424,8 @@
    评论区
    ===================================================== */
 .comment-wrap {
+  /* 短内容补满剩余空间，长评论仍由页面自然滚动。 */
+  flex: 1;
   background: var(--color-bg-card);
   /* comment-panel inline 模式自带样式，这里只做容器 */
 }

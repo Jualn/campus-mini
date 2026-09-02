@@ -14,7 +14,12 @@
 
 import { api } from './api';
 import { createLogger } from '../utils/logger';
-import type { EditProfileForm, Settings, UserProfileInfo } from '../types/business';
+import type {
+  EditProfileForm,
+  EditProfileUpdate,
+  Settings,
+  UserProfileInfo,
+} from '../types/business';
 import type {
   UserAgreementStatusVO,
   UserProfileUpdateRequest,
@@ -28,6 +33,7 @@ import { formatTime, TimeStyle } from '../utils/time-util';
 const log = createLogger('UserService');
 
 const toProfileInfo = (profile: UserProfileVO): UserProfileInfo => ({
+  id: profile.id,
   nickname: profile.nickname,
   avatarUrl: profile.avatarUrl,
   bannerUrl: profile.backgroundUrl,
@@ -179,9 +185,7 @@ export const bindPhone = async (phone: number): Promise<void> => {
  *   bio: '个人签名'
  * })
  */
-export const updateUserInfo = async (
-  data: Partial<EditProfileForm>,
-): Promise<UserProfileUpdateRequest> => {
+export const updateUserInfo = async (data: EditProfileUpdate): Promise<UserProfileInfo> => {
   const payload: UserProfileUpdateRequest = {};
 
   if (data.nickname !== undefined) {
@@ -192,22 +196,28 @@ export const updateUserInfo = async (
     payload.avatarUrl = data.avatarUrl;
   }
 
+  if (data.avatarObjectKey !== undefined) {
+    payload.avatarObjectKey = data.avatarObjectKey;
+  }
+
   if (data.bannerUrl !== undefined) {
     payload.backgroundUrl = data.bannerUrl;
+  }
+
+  if (data.backgroundObjectKey !== undefined) {
+    payload.backgroundObjectKey = data.backgroundObjectKey;
   }
 
   if (data.bio !== undefined) {
     payload.bio = data.bio;
   }
 
-  // 如果没有任何字段变化，不请求后端
+  // 没有可更新字段时只读取资料，不发送空 PUT。
   if (Object.keys(payload).length === 0) {
-    return payload;
+    return getCurrentProfile();
   }
 
-  await api.user.updateCurrentProfile(payload);
-
-  return payload;
+  return toProfileInfo(await api.user.updateCurrentProfile(payload));
 };
 
 /**

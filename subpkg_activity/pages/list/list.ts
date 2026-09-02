@@ -6,7 +6,7 @@ import { createLogger } from '../../../utils/logger';
 import { useListLoad } from '../../../behaviors/useListLoad';
 import definePage from '../../../utils/definePage';
 import { wxNavigateBack, wxNavigateTo, wxShowActionSheet } from '../../../utils/wx-promise';
-import { activityAction, searchAction } from '../../../actions/index';
+import * as activityAction from '../../actions/activity';
 import { showErrorToast } from '../../../utils/notify';
 
 const STATUS_TABS = [
@@ -267,7 +267,7 @@ definePage({
     });
 
     try {
-      const res = await searchAction.searchActivities({
+      const res = await activityAction.searchActivities({
         keyword,
         lastId: reset ? undefined : this.data.searchNextCursor || undefined,
         pageSize: PAGE_SIZE,

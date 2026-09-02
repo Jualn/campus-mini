@@ -5,13 +5,15 @@
  * 页面只通过 Action 或只读 helper 使用这些数据。
  */
 
-import type { Settings } from '../types/business';
+import type { Settings, UserProfileInfo } from '../types/business';
 import type { UserInfoDTO } from '../types/api';
 
 // ✅ 1. 定义 State 结构
 export interface AppState {
   token: string;
   userInfo: UserInfoDTO;
+  /** 完整资料只缓存于本次会话；userInfo 保留为登录摘要的兼容投影。 */
+  currentProfile: { profile: UserProfileInfo; fetchedAt: number } | null;
   userSetting: Settings;
 }
 
@@ -126,5 +128,6 @@ export const createDefaultUserSettings = (): Settings => ({
 export const appStore = new Store<AppState>({
   token: '',
   userInfo: defaultUserInfo,
+  currentProfile: null,
   userSetting: createDefaultUserSettings(),
 });

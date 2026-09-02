@@ -6,9 +6,11 @@ import { createLogger } from '../../utils/logger';
 import { TARGET_TYPES } from '../../utils/constants';
 import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
-import { postAction, userAction } from '../../actions/index';
+import * as postAction from '../../actions/post';
+import * as userAction from '../../actions/user';
 import definePage from '../../utils/definePage';
 import { notifyToast } from '../../utils/notify';
+import { getCurrentProfile, watchCurrentProfile } from '../../actions/current-user';
 
 const log = createLogger('MePage');
 
@@ -24,6 +26,7 @@ definePage({
   _previewRestoreTimer: null as number | null,
   _pullDownRefreshEnabled: false,
   _tabBarHidden: false,
+  _offProfile: null as (() => void) | null,
 
   behaviors: [
     useListLoad({
@@ -57,7 +60,20 @@ definePage({
     targetType: TARGET_TYPES.POST.value, // 默认目标类型为 post
   },
 
+  onShareAppMessage(options): WechatMiniprogram.Page.ICustomShareContent {
+    if (options.from === 'button') return this._getShareContent();
+    return {
+      title: '发现校园里的新鲜事',
+      path: '/pages/index/index',
+      imageUrl: 'https://cos.jualn.cn/share/index-share.jpg',
+    };
+  },
+
   onLoad() {
+    this._offProfile = watchCurrentProfile((profile) => {
+      this.setData({ userInfo: profile ?? ({} as UserProfileInfo) });
+      if (!profile) this.setData({ posts: [], postsCache: [], likesCache: [], likesLoaded: false });
+    });
     this._currentScrollTop = 0;
 
     const systemInfo = wx.getWindowInfo();
@@ -68,6 +84,9 @@ definePage({
   },
 
   onShow() {
+    void getCurrentProfile({ allowStale: true }).catch((err: unknown) => {
+      log.warn('onShow', '资料校验失败，保留现有展示', err);
+    });
     // 初始化tabbar，确保在onLoad时就能获取到实例并调用方法
     if (typeof this.getTabBar === 'function') {
       getCustomTabBar(this).init();
@@ -78,6 +97,7 @@ definePage({
   },
 
   onUnload() {
+    this._offProfile?.();
     if (this._previewRestoreTimer !== null) {
       clearInterval(this._previewRestoreTimer);
       this._previewRestoreTimer = null;
@@ -148,7 +168,7 @@ definePage({
     }
 
     try {
-      const result = await userAction.getMePageData();
+      const result = await userAction.getMePageData({ force: scene === 'refresh' });
 
       const patch: Record<string, unknown> = {
         userInfo: result.userInfo,
@@ -249,6 +269,7 @@ definePage({
       if (!userId) throw new Error('missing user id');
 
       const result = await postAction.getUserLikedPosts(userId);
+      if (this.data.userInfo.id !== userId) return;
 
       const patch: Record<string, unknown> = {
         likesCache: result.list,

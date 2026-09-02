@@ -1,6 +1,8 @@
 import { createLogger } from './utils/logger';
 import { AuthError, BusinessError, HttpError, NetworkError } from './utils/error';
-import { authAction, notificationCenter } from './actions/index';
+import * as authAction from './actions/auth';
+import * as notificationCenter from './actions/notification-center';
+import { getCurrentProfile } from './actions/current-user';
 
 const log = createLogger('App');
 
@@ -13,6 +15,10 @@ App({
   },
 
   onShow() {
+    // 应用负责资料预热/过期校验，头像组件只订阅，不各自发请求。
+    void getCurrentProfile({ allowStale: true }).catch((err: unknown) => {
+      log.warn('onShow', '当前用户资料校验失败', err);
+    });
     notificationCenter.start();
   },
 

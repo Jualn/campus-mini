@@ -54,5 +54,3 @@
 
   </view>
 </view>
-
-<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px;"></canvas>

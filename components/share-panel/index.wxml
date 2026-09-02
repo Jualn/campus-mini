@@ -1,8 +1,8 @@
 <!-- share-popup.wxml -->
 <wxs module="drag" src="../../utils/drag.wxs"></wxs>
-<view class="sp-root">
+<view class="sp-root" catchtouchmove="{{drag.noop}}" catchtap="noop">
   <view class="sp-mask J-mask" style="opacity: {{maskOpacity}}; transition: {{maskTransition}};"
-    bind:tap="onClose" />
+    catch:tap="closeSheet" catchtouchmove="{{drag.noop}}" />
 
   <view class="sp-sheet J-sheet" bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
     catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}"
@@ -24,32 +24,37 @@
     </view>
 
     <!-- 预览卡片区（canvas 生成的图片） -->
-    <block wx:if="{{shareImagePath}}">
+    <block>
       <view class="sp-preview-wrap">
-        <view class="sp-preview-card {{imageLoaded ? 'sp-preview-card--loaded' : ''}}">
+        <view class="sp-preview-card {{imageLoaded ? 'sp-preview-card--loaded' : 'sp-preview-card--pending'}}">
           <!-- 光晕装饰 -->
           <view class="sp-glow sp-glow--tl"></view>
           <view class="sp-glow sp-glow--br"></view>
 
           <!-- 图片 -->
-          <image class="sp-preview-img" src="{{shareImagePath}}" mode="widthFix" binderror="onImageError"
-            bindload="onImageLoad" lazy-load />
+          <image wx:if="{{shareImagePath}}" class="sp-preview-img" src="{{shareImagePath}}" data-path="{{shareImagePath}}" mode="aspectFit" binderror="onImageError"
+            bindload="onImageLoad" />
 
           <!-- 加载骨架屏 -->
           <view class="sp-skeleton {{imageLoaded ? 'sp-skeleton--hide' : ''}}">
-            <view class="sp-skeleton__shimmer"></view>
+            <view wx:if="{{status !== 'error' && !imageError}}" class="sp-skeleton__shimmer"></view>
+            <view class="sp-loading-content">
+              <text class="sp-loading-title">{{status === 'error' || imageError ? '分享图片生成失败' : status === 'ready' ? '正在加载预览' : '正在生成分享图片'}}</text>
+              <text class="sp-loading-note">{{status === 'error' || imageError ? '可重新生成，或直接分享内容' : '图片较大时需要多等一会儿'}}</text>
+              <button wx:if="{{status === 'error' || imageError}}" class="sp-retry" bindtap="onRetry">重新生成</button>
+            </view>
           </view>
         </view>
 
         <!-- 图片操作 -->
         <view class="sp-img-actions">
-          <view class="sp-img-btn tap-active" bindtap="onPreviewImage">
+          <view class="sp-img-btn tap-active {{!imageLoaded || status !== 'ready' ? 'sp-img-btn--disabled' : ''}}" bindtap="onPreviewImage">
             <image class="sp-img-btn__icon" src="/assets/icons/share-popup/preview.svg" mode="aspectFit" />
             <text class="sp-img-btn__label">查看大图</text>
           </view>
-          <view class="sp-img-btn sp-img-btn--accent tap-active" bindtap="onSaveImage">
+          <view class="sp-img-btn sp-img-btn--accent tap-active {{!imageLoaded || status !== 'ready' || saving ? 'sp-img-btn--disabled' : ''}}" bindtap="onSaveImage">
             <image class="sp-img-btn__icon" src="/assets/icons/share-popup/download.svg" mode="aspectFit" />
-            <text class="sp-img-btn__label">保存图片</text>
+            <text class="sp-img-btn__label">{{saving ? '正在保存…' : '保存图片'}}</text>
           </view>
         </view>
       </view>
@@ -66,20 +71,13 @@
     <view class="sp-options">
 
       <!-- 微信好友 -->
-      <button class="sp-option tap-active" open-type="share">
+      <button class="sp-option tap-active" open-type="{{status === 'ready' || status === 'error' ? 'share' : ''}}" disabled="{{status === 'loading' || status === 'idle'}}">
         <view class="sp-option__icon-wrap sp-option__icon-wrap--green">
           <image class="sp-option__icon" src="/assets/icons/share-popup/wechat_friend.svg" mode="aspectFit" />
         </view>
-        <text class="sp-option__label">微信好友</text>
+        <text class="sp-option__label">{{status === 'loading' || status === 'idle' ? '生成中…' : '微信好友'}}</text>
       </button>
 
-      <!-- 复制链接 -->
-      <!-- <view class="sp-option tap-active" bindtap="onCopyLink">
-        <view class="sp-option__icon-wrap sp-option__icon-wrap--blue">
-          <image class="sp-option__icon" src="/assets/icons/share-popup/copy_link.svg" mode="aspectFit" />
-        </view>
-        <text class="sp-option__label">复制链接</text>
-      </view> -->
 
     </view>
 

@@ -43,27 +43,38 @@ import defineComponent from '../../utils/defineComponent';
 import {
   wxHideLoading,
   wxNavigateTo,
-  wxOnKeyboardHeightChange,
   wxPreviewImage,
   wxShowLoading,
   wxShowModal,
 } from '../../utils/wx-promise';
 import { TARGET_TYPES, type TargetType } from '../../utils/constants';
-import type { CommentItem, ReplyItem, ReplyTarget } from '../../types/business';
-import { getUserInfo } from '../../stores/helper';
+import type { CommentItem, ReplyTarget } from '../../types/business';
 import { createLogger } from '../../utils/logger';
-import { getAvatarInfo } from '../../utils/avatar';
 import { useSheet } from '../../behaviors/sheet-mixin';
 import { type SelectedMediaFile } from '../../actions/media';
-import { commentAction, mediaAction } from '../../actions/index';
+import * as commentAction from '../../actions/comment';
+import * as mediaAction from '../../actions/media';
+import { getCurrentIdentity, watchCurrentIdentity } from '../../actions/current-user';
 import { notifyToast } from '../../utils/notify';
+import {
+  buildCommentUpdatePatch,
+  calculateCommentCount,
+  createCommentAuthor,
+  createOptimisticComment,
+  createOptimisticReply,
+  isCurrentUser,
+  mergeUniqueReplies,
+} from './comment-model';
 
 // ==================== 类型 ======================
 
 // 私有属性定义
 interface Private {
   _loading: boolean;
-  _safeBottom: number;
+  _offIdentity: (() => void) | null;
+  _draftValue: string;
+  _composerReady: boolean;
+  _composerMeasurePending: boolean;
   _lastTargetId?: string;
   _commentLikePendingMap: Record<string, boolean>;
   _replyLikePendingMap: Record<string, boolean>;
@@ -74,12 +85,13 @@ interface Private {
 
 const log = createLogger('CommentPanel');
 
-const SELF_USER = {
-  userId: getUserInfo('id'),
-  nickName: getUserInfo('nickname') ?? '我',
-  avatarBg: getAvatarInfo(getUserInfo('nickname') ?? '').bg,
-  avatarChar: getAvatarInfo(getUserInfo('nickname') ?? '').char,
-  avatarUrl: getUserInfo('avatarUrl') ?? '',
+const currentAuthor = () => {
+  const user = getCurrentIdentity();
+  return createCommentAuthor({
+    userId: user.id,
+    nickName: user.nickname,
+    avatarUrl: user.avatarUrl,
+  });
 };
 
 // ===================== Component =====================
@@ -123,15 +135,17 @@ defineComponent<Private>()({
     hasMoreComments: true,
     canSend: false,
     inputValue: '',
+    inputHeightRpx: 44,
+    composerHeight: 0,
     inputFocused: false,
     inputAutoFocus: false,
     previewImage: '',
     replyTarget: {} as ReplyTarget,
     keyboardOpen: false,
     keyboardBottom: 0,
-    selfAvatarBg: SELF_USER.avatarBg,
-    selfAvatarChar: SELF_USER.avatarChar,
-    selfAvatarUrl: SELF_USER.avatarUrl,
+    selfAvatarBg: '',
+    selfAvatarChar: '',
+    selfAvatarUrl: '',
     _lastCommentId: '',
     /** 更多操作面板状态 */
     _menu: {
@@ -154,6 +168,7 @@ defineComponent<Private>()({
       if (id === this._lastTargetId) return;
 
       this._lastTargetId = id;
+      this._draftValue = '';
 
       this.setData({
         hasInit: true,
@@ -165,6 +180,7 @@ defineComponent<Private>()({
         _lastCommentId: '',
         replyTarget: { commentId: '', nickName: '', userId: '' },
         inputValue: '',
+        inputHeightRpx: 44,
         previewImage: '',
         canSend: false,
         currentTotalCount: Math.max(0, this.properties.totalCount || 0),
@@ -174,45 +190,55 @@ defineComponent<Private>()({
         void this._loadComments(true);
       }
     },
+    'inputHeightRpx, previewImage, replyTarget.nickName, keyboardOpen'() {
+      this._queueComposerMeasure();
+    },
   },
 
   lifetimes: {
     attached() {
       // 私有字段初始化
       this._loading = false;
-      this._safeBottom = 0;
+      this._draftValue = this.data.inputValue;
+      this._composerReady = false;
+      this._composerMeasurePending = false;
       this._lastTargetId = undefined;
       this._commentLikePendingMap = {};
       this._replyLikePendingMap = {};
       this._selectedFiles = [];
-      const info = wx.getWindowInfo();
-      const safeBottom = info.screenHeight - info.safeArea.bottom;
-      this._safeBottom = safeBottom;
-
-      this.setData({
-        keyboardBottom: safeBottom,
-        currentTotalCount: Math.max(0, this.properties.totalCount || 0),
+      this._offIdentity = watchCurrentIdentity(() => {
+        const author = currentAuthor();
+        const patch: Record<string, unknown> = {
+          selfAvatarBg: author.avatarBg,
+          selfAvatarChar: author.avatarChar,
+          selfAvatarUrl: author.avatarUrl,
+        };
+        const next = this.data.commentList.map(commentAction.syncCommentAuthor);
+        if (next.some((item, index) => item !== this.data.commentList[index]))
+          patch.commentList = next;
+        if (this.data.replyTarget.userId && this.data.replyTarget.userId === author.userId) {
+          patch['replyTarget.nickName'] = author.nickName;
+        }
+        this.setData(patch);
       });
-
-      wxOnKeyboardHeightChange((res) => {
-        const kbHeight = res.height || 0;
-        this.setData({
-          keyboardBottom: kbHeight > 0 ? kbHeight : safeBottom,
-          keyboardOpen: kbHeight > 0,
-        });
+      this.setData({
+        currentTotalCount: Math.max(0, this.properties.totalCount || 0),
       });
     },
 
     ready() {
-      /* empty */
+      this._composerReady = true;
+      this._queueComposerMeasure();
     },
 
     detached() {
-      wx.offKeyboardHeightChange();
-
+      this._offIdentity?.();
+      this._offIdentity = null;
       // 私有字段重置（以防万一，虽然下次 attached 会重新赋值）
       this._loading = false;
-      this._safeBottom = 0;
+      this._composerReady = false;
+      this._composerMeasurePending = false;
+      this._draftValue = '';
       this._lastTargetId = undefined;
       this._commentLikePendingMap = {};
       this._replyLikePendingMap = {};
@@ -360,10 +386,7 @@ defineComponent<Private>()({
         });
 
         const comment = this.data.commentList[idx];
-        const existIds = new Set(comment.replyList.map((r) => r.replyId));
-        const newReplies = res.list.filter((r) => !existIds.has(r.replyId));
-
-        const replyList = [...comment.replyList, ...newReplies];
+        const replyList = mergeUniqueReplies(comment.replyList, res.list);
         const remainReplies = res.hasMore ? Math.max(0, comment.replyCount - replyList.length) : 0;
 
         this._updateComment(idx, {
@@ -399,26 +422,63 @@ defineComponent<Private>()({
       });
     },
 
-    /** 输入框内容变化时更新 inputValue 和 canSend。 */
+    /** 原生 textarea 持有输入过程，只在清空或恢复草稿时回写 value，避免逐字回写干扰光标。 */
     onInputChange(e: WechatMiniprogram.CustomEvent<{ value: string }>) {
       const value = e.detail.value || '';
-      this.setData({ inputValue: value, canSend: value.trim().length > 0 });
+      this._draftValue = value;
+      const canSend = value.trim().length > 0;
+      if (canSend !== this.data.canSend) this.setData({ canSend });
+    },
+
+    /** 只在行数改变时调整高度，最多展开四行，其余内容由原生输入框滚动。 */
+    onInputLineChange(e: WechatMiniprogram.TextareaLineChange) {
+      const lines = Math.max(1, Math.min(4, e.detail.lineCount || 1));
+      const inputHeightRpx = lines * 44;
+      if (inputHeightRpx !== this.data.inputHeightRpx) this.setData({ inputHeightRpx });
+    },
+
+    onInputKeyboardHeightChange(e: WechatMiniprogram.TextareaKeyboardHeightChange) {
+      this._updateKeyboardHeight(e.detail.height);
+    },
+
+    _updateKeyboardHeight(height: number) {
+      const keyboardBottom = Math.max(0, height || 0);
+      if (keyboardBottom === this.data.keyboardBottom) return;
+      this.setData({ keyboardBottom, keyboardOpen: keyboardBottom > 0 });
+    },
+
+    /** inline 固定输入栏的占位包含多行、回复提示、配图和安全区；合并同帧测量。 */
+    _queueComposerMeasure() {
+      if (!this._composerReady || this.properties.mode !== 'inline' || this._composerMeasurePending)
+        return;
+      this._composerMeasurePending = true;
+      wx.nextTick(() => {
+        this._composerMeasurePending = false;
+        if (!this._composerReady) return;
+        this.createSelectorQuery()
+          .select('.cp-bottom-bar--inline')
+          .boundingClientRect((rect) => {
+            const bounds = rect as WechatMiniprogram.BoundingClientRectResult | null;
+            if (!this._composerReady || !bounds) return;
+            const composerHeight = Math.ceil(bounds.height);
+            if (composerHeight !== this.data.composerHeight) this.setData({ composerHeight });
+          })
+          .exec();
+      });
     },
 
     /** 输入框聚焦时记录键盘高度，保证输入区不被遮挡。 */
     onInputFocus(e: WechatMiniprogram.CustomEvent<{ height: number }>) {
       this.setData({ inputFocused: true });
       const h = e.detail.height || 0;
-      if (h > 0) this.setData({ keyboardBottom: h, keyboardOpen: true });
+      if (h > 0) this._updateKeyboardHeight(h);
     },
 
-    /** 输入框失焦时恢复底部安全距离和键盘状态。 */
+    /** 失焦不提前复位高度，等待原生键盘高度事件，避免收键盘时先落下再弹回。 */
     onInputBlur() {
       this.setData({
         inputAutoFocus: false,
         inputFocused: false,
-        keyboardBottom: this._safeBottom || 0,
-        keyboardOpen: false,
       });
     },
 
@@ -428,9 +488,10 @@ defineComponent<Private>()({
      * 请求失败时回滚评论列表、输入框状态和评论总数。
      */
     async onSend() {
-      if (!this.data.canSend) return;
+      if (!this.data.canSend && !this.data.previewImage) return;
 
-      const { inputValue, replyTarget, previewImage } = this.data;
+      const { replyTarget, previewImage } = this.data;
+      const inputValue = this._draftValue;
       const text = inputValue.trim();
 
       if (!text && !previewImage) {
@@ -447,28 +508,29 @@ defineComponent<Private>()({
       }
 
       const tempId = `local-${Date.now().toString()}`;
-      const nowLabel = '刚刚';
-
       const prevInputState = {
         inputValue,
+        inputHeightRpx: this.data.inputHeightRpx,
         previewImage,
         canSend: this.data.canSend,
         replyTarget: { ...replyTarget },
         inputAutoFocus: this.data.inputAutoFocus,
         inputFocused: this.data.inputFocused,
-        selectedImageFile: this._selectedFiles[0], // 目前只支持单图，取第一张
+        selectedFiles: [...this._selectedFiles],
       };
 
       const restoreInputState = () => {
+        this._draftValue = prevInputState.inputValue;
         this.setData({
           inputValue: prevInputState.inputValue,
+          inputHeightRpx: prevInputState.inputHeightRpx,
           previewImage: prevInputState.previewImage,
           canSend: prevInputState.canSend,
           replyTarget: prevInputState.replyTarget,
           inputAutoFocus: prevInputState.inputAutoFocus,
           inputFocused: prevInputState.inputFocused,
-          selectedImageFile: prevInputState.selectedImageFile,
         });
+        this._selectedFiles = [...prevInputState.selectedFiles];
       };
 
       let rollback: () => void;
@@ -489,19 +551,13 @@ defineComponent<Private>()({
         const prevHasMoreReplies = comment.hasMoreReplies;
         const prevRepliesExpanded = comment.repliesExpanded;
 
-        const optimisticReply: ReplyItem = {
-          replyId: tempId,
-          userId: SELF_USER.userId ?? '',
-          nickName: SELF_USER.nickName || '我',
+        const optimisticReply = createOptimisticReply({
+          id: tempId,
+          author: currentAuthor(),
           content: text,
-          avatarUrl: SELF_USER.avatarUrl || '',
-          createTime: nowLabel,
-          likeCount: 0,
-          isLiked: false,
           replyToName: replyTarget.nickName || '',
-          _avatarChar: SELF_USER.avatarChar,
-          _avatarBg: SELF_USER.avatarBg,
-        };
+          replyToUserId: replyTarget.userId,
+        });
 
         if (comment.repliesExpanded) {
           const replyList = [optimisticReply, ...comment.replyList];
@@ -554,27 +610,12 @@ defineComponent<Private>()({
           this._updateComment(cidx, { replyPreview: next });
         };
       } else {
-        const optimisticComment: CommentItem = {
-          commentId: tempId,
-          userId: SELF_USER.userId ?? '',
-          nickName: SELF_USER.nickName || '我',
+        const optimisticComment = createOptimisticComment({
+          id: tempId,
+          author: currentAuthor(),
           content: text,
-          avatarUrl: SELF_USER.avatarUrl || '',
           imageUrl: previewImage || '',
-          createTime: nowLabel,
-          likeCount: 0,
-          isLiked: false,
-          replyCount: 0,
-          replyPreview: [],
-          replyList: [],
-          repliesExpanded: true,
-          hasMoreReplies: false,
-          loadingReplies: false,
-          remainReplies: 0,
-          lastId: '',
-          _avatarChar: SELF_USER.avatarChar,
-          _avatarBg: SELF_USER.avatarBg,
-        };
+        });
 
         const prevCommentList = this.data.commentList;
         const nextList = [optimisticComment, ...prevCommentList];
@@ -593,7 +634,8 @@ defineComponent<Private>()({
         };
       }
 
-      this.setData({ inputValue: '', previewImage: '', canSend: false });
+      this._draftValue = '';
+      this.setData({ inputValue: '', inputHeightRpx: 44, previewImage: '', canSend: false });
       this._selectedFiles = [];
 
       this.cancelReply();
@@ -605,7 +647,7 @@ defineComponent<Private>()({
           targetType: this.properties.targetType as TargetType,
           content: text,
           parentId: replyTarget.commentId ? replyTarget.commentId : undefined,
-          imageFile: !isReply ? this._selectedFiles[0] : undefined,
+          imageFile: !isReply ? prevInputState.selectedFiles[0] : undefined,
         });
 
         if (!res) {
@@ -720,18 +762,6 @@ defineComponent<Private>()({
       } finally {
         this._replyLikePendingMap[replyId] = false;
       }
-
-      // TODO: 实现回复点赞功能
-      // const res = await api.toggleLike(
-      //   this.properties.targetId,
-      //   'reply',
-      //   replyId,
-      //   isLiked
-      // );
-      // if (res.code !== 0) {
-      //   newReplyList[ridx] = reply;
-      //   this._updateComment(cidx, { replyList: newReplyList });
-      // }
     },
 
     /**
@@ -886,12 +916,7 @@ defineComponent<Private>()({
      * 统一通过 setData 的路径写法减少整列表刷新。
      */
     _updateComment(idx: number, fields: Partial<CommentItem>) {
-      const prefix = `commentList[${idx.toString()}]`;
-      const updates: Record<string, unknown> = {};
-      Object.keys(fields).forEach((k) => {
-        updates[`${prefix}.${k}`] = fields[k as keyof CommentItem];
-      });
-      this.setData(updates);
+      this.setData(buildCommentUpdatePatch(idx, fields));
     },
 
     /**
@@ -907,7 +932,7 @@ defineComponent<Private>()({
           ? this.data.currentTotalCount
           : this.properties.totalCount || 0;
 
-      const nextCount = Math.max(0, current + delta);
+      const nextCount = calculateCommentCount(current, delta);
 
       this.setData({
         currentTotalCount: nextCount,
@@ -923,8 +948,8 @@ defineComponent<Private>()({
 
     /** 判断传入 userId 是否为当前登录用户。 */
     _isCurrentUser(userId: string): boolean {
-      const currentUserId = SELF_USER.userId;
-      return !!currentUserId && currentUserId === userId;
+      const currentUserId = getCurrentIdentity().id;
+      return isCurrentUser(currentUserId, userId);
     },
 
     /** 跳转到用户主页。 */

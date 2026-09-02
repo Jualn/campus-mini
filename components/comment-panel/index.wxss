@@ -443,11 +443,10 @@
    ============================================ */
 .cp-inputbar__avatar.cp-avatar.cp-avatar--sm {
   width: 72rpx;
-  /* 微信按钮约 32px = 64rpx */
   height: 72rpx;
   flex-shrink: 0;
   margin-bottom: 4rpx;
-  /* 与 textarea 底部视觉对��� */
+  /* 与 80rpx 单行输入框居中，多行时保持与最后一行对齐。 */
 }
 
 .cp-avatar__img {
@@ -536,12 +535,25 @@
 }
 
 .cp-empty__icon {
+  width: 96rpx;
+  height: 96rpx;
   flex-shrink: 0;
 }
 
 .cp-empty__text {
   font-size: 28rpx;
   color: var(--cp-text-sub);
+}
+
+/* 详情页的空评论是局部提示，使用紧凑间距，避免大插图占据整屏。 */
+.cp-inline .cp-empty {
+  padding: 56rpx 32rpx;
+  gap: 12rpx;
+}
+
+.cp-inline .cp-empty__text {
+  font-size: 26rpx;
+  color: var(--cp-text-light);
 }
 
 /* ============================================
@@ -582,18 +594,15 @@
   color: var(--cp-text);
 }
 
-/* ✅ 输入栏 + Banner 的独立 fixed 容器 */
+/* sheet 栏参与弹层布局，inline 栏固定于键盘上方。 */
 .cp-bottom-bar {
   flex-shrink: 0;
   position: relative;
-  /* ❌ 去掉 position: fixed */
   left: 0;
   right: 0;
   z-index: 902;
   background: var(--cp-surface);
-  /* ✅ bottom 由 JS style 写入，这里不写 bottom */
-  /* ✅ 键盘收起时的安全区由 JS 的默认值 = safeBottom 保证，见下方 JS */
-  transition: bottom 0.25s ease;
+  /* 不叠加 bottom 动画，直接跟随原生键盘高度。安全区只由输入栏 padding 承担。 */
   width: 100%;
   box-sizing: border-box;
 }
@@ -604,15 +613,21 @@
 .cp-inputbar {
   display: flex;
   align-items: flex-end;
-  padding: 12rpx 20rpx;
-  /* ✅ 底部安全区 */
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  gap: 16rpx;
+  padding: 12rpx 20rpx calc(12rpx + env(safe-area-inset-bottom));
+  gap: 12rpx;
   background: var(--cp-surface);
   border-top: 1rpx solid var(--cp-border);
   flex-shrink: 0;
   box-sizing: border-box;
   width: 100%;
+}
+
+.cp-inputbar--keyboard {
+  padding-bottom: 12rpx;
+}
+
+.cp-inputbar-spacer {
+  pointer-events: none;
 }
 
 .cp-bottom-bar--inline {
@@ -626,43 +641,52 @@
 .cp-inputbar__wrap {
   flex: 1;
   min-width: 0;
-  /* ✅ 关键：防止 flex 子项撑破父容器 */
   background: var(--cp-bg);
-  border-radius: 30rpx;
+  border-radius: 24rpx;
   display: flex;
   align-items: flex-end;
-  padding: 14rpx 20rpx;
-  gap: 16rpx;
-  border: 1rpx solid transparent;
+  padding: 18rpx 16rpx;
+  gap: 12rpx;
+  min-height: 80rpx;
+  box-shadow: inset 0 0 0 1rpx transparent;
   box-sizing: border-box;
-  transition: border-color 0.2s;
 }
 
 .cp-inputbar__wrap--focus {
-  border-color: var(--cp-primary);
+  box-shadow: inset 0 0 0 1rpx var(--cp-primary);
   background: var(--cp-surface);
 }
 
 .cp-inputbar__input {
   flex: 1;
-  width: 100%;
+  width: 0;
+  min-width: 0;
+  font-family: inherit;
   font-size: 30rpx;
   color: var(--cp-text);
   background: transparent;
   border: none;
   outline: none;
-  line-height: normal;
-  min-height: 50rpx;
+  line-height: 44rpx;
+  min-height: 44rpx;
+  padding: 0;
+  margin: 0;
+  display: block;
 }
 
 .cp-inputbar__placeholder {
   color: var(--cp-text-light);
   font-size: 30rpx;
+  line-height: 44rpx;
 }
 
 .cp-inputbar__imgbtn {
-  font-size: 36rpx;
-  padding: 4rpx;
+  width: 44rpx;
+  height: 44rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cp-inputbar__imgbtn:active {
@@ -683,7 +707,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  /* ✅ 确保发送按钮不被压缩 */
   transition: opacity 0.15s;
   margin-bottom: 4rpx;
   box-sizing: border-box;
@@ -697,6 +720,11 @@
   background: #c0ccda;
 }
 
+.cp-inputbar__send-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+
 /* ============================================
    图片预览条
    ============================================ */
@@ -706,7 +734,6 @@
   gap: 16rpx;
   background: var(--cp-surface);
   border-top: 1rpx solid var(--cp-border);
-  bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 .cp-imgpreview__item {
@@ -813,20 +840,14 @@
 }
 
 /* 图标辅助 */
-.cp-icon--send {
-  color: #fff;
-  font-size: 28rpx;
-  font-style: normal;
-}
-
 .cp-icon--close {
   font-size: 24rpx;
   color: var(--cp-text-sub);
 }
 
 .cp-icon--img{
-  width: 54rpx;
-  height: 54rpx;
+  width: 40rpx;
+  height: 40rpx;
   color: #000;
 }
 

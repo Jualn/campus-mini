@@ -1,4 +1,5 @@
-import { interactService, postService } from '../services/index';
+import * as interactService from '../services/interact';
+import * as postService from '../services/post';
 import { emitPostCreated, emitPostDeleted, emitPostUpdated } from '../events/post-event';
 import { postSyncStore } from '../stores/postSyncStore';
 import { getUserId } from '../stores/helper';
@@ -7,6 +8,11 @@ import { createLogger } from '../utils/logger';
 import type { PostCardItem, PostDetail } from '../types/business';
 import type { PostCreateRequest } from '../types/api';
 import type { PostUpdatePayload } from '../events/post-event';
+import { peekCurrentProfile } from './current-user';
+import { projectPostAuthor } from '../utils/user-projection';
+
+export const syncPostAuthor = <T extends PostCardItem | PostDetail>(post: T): T =>
+  projectPostAuthor(post, peekCurrentProfile());
 
 const log = createLogger('PostAction');
 
@@ -50,6 +56,7 @@ export function mergePostSyncCache<T extends PostCardItem | PostDetail>(
 }
 
 function mergeOnePost<T extends PostCardItem | PostDetail>(post: T): T {
+  post = syncPostAuthor(post);
   const cached = postSyncStore.get(post.id);
   if (!cached) return post;
 

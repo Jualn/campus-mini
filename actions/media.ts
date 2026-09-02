@@ -3,17 +3,17 @@
  *
  * 完整上传流程分两步：
  * 1. 选择文件（selectMessageFiles / selectImages）→ 返回 SelectedMediaFile[]，此时不上传
- * 2. 用户确认提交后调用 uploadAndSaveFiles()：
+ * 2. 用户确认提交后调用 uploadFilesToCos()：
  *    a. 将文件名列表提交后端 → 返回一个 STS 凭证 + 对应的 objectKey 列表
  *    b. 用该凭证批量上传到 COS
- *    c. 将文件 URL 等信息写库
+ *    c. 返回 objectKey/URL，由业务提交接口统一写库
  *
  * 两种文件来源的区别：
  * - chooseMessageFile → 有原始文件名（直接用）
  * - chooseImages       → 只有路径，无文件名（前端构建后提交后端）
  */
 
-import { mediaService } from '../services/index';
+import * as mediaService from '../services/media';
 import { MEDIA_TYPES, type MediaType, type TargetType } from '../utils/constants';
 import {
   uploadCosFile,
@@ -23,7 +23,7 @@ import {
   type CosUploadProgress,
   type CosUploadResult,
 } from '../utils/cos';
-import { chooseImages, chooseMessageFile } from '../utils/wx-promise';
+import { chooseImages, chooseMessageFile, wxCompressImage } from '../utils/wx-promise';
 import type { AttachmentItemRequest } from '../types/api';
 
 // ── 类型定义 ──────────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ export interface SelectedMediaFile {
   originalName: string;
 
   fileSize?: number;
+  mimeType?: string;
 }
 
 interface BatchUploadOptions {
@@ -51,16 +52,6 @@ interface BatchUploadOptions {
 //   attachmentItems: AttachmentItemRequest[];
 //   savedAttachments?: MediaAttachmentBO[];
 // };
-
-interface Credential {
-  bucket: string; // string
-  region: string; // string
-  objectKeys: string[]; // 对象键列表。
-  tmpSecretId: string; // STS 临时凭证字段
-  tmpSecretKey: string; // STS 临时凭证字段
-  sessionToken: string; // STS 临时凭证字段
-  expiredTime: number; // 单位为 epoch seconds
-}
 
 // ── 内部工具函数 ───────────────────────────────────────────────────────────
 
@@ -80,6 +71,41 @@ const getBaseName = (name: string): string => {
   return idx >= 0 ? name.slice(0, idx) : name;
 };
 
+const IMAGE_COMPRESS_THRESHOLD = 1024 * 1024;
+const MAX_IMAGE_UPLOAD_SIZE = 10 * 1024 * 1024;
+const MAX_DOCUMENT_UPLOAD_SIZE = 20 * 1024 * 1024;
+const IMAGE_COMPRESS_QUALITY = 82;
+
+const canCompressImage = (fileName: string): boolean => /\.(jpe?g|png|webp)$/i.test(fileName);
+
+const getLocalFileSize = (filePath: string): Promise<number> =>
+  new Promise((resolve, reject) => {
+    wx.getFileSystemManager().getFileInfo({
+      filePath,
+      success: (result) => {
+        resolve(result.size);
+      },
+      fail: (error) => {
+        reject(new Error(`读取文件大小失败: ${error.errMsg}`));
+      },
+    });
+  });
+
+const getContentTypeByName = (fileName: string): string => {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.bmp')) return 'image/bmp';
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.doc')) return 'application/msword';
+  if (lower.endsWith('.docx')) {
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  }
+  throw new Error(`不支持上传该文件类型: ${fileName}`);
+};
+
 // 工具函数：根据文件名或路径判断类型
 const getFileTypeByName = (fileName: string): MediaType => {
   const lower = fileName.toLowerCase();
@@ -93,8 +119,7 @@ const getFileTypeByName = (fileName: string): MediaType => {
   // Word
   if (/\.(doc|docx)$/.test(lower)) return MEDIA_TYPES.WORD.value;
 
-  // 其他默认 URL
-  return MEDIA_TYPES.URL.value;
+  throw new Error(`不支持上传该文件类型: ${fileName}`);
 };
 
 /**
@@ -114,6 +139,7 @@ const buildAttachmentItems = (
 ): AttachmentItemRequest[] =>
   results.map((result, i) => ({
     type: getFileTypeByName(sourceFiles[i].originalName),
+    objectKey: result.objectKey,
     url: result.fileUrl,
     originalName: sourceFiles[i]?.originalName ?? getFileNameFromPath(result.objectKey),
     sortOrder: i,
@@ -121,18 +147,16 @@ const buildAttachmentItems = (
 
 // ── 内部核心流程 ───────────────────────────────────────────────────────────
 
-const uploadAndSave = async (
+const uploadFiles = async (
   targetType: TargetType,
   sourceFiles: SelectedMediaFile[],
   options: BatchUploadOptions = {},
 ): Promise<AttachmentItemRequest[]> => {
   // 一次请求：后端返回一个 STS 凭证 + 按 fileNames 顺序的 objectKey 列表
-  const batchCredentialRaw = await mediaService.getUploadCredential({
+  const batchCredential = await mediaService.getUploadCredential({
     targetType,
     fileNames: sourceFiles.map((f) => f.originalName),
   });
-
-  const batchCredential: Credential = batchCredentialRaw;
 
   if (batchCredential.objectKeys.length !== sourceFiles.length) {
     throw new Error('后端返回的 objectKey 数量与文件数量不一致');
@@ -142,7 +166,7 @@ const uploadAndSave = async (
   const files: CosBatchFileItem[] = batchCredential.objectKeys.map((objectKey, i) => ({
     objectKey: objectKey,
     filePath: sourceFiles[i].filePath,
-    contentType: options.contentType,
+    contentType: options.contentType ?? sourceFiles[i].mimeType,
     headers: options.headers,
     onProgress: options.onProgress
       ? (progress) => {
@@ -154,13 +178,6 @@ const uploadAndSave = async (
   const uploadResults = await uploadCosFilesBatch(batchCredential, files);
 
   const attachmentItems = buildAttachmentItems(uploadResults, sourceFiles);
-
-  // const savedAttachments = await api.media
-  //   .saveAttachments({ targetType, attachmentItems })
-  //   .catch((err) => {
-  //     logger.error(TAG, "保存附件信息失败", err);
-  //     throw err;
-  //   });
 
   return attachmentItems;
 };
@@ -175,11 +192,18 @@ export const selectMessageFiles = async (
   options: Parameters<typeof chooseMessageFile>[0] = {},
 ): Promise<SelectedMediaFile[]> => {
   const files = await chooseMessageFile(options);
-  return files.map((file) => ({
-    filePath: file.path,
-    originalName: file.name,
-    fileSize: file.size,
-  }));
+  return files.map((file) => {
+    const mimeType = getContentTypeByName(file.name);
+    if (typeof file.size === 'number' && file.size > MAX_DOCUMENT_UPLOAD_SIZE) {
+      throw new Error(`文件不能超过 20MB: ${file.name}`);
+    }
+    return {
+      filePath: file.path,
+      originalName: file.name,
+      fileSize: file.size,
+      mimeType,
+    };
+  });
 };
 
 /**
@@ -187,33 +211,53 @@ export const selectMessageFiles = async (
  * chooseImages 只返回路径，无文件名，前端基于路径构建文件名后提交后端
  */
 export const selectImages = async (count = 1): Promise<SelectedMediaFile[]> => {
-  const filePaths = await chooseImages(count);
-  return filePaths.map((filePath, i) => ({
-    filePath,
-    originalName: buildImageFileName(filePath, i),
-  }));
+  const images = await chooseImages(count);
+  return Promise.all(
+    images.map(async (image, i) => {
+      const originalName = buildImageFileName(image.path, i);
+      let uploadPath = image.path;
+      let uploadSize = image.size;
+
+      if (image.size > IMAGE_COMPRESS_THRESHOLD && canCompressImage(originalName)) {
+        try {
+          const compressed = await wxCompressImage({
+            src: image.path,
+            quality: IMAGE_COMPRESS_QUALITY,
+          });
+          const compressedSize = await getLocalFileSize(compressed.tempFilePath);
+          if (compressedSize < image.size) {
+            uploadPath = compressed.tempFilePath;
+            uploadSize = compressedSize;
+          }
+        } catch {
+          // 压缩能力不可用时保留原图，仍由下面的最终大小限制兜底。
+        }
+      }
+
+      if (uploadSize > MAX_IMAGE_UPLOAD_SIZE) {
+        throw new Error(`图片压缩后仍超过 10MB: ${originalName}`);
+      }
+
+      return {
+        filePath: uploadPath,
+        originalName,
+        fileSize: uploadSize,
+        mimeType: getContentTypeByName(originalName),
+      };
+    }),
+  );
 };
 
 /**
- * TODO:
- *  当前没有做 COS 孤儿文件回收。
- *
- * 约束：
- * 1. 选择图片/文件时只保存本地 filePath，不上传 COS；
- * 2. 用户点击发布/提交时才调用 uploadAndSaveFiles；
- * 3. 如果用户选择后取消图片，直接从本地 selectedFiles 中移除；
- * 4. 暂不做前端删除 COS，也不做后端 pending 上传记录。
- *
- * 后续如果观察到 COS 孤儿文件明显增多，
- * 再增加后端 objectKey 生命周期记录和定时清理。
- * 第二步：批量上传并保存（用户确认提交后调用）
- * 内部流程：获取 STS 凭证 → 批量上传 COS → 返回attachmentItems
+ * 第二步：批量上传（用户确认提交后调用）。
+ * 内部流程：获取 STS 凭证 → 后端登记 PENDING objectKey → 批量上传 COS →
+ * 返回 attachmentItems，由业务保存事务完成绑定；超时未绑定对象由后端定时清理。
  */
-export const uploadAndSaveFiles = (
+export const uploadFilesToCos = (
   targetType: TargetType,
   sourceFiles: SelectedMediaFile[],
   options?: BatchUploadOptions,
-): Promise<AttachmentItemRequest[]> => uploadAndSave(targetType, sourceFiles, options);
+): Promise<AttachmentItemRequest[]> => uploadFiles(targetType, sourceFiles, options);
 
 /**
  * 一站式单文件上传：获取凭证 + 上传到 COS
@@ -226,10 +270,4 @@ export const uploadMediaFileToCos = async (
 ): Promise<CosUploadResult> => {
   const credential = await mediaService.getUploadCredential(credentialRequest);
   return uploadCosFile({ ...options, credential, filePath });
-};
-
-/** 删除已上传的附件（后端同步删除 COS 文件及数据库记录） */
-export const removeAttachment = async (attachmentId: string): Promise<void> => {
-  if (!attachmentId) return Promise.reject(new Error('attachmentId 不能为空'));
-  await mediaService.removeAttachment(attachmentId);
 };

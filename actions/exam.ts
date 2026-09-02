@@ -1,4 +1,4 @@
-import { examService } from '../services/index';
+import * as examService from '../services/exam';
 import type { ExamListItem } from '../types/business';
 
 export const getExamListPageData = () => examService.getExamListPageData();

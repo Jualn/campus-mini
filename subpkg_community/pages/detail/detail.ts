@@ -1,3 +1,4 @@
+import { useSharePoster } from '../../../behaviors/useSharePoster';
 // subpkg_community/pages/detail/detail.ts
 
 import { TARGET_TYPES } from '../../../utils/constants';
@@ -5,36 +6,33 @@ import {
   wxGetWindowInfo,
   wxNavigateBack,
   wxNavigateTo,
-  wxOffKeyboardHeightChange,
-  wxOnKeyboardHeightChange,
   wxReLaunch,
   wxShowActionSheet,
   wxShowModal,
 } from '../../../utils/wx-promise';
 import { createLogger } from '../../../utils/logger';
-import { getUserInfo } from '../../../stores/helper';
 import type { PostDetail } from '../../../types/business';
 import { drawPostPoster } from '../../../utils/share_poster/postPoster';
 import { showErrorToast } from '../../../utils/notify';
-import { postAction } from '../../../actions/index';
-import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import * as postAction from '../../../actions/post';
+import { useAsyncLoad } from '../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
+import { watchCurrentIdentity, getCurrentIdentity } from '../../../actions/current-user';
 
 const log = createLogger('PostDetailPage');
 
 // ─────────────────────────────────────────────────────────
 
-const INPUT_BAR_HEIGHT_PX = 56;
-
 // 改成项目真实的首页路径。无论首页是不是 tabBar，reLaunch 都可以打开。
 const HOME_PAGE_URL = '/pages/index/index';
 
 definePage({
-  behaviors: [useAsyncLoad()],
+  behaviors: [useAsyncLoad(), useSharePoster()],
 
   _currentScrollTop: 0,
   _enteredFromShare: false,
   _likePending: false,
+  _offIdentity: null as (() => void) | null,
   /** 浏览数上报定时器 */
   _viewTimer: 0,
   /**  */
@@ -44,7 +42,6 @@ definePage({
     targetId: '',
     targetType: TARGET_TYPES.POST.value,
     statusBarHeight: 20,
-    bottomPad: INPUT_BAR_HEIGHT_PX,
     post: {} as PostDetail,
     myAvatar: '',
     currentCommentCount: 0,
@@ -56,13 +53,17 @@ definePage({
 
     showPopup: false,
     popupType: '',
-    currentShareImage: '',
-    currentSharePath: '',
     reportTargetType: '',
     reportTargetId: '',
   },
 
   onLoad(query: { postId: string; from?: string }) {
+    this._offIdentity = watchCurrentIdentity(() => {
+      this.setData({
+        post: postAction.syncPostAuthor(this.data.post),
+        myAvatar: getCurrentIdentity().avatarUrl,
+      });
+    });
     const sys = wxGetWindowInfo();
     const isShareEntry = query.from === 'share' || getCurrentPages().length <= 1;
     this._enteredFromShare = isShareEntry;
@@ -77,50 +78,35 @@ definePage({
     });
 
     this._loadPost(query.postId);
-
-    // 监听键盘高度，输入栏跟随上移
-    wxOnKeyboardHeightChange((res) => {
-      this.setData({
-        // 页面底部 padding = 输入栏 + 键盘（键盘弹起时输入栏已在键盘上方）
-        bottomPad: res.height > 0 ? res.height + INPUT_BAR_HEIGHT_PX : INPUT_BAR_HEIGHT_PX,
-      });
-    });
   },
 
   onUnload() {
+    this._offIdentity?.();
     this._clearViewTimer();
-    wxOffKeyboardHeightChange();
   },
 
   onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
-    const { id } = this.data.post;
-    const currentShareImage = this.data.currentShareImage;
-    return {
-      // title: content.slice(0, 30) || '校园圈动态',
-      path: `/subpkg_community/pages/detail/detail?postId=${id}&from=share`,
-      imageUrl: currentShareImage || '',
-    };
+    return this._getShareContent();
   },
 
   onShareTimeline(): WechatMiniprogram.Page.ICustomTimelineContent {
     const { id } = this.data.post;
-    const currentShareImage = this.data.currentShareImage;
     return {
-      // title: content.slice(0, 30) || '校园圈动态',
       query: `postId=${id}&from=share`,
-      imageUrl: currentShareImage || '',
+      imageUrl: this._getShareContent().imageUrl,
     };
   },
 
   onShare() {
+    if (!this.data.post.id) return;
+    this._preparePostShare();
     this._openPopup({
       popupType: 'share',
-      currentSharePath: `/subpkg_community/pages/detail/detail?postId=${this.data.post.id}&from=share`,
-      currentShareImage: this.data.currentShareImage,
     });
   },
 
-  async _drawPostPoster() {
+  _preparePostShare() {
+    if (!this.data.post.id) return;
     const post = this.data.post;
 
     const postData = {
@@ -133,12 +119,10 @@ definePage({
       time: post.createdAtText || '',
     };
 
-    await drawPostPoster(this, postData, (tempFilePath: string) => {
-      this.setData({
-        currentShareImage: tempFilePath,
-      });
-    }).catch((err: unknown) => {
-      log.error('_drawPostPoster', '生成分享图片失败', err);
+    this._prepareShare({
+      key: JSON.stringify([post.id, postData]),
+      path: `/subpkg_community/pages/detail/detail?postId=${post.id}&from=share`,
+      render: (scope) => drawPostPoster(scope, postData),
     });
   },
 
@@ -165,14 +149,14 @@ definePage({
 
         this.setData({
           post: merged,
-          myAvatar: getUserInfo('avatarUrl') ?? '',
+          myAvatar: getCurrentIdentity().avatarUrl,
           currentCommentCount: merged.commentCount,
           targetId: merged.id,
         });
 
         this._asyncLoadSuccess();
         this._scheduleViewReport(merged.id);
-        void this._drawPostPoster();
+        this._preparePostShare();
       })
       .catch((err: unknown) => {
         this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
@@ -410,10 +394,6 @@ definePage({
     this.setData({
       showPopup: false,
       popupType: '',
-
-      // 保留分享相关内容
-      // currentShareImage: '',
-      // currentSharePath: '',
 
       reportTargetType: '',
       reportTargetId: '',

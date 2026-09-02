@@ -23,7 +23,25 @@
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "folder", "value": ".agents" },
+      { "type": "folder", "value": ".codex-remote-attachments" },
+      { "type": "folder", "value": "mock" },
+      { "type": "folder", "value": "pages/test" },
+      { "type": "folder", "value": "scripts" },
+      { "type": "file", "value": "API_TYPES_DEFINITIONS.md" },
+      { "type": "file", "value": "assets/icons/common/README.md" },
+      { "type": "file", "value": "assets/icons/detail/README.md" },
+      { "type": "file", "value": "config/ARCHITECTURE_DIAGRAM.md" },
+      { "type": "file", "value": "config/COMMENT_PANEL.md" },
+      { "type": "file", "value": "config/DATA_STORAGE.md" },
+      { "type": "file", "value": "config/INTEGRATION_GUIDE.md" },
+      { "type": "file", "value": "config/NOTIFY_EVENTBUS.md" },
+      { "type": "file", "value": "config/QUICK_REFERENCE.md" },
+      { "type": "file", "value": "config/README.md" },
+      { "type": "file", "value": "config/SERVICES_GUIDE.md" },
+      { "type": "file", "value": "miniprogram_npm/cos-wx-sdk-v5/index.js.map" }
+    ],
     "include": []
   },
   "appid": "wxe5bb58670f1dc1b3",

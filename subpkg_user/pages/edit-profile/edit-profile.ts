@@ -7,13 +7,14 @@ import {
   wxShowLoading,
   wxShowModal,
 } from '../../../utils/wx-promise';
-import type { EditProfileForm } from '../../../types/business';
+import type { EditProfileForm, EditProfileUpdate } from '../../../types/business';
 import { createLogger } from '../../../utils/logger';
 import { type SelectedMediaFile } from '../../../actions/media';
 import { TARGET_TYPES } from '../../../utils/constants';
-import { mediaAction, userAction } from '../../../actions/index';
+import * as mediaAction from '../../../actions/media';
+import * as userAction from '../../../actions/user';
 import { notifyToast } from '../../../utils/notify';
-import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import { useAsyncLoad } from '../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
 
 const log = createLogger('EditProfilePage');
@@ -23,6 +24,7 @@ definePage({
 
   _selectedAvatarFile: [] as SelectedMediaFile[],
   _selectedBannerFile: [] as SelectedMediaFile[],
+  _saving: false,
 
   data: {
     statusBarHeight: 20,
@@ -151,6 +153,7 @@ definePage({
   },
 
   async onSave() {
+    if (this._saving) return;
     if (!this.data.hasChanged) return;
 
     if (!this.data.form.nickname.trim()) {
@@ -164,7 +167,7 @@ definePage({
     const original = this.data._original;
     const current = this.data.form;
 
-    const changedForm: Partial<EditProfileForm> = {};
+    const changedForm: EditProfileUpdate = {};
 
     // 只提交发生变化的普通字段
     if (current.nickname !== original.nickname) {
@@ -183,31 +186,34 @@ definePage({
       return;
     }
 
+    this._saving = true;
     void wxShowLoading({
       title: '保存中...',
     });
 
     try {
-      if (hasAvatarChanged) {
-        const avatarUrl = await mediaAction.uploadAndSaveFiles(
-          TARGET_TYPES.USER.value,
-          this._selectedAvatarFile,
-        );
+      const selectedProfileFiles = [
+        ...(hasAvatarChanged ? this._selectedAvatarFile : []),
+        ...(hasBannerChanged ? this._selectedBannerFile : []),
+      ];
+      const uploadedItems =
+        selectedProfileFiles.length > 0
+          ? await mediaAction.uploadFilesToCos(TARGET_TYPES.USER.value, selectedProfileFiles)
+          : [];
+      let uploadedIndex = 0;
 
-        if (avatarUrl[0]?.url) {
-          changedForm.avatarUrl = avatarUrl[0].url;
-        }
+      if (hasAvatarChanged) {
+        const avatar = uploadedItems[uploadedIndex++];
+        if (!avatar.url || !avatar.objectKey) throw new Error('头像上传结果不完整');
+        changedForm.avatarUrl = avatar.url;
+        changedForm.avatarObjectKey = avatar.objectKey;
       }
 
       if (hasBannerChanged) {
-        const bannerUrl = await mediaAction.uploadAndSaveFiles(
-          TARGET_TYPES.USER.value,
-          this._selectedBannerFile,
-        );
-
-        if (bannerUrl[0]?.url) {
-          changedForm.bannerUrl = bannerUrl[0].url;
-        }
+        const background = uploadedItems[uploadedIndex];
+        if (!background.url || !background.objectKey) throw new Error('背景图上传结果不完整');
+        changedForm.bannerUrl = background.url;
+        changedForm.backgroundObjectKey = background.objectKey;
       }
 
       if (Object.keys(changedForm).length === 0) {
@@ -236,6 +242,7 @@ definePage({
         icon: 'none',
       });
     } finally {
+      this._saving = false;
       void wxHideLoading();
     }
   },

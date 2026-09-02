@@ -1,19 +1,20 @@
+import { useSharePoster } from '../../../behaviors/useSharePoster';
 // subpkg_exam/pages/detail/detail.ts
 
 import { wxSetClipboardData } from '../../../utils/wx-promise';
-import { examAction } from '../../../actions/index';
+import * as examAction from '../../../actions/exam';
 import { createLogger } from '../../../utils/logger';
 import type { ExamDetail } from '../../../types/business';
 import { drawExamPoster } from '../../utils/examPoster';
 import { showErrorToast, showSuccessToast } from '../../../utils/notify';
-import { useAsyncLoad } from '../../../behaviors/useAsyncLoad';
+import { useAsyncLoad } from '../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
-import { navigateBackOrHome } from '../../../utils/navigation';
+import { navigateBackOrHome } from '../../utils/navigation';
 
 const log = createLogger('ExamDetailPage');
 
 definePage({
-  behaviors: [useAsyncLoad()],
+  behaviors: [useAsyncLoad(), useSharePoster()],
 
   data: {
     statusBarHeight: 20,
@@ -21,8 +22,8 @@ definePage({
     exam: {} as ExamDetail,
     skeletonSections: [1, 2, 3],
 
-    // currentShareImage: '',
-    // currentSharePath: '',
+    showPopup: false,
+    popupType: '',
   },
 
   onLoad(query: { examId: string; from?: string }) {
@@ -48,6 +49,7 @@ definePage({
         exam: detail,
       });
       this._asyncLoadSuccess();
+      this._prepareExamShare();
     } catch (err) {
       this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
       log.error('onLoad', `加载考试详情失败 [${examId}]`, err);
@@ -58,53 +60,53 @@ definePage({
     void this._loadExam(this.data.examId, { preserveError: true });
   },
 
-  // onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
-  //   const { id } = this.data.exam;
-  //   const currentShareImage = this.data.currentShareImage;
-  //   return {
-  //     // title: content.slice(0, 30) || '校园圈动态',
-  //     path: `/subpkg_exam/pages/detail/detail?examId=${id}&from=share`,
-  //     imageUrl: currentShareImage || '',
-  //   };
-  // },
+  onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
+    return this._getShareContent();
+  },
 
-  // onShareTimeline(): WechatMiniprogram.Page.ICustomTimelineContent {
-  //   const { id } = this.data.exam;
-  //   const currentShareImage = this.data.currentShareImage;
-  //   return {
-  //     // title: content.slice(0, 30) || '校园圈动态',
-  //     query: `examId=${id}&from=share`,
-  //     imageUrl: currentShareImage || '',
-  //   };
-  // },
+  onShareTimeline(): WechatMiniprogram.Page.ICustomTimelineContent {
+    return {
+      query: `examId=${this.data.exam.id}&from=share`,
+      imageUrl: this._getShareContent().imageUrl,
+    };
+  },
 
-  // onShare() {},
+  onShareOpen() {
+    if (!this.data.exam.id) return;
+    this._prepareExamShare();
+    this.setData({ showPopup: true, popupType: 'share' });
+  },
+  onShareClose() {
+    this.setData({ showPopup: false });
+  },
+  onOverlayTap() {
+    this.onShareClose();
+  },
+  onPopupAfterLeave() {
+    this.setData({ showPopup: false, popupType: '' });
+  },
+  noop() {
+    /* block overlay touch */
+  },
 
-  async _drawExamPoster() {
+  _prepareExamShare() {
     const exam = this.data.exam;
-    const timeline = exam.timeline;
-    let enrollTime: string;
-    let examTime: string;
-
-    if (timeline !== undefined) {
-      enrollTime = timeline.find((item) => item.label === 'enroll')?.date ?? '';
-      examTime = timeline.find((item) => item.label === 'exam')?.date ?? '';
-    } else {
-      enrollTime = '';
-      examTime = '';
-    }
-
+    if (!exam.id) return;
     const posterData = {
       name: exam.name,
-      enrollTime,
-      examTime,
-      desc: exam.desc ? exam.desc.slice(0, 20) : '',
+      desc: (exam.desc ?? '') || exam.tagline || '',
+      dates: (exam.timeline ?? [])
+        .filter((item) => item.date)
+        .slice(0, 2)
+        .map((item) => ({
+          label: item.label,
+          value: [item.date, item.time].filter(Boolean).join(' '),
+        })),
     };
-
-    await drawExamPoster(this, posterData, (tempFilePath) => {
-      this.setData({
-        currentShareImage: tempFilePath,
-      });
+    this._prepareShare({
+      key: JSON.stringify([exam.id, posterData]),
+      path: `/subpkg_exam/pages/detail/detail?examId=${exam.id}&from=share`,
+      render: (scope) => drawExamPoster(scope, posterData),
     });
   },
 

@@ -179,13 +179,17 @@ export default tseslint.config(
   },
   
   {
-    files: ["**/*.js"],
+    files: ["**/*.js", "scripts/**/*.mjs"],
     extends: [tseslint.configs.disableTypeChecked],
 
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: "module",
-      globals: miniprogramGlobals,
+      globals: {
+        ...miniprogramGlobals,
+        console: "readonly",
+        process: "readonly",
+      },
     },
   },
 

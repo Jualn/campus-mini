@@ -72,10 +72,7 @@ interface CosProgressInfo {
 
 interface CosBatchResult {
   files?: {
-    ETag?: string;
-    etag?: string;
-    RequestId?: string;
-    requestId?: string;
+    data?: SdkUploadResult;
     /** SDK uploadFiles 单文件失败时，error 有值，顶层 err 仍为 null */
     error?: unknown;
   }[];
@@ -167,7 +164,9 @@ const normalizeExpireTime = (
   return undefined;
 };
 
-const isStsCredential = (credential: CosUploadCredentialDTO): boolean =>
+const isStsCredential = (
+  credential: CosUploadCredentialDTO,
+): credential is CosStsCredential & CosUploadCredentialDTO =>
   Boolean(
     credential.tmpSecretId &&
     credential.tmpSecretKey &&
@@ -187,6 +186,12 @@ const readFileAsArrayBuffer = (filePath: string): Promise<ArrayBuffer> =>
       },
     });
   });
+
+const normalizeProgress = (progress: CosProgressInfo): CosUploadProgress => ({
+  loaded: progress.loaded,
+  total: progress.total,
+  progress: progress.percent,
+});
 
 // ── 公开工具函数 ───────────────────────────────────────────────────────────
 
@@ -210,10 +215,13 @@ export const buildCosObjectUrl = (
   objectKey: string,
   customDomain?: string,
 ): string => {
-  const domain = customDomain
-    ? customDomain.replace(/\/$/, '')
-    : `${bucket}.cos.${region}.myqcloud.com`;
-  return `https://${domain}/${encodeObjectKey(objectKey)}`;
+  const configuredDomain = customDomain?.replace(/\/$/, '');
+  const baseUrl = configuredDomain
+    ? /^https?:\/\//i.test(configuredDomain)
+      ? configuredDomain
+      : `https://${configuredDomain}`
+    : `https://${bucket}.cos.${region}.myqcloud.com`;
+  return `${baseUrl}/${encodeObjectKey(objectKey)}`;
 };
 
 /** 创建 COS SDK 客户端（STS 模式） */
@@ -245,6 +253,9 @@ export const createDefaultObjectKey = (
 
 const uploadWithSts = (options: CosUploadOptions): Promise<CosUploadResult> => {
   const { credential, filePath, contentType, headers, onProgress } = options;
+  if (!isStsCredential(credential)) {
+    return Promise.reject(new Error(TAG + '上传需要有效的 STS 凭证'));
+  }
   const client = createCosClient(credential);
 
   return new Promise((resolve, reject) => {
@@ -258,7 +269,7 @@ const uploadWithSts = (options: CosUploadOptions): Promise<CosUploadResult> => {
           ...(contentType ? { 'Content-Type': contentType } : {}),
           ...headers,
         },
-        onProgress: (p: CosUploadProgress) => onProgress?.(p),
+        onProgress: (p: CosProgressInfo) => onProgress?.(normalizeProgress(p)),
       },
       (err, data) => {
         if (err) {
@@ -284,11 +295,15 @@ const uploadWithSts = (options: CosUploadOptions): Promise<CosUploadResult> => {
 
 const uploadWithPreSignedUrl = async (options: CosUploadOptions): Promise<CosUploadResult> => {
   const { credential, filePath, contentType, headers, timeout } = options;
+  if (!credential.uploadUrl) {
+    return Promise.reject(new Error(TAG + '缺少预签名上传 URL'));
+  }
+  const uploadUrl = credential.uploadUrl;
   const body = await readFileAsArrayBuffer(filePath);
 
   return new Promise((resolve, reject) => {
     wx.request({
-      url: credential.uploadUrl,
+      url: uploadUrl,
       method: 'PUT',
       data: body,
       timeout,
@@ -344,10 +359,13 @@ export const uploadCosFile = (options: CosUploadOptions): Promise<CosUploadResul
  * SDK 版本不支持时退化为并行的单文件上传。
  */
 export const uploadCosFilesBatch = (
-  credential: CosStsCredential,
+  credential: CosUploadCredentialDTO,
   files: CosBatchFileItem[],
 ): Promise<CosUploadResult[]> => {
   if (files.length === 0) return Promise.resolve([]);
+  if (!isStsCredential(credential)) {
+    return Promise.reject(new Error(TAG + '批量上传需要有效的 STS 凭证'));
+  }
 
   const client = createCosClient(credential);
 
@@ -385,7 +403,7 @@ export const uploadCosFilesBatch = (
                     ...(f.contentType ? { 'Content-Type': f.contentType } : {}),
                     ...f.headers,
                   },
-                  onProgress: (p: CosUploadProgress) => f.onProgress?.(p),
+                  onProgress: (p: CosProgressInfo) => f.onProgress?.(normalizeProgress(p)),
                 },
                 (err, data) => {
                   if (err) {
@@ -418,18 +436,9 @@ export const uploadCosFilesBatch = (
             ...(f.contentType ? { 'Content-Type': f.contentType } : {}),
             ...f.headers,
           },
+          onProgress: (progress: CosProgressInfo) => f.onProgress?.(normalizeProgress(progress)),
         })),
         SliceSize: 1024 * 1024 * 10, // 设置大于10MB采用分块上传，按需调整，最小支持1MB
-        onProgress: (info: CosProgressInfo) => {
-          const idx = info.index ?? info.fileIndex;
-          if (typeof idx === 'number') {
-            files[idx]?.onProgress?.({
-              loaded: info.loaded,
-              total: info.total,
-              progress: info.percent,
-            });
-          }
-        },
       },
       (err, data) => {
         if (err) {
@@ -442,6 +451,10 @@ export const uploadCosFilesBatch = (
         }
         // uploadFiles 单文件失败不触发顶层 err，错误藏在 data.files[i].error 里
         const fileResults = data?.files ?? [];
+        if (fileResults.length !== files.length) {
+          reject(new Error(TAG + '批量上传结果数量与文件数量不一致'));
+          return;
+        }
         const failures = fileResults
           .map((f, i) =>
             f.error ? { index: i, objectKey: files[i]?.objectKey, error: f.error } : null,
@@ -459,14 +472,7 @@ export const uploadCosFilesBatch = (
           return;
         }
 
-        resolve(
-          fileResults.map((f, i) =>
-            toResult(files[i], {
-              ETag: f.ETag ?? f.etag,
-              RequestId: f.RequestId ?? f.requestId,
-            }),
-          ),
-        );
+        resolve(fileResults.map((f, i) => toResult(files[i], f.data)));
       },
     );
   });

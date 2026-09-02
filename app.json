@@ -2,8 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/me/me",
-    "pages/message/message",
-    "pages/test/test"
+    "pages/message/message"
   ],
   "subPackages": [
     {

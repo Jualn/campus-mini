@@ -10,7 +10,8 @@ import {
   wxShowActionSheet,
   wxShowModal,
 } from '../../../utils/wx-promise';
-import { mediaAction, postAction } from '../../../actions/index';
+import * as mediaAction from '../../../actions/media';
+import * as postAction from '../../../actions/post';
 import type { SelectedMediaFile } from '../../../actions/media';
 import { TARGET_TYPES } from '../../../utils/constants';
 import { showErrorToast, showInfoToast, showSuccessToast } from '../../../utils/notify';
@@ -256,7 +257,7 @@ Page({
     try {
       const attachmentItems =
         this.data.selectedFiles.length > 0
-          ? await mediaAction.uploadAndSaveFiles(TARGET_TYPES.POST.value, this.data.selectedFiles)
+          ? await mediaAction.uploadFilesToCos(TARGET_TYPES.POST.value, this.data.selectedFiles)
           : [];
       const topicText = this.data.topics.map((topic) => `#${topic}`).join(' ');
       const finalContent = topicText ? `${content}\n${topicText}` : content;

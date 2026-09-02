@@ -16,12 +16,11 @@
 
 import defineComponent from '../../utils/defineComponent';
 import { getAvatarInfo } from '../../utils/avatar';
-import { drawPostPoster } from '../../utils/share_poster/postPoster';
 import type { PostCardItem } from '../../types/business';
 import { createLogger } from '../../utils/logger';
 import { wxNavigateTo } from '../../utils/wx-promise';
-import { notifyToast, showErrorToast } from '../../utils/notify';
-import { postAction } from '../../actions/index';
+import { showErrorToast } from '../../utils/notify';
+import * as postAction from '../../actions/post';
 import { TARGET_TYPES } from '../../utils/constants';
 
 const log = createLogger('PostCard');
@@ -209,36 +208,9 @@ defineComponent<PostCardPrivate>()({
       this.triggerEvent('view', { postId, source: 'preview' });
     },
 
-    async onShare() {
-      const post = this.properties.post;
-      this.triggerEvent('share', {
-        shareTitle: '你好',
-        sharePath: `/subpkg_community/pages/detail/detail?postId=${post.id}&from=share`,
-        shareImage: '',
-        targetId: post.id,
-      });
-
-      const postData = {
-        avatarUrl: post.avatarUrl || '',
-        avatarChar: this.data._avatarChar,
-        avatarBg: this.data._avatarBg,
-        name: post.nickname || '',
-        content: post.content || '',
-        images: post.images ?? [],
-        time: post.createdAt || '',
-      };
-
-      await drawPostPoster(this, postData, (tempFilePath: string) => {
-        this.triggerEvent('shareImageReady', {
-          shareImage: tempFilePath,
-        });
-      }).catch((err: unknown) => {
-        log.error('onShare', '生成分享图片失败', err);
-        notifyToast({
-          title: '生成分享图片失败',
-          icon: 'none',
-        });
-      });
+    onShare() {
+      const postId = this.properties.post.id;
+      if (postId) this.triggerEvent('share', { postId });
     },
 
     onMoreTap() {

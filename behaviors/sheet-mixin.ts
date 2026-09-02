@@ -35,6 +35,8 @@ export interface UseSheetOptions {
   animDuration?: number;
   /** 关闭延迟时长(ms)，需与 WXS 动画时长对齐，默认 340 */
   dismissDelay?: number;
+  /** WXS 已启动退场时，不再用 setData 把元素瞬间移到动画终点。 */
+  preserveWxsExitAnimation?: boolean;
   /**
    * 关闭前的钩子，返回 false 可阻止关闭
    * 不传则直接关闭
@@ -60,6 +62,7 @@ export function useSheet(options: UseSheetOptions = {}) {
     panelRatio = 0.9,
     animDuration = 380,
     dismissDelay = 340,
+    preserveWxsExitAnimation = false,
     onBeforeClose,
     onClose,
     onScroll,
@@ -127,12 +130,14 @@ export function useSheet(options: UseSheetOptions = {}) {
         const h = this._panelHeight || this.data.panelHeight || 600;
 
         // 数据对齐到 WXS 动画终点，避免重渲染冲突
-        this.setData({
-          sheetTranslateY: h,
-          sheetTransition: 'none',
-          maskOpacity: 0,
-          maskTransition: 'none',
-        });
+        if (!preserveWxsExitAnimation) {
+          this.setData({
+            sheetTranslateY: h,
+            sheetTransition: 'none',
+            maskOpacity: 0,
+            maskTransition: 'none',
+          });
+        }
 
         void wx.hideKeyboard();
         this._keyboardListener?.remove?.();

@@ -1,12 +1,25 @@
-import { commentService, interactService } from '../services/index';
+import * as commentService from '../services/comment';
+import * as interactService from '../services/interact';
 import type { SelectedMediaFile } from './media';
-import { uploadAndSaveFiles } from './media';
+import { uploadFilesToCos } from './media';
 import { TARGET_TYPES, type TargetType } from '../utils/constants';
 import type { CommentCreateRequest, CommentPageQuery } from '../types/api';
+import type { CommentItem, ReplyItem } from '../types/business';
+import { peekCurrentProfile } from './current-user';
+import { projectCommentAuthor } from '../utils/user-projection';
 
-export const getCommentList = (query: CommentPageQuery) => commentService.getCommentList(query);
+export const syncCommentAuthor = <T extends CommentItem | ReplyItem>(item: T): T =>
+  projectCommentAuthor(item, peekCurrentProfile());
 
-export const getReplyList = (query: CommentPageQuery) => commentService.getReplyList(query);
+export const getCommentList = async (query: CommentPageQuery) => {
+  const page = await commentService.getCommentList(query);
+  return { ...page, list: page.list.map(syncCommentAuthor) };
+};
+
+export const getReplyList = async (query: CommentPageQuery) => {
+  const page = await commentService.getReplyList(query);
+  return { ...page, list: page.list.map(syncCommentAuthor) };
+};
 
 export const createComment = (data: CommentCreateRequest) => commentService.createComment(data);
 
@@ -18,12 +31,12 @@ export const createCommentWithImage = async (options: {
   imageFile?: SelectedMediaFile;
 }): Promise<string> => {
   let imageUrl = '';
+  let imageObjectKey: string | undefined;
 
   if (!options.parentId && options.imageFile) {
-    const attachmentItems = await uploadAndSaveFiles(TARGET_TYPES.COMMENT.value, [
-      options.imageFile,
-    ]);
+    const attachmentItems = await uploadFilesToCos(TARGET_TYPES.COMMENT.value, [options.imageFile]);
     imageUrl = attachmentItems[0]?.url ?? '';
+    imageObjectKey = attachmentItems[0]?.objectKey;
   }
 
   return createComment({
@@ -31,6 +44,7 @@ export const createCommentWithImage = async (options: {
     targetType: options.targetType,
     content: options.content,
     imageUrl,
+    imageObjectKey,
     parentId: options.parentId,
   });
 };

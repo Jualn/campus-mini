@@ -7,11 +7,23 @@ export const api = {
       http.post<ApiTypes.LoginVO>('/v1/auth/login', payload, { auth: 'none' }),
   },
 
+  adminAuth: {
+    confirmQrLogin: (sessionId: string) =>
+      http.post<ApiTypes.AdminQrConfirmationVO>(
+        `/v1/admin/auth/qr-confirmations/${encodeURIComponent(sessionId)}`,
+        undefined,
+        {
+          auth: 'required',
+          showLoading: true,
+        },
+      ),
+  },
+
   user: {
     getCurrentProfile: () => http.get<ApiTypes.UserProfileVO>('/v1/users/me'),
 
     updateCurrentProfile: (payload: ApiTypes.UserProfileUpdateRequest) =>
-      http.put<null>('/v1/users/me', payload),
+      http.put<ApiTypes.UserProfileVO>('/v1/users/me', payload),
 
     getPublicProfile: (userId: string) =>
       http.get<ApiTypes.UserPublicProfileVO>(`/v1/users/public/${userId}`),
@@ -132,12 +144,6 @@ export const api = {
   media: {
     getUploadCredential: (payload: ApiTypes.MediaUploadCredentialRequest) =>
       http.post<ApiTypes.CosUploadCredentialDTO>('/v1/media/upload/credential', payload),
-
-    saveAttachments: (payload: ApiTypes.MediaAttachmentCreateRequest) =>
-      http.post<ApiTypes.MediaAttachmentBO[]>('/v1/media/attachments', payload),
-
-    removeAttachment: (attachmentId: string) =>
-      http.del<null>(`/v1/media/attachments/${attachmentId}`),
   },
 
   notify: {

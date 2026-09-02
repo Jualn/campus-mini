@@ -14,93 +14,91 @@
         <view class="search-bar__icon-wrap">
           <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
         </view>
-        <input class="search-bar__input" placeholder="搜索动态、活动或考试" placeholder-class="search-bar__placeholder"
-          value="{{keyword}}" focus="{{inputFocus}}" confirm-type="search" bindinput="onInput"
-          bindconfirm="onConfirm" />
+        <input
+          class="search-bar__input"
+          placeholder="搜索动态、活动"
+          placeholder-class="search-bar__placeholder"
+          value="{{keyword}}"
+          focus="{{inputFocus}}"
+          confirm-type="search"
+          bindinput="onInput"
+          bindconfirm="onConfirm"
+        />
         <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClear">
           <text class="search-bar__clear-icon">✕</text>
         </view>
       </view>
     </view>
 
-    <scroll-view scroll-x enable-flex class="tab-scroll">
-      <view wx:for="{{tabs}}" wx:key="id" class="tab-item {{activeTab === item.id ? 'tab-item--active' : ''}}"
-        bindtap="onSwitchTab" data-id="{{item.id}}">
+    <view class="result-tabs">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="id"
+        class="tab-item {{activeTab === item.id ? 'tab-item--active' : ''}}"
+        bindtap="onSwitchTab"
+        data-id="{{item.id}}"
+      >
         <text class="tab-item__label">{{item.label}}</text>
       </view>
-    </scroll-view>
+    </view>
   </view>
 
-  <view class="result-content">
-    <block wx:if="{{!keyword}}">
-      <view class="result-empty">
-        <view class="result-empty__visual">
-          <image class="result-empty__svg" src="/images/icons/search.svg" mode="aspectFit" />
-        </view>
-        <text class="result-empty__title">输入关键词开始搜索</text>
-        <text class="result-empty__desc">可以搜索动态、活动或考试信息</text>
-      </view>
-    </block>
+  <!-- 无结果时占据顶部以外的剩余空间，不再套一层白色卡片。 -->
+  <view
+    class="result-content {{(activeTab === 'all' ? postList.length : activityList.length) ? '' : 'result-content--state'}}"
+  >
+    <view wx:if="{{!searchKeyword}}" class="result-empty" aria-role="status">
+      <image class="result-empty__svg" src="/images/icons/search.svg" mode="aspectFit" />
+      <text class="result-empty__title">输入关键词开始搜索</text>
+      <text class="result-empty__desc">查找感兴趣的动态和校园活动</text>
+    </view>
 
-    <block wx:else>
-      <!-- 综合：默认展示动态 post-card -->
-      <block wx:if="{{activeTab === 'all'}}">
+    <!-- 首次请求和重试均原位反馈，顶部搜索框和分类保持可用。 -->
+    <load-state wx:elif="{{loading && !loaded}}" mode="loading" title="正在搜索" description="正在查找相关内容" />
 
-        <view wx:if="{{postList.length}}" class="post-result-list">
+    <load-state
+      wx:elif="{{error && !loaded}}"
+      mode="error"
+      title="搜索暂时不可用"
+      description="请检查网络后重试"
+      action-text="重新搜索"
+      bind:action="onRetry"
+    />
+
+    <block wx:elif="{{loaded}}">
+      <block wx:if="{{activeTab === 'all' ? postList.length : activityList.length}}">
+        <view wx:if="{{activeTab === 'all'}}" class="post-result-list">
           <block wx:for="{{postList}}" wx:key="id" wx:for-item="post">
             <post-card post="{{post}}" />
           </block>
         </view>
-
-        <view wx:elif="{{!loading && loaded}}" class="result-empty">
-          <view class="result-empty__visual">
-            <image class="result-empty__svg" src="/images/icons/search.svg" mode="aspectFit" />
-          </view>
-          <text class="result-empty__title">没有找到相关动态</text>
-          <text class="result-empty__desc">换个关键词试试</text>
-        </view>
-      </block>
-
-      <!-- 活动 -->
-      <block wx:elif="{{activeTab === 'activity'}}">
-
-        <view wx:if="{{activityList.length}}" class="activity-result-list">
+        <view wx:else class="activity-result-list">
           <block wx:for="{{activityList}}" wx:key="id" wx:for-item="activity">
             <activity-card activity="{{activity}}" />
           </block>
         </view>
 
-        <view wx:elif="{{!loading && loaded}}" class="result-empty">
-          <text class="result-empty__icon">🎉</text>
-          <text class="result-empty__title">没有找到相关活动</text>
-          <text class="result-empty__desc">试试搜索活动名称、类型或主办方</text>
+        <load-state wx:if="{{loading}}" mode="loading" variant="inline" title="正在加载更多" />
+        <load-state
+          wx:elif="{{error}}"
+          mode="error"
+          variant="inline"
+          title="加载失败"
+          action-text="点击重试"
+          bind:action="onRetry"
+        />
+        <view wx:elif="{{activeTab === 'all' ? !postHasMore : !activityHasMore}}" class="list-state">
+          <text class="list-state__text">已显示全部结果</text>
         </view>
       </block>
 
-      <!-- 考试：先占位 -->
-      <block wx:elif="{{activeTab === 'exam'}}">
-
-        <view class="result-empty">
-          <text class="result-empty__icon">📝</text>
-          <text class="result-empty__title">考试搜索暂未接入</text>
-          <text class="result-empty__desc">等考试接口完成后接入 searchExams 即可</text>
-        </view>
-      </block>
-
-      <view wx:if="{{loading}}" class="list-state">
-        <text class="list-state__text">加载中...</text>
-      </view>
-
-      <view wx:if="{{!loading && activeTab === 'all' && postList.length && !postHasMore}}" class="list-state">
-        <text class="list-state__text">— 已经到底啦 —</text>
-      </view>
-
-      <view wx:if="{{!loading && activeTab === 'activity' && activityList.length && !activityHasMore}}"
-        class="list-state">
-        <text class="list-state__text">— 已经到底啦 —</text>
+      <view wx:else class="result-empty" aria-role="status">
+        <image class="result-empty__svg" src="/images/icons/search.svg" mode="aspectFit" />
+        <text class="result-empty__title">没有找到相关{{activeTab === 'all' ? '动态' : '活动'}}</text>
+        <text class="result-empty__desc">试试更简短的关键词，或切换分类查找</text>
       </view>
     </block>
   </view>
 </view>
 
-<in-app-banner/>
+<in-app-banner />

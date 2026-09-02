@@ -1,20 +1,3 @@
-// postPoster.ts
-// utils/postPoster.js
-// 帖子分享卡片
-// 有图：首图铺满上方，多图缩略网格，底部头像+摘要
-// 无图：蓝白排版卡片，大字正文，底部署名+按钮
-//
-// 使用方式：
-//   import { drawPostPoster } from '../../utils/postPoster'
-//   await drawPostPoster(this, postData, (tempFilePath) => { ... })
-//
-// postData 字段：
-//   avatar   string   头像路径
-//   name     string   昵称
-//   time     string   发布时间
-//   content  string   正文内容
-//   images   string[] 图片路径数组，空数组或不传为无图
-
 import * as PC from './posterCanvas';
 import type { WxScope } from './posterCanvas';
 
@@ -30,58 +13,59 @@ export interface PostData {
   images?: string[];
 }
 
-type OnSuccess = (tempFilePath: string) => void;
-
-/**
- * 入口：根据是否有图自动选择方案
- * @param {object} scope        Page 实例（传 this）
- * @param {object} postData     帖子数据
- * @param {function} onSuccess  成功回调，参数为 tempFilePath
- */
-export async function drawPostPoster(
-  scope: WxScope,
-  postData: PostData,
-  onSuccess: OnSuccess,
-): Promise<void> {
+/** 沿用最初的海报布局；生成与导出统一返回 Promise，由页面管理加载状态。 */
+export async function drawPostPoster(scope: WxScope, postData: PostData): Promise<string> {
   const canvas = await PC.getCanvasNode('#posterCanvas', scope);
-  const hasImages = postData.images && postData.images.length > 0;
-  if (hasImages) {
-    await _drawWithImages(canvas, scope, postData, onSuccess);
-  } else {
-    await _drawTextOnly(canvas, scope, postData, onSuccess);
-  }
+  // 首图、头像和最多四张缩略图并行加载，避免失败资源逐张等待超时。
+  const [images, avatar] = await Promise.all([
+    Promise.all((postData.images ?? []).slice(0, 5).map((src) => PC.optionalImage(canvas, src))),
+    PC.optionalImage(canvas, postData.avatarUrl),
+  ]);
+  if (images[0]) return _drawWithImages(canvas, scope, postData, images, avatar);
+  return _drawTextOnly(canvas, scope, postData, avatar);
 }
 
 // ── 头像渲染（图片优先，降级文字，兜底灰圆）────────────────────────────
 
-async function _drawAvatar(
-  canvas: WechatMiniprogram.Canvas,
-  ctx: ReturnType<typeof PC.initCanvas>['ctx'],
-  data: Pick<PostData, 'avatarUrl' | 'avatarChar' | 'avatarBg'>,
+function _drawAvatar(
+  ctx: PC.Ctx2D,
+  data: Pick<PostData, 'avatarChar' | 'avatarBg'>,
+  avatar: WechatMiniprogram.Image | null,
   x: number,
   y: number,
   size: number,
-): Promise<void> {
-  if (data.avatarUrl) {
-    await PC.drawCircleImage(canvas, ctx, data.avatarUrl, x, y, size);
-  } else if (data.avatarChar && data.avatarBg) {
-    PC.drawTextAvatar(ctx, data.avatarChar, data.avatarBg, x, y, size);
+): void {
+  if (avatar) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+    ctx.clip();
+    PC.drawCover(ctx, avatar, x, y, size, size);
+    ctx.restore();
   } else {
-    PC.drawTextAvatar(ctx, '?', '#dddddd', x, y, size);
+    PC.drawTextAvatar(
+      ctx,
+      (data.avatarChar ?? '') || '?',
+      (data.avatarBg ?? '') || '#dddddd',
+      x,
+      y,
+      size,
+    );
   }
 }
 
 // ── 有图版 ────────────────────────────────────────────────────────────
 
-async function _drawWithImages(
+function _drawWithImages(
   canvas: WechatMiniprogram.Canvas,
   scope: WxScope,
   postData: PostData,
-  onSuccess: OnSuccess,
-): Promise<void> {
+  loadedImages: (WechatMiniprogram.Image | null)[],
+  avatar: WechatMiniprogram.Image | null,
+): Promise<string> {
   const { ctx, W, H } = PC.initCanvas(canvas);
   const { name, time, content, images = [] } = postData;
-  const PAD = 40;
+  const PAD = 32;
   const imgH = 560;
 
   ctx.fillStyle = '#ffffff';
@@ -89,7 +73,8 @@ async function _drawWithImages(
 
   // 1. 首图（失败时灰色占位）
   try {
-    const img = await PC.loadImage(canvas, images[0]);
+    const img = loadedImages[0];
+    if (!img) throw new Error('首图不可用');
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, W, imgH);
@@ -107,7 +92,7 @@ async function _drawWithImages(
     const tp = 6;
     const maxShow = Math.min(images.length - 1, 4);
     const rowX = W - PAD - maxShow * (ts + tp) + tp;
-    const rowY = imgH - ts - PAD;
+    const rowY = imgH - ts - 88;
 
     for (let i = 0; i < maxShow; i++) {
       const tx = rowX + i * (ts + tp);
@@ -117,8 +102,10 @@ async function _drawWithImages(
       ctx.fillRect(tx - 3, rowY - 3, ts + 6, ts + 6);
 
       try {
-        const img = await PC.loadImage(canvas, images[i + 1]);
+        const img = loadedImages[i + 1];
+        if (!img) throw new Error('缩略图不可用');
         ctx.save();
+        ctx.beginPath();
         ctx.rect(tx, rowY, ts, ts);
         ctx.clip();
         PC.drawCover(ctx, img, tx, rowY, ts, ts);
@@ -148,33 +135,33 @@ async function _drawWithImages(
 
   // 4. 头像 + 昵称 + 时间
   const infoY = imgH - 80;
-  const AV = 156;
-  await _drawAvatar(canvas, ctx, postData, PAD, infoY, AV);
+  const AV = 144;
+  _drawAvatar(ctx, postData, avatar, PAD, infoY, AV);
 
   ctx.fillStyle = '#1a1a1a';
   ctx.font = 'bold 50px sans-serif';
-  ctx.fillText(name, PAD + AV + 16, infoY + 92);
+  ctx.fillText(PC.truncateText(ctx, name, W - PAD * 2 - AV - 16), PAD + AV + 16, infoY + 88);
   ctx.fillStyle = '#bbbbbb';
   ctx.font = '42px sans-serif';
-  ctx.fillText(time, PAD + AV + 16, infoY + 150);
+  ctx.fillText(PC.truncateText(ctx, time, W - PAD * 2 - AV - 16), PAD + AV + 16, infoY + 142);
 
   // 5. 正文摘要（3 行）
-  const textY = infoY + AV + 65;
+  const textY = infoY + AV + 60;
   ctx.font = '56px sans-serif';
   ctx.fillStyle = '#111111';
   PC.drawText(ctx, content, PAD, textY, W - PAD * 2, 64, 3);
 
-  PC.finalize(canvas, scope, onSuccess);
+  return PC.finalize(canvas, scope);
 }
 
 // ── 无图版 ────────────────────────────────────────────────────────────
 
-async function _drawTextOnly(
+function _drawTextOnly(
   canvas: WechatMiniprogram.Canvas,
   scope: WxScope,
   postData: PostData,
-  onSuccess: OnSuccess,
-): Promise<void> {
+  avatar: WechatMiniprogram.Image | null,
+): Promise<string> {
   const { ctx, W, H } = PC.initCanvas(canvas);
   const { name, time, content } = postData;
   const PAD = 32;
@@ -194,7 +181,7 @@ async function _drawTextOnly(
   const textEndY = PC.drawText(ctx, content, PAD, 160, W - PAD * 2, 96, 5);
 
   // 分割线
-  const divY = Math.max(textEndY + 40, 620);
+  const divY = Math.min(Math.max(textEndY + 16, 620), H - 208);
   ctx.strokeStyle = '#e8e8e8';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
@@ -205,14 +192,14 @@ async function _drawTextOnly(
   // 头像 + 昵称 + 时间
   const infoY = divY + 36;
   const AV = 140;
-  await _drawAvatar(canvas, ctx, postData, PAD, infoY, AV);
+  _drawAvatar(ctx, postData, avatar, PAD, infoY, AV);
 
   ctx.fillStyle = '#111111';
   ctx.font = 'bold 50px sans-serif';
-  ctx.fillText(name, PAD + AV + 20, infoY + 62);
+  ctx.fillText(PC.truncateText(ctx, name, W - PAD * 2 - AV - 20 - 314), PAD + AV + 20, infoY + 62);
   ctx.fillStyle = '#bbbbbb';
   ctx.font = '42px sans-serif';
-  ctx.fillText(time, PAD + AV + 20, infoY + 122);
+  ctx.fillText(PC.truncateText(ctx, time, W - PAD * 2 - AV - 20 - 314), PAD + AV + 20, infoY + 122);
 
   // 胶囊按钮
   const btnW = 290;
@@ -220,13 +207,24 @@ async function _drawTextOnly(
   const btnR = 62;
   const btnX = W - PAD - btnW;
   const btnY = infoY + (AV - btnH) / 2;
-  const btnText = '查看全文 ›';
+  const btnText = '查看全文';
   ctx.fillStyle = PC.BLUE;
   PC.roundRect(ctx, btnX, btnY, btnW, btnH, btnR);
   ctx.fill();
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 44px sans-serif';
-  ctx.fillText(btnText, btnX + (btnW - ctx.measureText(btnText).width) / 2, btnY + btnH / 2 + 15);
+  const labelW = ctx.measureText(btnText).width;
+  const labelX = btnX + (btnW - labelW - 30) / 2;
+  const centerY = btnY + btnH / 2;
+  PC.drawVerticallyCenteredText(ctx, btnText, labelX, centerY, 44);
+  const arrowX = labelX + labelW + 16;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(arrowX, centerY - 12);
+  ctx.lineTo(arrowX + 12, centerY);
+  ctx.lineTo(arrowX, centerY + 12);
+  ctx.stroke();
 
-  PC.finalize(canvas, scope, onSuccess);
+  return PC.finalize(canvas, scope);
 }

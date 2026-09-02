@@ -1,11 +1,7 @@
 // subpkg_community/pages/search/search.ts
 
 import { wxNavigateBack, wxNavigateTo, wxSwitchTab } from '../../../utils/wx-promise';
-import {
-  addSearchHistory,
-  clearSearchHistory,
-  getSearchHistory,
-} from '../../../utils/search-history';
+import { addSearchHistory, clearSearchHistory, getSearchHistory } from '../../utils/search-history';
 
 const RESULT_PAGE_URL = '/subpkg_community/pages/search-result/search-result';
 

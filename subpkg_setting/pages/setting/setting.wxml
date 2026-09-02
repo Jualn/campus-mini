@@ -20,7 +20,7 @@
 
       <view class="setting-item">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/activity_reminder.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/activity_reminder.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">活动提醒</text>
             <text class="setting-item__desc">报名截止、活动开始前提醒</text>
@@ -51,7 +51,7 @@
 
       <view class="setting-item">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/interaction_message.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/interaction_message.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">互动消息</text>
             <text class="setting-item__desc">点赞、评论、关注通知</text>
@@ -69,7 +69,7 @@
 
       <view class="setting-item">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/system_announcement.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/system_announcement.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">系统公告</text>
             <text class="setting-item__desc">平台通知、功能更新</text>
@@ -87,7 +87,7 @@
 
       <view class="setting-item" bindtap="bindMp">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/bind_service_account.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/bind_service_account.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">绑定服务号</text>
             <text class="setting-item__desc">推送通知到服务号</text>
@@ -148,7 +148,7 @@
 
       <view class="setting-item" bindtap="onGoEditProfile">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/edit_profile.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/edit_profile.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">编辑资料</text>
           </view>
@@ -156,6 +156,26 @@
         <text class="setting-item__arrow">›</text>
       </view>
       <view class="setting-divider" />
+
+      <view
+        wx:if="{{canUseAdminLogin}}"
+        class="setting-item"
+        hover-class="setting-item--pressed"
+        bindtap="onScanAdminLogin"
+      >
+        <view class="setting-item__left">
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/admin_login.svg" mode="aspectFit" />
+          <view class="setting-item__text">
+            <text class="setting-item__title">扫码登录管理端</text>
+            <text class="setting-item__desc">扫描管理端登录页面上的二维码</text>
+          </view>
+        </view>
+        <view class="setting-item__right">
+          <view wx:if="{{adminLoginPending}}" class="action-spinner" />
+          <text wx:else class="setting-item__arrow">›</text>
+        </view>
+      </view>
+      <view wx:if="{{canUseAdminLogin}}" class="setting-divider" />
 
       <!-- <view class="setting-item" bindtap="onGoBindPhone">
         <view class="setting-item__left">
@@ -179,7 +199,7 @@
 
       <view class="setting-item" bindtap="onGoFeedback">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/feedback.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/feedback.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">意见反馈</text>
           </view>
@@ -193,7 +213,7 @@
 
       <!-- <view class="setting-item" bindtap="onGoAgreement">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/user_agreement.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/user_agreement.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">用户协议</text>
           </view>
@@ -204,7 +224,7 @@
 
       <view class="setting-item" bindtap="onGoPrivacyPolicy">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/privacy_policy.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/privacy_policy.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">隐私政策</text>
           </view>
@@ -215,7 +235,7 @@
 
       <view class="setting-item">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="/images/icons/setting/app_version.svg" mode="aspectFit" />
+          <image class="setting-item__icon-img" src="../../assets/icons/setting/app_version.svg" mode="aspectFit" />
           <view class="setting-item__text">
             <text class="setting-item__title">当前版本</text>
           </view>

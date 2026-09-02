@@ -10,165 +10,32 @@
  * - DELETE /v1/activity/{id}
  */
 
-import { api } from './api';
-import { createLogger } from '../utils/logger';
-import type { ActivityCard, ActivityDetail, ServiceCursorPage } from '../types/business';
-import type {
-  ActivityCreateRequest,
-  ActivityDetailVO,
-  ActivityListBO,
-  ActivityUploadBO,
-} from '../types/api';
-import {
-  ACTIVITY_CATEGORYS,
-  ACTIVITY_STATUS,
-  type ActivityStatus,
-  formatDepartmentText,
-} from '../utils/constants';
-import { formatTime, calcDaysToDeadline, parseDate, TimeStyle } from '../utils/time-util';
+import { api } from '../../services/api';
+import { createLogger } from '../../utils/logger';
+import type { ActivityCard, ActivityDetail, ServiceCursorPage } from '../../types/business';
+import type { ActivityCreateRequest, ActivityDetailVO, ActivityUploadBO } from '../../types/api';
+import { ACTIVITY_CATEGORYS, formatDepartmentText } from '../../utils/constants';
+import { formatTime, calcDaysToDeadline, parseDate, TimeStyle } from '../../utils/time-util';
+
+import type { Attachment, Contact, TimelineNode, TimelineNodeStatus } from '../../types/activity';
+import { STATUS_LABEL, TYPE_MAP, injectIscancelled, toCard } from './activity-mapper';
 
 const log = createLogger('ActivityService');
 void log;
-// ============================================================
-// § 1  页面就绪类型（页面层唯一依赖的类型，与后端结构完全解耦）
-// ============================================================
-
-// ── 1-1  状态枚举 ────────────────────────────────────────────
-
-export type ActivityUiStatus =
-  | 'not_started' // 未开始（报名未开放）
-  | 'enrolling' // 报名中
-  | 'ongoing' // 进行中（报名已截止，活动进行中）
-  | 'ended' // 已结束
-  | 'cancelled'; // 已取消
-
-const STATUS_LABEL = {
-  enrolling: '报名中',
-  not_started: '待开始',
-  ongoing: '进行中',
-  ended: '已结束',
-  cancelled: '已取消',
-};
-
-interface Type {
-  color: string;
-  icon: string;
-}
-
-const TYPE_MAP: Record<string, Type> = {
-  志愿公益: {
-    color: 'volunteer',
-    icon: '',
-  },
-  体育运动: {
-    color: 'competition',
-    icon: '',
-  },
-  学术讲座: {
-    color: 'lecture',
-    icon: '',
-  },
-  文体比赛: {
-    color: 'campus',
-    icon: '',
-  },
-  其他: {
-    color: 'campus',
-    icon: '',
-  },
-};
-
-// ── 1-2  时间轴（注入状态后的版本）────────────────────────────
-
-export type TimelineNodeStatus = 'done' | 'active' | 'pending';
-
-export interface TimelineNode {
-  label: string;
-  /** YYYY-MM-DD */
-  date: string;
-  /** HH:MM */
-  time: string;
-  // source: string;
-  note: string;
-  status: TimelineNodeStatus;
-}
-
-// ── 1-3  参与方式（判别联合，按 type 收窄）────────────────────
-
-interface JoinMethodBase {
-  label: string;
-  note: string;
-}
-
-export interface JoinMethodQQ extends JoinMethodBase {
-  type: 'qq';
-  group_id: string;
-}
-
-export interface JoinMethodEmail extends JoinMethodBase {
-  type: 'email';
-  email: string;
-}
-
-export interface JoinMethodQRCode extends JoinMethodBase {
-  type: 'qrcode';
-  image_url: string;
-}
-
-export interface JoinMethodWeChat extends JoinMethodBase {
-  type: 'wechat';
-  account: string;
-}
-
-export interface JoinMethodLink extends JoinMethodBase {
-  type: 'link';
-  url: string;
-}
-
-export type JoinMethod =
-  | JoinMethodQQ
-  | JoinMethodEmail
-  | JoinMethodQRCode
-  | JoinMethodWeChat
-  | JoinMethodLink;
-
-// ── 1-4  其他子类型 ───────────────────────────────────────────
-
-export interface Reward {
-  level: string;
-  count: number | null;
-  prize: string;
-  note: string;
-}
-
-export interface Contact {
-  name: string;
-  role?: string;
-  phone?: string;
-  qq?: string;
-  email?: string;
-  note?: string;
-}
-
-export interface Attachment {
-  type: string;
-  name: string;
-  url: string;
-  note?: string;
-}
 
 // ============================================================
 // § 2  内部计算函数（private，不 export，只供本文件使用）
 // ============================================================
 
 function getExtension(name: string): string {
-  const index = name.lastIndexOf('.');
+  const filename = name.split(/[?#]/)[0].split('/').pop() ?? '';
+  const index = filename.lastIndexOf('.');
 
-  if (index === -1 || index === 0 || index === name.length - 1) {
+  if (index <= 0 || index === filename.length - 1) {
     return '';
   }
 
-  return name.substring(index + 1);
+  return filename.substring(index + 1).toLowerCase();
 }
 
 function injectTimelineStatus(items: ActivityDetailVO['timelineItems']): TimelineNode[] {
@@ -205,19 +72,16 @@ function injectTimelineStatus(items: ActivityDetailVO['timelineItems']): Timelin
     });
 }
 
-function injectIscancelled(status: ActivityStatus): ActivityUiStatus {
-  if (status === ACTIVITY_STATUS.ONGOING.value) return 'ongoing';
-  if (status === ACTIVITY_STATUS.SIGNUP.value) return 'enrolling';
-  if (status === ACTIVITY_STATUS.DRAFT.value) return 'not_started';
-  if (status === ACTIVITY_STATUS.ENDED.value) return 'ended';
-  if (status === ACTIVITY_STATUS.CANCELED.value) return 'cancelled';
-  return 'not_started';
-}
-
 function normalizeAttachments(raw: ActivityDetailVO['attachmentItems']): Attachment[] {
   return raw.map((a) => ({
-    type: getExtension(a.originalName),
-    name: a.originalName,
+    type:
+      a.type.toLowerCase() === 'link'
+        ? 'link'
+        : getExtension(a.originalName || '') ||
+          getExtension(a.url || '') ||
+          a.type.toLowerCase() ||
+          '',
+    name: a.originalName || '未命名附件',
     url: a.url,
     note: undefined,
   }));
@@ -238,35 +102,6 @@ function normalizeContacts(raw: ActivityDetailVO['contactInfo']): Contact[] {
     }));
   }
   return [];
-}
-
-/** ActivityCard（列表页用） */
-export function toCard(raw: ActivityListBO): ActivityCard {
-  const typeInfo = TYPE_MAP[ACTIVITY_CATEGORYS[raw.category].text] ?? {
-    color: 'default',
-    icon: '',
-  };
-
-  return {
-    id: raw.id,
-    title: raw.title,
-    cover: undefined,
-    type: ACTIVITY_CATEGORYS[raw.category].text,
-    typeIcon: typeInfo.icon,
-    typeColor: typeInfo.color,
-    location: raw.location,
-    max_participants: raw.maxParticipants ?? null,
-    enroll_deadline: formatTime(raw.enrollDeadline, TimeStyle.SHORT_YMDHM),
-    scope: formatDepartmentText(raw.audienceScope),
-    organizer: raw.organizer,
-    // summary: raw.summary,
-    // series_name: raw.series_name,
-    status: injectIscancelled(raw.status),
-    statusLabel: STATUS_LABEL[injectIscancelled(raw.status)],
-    daysToDeadline: calcDaysToDeadline(raw.enrollDeadline),
-    published_at: formatTime(raw.publishedAt, TimeStyle.FULL),
-    // startDateShort: formatShortDate(raw.start_time),
-  };
 }
 
 /** ActivityRaw → ActivityDetail（详情页用） */

@@ -16,7 +16,7 @@
           <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
         </view>
 
-        <input class="search-bar__input" placeholder="搜索动态、活动或考试" placeholder-class="search-bar__placeholder"
+        <input class="search-bar__input" placeholder="搜索动态、活动" placeholder-class="search-bar__placeholder"
           value="{{keyword}}" focus="{{inputFocus}}" confirm-type="search" bindinput="onInput"
           bindconfirm="onConfirm" />
 

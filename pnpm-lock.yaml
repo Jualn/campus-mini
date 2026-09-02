@@ -210,9 +210,6 @@ importers:
       cos-wx-sdk-v5:
         specifier: ^1.8.0
         version: 1.8.0
-      miniprogram-api-promise:
-        specifier: ^1.0.4
-        version: 1.0.4
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -573,9 +570,6 @@ packages:
   minimatch@10.2.5:
     resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
     engines: {node: 18 || 20 || >=22}
-
-  miniprogram-api-promise@1.0.4:
-    resolution: {integrity: sha512-lS2ukj03Ugy8IJUDmdssklLT4kjzyRtVYwErhyDZkzxtqcxaed2xldRgNrsikigeMUBR9gAs7wgnjSKPlyKIYg==}
 
   miniprogram-api-typings@5.2.1:
     resolution: {integrity: sha512-fbB2hapWx/vaXN4olDJEIS+OOkCjHlHLX0WG74XUJqhm0VJ8dpleBdgagHATjEpcbcH2z7AV8PjpwYp9dylfYA==}
@@ -1029,8 +1023,6 @@ snapshots:
   minimatch@10.2.5:
     dependencies:
       brace-expansion: 5.0.6
-
-  miniprogram-api-promise@1.0.4: {}
 
   miniprogram-api-typings@5.2.1: {}
 

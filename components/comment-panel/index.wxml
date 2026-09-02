@@ -74,10 +74,7 @@
           </block>
         </view>
       </scroll-view>
-      <!-- </view> -->
-      <!-- ✅ 输入栏 + Banner：独立 fixed，只有这两个随键盘上移 -->
-      <!-- ✅ 只在 sheetVisible 时显示，面板关闭后消失 -->
-      <!-- <block wx:if="{{sheetVisible}}"> -->
+      <!-- 输入栏参与面板布局，键盘占位挤压上方评论列表。 -->
       <view class="cp-bottom-bar" style="padding-bottom: {{keyboardBottom}}px;">
         <!-- 回复 Banner -->
         <view class="cp-reply-banner" wx:if="{{replyTarget.nickName}}">
@@ -88,7 +85,7 @@
           <view class="cp-reply-banner__cancel" bindtap="cancelReply">✕</view>
         </view>
         <!-- 输入栏 -->
-        <view class="cp-inputbar" catchtouchmove="noop">
+        <view class="cp-inputbar {{keyboardOpen ? 'cp-inputbar--keyboard' : ''}}" catchtouchmove="noop">
           <view class="cp-inputbar__avatar cp-avatar cp-avatar--sm" style="background:{{selfAvatarBg}}">
             <image wx:if="{{selfAvatarUrl}}" class="cp-avatar__img" src="{{selfAvatarUrl}}" mode="aspectFill" />
             <text wx:else class="cp-avatar__char">{{selfAvatarChar}}</text>
@@ -96,16 +93,17 @@
           <view class="cp-inputbar__wrap {{inputFocused ? 'cp-inputbar__wrap--focus' : ''}}">
             <textarea class="cp-inputbar__input" value="{{inputValue}}"
               placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : '说点什么…'}}"
-              placeholder-style="cp-inputbar__placeholder" maxlength="500" auto-height cursor-spacing="0"
+              placeholder-class="cp-inputbar__placeholder" maxlength="500" auto-height="{{false}}" cursor-spacing="0"
+              style="height:{{inputHeightRpx}}rpx;" fixed disable-default-padding
               focus="{{inputAutoFocus}}" show-confirm-bar="{{false}}" adjust-position="{{false}}"
-              bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur" />
+              bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur"
+              bindlinechange="onInputLineChange" bindkeyboardheightchange="onInputKeyboardHeightChange" />
           </view>
-          <view class="cp-inputbar__send {{canSend ? '' : 'cp-inputbar__send--disabled'}}" bindtap="onSend">
-            <text class="cp-icon cp-icon--send">▶</text>
+          <view class="cp-inputbar__send {{canSend ? '' : 'cp-inputbar__send--disabled'}}" bindtap="onSend" aria-role="button" aria-label="发送评论" aria-disabled="{{!canSend}}">
+            <image class="cp-inputbar__send-icon" src="/assets/icons/common/send.svg" mode="aspectFit" />
           </view>
         </view>
       </view>
-      <!-- </block> -->
     </view>
   </block>
 
@@ -156,6 +154,7 @@
           </block>
         </block>
       </view>
+      <view class="cp-inputbar-spacer" style="height:{{composerHeight + keyboardBottom}}px;" aria-hidden="true" />
       <view class="cp-bottom-bar cp-bottom-bar--inline" style="bottom: {{keyboardBottom}}px;" catchtouchmove="noop">
         <!-- 图片预览 -->
         <view class="cp-imgpreview" wx:if="{{previewImage}}">
@@ -173,7 +172,7 @@
           <view class="cp-reply-banner__cancel" bindtap="cancelReply">✕</view>
         </view>
         <!-- Inline 输入栏（固定底部） -->
-        <view class="cp-inputbar ">
+        <view class="cp-inputbar {{keyboardOpen ? 'cp-inputbar--keyboard' : ''}}">
           <view class="cp-inputbar__avatar cp-avatar cp-avatar--sm" style="background:{{selfAvatarBg}}">
             <image wx:if="{{selfAvatarUrl}}" class="cp-avatar__img" src="{{selfAvatarUrl}}" mode="aspectFill" />
             <text wx:else class="cp-avatar__char">{{selfAvatarChar}}</text>
@@ -181,9 +180,11 @@
           <view class="cp-inputbar__wrap {{inputFocused ? 'cp-inputbar__wrap--focus' : ''}}">
             <textarea class="cp-inputbar__input" value="{{inputValue}}"
               placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : '说点什么…'}}"
-              placeholder-class="cp-inputbar__placeholder" maxlength="500" auto-height cursor-spacing="0"
+              placeholder-class="cp-inputbar__placeholder" maxlength="500" auto-height="{{false}}" cursor-spacing="0"
+              style="height:{{inputHeightRpx}}rpx;" fixed disable-default-padding
               focus="{{inputAutoFocus}}" show-confirm-bar="{{false}}" adjust-position="{{false}}"
-              bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur" />
+              bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur"
+              bindlinechange="onInputLineChange" bindkeyboardheightchange="onInputKeyboardHeightChange" />
             <!-- 配图按钮（一级评论可用，回复时禁用） -->
             <view class="cp-inputbar__imgbtn {{replyTarget.nickName ? 'cp-inputbar__imgbtn--disabled' : ''}}"
               bindtap="onChooseImage">
@@ -191,8 +192,8 @@
             </view>
           </view>
           <view class="cp-inputbar__send {{canSend || previewImage ? '' : 'cp-inputbar__send--disabled'}}"
-            bindtap="onSend">
-            <text class="cp-icon cp-icon--send">▶</text>
+            bindtap="onSend" aria-role="button" aria-label="发送评论" aria-disabled="{{!canSend && !previewImage}}">
+            <image class="cp-inputbar__send-icon" src="/assets/icons/common/send.svg" mode="aspectFit" />
           </view>
         </view>
       </view>

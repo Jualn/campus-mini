@@ -1,7 +1,7 @@
 // subpkg_exam/pages/list/list.ts
 
 import type { ExamListItem, ExamSearchItem, HotExam } from '../../../types/business';
-import { examAction } from '../../../actions/index';
+import * as examAction from '../../../actions/exam';
 import { createLogger } from '../../../utils/logger';
 import { wxGetWindowInfo, wxNavigateBack, wxNavigateTo } from '../../../utils/wx-promise';
 import { notifyToast } from '../../../utils/notify';

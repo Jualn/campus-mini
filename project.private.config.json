@@ -29,13 +29,6 @@
           "scene": null
         },
         {
-          "name": "pages/test/test",
-          "pathName": "pages/test/test",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
           "name": "pages/me/me",
           "pathName": "pages/me/me",
           "query": "",

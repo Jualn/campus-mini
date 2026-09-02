@@ -221,7 +221,7 @@
 </view> -->
 
     <!-- 报名方式 -->
-    <view class="section-card" wx:if="{{activity.join_method}}">
+    <view id="join-section" class="section-card" wx:if="{{activity.join_method || activity.qrcode_url}}">
       <view class="section-title-row">
         <image class="section-title-icon" src="/assets/icons/detail/join_method.svg" mode="aspectFit" />
         <text class="section-title">报名方式</text>
@@ -235,6 +235,7 @@
           src="{{activity.qrcode_url}}"
           mode="aspectFit"
           show-menu-by-longpress="{{true}}"
+          bindtap="onPreviewQRCode"
         />
 
         <!-- 说明文字 -->
@@ -292,16 +293,14 @@
           wx:key="name"
           class="attachment-item"
           bindtap="onOpenAttachment"
-          data-url="{{item.url}}"
-          data-type="{{item.type}}"
-          data-name="{{item.name}}"
+          data-index="{{index}}"
         >
           <image class="attachment-icon-img" src="/assets/icons/detail/file_item.svg" mode="aspectFit" />
           <view class="attachment-body">
             <text class="attachment-name">{{item.name}}</text>
             <text class="attachment-note" wx:if="{{item.note}}">{{item.note}}</text>
           </view>
-          <text class="attachment-type-badge">{{item.type.toUpperCase()}}</text>
+          <text class="attachment-type-badge">{{item.type || '文件'}}</text>
           <text class="attachment-arrow">›</text>
         </view>
       </view>
@@ -317,41 +316,35 @@
     <view class="bottom-safe" />
 
     <!-- 底部按钮栏 -->
-    <view class="bottom-bar" wx:if="{{activity.join_method && activity.join_method.length}}">
+    <view class="bottom-bar" wx:if="{{activity.join_method || activity.qrcode_url}}">
       <view class="enroll-btn enroll-btn--{{activity.status}}" bindtap="onScrollToJoin">
-        <text class="enroll-btn__text"
-          >{{activity.status==='enrolling'?'查看报名方式':activity.status==='not_started'?'报名已截止':activity.status==='ongoing'?'活动进行中':activity.status==='ended'?'活动已结束':''}}
-        </text>
+        <text class="enroll-btn__text">查看报名方式</text>
       </view>
-      <view class="share-btn" bind:tap="onShareOpen">
-        <view class="share-btn" bind:tap="onShareOpen">
-          <image class="share-btn__icon-img" src="/assets/icons/detail/share.svg" mode="aspectFit" />
-          <text class="share-btn__text">分享</text>
-        </view>
+      <view class="share-btn" bind:tap="onShare">
+        <image class="share-btn__icon-img" src="/assets/icons/detail/share.svg" mode="aspectFit" />
+        <text class="share-btn__text">分享</text>
       </view>
     </view>
   </block>
 </view>
 
-<view wx:if="{{showPopup}}" class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
-
 <page-container
   show="{{showPopup}}"
   position="bottom"
   round
-  overlay="{{false}}"
+  overlay="{{true}}"
   close-on-slide-down="{{false}}"
   z-index="999"
-  bind:beforeleave="onPopupBeforeLeave"
-  bind:leave="onPopupLeave"
   bind:afterleave="onPopupAfterLeave"
   bind:clickoverlay="onOverlayTap"
 >
   <!-- share弹窗 -->
   <share-panel
     wx:if="{{popupType==='share'}}"
-    share-path="{{currentSharePath}}"
     share-image-path="{{currentShareImage}}"
+    status="{{shareStatus}}"
+    bind:retry="onRetryShare"
+    bind:previewerror="onSharePreviewError"
     bind:close="onShareClose"
   />
 </page-container>

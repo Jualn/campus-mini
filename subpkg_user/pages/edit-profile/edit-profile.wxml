@@ -34,7 +34,7 @@
   <view class="banner-wrap" bindtap="onChangeBanner">
     <image class="banner-img" src="{{form.bannerUrl}}" mode="aspectFill" />
     <view class="banner-mask">
-      <image class="banner-mask__icon" src="/assets/icons/profile/change_cover_line.svg" mode="aspectFit" />
+      <image class="banner-mask__icon" src="../../assets/icons/profile/change_cover_line.svg" mode="aspectFit" />
       <text class="banner-mask__text">更换封面</text>
     </view>
   </view>
@@ -44,7 +44,7 @@
     <view class="avatar-wrap" bindtap="onChangeAvatar">
       <image class="avatar-img" src="{{form.avatarUrl}}" mode="aspectFill" />
       <view class="avatar-mask">
-        <image class="avatar-mask__icon" src="/assets/icons/profile/change_avatar_line.svg" mode="aspectFit" />
+        <image class="avatar-mask__icon" src="../../assets/icons/profile/change_avatar_line.svg" mode="aspectFit" />
       </view>
     </view>
   </view>

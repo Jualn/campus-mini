@@ -4,7 +4,7 @@ import defineComponent from '../../utils/defineComponent';
 import { createLogger } from '../../utils/logger';
 import { notifyToast } from '../../utils/notify';
 import type { SelectedMediaFile } from '../../actions/media';
-import { mediaAction } from '../../actions/index';
+import * as mediaAction from '../../actions/media';
 
 const log = createLogger('PostEditPanel');
 

@@ -790,6 +790,7 @@
 }
 
 .attachment-type-badge {
+  text-transform: uppercase;
   font-size: 20rpx;
   color: var(--color-text-tertiary);
   background: var(--color-bg-page);

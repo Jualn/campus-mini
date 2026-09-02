@@ -19,7 +19,10 @@ import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
 import definePage from '../../utils/definePage';
 import { notifyToast, showErrorToast } from '../../utils/notify';
-import { examAction, mediaAction, postAction } from '../../actions/index';
+import * as examAction from '../../actions/exam';
+import * as mediaAction from '../../actions/media';
+import * as postAction from '../../actions/post';
+import { appendUniquePosts, calculateHomeLayout, generatePostTitle } from './home-model';
 
 const log = createLogger('IndexPage');
 
@@ -101,15 +104,11 @@ definePage({
     this._loadListeners();
 
     const sys = wxGetWindowInfo();
-    const safeBottom = sys.screenHeight - sys.safeArea.bottom;
-
-    const rpxRatio = sys.windowWidth / 750;
-    const tabBarHeight = Math.round(120 * rpxRatio);
-    const tabBarBottom = safeBottom + 16;
-
-    const fabBottomDock = tabBarBottom + tabBarHeight + 16;
-    const fabSize = 50;
-    const fabMenuBottom = fabBottomDock + fabSize + 16;
+    const { fabBottomDock, fabMenuBottom } = calculateHomeLayout({
+      screenHeight: sys.screenHeight,
+      safeAreaBottom: sys.safeArea.bottom,
+      windowWidth: sys.windowWidth,
+    });
 
     const menuButton = wx.getMenuButtonBoundingClientRect();
     this.setData({
@@ -190,20 +189,11 @@ definePage({
   },
 
   onShareAppMessage(options): WechatMiniprogram.Page.ICustomShareContent {
-    let imageUrl: string;
-    let path: string;
-
-    if (options.from === 'button') {
-      imageUrl = this.data.currentShareImage || '';
-      path = this.data.currentSharePath;
-    } else {
-      imageUrl = 'https://cos.jualn.cn/share/index-share.jpg';
-      path = '/pages/index/index';
-    }
-
+    if (options.from === 'button') return this._getShareContent();
     return {
-      imageUrl,
-      path,
+      title: '发现校园里的新鲜事',
+      imageUrl: 'https://cos.jualn.cn/share/index-share.jpg',
+      path: '/pages/index/index',
     };
   },
 
@@ -345,9 +335,7 @@ definePage({
       const res = await postAction.fetchPostList({ lastId });
 
       // 防止后端游标边界重复返回同一条内容，避免列表出现重复卡片。
-      const existingIds = new Set(this.data.posts.map((item) => item.id));
-      const uniqueAppendList = res.list.filter((item) => !existingIds.has(item.id));
-      const nextList = [...this.data.posts, ...uniqueAppendList];
+      const nextList = appendUniquePosts(this.data.posts, res.list);
 
       this._lastPostId = res.nextCursor ?? '';
       this.setData({
@@ -411,27 +399,6 @@ definePage({
       });
     }
   },
-
-  // ==== 新增：封装方法，统一控制 TabBar 显示/隐藏，避免重复调用 ====
-  // _setTabBarHidden(hidden: boolean) {
-  //   const tabBar = typeof this.getTabBar === 'function' && this.getTabBar();
-  //   if (!tabBar) {
-  //     // 没有 tabbar （比如子包/调试环境）则跳过
-  //     this._tabBarHidden = hidden;
-  //     this.setData({
-  //       tabBarHidden: hidden,
-  //     });
-  //     return;
-  //   }
-  //   // 避免重复调用同样的状态
-  //   if (this._tabBarHidden === hidden) return;
-
-  //   this._tabBarHidden = hidden;
-  //   getCustomTabBar(this).toggleVisible(!hidden);
-  //   this.setData({
-  //     tabBarHidden: hidden,
-  //   });
-  // },
 
   _setHomeHeaderHidden(hidden: boolean) {
     this.setData({
@@ -518,24 +485,6 @@ definePage({
     });
   },
 
-  /** 截取去除杂乱字符的content，前10个字符作为标题 */
-  _generateTitle(content: string, maxLength = 10): string {
-    if (!content) return '无标题';
-
-    // 去掉首尾空格和换行
-    let text = content.trim().replace(/\r?\n/g, ' ');
-
-    // 可选：去掉 HTML 标签
-    text = text.replace(/<[^>]+>/g, '');
-
-    // 截取前 maxLength 个字符
-    if (text.length > maxLength) {
-      text = text.slice(0, maxLength) + '...';
-    }
-
-    return text || '无标题';
-  },
-
   onTapFab() {
     const { canPublishActivity, fabOpen } = this.data;
     if (!canPublishActivity) {
@@ -594,7 +543,7 @@ definePage({
       // 只有用户最终点击发布时才上传 COS
       // 用户选择图片、取消图片、关闭弹窗时，不上传 COS
       if (selectedFiles && selectedFiles.length > 0) {
-        attachmentItems = await mediaAction.uploadAndSaveFiles(
+        attachmentItems = await mediaAction.uploadFilesToCos(
           TARGET_TYPES.POST.value,
           selectedFiles,
         );
@@ -605,7 +554,7 @@ definePage({
       // 如果 COS 上传成功但 publishPost 失败，可能产生少量无业务引用文件。
       // 现阶段先观察 COS 存储情况，后续如有必要再增加 objectKey 生命周期记录和定时清理。
       await postAction.publishPostAndSync({
-        title: this._generateTitle(content),
+        title: generatePostTitle(content),
         content,
         attachmentItems,
       });

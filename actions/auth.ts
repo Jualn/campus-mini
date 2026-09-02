@@ -1,5 +1,5 @@
 // auth.ts
-import { authService } from '../services/index';
+import * as authService from '../services/auth';
 import { wxLogin } from '../utils/wx-promise';
 import { storage, STORAGE_KEYS } from '../utils/storage';
 import { appStore } from '../stores/index';

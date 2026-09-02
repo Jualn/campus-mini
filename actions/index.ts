@@ -1,11 +1,9 @@
 export * as authAction from './auth';
-export * as activityAction from './activity';
 export * as commentAction from './comment';
 export * as examAction from './exam';
 export * as mediaAction from './media';
 export * as messageAction from './message';
 export * as postAction from './post';
 export * as reportAction from './report';
-export * as searchAction from './search';
 export * as userAction from './user';
 export * as notificationCenter from './notification-center';

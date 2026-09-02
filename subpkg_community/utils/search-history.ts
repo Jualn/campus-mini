@@ -1,6 +1,6 @@
-// utils/search-history.ts
+// subpkg_community/utils/search-history.ts
 
-import { storage, STORAGE_KEYS } from './storage';
+import { storage, STORAGE_KEYS } from '../../utils/storage';
 
 const MAX_SEARCH_HISTORY = 8;
 

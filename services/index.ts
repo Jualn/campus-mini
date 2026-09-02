@@ -12,8 +12,7 @@ export * as mediaService from './media';
 export * as commentService from './comment';
 export * as interactService from './interact';
 export * as userService from './user';
-export * as activityService from './activity';
+
 export * as examService from './exam';
 export * as messageService from './message';
 export * as reportService from './report';
-export * as searchService from './search';

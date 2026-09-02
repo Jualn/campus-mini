@@ -1,24 +1,5 @@
-// activityPoster.ts
-// utils/activityPoster.js
-// 活动分享卡片
-// 有封面：封面图占上方55%，下方结构化信息条
-// 无封面：蓝白信息流卡片，时间/地点/人数色块排布
-//
-// 使用方式：
-//   import { drawActivityPoster } from '../../utils/activityPoster'
-//   await drawActivityPoster(this, activityData, (tempFilePath) => { ... })
-//
-// activityData 字段：
-//   title      string       活动标题
-//   time       string       活动时间
-//   location   string       活动地点
-//   maxPeople  number|null  人数上限，null 表示不限
-//   cover      string       封面图路径，空字符串表示无封面
-
 import * as PC from '../../utils/share_poster/posterCanvas';
 import type { WxScope } from '../../utils/share_poster/posterCanvas';
-import { createLogger } from '../../utils/logger';
-import { showErrorToast } from '../../utils/notify';
 
 // ── 类型定义 ──────────────────────────────────────────────────────────
 
@@ -31,60 +12,42 @@ export interface ActivityData {
 }
 
 type Ctx = ReturnType<typeof PC.initCanvas>['ctx'];
-type OnSuccess = (tempFilePath: string) => void;
-
-const log = createLogger('ActivityPoster');
-
+/** 保留原版封面、标签及信息色块；页面统一处理生成状态。 */
 export async function drawActivityPoster(
   scope: WxScope,
   activityData: ActivityData,
-  onSuccess: OnSuccess,
-): Promise<void> {
-  try {
-    const canvas = await PC.getCanvasNode('#posterCanvas', scope);
-    if (activityData.cover) {
-      await _drawWithCover(canvas, scope, activityData, onSuccess);
-    } else {
-      _drawNoCover(canvas, scope, activityData, onSuccess);
-    }
-  } catch (err) {
-    void wx.hideLoading();
-    showErrorToast(err, { fallback: '绘制失败' });
-    log.error('drawActivityPoster', '绘制失败', err);
-  }
+): Promise<string> {
+  const canvas = await PC.getCanvasNode('#posterCanvas', scope);
+  const image = await PC.optionalImage(canvas, activityData.cover);
+  const data = {
+    ...activityData,
+    title: activityData.title || '校园活动',
+    time: activityData.time || '未提供时间',
+    location: activityData.location || '未提供地点',
+    maxPeople:
+      typeof activityData.maxPeople === 'number' && activityData.maxPeople > 0
+        ? activityData.maxPeople
+        : null,
+  };
+  return image ? _drawWithCover(canvas, scope, data, image) : _drawNoCover(canvas, scope, data);
 }
 
 // ── 有封面版 ─────────────────────────────────────────
-async function _drawWithCover(
+function _drawWithCover(
   canvas: WechatMiniprogram.Canvas,
   scope: WxScope,
   data: ActivityData,
-  onSuccess: OnSuccess,
-): Promise<void> {
+  image: WechatMiniprogram.Image,
+): Promise<string> {
   const { ctx, W, H } = PC.initCanvas(canvas);
-  const { title, time, location, maxPeople, cover } = data;
+  const { title, time, location, maxPeople } = data;
   const PAD = 32;
   const imgH = 474;
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // 封面图
-  try {
-    const img = await PC.loadImage(canvas, cover);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, W, imgH);
-    ctx.clip();
-    PC.drawCover(ctx, img, 0, 0, W, imgH);
-    ctx.restore();
-  } catch {
-    const grad = ctx.createLinearGradient(0, 0, W, imgH);
-    grad.addColorStop(0, '#1677ff');
-    grad.addColorStop(1, '#69b1ff');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, imgH);
-  }
+  PC.drawCover(ctx, image, 0, 0, W, imgH);
 
   // 封面底部渐变过渡
   const grad = ctx.createLinearGradient(0, imgH - 80, 0, imgH);
@@ -103,7 +66,7 @@ async function _drawWithCover(
   PC.roundRect(ctx, PAD, tagY - 40, tagW, tagH, 10);
   ctx.fill();
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(tagText, PAD + 14, tagY + 8);
+  PC.drawVerticallyCenteredText(ctx, tagText, PAD + 14, tagY - 8, 48);
 
   // 标题（单行截断）
   const titleY = tagY + tagH + 32;
@@ -128,7 +91,7 @@ async function _drawWithCover(
     );
   }
 
-  PC.finalize(canvas, scope, onSuccess);
+  return PC.finalize(canvas, scope);
 }
 
 // 有封面版：单行信息条（圆点 + 标签 + 值）
@@ -144,17 +107,17 @@ function _drawInfoRow(
   const dotR = 6;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(x + dotR, y + dotR + 2, dotR, 0, Math.PI * 2);
+  ctx.arc(x + dotR, y, dotR, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = color;
   ctx.font = 'bold 48px sans-serif';
-  ctx.fillText(label, x + dotR * 2 + 12, y + 18);
+  PC.drawVerticallyCenteredText(ctx, label, x + dotR * 2 + 12, y, 48);
 
   const labelW = ctx.measureText(label).width + dotR * 2 + 12 + 16;
   ctx.fillStyle = '#333333';
   ctx.font = '54px sans-serif';
-  ctx.fillText(PC.truncateText(ctx, value, maxW - labelW), x + labelW, y + 18);
+  PC.drawVerticallyCenteredText(ctx, PC.truncateText(ctx, value, maxW - labelW), x + labelW, y, 54);
 }
 
 // ── 无封面版 ─────────────────────────────────────────
@@ -162,8 +125,7 @@ function _drawNoCover(
   canvas: WechatMiniprogram.Canvas,
   scope: WxScope,
   data: ActivityData,
-  onSuccess: OnSuccess,
-): void {
+): Promise<string> {
   const { ctx, W, H } = PC.initCanvas(canvas);
   const { title, time, location, maxPeople } = data;
   const PAD = 32;
@@ -182,7 +144,7 @@ function _drawNoCover(
   PC.roundRect(ctx, PAD, tagY, tagW, tagH, 10);
   ctx.fill();
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(tagText, PAD + 20, tagY + 50);
+  PC.drawVerticallyCenteredText(ctx, tagText, PAD + 20, tagY + tagH / 2, 48);
 
   // 标题（最多2行，56px）
   const titleY = tagY + tagH + 78;
@@ -221,7 +183,7 @@ function _drawNoCover(
   ctx.fill();
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 48px sans-serif';
-  ctx.fillText('日', iconX + 8, iconY + 48);
+  PC.drawVerticallyCenteredText(ctx, '日', iconX + 8, iconY + iconSize / 2, 48);
 
   ctx.fillStyle = PC.BLUE;
   ctx.font = 'bold 48px sans-serif';
@@ -251,7 +213,8 @@ function _drawNoCover(
     ctx.fillText('地点', PAD + 24, row2Y + 54);
     ctx.fillStyle = '#222222';
     ctx.font = '54px sans-serif';
-    PC.drawText(ctx, location, PAD + 24, row2Y + 120, colW - 48, 58, 3);
+    const locationLines = Math.max(1, Math.min(3, Math.floor((row2H - 136) / 58) + 1));
+    PC.drawText(ctx, location, PAD + 24, row2Y + 120, colW - 48, 58, locationLines);
 
     // 人数块
     const col2X = PAD + colW + blockGap;
@@ -263,11 +226,12 @@ function _drawNoCover(
     ctx.fillText('人数上限', col2X + 24, row2Y + 54);
     ctx.fillStyle = '#1a1a1a';
     ctx.font = 'bold 54px sans-serif';
-    const numStr = String(maxPeople);
+    const numStr = PC.truncateText(ctx, String(maxPeople), colW - 112);
+    const numWidth = ctx.measureText(numStr).width;
     ctx.fillText(numStr, col2X + 24, row2Y + row2H / 2 + 22);
     ctx.fillStyle = '#888888';
     ctx.font = '54px sans-serif';
-    ctx.fillText('人', col2X + 24 + ctx.measureText(numStr).width + 6, row2Y + row2H / 2 + 22);
+    ctx.fillText('人', col2X + 24 + numWidth + 6, row2Y + row2H / 2 + 22);
   } else {
     // 地点独占全宽
     ctx.fillStyle = '#f6f6f6';
@@ -281,5 +245,5 @@ function _drawNoCover(
     PC.drawText(ctx, location, PAD + 32, row2Y + 120, W - PAD * 2 - 64, 58, 2);
   }
 
-  PC.finalize(canvas, scope, onSuccess);
+  return PC.finalize(canvas, scope);
 }

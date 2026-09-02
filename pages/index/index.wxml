@@ -139,7 +139,6 @@
           bind:comment="onOpenComment"
           bind:view="onPostView"
           bind:share="onOpenShare"
-          bind:shareImageReady="onShareImageReady"
           bind:more="onPostCardMore"
         />
         <!-- 活动插片
@@ -232,8 +231,10 @@
   <!-- share弹窗 -->
   <share-panel
     wx:elif="{{popupType==='share'}}"
-    share-path="{{currentSharePath}}"
     share-image-path="{{currentShareImage}}"
+    status="{{shareStatus}}"
+    bind:retry="onRetryShare"
+    bind:previewerror="onSharePreviewError"
     bind:close="onShareClose"
   />
   <!-- report弹窗 -->
@@ -275,3 +276,5 @@
 </view>
 
 <in-app-banner />
+
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px"></canvas>

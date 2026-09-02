@@ -39,6 +39,7 @@ export interface UserInfoDTO {
 
 /** 用户完整资料VO */
 export interface UserProfileVO {
+  id: string;
   nickname: string; // string
   avatarUrl: string; // string
   backgroundUrl: string; // string
@@ -69,7 +70,9 @@ export interface UserPublicProfileVO {
 export interface UserProfileUpdateRequest {
   nickname?: string; // string
   avatarUrl?: string; // string
+  avatarObjectKey?: string; // string
   backgroundUrl?: string; // string
+  backgroundObjectKey?: string; // string
   bio?: string; // string
   gender?: number; // integer(int32)
 }
@@ -128,6 +131,12 @@ export interface LoginRequest {
 export interface LoginVO {
   token: string; // string
   userInfo: UserInfoDTO; // UserInfoDTO
+}
+
+/** 管理端二维码登录确认结果 */
+export interface AdminQrConfirmationVO {
+  confirmed: boolean;
+  displayName: string;
 }
 
 // ============================================================
@@ -314,7 +323,7 @@ export interface ExamDetailVO {
 export interface PostCreateRequest {
   title: string; // string
   content: string; // string
-  attachmentItems: unknown[]; // array
+  attachmentItems: AttachmentItemRequest[]; // array
 }
 
 /** 帖子列表BO */
@@ -357,6 +366,7 @@ export interface CommentCreateRequest {
   replyToUid?: string | null; // string(long)
   content: string; // string
   imageUrl?: string; // string
+  imageObjectKey?: string; // string
 }
 
 /** 评论VO */
@@ -504,20 +514,21 @@ export interface CosUploadCredentialDTO {
   bucket: string; // string
   region: string; // string
   objectKeys: string[]; // 对象键列表。
-  uploadUrl: string; // 预签名上传 URL（PUT），STS 流程下不返回。
-  fileUrl: string; // 资源访问 URL，STS 流程下不返回。
-  expireAt: string; // 凭证过期时间。(date-time)
-  tmpSecretId: string; // STS 临时凭证字段
-  tmpSecretKey: string; // STS 临时凭证字段
-  sessionToken: string; // STS 临时凭证字段
-  expiredTime: number; // 单位为 epoch seconds
-  customDomain: string; // 自定义访问域名，如果提供则优先使用该域名而非默认的官方域名
+  uploadUrl?: string; // 预签名上传 URL（PUT），STS 流程下不返回。
+  fileUrl?: string; // 资源访问 URL，STS 流程下不返回。
+  expireAt?: string; // 凭证过期时间。(date-time)
+  tmpSecretId?: string; // STS 临时凭证字段
+  tmpSecretKey?: string; // STS 临时凭证字段
+  sessionToken?: string; // STS 临时凭证字段
+  expiredTime?: number; // 单位为 epoch seconds
+  customDomain?: string; // 自定义访问域名，如果提供则优先使用该域名而非默认的官方域名
 }
 
 /** 媒体附件BO */
 export interface MediaAttachmentBO {
   id: string; // string(long)
   type: string; // string
+  objectKey?: string; // COS 对象键；外链类型为空
   url: string; // string
   originalName: string; // string
   sortOrder: number; // integer(int32)
@@ -534,15 +545,10 @@ export interface MediaAttachmentSimpleBO {
 /** 附件项请求 */
 export interface AttachmentItemRequest {
   type: MediaType; // string
+  objectKey?: string; // COS 对象键；外链类型不传
   url: string; // string
   originalName: string; // string
   sortOrder: number; // integer(int32)
-}
-
-/** 媒体附件创建请求 */
-export interface MediaAttachmentCreateRequest {
-  targetType: TargetType; // string
-  attachmentItems: AttachmentItemRequest[]; // array
 }
 
 // ============================================================

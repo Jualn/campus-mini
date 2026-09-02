@@ -1,6 +1,6 @@
 // 业务实体类型
 
-import type { ActivityUiStatus, Attachment, Contact, TimelineNode } from '../services/activity';
+import type { ActivityUiStatus, Attachment, Contact, TimelineNode } from './activity';
 
 // *********************** Service 层返回类型定义 ***********************
 
@@ -26,6 +26,7 @@ export interface ReplyItem {
   likeCount: number;
   isLiked?: boolean;
   replyToName?: string;
+  replyToUserId?: string;
   _avatarChar: string;
   _avatarBg: string;
 }
@@ -142,6 +143,11 @@ export interface EditProfileForm {
   avatarUrl: string;
   bannerUrl: string;
 }
+
+export type EditProfileUpdate = Partial<EditProfileForm> & {
+  avatarObjectKey?: string;
+  backgroundObjectKey?: string;
+};
 
 // subpkg_user/pages/user/user.ts 中使用的类型
 export interface UserPageData {

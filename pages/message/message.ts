@@ -1,4 +1,4 @@
-import { messageAction } from '../../actions/index';
+import * as messageAction from '../../actions/message';
 import { createLogger } from '../../utils/logger';
 import type { FilterTab, MessageItem } from '../../types/business';
 import { getCustomTabBar } from '../../utils/tabbar';

@@ -1,6 +1,9 @@
+import { useSharePoster } from './useSharePoster';
+import { drawPostPoster } from '../utils/share_poster/postPoster';
+import { getAvatarInfo } from '../utils/avatar';
 import defineBehavior from '../utils/defineBehavior';
 import { wxHideKeyboard, wxShowActionSheet, wxShowModal } from '../utils/wx-promise';
-import { postAction } from '../actions/index';
+import * as postAction from '../actions/post';
 import { TARGET_TYPES } from '../utils/constants';
 import type { PostCardItem } from '../types/business';
 import { createLogger } from '../utils/logger';
@@ -8,6 +11,7 @@ import { eventBus, EVENTS } from '../utils/event-bus';
 import { type PostUpdatePayload } from '../events/post-event';
 import { getUserInfo } from '../stores/helper';
 import { showErrorToast, showSuccessToast } from '../utils/notify';
+import { watchCurrentProfile } from '../actions/current-user';
 
 const log = createLogger('usePostActions');
 
@@ -153,6 +157,7 @@ export function usePostActions<TExtraThis extends object = object>(
   const postListKeys = [...new Set(configuredPostListKeys)];
 
   return defineBehavior<PostActionsPrivate>()({
+    behaviors: [useSharePoster()],
     data: {
       posts: [] as PostCardItem[],
       postsCache: [] as PostCardItem[],
@@ -164,10 +169,6 @@ export function usePostActions<TExtraThis extends object = object>(
       commentTargetId: '',
       commentTargetType: TARGET_TYPES.POST.value,
       commentTotalCount: 0,
-
-      // share-panel 传递的数据
-      currentShareImage: '',
-      currentSharePath: '',
 
       // report-panel 传递的数据
       reportTargetType: '',
@@ -185,6 +186,15 @@ export function usePostActions<TExtraThis extends object = object>(
         this._postActionsPopupVisible = this.data.showPopup;
 
         this._behaviorDisposers.push(
+          watchCurrentProfile(() => {
+            const patch: Record<string, PostCardItem[]> = {};
+            for (const key of postListKeys) {
+              const list = this.data[key];
+              const next = list.map(postAction.syncPostAuthor);
+              if (next.some((post, index) => post !== list[index])) patch[key] = next;
+            }
+            if (Object.keys(patch).length) this.setData(patch);
+          }),
           eventBus.on(EVENTS.POST_UPDATED, (payload) => {
             if (!payload.id) return;
             this._applyPostPatch(payload);
@@ -420,9 +430,6 @@ export function usePostActions<TExtraThis extends object = object>(
           commentTargetType: TARGET_TYPES.POST.value,
           commentTotalCount: 0,
 
-          currentShareImage: '',
-          currentSharePath: '',
-
           reportTargetType: '',
           reportTargetId: '',
           previousPopupType: '',
@@ -474,44 +481,26 @@ export function usePostActions<TExtraThis extends object = object>(
         this._recordPostView(e.detail.postId);
       },
 
-      /**
-       * post-card -> bind:share
-       *
-       * detail 需要传递 sharePath 和 shareImage，sharePath 用于设置分享路径，shareImage 用于设置分享图片
-       * @param e 事件对象，包含 detail.sharePath 和 detail.shareImage
-       */
-      onOpenShare(
-        e: WechatMiniprogram.CustomEvent<{
-          sharePath: string;
-          shareImage: string;
-          shareTitle?: string;
-          targetId?: string;
-        }>,
-      ) {
-        const { sharePath, shareImage } = e.detail;
-
-        this._openPopup({
-          popupType: 'share',
-          currentSharePath: sharePath || '',
-          currentShareImage: shareImage || '',
-          previousPopupType: '',
+      /** 页面拥有分享任务及唯一画布，卡片只报告 postId。 */
+      onOpenShare(e: WechatMiniprogram.CustomEvent<{ postId: string }>) {
+        const post = this.data.posts.find((item) => item.id === e.detail.postId);
+        if (!post) return;
+        const avatar = getAvatarInfo(post.nickname);
+        const data = {
+          avatarUrl: post.avatarUrl || '',
+          avatarChar: avatar.char,
+          avatarBg: avatar.bg,
+          name: post.nickname || '',
+          content: post.content || '',
+          images: [...(post.images ?? [])],
+          time: post.createdAt || '',
+        };
+        this._prepareShare({
+          key: JSON.stringify([post.id, data]),
+          path: `/subpkg_community/pages/detail/detail?postId=${post.id}&from=share`,
+          render: (scope) => drawPostPoster(scope, data),
         });
-      },
-
-      /**
-       * post-card -> bind:shareImageReady
-       *
-       * detail 需要传递 shareImage，用于更新分享图片地址
-       * @param e 事件对象，包含 detail.shareImage
-       */
-      onShareImageReady(
-        e: WechatMiniprogram.CustomEvent<{
-          shareImage: string;
-        }>,
-      ) {
-        this.setData({
-          currentShareImage: e.detail.shareImage || '',
-        });
+        this._openPopup({ popupType: 'share', previousPopupType: '' });
       },
 
       /**
