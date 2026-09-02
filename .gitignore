@@ -1,4 +1,6 @@
 # dependencies
 node_modules/
 .pnpm-store/
+.agents/
+
 project.private.config.json
