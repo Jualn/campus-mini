@@ -12,7 +12,7 @@ export function projectPostAuthor<T extends PostCardItem | PostDetail>(
   post: T,
   profile: UserProfileInfo | null,
 ): T {
-  if (!profile?.id || post.userId !== profile.id) return post;
+  if (!profile?.userId || post.userId !== profile.userId) return post;
   const avatarUrl = profile.avatarUrl ?? '';
   if ('avatar' in post) {
     const avatar = getAvatarInfo(profile.nickname);
@@ -20,19 +20,31 @@ export function projectPostAuthor<T extends PostCardItem | PostDetail>(
       post.nickname === profile.nickname &&
       post.avatar === avatarUrl &&
       post._avatarChar === avatar.char &&
-      post._avatarBg === avatar.bg
+      post._avatarBg === avatar.bg &&
+      post.isPlatformOperator === profile.isPlatformOperator
     )
       return post;
     return {
       ...post,
+      isPlatformOperator: profile.isPlatformOperator,
       nickname: profile.nickname,
       avatar: avatarUrl,
       _avatarChar: avatar.char,
       _avatarBg: avatar.bg,
     };
   }
-  if (post.nickname === profile.nickname && post.avatarUrl === avatarUrl) return post;
-  return { ...post, nickname: profile.nickname, avatarUrl };
+  if (
+    post.nickname === profile.nickname &&
+    post.avatarUrl === avatarUrl &&
+    post.isPlatformOperator === profile.isPlatformOperator
+  )
+    return post;
+  return {
+    ...post,
+    isPlatformOperator: profile.isPlatformOperator,
+    nickname: profile.nickname,
+    avatarUrl,
+  };
 }
 
 export function projectCommentAuthor<T extends CommentItem | ReplyItem>(
@@ -43,12 +55,13 @@ export function projectCommentAuthor(
   item: CommentItem | ReplyItem,
   profile: UserProfileInfo | null,
 ): CommentItem | ReplyItem {
-  if (!profile?.id) return item;
+  if (!profile?.userId) return item;
   let next = item;
-  if (item.userId === profile.id) {
+  if (item.userId === profile.userId) {
     const avatar = getAvatarInfo(profile.nickname);
     const avatarUrl = profile.avatarUrl ?? '';
     if (
+      item.isPlatformOperator !== profile.isPlatformOperator ||
       item.nickName !== profile.nickname ||
       item.avatarUrl !== avatarUrl ||
       item._avatarChar !== avatar.char ||
@@ -56,6 +69,7 @@ export function projectCommentAuthor(
     ) {
       next = {
         ...next,
+        isPlatformOperator: profile.isPlatformOperator,
         nickName: profile.nickname,
         avatarUrl,
         _avatarChar: avatar.char,
@@ -65,7 +79,7 @@ export function projectCommentAuthor(
   }
   if (
     'replyToUserId' in next &&
-    next.replyToUserId === profile.id &&
+    next.replyToUserId === profile.userId &&
     next.replyToName !== profile.nickname
   ) {
     next = { ...next, replyToName: profile.nickname };

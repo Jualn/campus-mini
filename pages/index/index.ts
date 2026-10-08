@@ -10,19 +10,28 @@ import { TARGET_TYPES } from '../../utils/constants';
 import { createLogger } from '../../utils/logger';
 import type { SelectedMediaFile } from '../../actions/media';
 import type { AttachmentItemRequest } from '../../types/api';
-import type { IndexActivityCard, IndexExamCardItem, PostCardItem } from '../../types/business';
+import type { IndexActivityCard, PostCardItem } from '../../types/business';
+import type { HomePublicMatterReminderSnapshot } from '../../services/home-public-matter-reminder';
 import { getCustomTabBar } from '../../utils/tabbar';
+import { appStore } from '../../stores/index';
 import { scrollStore } from '../../stores/scrollStore';
-import { getUserInfo } from '../../stores/helper';
+import { getUserInfo, isLoggedIn } from '../../stores/helper';
 import { authReady } from '../../actions/auth';
 import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
 import definePage from '../../utils/definePage';
 import { notifyToast, showErrorToast } from '../../utils/notify';
-import * as examAction from '../../actions/exam';
+import { getHomePublicMatterReminders } from '../../services/home-public-matter-reminder';
 import * as mediaAction from '../../actions/media';
 import * as postAction from '../../actions/post';
-import { appendUniquePosts, calculateHomeLayout, generatePostTitle } from './home-model';
+import {
+  appendUniquePosts,
+  calculateHomeLayout,
+  estimateReminderNow,
+  generatePostTitle,
+  toHomeReminderCards,
+  type HomePublicMatterReminderCard,
+} from './home-model';
 
 const log = createLogger('IndexPage');
 
@@ -50,6 +59,16 @@ definePage({
   // _viewedPostIds: new Set<string>(),
   /** 记录最后一篇文章的ID */
   _lastPostId: '',
+  _reminderVersion: 0,
+  _reminderUnloaded: false,
+  _pageVisible: false,
+  _reminderUserId: null as string | null,
+  _reminderSnapshot: null as HomePublicMatterReminderSnapshot | null,
+  _reminderTimer: null as ReturnType<typeof setInterval> | null,
+  _reminderInFlight: null as Promise<void> | null,
+  _reminderInFlightUserId: '',
+  _reminderReloadPending: false,
+  _reminderRenderKey: '',
   /** 标记是否正在提交, 防止重复提交 */
   _submitting: false,
   _disposers: [] as (() => void)[],
@@ -76,14 +95,16 @@ definePage({
     statusBarHeight: 20,
     navHeight: 64,
     /** 骨架循环数据写在 data 中，避免在 WXML 里创建临时数组 */
-    skeletonExamList: [0, 1],
+    skeletonPublicEventList: [0, 1],
     skeletonQuickNavList: [0, 1],
 
     /** post-card 传递的数据列表 */
     posts: [] as PostCardItem[],
 
     activities: [] as IndexActivityCard[],
-    examList: [] as IndexExamCardItem[],
+    homeReminderList: [] as HomePublicMatterReminderCard[],
+    homeReminderLoading: false,
+    homeReminderError: false,
 
     isScrolled: false, // 新增：是否页面发生滚动
 
@@ -117,8 +138,6 @@ definePage({
       canPublishActivity: getUserInfo('role') !== 1,
       statusBarHeight: sys.statusBarHeight,
       navHeight: menuButton.top + 10,
-      // 考试数据为本地同步数据，先准备好；即使动态接口失败，顶部内容也能正常展示。
-      examList: examAction.getExamSimpleList(),
     });
 
     this._listLoadBeginInitial();
@@ -137,6 +156,10 @@ definePage({
   },
 
   onUnload() {
+    this._reminderUnloaded = true;
+    this._pageVisible = false;
+    this._reminderVersion++;
+    this._stopReminderTimer();
     if (this._previewRestoreTimer !== null) {
       clearInterval(this._previewRestoreTimer);
       this._previewRestoreTimer = null;
@@ -153,6 +176,8 @@ definePage({
   },
 
   onHide() {
+    this._pageVisible = false;
+    this._stopReminderTimer();
     this._saveCurrentScrollTop();
   },
 
@@ -164,13 +189,17 @@ definePage({
     }
 
     try {
-      await this._loadData({ scene: 'refresh' });
+      await Promise.all([this._loadData({ scene: 'refresh' }), this._loadHomeReminders()]);
     } finally {
       void wx.stopPullDownRefresh();
     }
   },
 
   onShow() {
+    this._pageVisible = true;
+    this._syncHomeReminderCountdown();
+    this._startReminderTimer();
+    void this._loadHomeReminders();
     // 初始化tabbar，确保在onLoad时就能获取到实例并调用方法
     if (typeof this.getTabBar === 'function') {
       getCustomTabBar(this).init();
@@ -186,6 +215,132 @@ definePage({
     this._syncPostsFromCache();
 
     // this._loadData(); 不能全量刷新数据，否则会导致评论区关闭后帖子列表闪烁,后面设计有监听需求按监听实现刷新
+  },
+
+  _loadHomeReminders(): Promise<void> {
+    const userId = getUserInfo('id') ?? '';
+    if (!isLoggedIn() || !userId) {
+      this._clearHomeReminders();
+      return Promise.resolve();
+    }
+
+    if (this._reminderInFlight && this._reminderInFlightUserId === userId) {
+      return this._reminderInFlight;
+    }
+
+    const version = ++this._reminderVersion;
+    this._reminderInFlightUserId = userId;
+    // 加载本身不改变内容/错误区域的可见性，避免空结果刷新时闪出临时占位。
+    this.setData({ homeReminderLoading: true });
+
+    const request = (async () => {
+      try {
+        const snapshot = await getHomePublicMatterReminders();
+        if (!this._canApplyReminderResult(version, userId)) return;
+
+        this._reminderSnapshot = snapshot;
+        this.setData({ homeReminderError: false });
+        this._syncHomeReminderCountdown();
+        this._startReminderTimer();
+      } catch (err) {
+        if (!this._canApplyReminderResult(version, userId)) return;
+        log.error('_loadHomeReminders', '主页公共事项提醒加载失败', err);
+        this.setData({ homeReminderError: true });
+        this._startReminderTimer();
+      } finally {
+        if (this._canApplyReminderResult(version, userId)) {
+          this.setData({ homeReminderLoading: false });
+        }
+        if (version === this._reminderVersion && this._reminderInFlightUserId === userId) {
+          this._reminderInFlight = null;
+          this._reminderInFlightUserId = '';
+          if (this._reminderReloadPending && this._pageVisible) {
+            this._reminderReloadPending = false;
+            void this._loadHomeReminders();
+          }
+        }
+      }
+    })();
+
+    this._reminderInFlight = request;
+    return request;
+  },
+
+  _canApplyReminderResult(version: number, userId: string): boolean {
+    return (
+      !this._reminderUnloaded &&
+      version === this._reminderVersion &&
+      userId === (getUserInfo('id') ?? '')
+    );
+  },
+
+  _syncHomeReminderCountdown() {
+    const snapshot = this._reminderSnapshot;
+    if (!snapshot) return;
+
+    const estimatedNow = estimateReminderNow(snapshot);
+    const cards = toHomeReminderCards(snapshot.items, estimatedNow);
+    const renderKey = JSON.stringify(cards);
+
+    if (renderKey !== this._reminderRenderKey) {
+      this._reminderRenderKey = renderKey;
+      this.setData({ homeReminderList: cards });
+    }
+
+    if (cards.length < snapshot.items.length) {
+      const activeIds = new Set(cards.map((item) => item.publicMatterId));
+      this._reminderSnapshot = {
+        ...snapshot,
+        items: snapshot.items.filter((item: HomePublicMatterReminderSnapshot['items'][number]) =>
+          activeIds.has(item.publicMatterId),
+        ),
+      };
+      if (cards.length === 0) this._stopReminderTimer();
+      if (this._pageVisible) {
+        if (this._reminderInFlight) this._reminderReloadPending = true;
+        else void this._loadHomeReminders();
+      }
+    }
+  },
+
+  _startReminderTimer() {
+    if (!this._pageVisible || !this._reminderSnapshot?.items.length || this._reminderTimer !== null)
+      return;
+    this._reminderTimer = setInterval(() => {
+      this._syncHomeReminderCountdown();
+    }, 1000);
+  },
+
+  _stopReminderTimer() {
+    if (this._reminderTimer === null) return;
+    clearInterval(this._reminderTimer);
+    this._reminderTimer = null;
+  },
+
+  _clearHomeReminders() {
+    this._reminderVersion++;
+    this._reminderSnapshot = null;
+    this._reminderInFlight = null;
+    this._reminderInFlightUserId = '';
+    this._reminderReloadPending = false;
+    this._reminderRenderKey = '';
+    this._stopReminderTimer();
+    this.setData({
+      homeReminderList: [],
+      homeReminderLoading: false,
+      homeReminderError: false,
+    });
+  },
+
+  _handleReminderIdentity(userId: string) {
+    if (this._reminderUserId === userId) return;
+    this._reminderUserId = userId;
+    this._clearHomeReminders();
+    if (userId && this._pageVisible) void this._loadHomeReminders();
+  },
+
+  onRetryHomeReminders() {
+    void this._loadHomeReminders();
   },
 
   onShareAppMessage(options): WechatMiniprogram.Page.ICustomShareContent {
@@ -227,8 +382,11 @@ definePage({
   _loadListeners() {
     if (this._disposers.length > 0) return;
 
-    // 监听事件
-    this._disposers.push();
+    this._disposers.push(
+      appStore.watch('userInfo', (user) => {
+        this._handleReminderIdentity(user.id);
+      }),
+    );
   },
 
   _prependPostCard(post: PostCardItem) {
@@ -596,12 +754,14 @@ definePage({
     this._navigateTo('/subpkg_community/pages/search/search');
   },
 
-  goToExamList() {
-    this._navigateTo('/subpkg_exam/pages/list/list');
+  goToPublicEventList() {
+    this._navigateTo('/subpkg_public_event/pages/list/list');
   },
 
-  goToExamDetail(e: WechatMiniprogram.TouchEvent) {
-    const examId = e.currentTarget.dataset.id as string;
-    this._navigateTo(`/subpkg_exam/pages/detail/detail?examId=${examId}`);
+  goToPublicEventDetail(e: WechatMiniprogram.TouchEvent) {
+    const publicEventId = e.currentTarget.dataset.id as string;
+    this._navigateTo(
+      `/subpkg_public_event/pages/detail/detail?publicEventId=${encodeURIComponent(publicEventId)}`,
+    );
   },
 });

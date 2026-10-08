@@ -185,10 +185,6 @@ page {
   z-index: 2;
 }
 
-.image-item__del-icon {
-  font-size: 20rpx;
-  color: var(--color-text-inverse);
-}
 
 /* 添加图片按钮 */
 .image-add {
@@ -202,10 +198,6 @@ page {
   justify-content: center;
   gap: 8rpx;
   background: #F8F9FA;
-}
-
-.image-add__icon {
-  font-size: 40rpx;
 }
 
 .image-add__text {
@@ -253,10 +245,6 @@ page {
   justify-content: center;
 }
 
-.topic-chip__del-icon {
-  font-size: 18rpx;
-  color: var(--color-primary);
-}
 
 .bottom-pad {
   height: 20rpx;
@@ -301,10 +289,6 @@ page {
 .toolbar-btn__icon {
   font-size: 36rpx;
   color: var(--color-text-secondary);
-}
-
-.toolbar-btn--text .toolbar-btn__icon {
-  font-size: 28rpx;
 }
 
 .toolbar-btn__label {

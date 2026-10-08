@@ -163,7 +163,7 @@
   height: 40rpx;
   flex-shrink: 0;
   position: relative;
-  opacity: 0.78;
+  opacity: 1;
   margin-right: 6rpx;
 }
 
@@ -187,34 +187,7 @@
 }
 
 /* 点赞图标动画 */
-.icon {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-.like-off {
-  opacity: 1;
-}
-
-.like-on {
-  opacity: 0;
-  transform: scale(0.7);
-}
-
-.liked .like-off {
-  opacity: 0;
-  transform: scale(0.7);
-}
-
-.liked .like-on {
-  opacity: 1;
-  transform: scale(1);
-  animation: likePop 0.3s ease;
-}
+.action-icon.liked { animation: likePop 0.3s ease; }
 
 @keyframes likePop {
   0% {
@@ -228,4 +201,10 @@
   100% {
     transform: scale(1);
   }
+}
+/* Layout stays with the caller; UiIcon owns the glyph. */
+.icon-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

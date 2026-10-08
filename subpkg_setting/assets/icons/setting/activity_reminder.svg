@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style>.cls-1{fill:#1876ff;}.cls-2{fill:#98bdfe;}.cls-3{fill:#fff;}.cls-4{fill:#ffe08a;}.cls-5{fill:none;stroke:#144a8a;stroke-linecap:round;stroke-miterlimit:10;stroke-width:.65px;}</style></defs><g id="图层_1" data-name="图层 1"><g id="活动提醒"><path class="cls-2" d="M6.18,5.63h11.64a1.38,1.38,0,0,1,1.38,1.38V18.53a1.46,1.46,0,0,1-1.46,1.46H6.26A1.46,1.46,0,0,1,4.8,18.53V7.01A1.38,1.38,0,0,1,6.18,5.63Z"/><path class="cls-1" d="M6.18,5.63h11.64A1.38,1.38,0,0,1,19.2,7v2.78H4.8V7A1.38,1.38,0,0,1,6.18,5.63Z"/><path class="cls-3" d="M8.11,11.48h2.08a.35.35,0,0,1,.35.35v2.08a.35.35,0,0,1-.35.35H8.11a.35.35,0,0,1-.35-.35V11.83A.35.35,0,0,1,8.11,11.48Z"/><path class="cls-3" d="M13.81,11.48h2.08a.35.35,0,0,1,.35.35v2.08a.35.35,0,0,1-.35.35H13.81a.35.35,0,0,1-.35-.35V11.83A.35.35,0,0,1,13.81,11.48Z"/><path class="cls-3" d="M8.11,15.93h2.08a.35.35,0,0,1,.35.35v1.12a.35.35,0,0,1-.35.35H8.11a.35.35,0,0,1-.35-.35V16.28A.35.35,0,0,1,8.11,15.93Z"/><path class="cls-4" d="M17.08,14.92l.62,1.26,1.39.2-1,1,.24,1.38-1.25-.65-1.24.65.23-1.38-1-1,1.39-.2Z"/><line class="cls-5" x1="8.13" y1="4.12" x2="8.13" y2="6.71"/><line class="cls-5" x1="15.87" y1="4.12" x2="15.87" y2="6.71"/></g></g></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#2f7cf6"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+  <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+</svg>

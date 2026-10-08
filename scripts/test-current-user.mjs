@@ -81,12 +81,12 @@ const projection = load('utils/user-projection.ts');
 const login = (id) =>
   appStore.set('userInfo', { id, nickname: '登录摘要', avatarUrl: 'login.png', role: 1 });
 const profile = (nickname, id = 'me') => ({
-  id,
+  userId: id,
   nickname,
   avatarUrl: `${nickname}.png`,
-  bannerUrl: 'banner.png',
+  backgroundUrl: `${nickname}-background.png`,
   bio: '简介',
-  role: 1,
+  isPlatformOperator: false,
 });
 login('me');
 let seen;
@@ -124,7 +124,8 @@ reads[2].resolve(profile('迟到旧值'));
 assert.equal((await lateRead).nickname, '服务端最终昵称', '旧 GET 的调用方也只能拿到新资料');
 assert.equal(seen.nickname, '服务端最终昵称');
 assert.equal(persisted.at(-1).nickname, '服务端最终昵称');
-assert.equal(reads.length, 3, 'PUT 返回资料后不额外 GET');
+assert.equal(action.peekCurrentProfile().backgroundUrl, '服务端最终昵称-background.png', 'Background follows final server state');
+assert.equal(reads.length, 3, 'PATCH 返回资料后不额外 GET');
 
 const failedSave = action.saveCurrentProfile({ bio: '失败改动' });
 await tick();
@@ -167,6 +168,10 @@ const other = { ...own, id: 'q', userId: 'other' };
 const projected = projection.projectPostAuthor(own, fresh);
 assert.equal(projected.nickname, '最新');
 assert.equal(projected.likeCount, 7);
+assert.equal(projected.isPlatformOperator, false);
+const operator = { ...fresh, isPlatformOperator: true };
+assert.equal(projection.projectPostAuthor(own, operator).isPlatformOperator, true);
+assert.equal(projection.projectCommentAuthor({ userId: 'me', nickName: '旧' }, operator).isPlatformOperator, true);
 assert.equal(own.nickname, '旧', '不修改接口原对象');
 assert.equal(projection.projectPostAuthor(other, fresh), other, '不改其他作者');
 assert.equal(projection.projectPostAuthor(projected, fresh), projected, '无变化保持引用');
@@ -272,6 +277,22 @@ writes[4].resolve(profile('销毁后'));
 await lastSave;
 assert.equal(panel.data.selfAvatarUrl, '同步后.png');
 assert.equal(host.data.posts[0].nickname, '同步后');
+// A timeout/500 cannot be blindly resubmitted: next explicit save first rereads truth.
+const { NetworkError } = load('utils/error.ts');
+const unknown = action.saveCurrentProfile({ bio: '未知结果' });
+await tick();
+writes[5].reject(new NetworkError('timeout'));
+await assert.rejects(unknown, /timeout/);
+assert.equal(writes.length, 6, '失败不自动重试写入');
+const retry = action.saveCurrentProfile({ bio: '显式重试' });
+await tick();
+assert.equal(reads.length, 6, '显式重试先重新读取有效资料');
+assert.equal(writes.length, 6, '重新读取完成前不写入');
+reads[5].resolve(profile('重新校验'));
+await tick();
+writes[6].resolve(profile('销毁后'));
+await retry;
+
 off();
 login('');
 assert.equal(seen.nickname, '销毁后', '销毁时解除订阅');

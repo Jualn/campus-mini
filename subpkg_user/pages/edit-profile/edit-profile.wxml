@@ -23,26 +23,22 @@
 
   <!-- 导航栏 -->
   <view class="nav-bar" style="padding-top:{{statusBarHeight}}px;">
-    <view class="nav-back" bindtap="onCancel">
-      <text class="nav-back__icon">‹</text>
+    <view class="nav-back" bindtap="onCancel" aria-role="button" aria-label="返回">
+      <view class="nav-back__surface"><ui-icon name="chevron-left" size="lg" /></view>
     </view>
     <text class="nav-title">编辑资料</text>
     <view class="nav-placeholder" />
   </view>
 
-  <!-- 横幅 -->
-  <view class="banner-wrap" bindtap="onChangeBanner">
-    <image class="banner-img" src="{{form.bannerUrl}}" mode="aspectFill" />
-    <view class="banner-mask">
-      <image class="banner-mask__icon" src="../../assets/icons/profile/change_cover_line.svg" mode="aspectFit" />
-      <text class="banner-mask__text">更换封面</text>
-    </view>
+  <view class="banner-wrap" bindtap="onChangeBackground" aria-role="button" aria-label="更换主页背景">
+    <image wx:if="{{form.backgroundUrl}}" class="banner-img" src="{{form.backgroundUrl}}" mode="aspectFill" />
+    <view class="banner-mask"><text class="banner-mask__text">更换背景</text></view>
   </view>
 
   <!-- 头像行 -->
   <view class="avatar-row">
     <view class="avatar-wrap" bindtap="onChangeAvatar">
-      <image class="avatar-img" src="{{form.avatarUrl}}" mode="aspectFill" />
+      <image class="avatar-img" wx:if="{{form.avatarUrl}}" src="{{form.avatarUrl}}" mode="aspectFill" />
       <view class="avatar-mask">
         <image class="avatar-mask__icon" src="../../assets/icons/profile/change_avatar_line.svg" mode="aspectFit" />
       </view>
@@ -59,11 +55,12 @@
           value="{{form.nickname}}"
           placeholder="填写你的昵称"
           placeholder-class="form-placeholder"
-          maxlength="20"
+          maxlength="-1"
+          disabled="{{saving}}"
           bindinput="onInput"
           data-field="nickname"
         />
-        <text class="form-count">{{form.nickname.length}}/20</text>
+        <text class="form-count">{{nicknameLength}}/10</text>
       </view>
     </view>
     <view class="form-divider" />
@@ -76,78 +73,29 @@
           value="{{form.bio}}"
           placeholder="介绍一下自己吧"
           placeholder-class="form-placeholder"
-          maxlength="80"
+          maxlength="-1"
           auto-height
           show-confirm-bar="{{false}}"
           adjust-position="{{false}}"
           cursor-spacing="20"
+          disabled="{{saving}}"
           bindinput="onInput"
           data-field="bio"
         />
-        <text class="form-count">{{form.bio.length}}/80</text>
+        <text class="form-count">{{bioLength}}/200</text>
       </view>
     </view>
     <view class="form-divider" />
 
-    <!-- 修复：加 form-right--prefix，替代不兼容的 :has() -->
-    <!-- <view class="form-item">
-      <text class="form-label">ID</text>
-      <view class="form-right form-right--prefix">
-        <text class="form-prefix">@</text>
-        <input class="form-input" value="{{form.handle}}" placeholder="英文 ID" placeholder-class="form-placeholder"
-          maxlength="20" bindinput="onInput" data-field="handle" />
-      </view>
-    </view>
-    <view class="form-divider" /> -->
-
-    <!-- <view class="form-item" bindtap="onPickSchool">
-      <text class="form-label">学校</text>
-      <view class="form-right form-right--row">
-        <text class="form-value {{form.school ? '' : 'form-value--placeholder'}}">
-          {{form.school || '选择学校'}}
-        </text>
-        <text class="form-arrow">›</text>
-      </view>
-    </view>
-    <view class="form-divider" /> -->
-
-    <!-- <view class="form-item">
-      <text class="form-label">院系</text>
-      <view class="form-right">
-        <input class="form-input" value="{{form.dept}}" placeholder="填写院系和年级" placeholder-class="form-placeholder"
-          maxlength="20" bindinput="onInput" data-field="dept" />
-      </view>
-    </view>
-    <view class="form-divider" />
-
-    <view class="form-item form-item--gender">
-      <text class="form-label">性别</text>
-      <view class="gender-row">
-        <view class="gender-btn {{form.gender==='male'?'gender-btn--active':''}}" bindtap="onSelectGender"
-          data-gender="male">
-          <text class="gender-icon">👦</text>
-          <text class="gender-label">男</text>
-        </view>
-        <view class="gender-btn {{form.gender==='female'?'gender-btn--active':''}}" bindtap="onSelectGender"
-          data-gender="female">
-          <text class="gender-icon">👧</text>
-          <text class="gender-label">女</text>
-        </view>
-        <view class="gender-btn {{form.gender==='hidden'?'gender-btn--active':''}}" bindtap="onSelectGender"
-          data-gender="hidden">
-          <text class="gender-icon">🤫</text>
-          <text class="gender-label">不公开</text>
-        </view>
-      </view>
-    </view> -->
   </view>
 
+  <view wx:if="{{saveError}}" class="save-error" aria-role="status">{{saveError}}</view>
   <view class="bottom-safe" />
 </view>
 
 <!-- 底部固定保存栏 -->
 <view class="save-bar">
-  <view class="save-btn {{hasChanged ? 'save-btn--active' : ''}}" bindtap="onSave">
-    <text class="save-btn__text">保存</text>
+  <view class="save-btn {{hasChanged && !saving ? 'save-btn--active' : ''}}" bindtap="onSave" aria-role="button" aria-disabled="{{!hasChanged || saving}}">
+    <text class="save-btn__text">{{saving ? '保存中…' : '保存'}}</text>
   </view>
 </view>

@@ -10,7 +10,9 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "useCompilerPlugins": ["typescript"],
+    "useCompilerPlugins": [
+      "typescript"
+    ],
     "minifyWXML": true,
     "packNpmManually": true,
     "packNpmRelationList": [
@@ -18,32 +20,145 @@
         "packageJsonPath": "/package.json",
         "miniprogramNpmDistDir": "/"
       }
-    ]
+    ],
+    "compileWorklet": false,
+    "uploadWithSourceMap": true,
+    "minifyWXSS": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false
   },
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
   "packOptions": {
     "ignore": [
-      { "type": "folder", "value": ".agents" },
-      { "type": "folder", "value": ".codex-remote-attachments" },
-      { "type": "folder", "value": "mock" },
-      { "type": "folder", "value": "pages/test" },
-      { "type": "folder", "value": "scripts" },
-      { "type": "file", "value": "API_TYPES_DEFINITIONS.md" },
-      { "type": "file", "value": "assets/icons/common/README.md" },
-      { "type": "file", "value": "assets/icons/detail/README.md" },
-      { "type": "file", "value": "config/ARCHITECTURE_DIAGRAM.md" },
-      { "type": "file", "value": "config/COMMENT_PANEL.md" },
-      { "type": "file", "value": "config/DATA_STORAGE.md" },
-      { "type": "file", "value": "config/INTEGRATION_GUIDE.md" },
-      { "type": "file", "value": "config/NOTIFY_EVENTBUS.md" },
-      { "type": "file", "value": "config/QUICK_REFERENCE.md" },
-      { "type": "file", "value": "config/README.md" },
-      { "type": "file", "value": "config/SERVICES_GUIDE.md" },
-      { "type": "file", "value": "miniprogram_npm/cos-wx-sdk-v5/index.js.map" }
+      {
+        "value": "docs",
+        "type": "folder"
+      },
+      {
+        "value": ".md",
+        "type": "suffix"
+      },
+      {
+        "value": ".mjs",
+        "type": "suffix"
+      },
+      {
+        "value": ".yaml",
+        "type": "suffix"
+      },
+      {
+        "value": ".d.ts",
+        "type": "suffix"
+      },
+      {
+        "value": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "value": "images/icons/exam",
+        "type": "folder"
+      },
+      {
+        "value": "actions/exam.ts",
+        "type": "file"
+      },
+      {
+        "value": "services/exam.ts",
+        "type": "file"
+      },
+      {
+        "value": "utils/exam-db.ts",
+        "type": "file"
+      },
+      {
+        "value": "actions/message.ts",
+        "type": "file"
+      },
+      {
+        "value": "services/message.ts",
+        "type": "file"
+      },
+      {
+        "value": "actions/index.ts",
+        "type": "file"
+      },
+      {
+        "value": "services/index.ts",
+        "type": "file"
+      },
+      {
+        "value": ".agents",
+        "type": "folder"
+      },
+      {
+        "value": ".codex-remote-attachments",
+        "type": "folder"
+      },
+      {
+        "value": "mock",
+        "type": "folder"
+      },
+      {
+        "value": "pages/test",
+        "type": "folder"
+      },
+      {
+        "value": "scripts",
+        "type": "folder"
+      },
+      {
+        "value": "API_TYPES_DEFINITIONS.md",
+        "type": "file"
+      },
+      {
+        "value": "assets/icons/common/README.md",
+        "type": "file"
+      },
+      {
+        "value": "assets/icons/detail/README.md",
+        "type": "file"
+      },
+      {
+        "value": "config/ARCHITECTURE_DIAGRAM.md",
+        "type": "file"
+      },
+      {
+        "value": "config/COMMENT_PANEL.md",
+        "type": "file"
+      },
+      {
+        "value": "config/DATA_STORAGE.md",
+        "type": "file"
+      },
+      {
+        "value": "config/INTEGRATION_GUIDE.md",
+        "type": "file"
+      },
+      {
+        "value": "config/NOTIFY_EVENTBUS.md",
+        "type": "file"
+      },
+      {
+        "value": "config/QUICK_REFERENCE.md",
+        "type": "file"
+      },
+      {
+        "value": "config/README.md",
+        "type": "file"
+      },
+      {
+        "value": "config/SERVICES_GUIDE.md",
+        "type": "file"
+      },
+      {
+        "value": "miniprogram_npm/cos-wx-sdk-v5/index.js.map",
+        "type": "file"
+      }
     ],
     "include": []
   },
-  "appid": "touristappid",
+  "appid": "wxe5bb58670f1dc1b3",
   "editorSetting": {}
 }

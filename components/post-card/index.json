@@ -1,6 +1,8 @@
 {
   "component": true,
   "usingComponents": {
-    "grid-image": "/components/grid-image/grid-image"
+    "grid-image": "/components/grid-image/grid-image",
+    "ui-icon": "/components/ui-icon/index",
+    "operator-badge": "/components/operator-badge/index"
   }
 }

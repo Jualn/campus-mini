@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "公共事项",
+  "usingComponents": {
+    "ui-icon": "/components/ui-icon/index"
+  }
+}

@@ -32,12 +32,17 @@ const subpackages = (appConfig.subPackages ?? appConfig.subpackages ?? []).map((
 }));
 const packIgnoreRules = projectConfig.packOptions?.ignore ?? [];
 const allFiles = walk(projectRoot);
+const includedFiles = allFiles.filter((file) => !isPackIgnored(file.relative));
 const runtimeFiles = allFiles.filter(
   (file) => RUNTIME_EXTENSIONS.has(path.extname(file.relative).toLowerCase()) && !isPackIgnored(file.relative),
 );
 
-const packageRows = new Map([['main', { files: 0, bytes: 0 }]]);
-for (const item of subpackages) packageRows.set(item.name, { files: 0, bytes: 0 });
+const packageRows = new Map([['main', { files: 0, bytes: 0, includedBytes: 0 }]]);
+for (const item of subpackages) packageRows.set(item.name, { files: 0, bytes: 0, includedBytes: 0 });
+
+for (const file of includedFiles) {
+  packageRows.get(packageOwner(file.relative)).includedBytes += file.size;
+}
 
 for (const file of runtimeFiles) {
   const owner = packageOwner(file.relative);
@@ -50,10 +55,10 @@ const warnings = [];
 const errors = [];
 
 for (const [name, row] of packageRows) {
-  if (row.bytes >= PACKAGE_HARD_LIMIT) {
-    errors.push(`${name} 原始运行文件已达到 ${formatSize(row.bytes)}，超过 2 MiB 审计线`);
-  } else if (row.bytes >= PACKAGE_WARNING_LIMIT) {
-    warnings.push(`${name} 原始运行文件已达到 ${formatSize(row.bytes)}，超过 1.5 MiB 预警线`);
+  if (row.includedBytes >= PACKAGE_HARD_LIMIT) {
+    errors.push(`${name} 未显式排除的原始文件已达到 ${formatSize(row.includedBytes)}，超过 2 MiB 审计线`);
+  } else if (row.includedBytes >= PACKAGE_WARNING_LIMIT) {
+    warnings.push(`${name} 未显式排除的原始文件已达到 ${formatSize(row.includedBytes)}，超过 1.5 MiB 预警线`);
   }
 }
 
@@ -90,6 +95,7 @@ console.table(
     package: name,
     files: row.files,
     size: formatSize(row.bytes),
+    allIncluded: formatSize(row.includedBytes),
   })),
 );
 
@@ -108,11 +114,17 @@ function checkSubpackageOnlyModules() {
     'actions/activity',
     'actions/admin-auth',
     'actions/search',
+    'actions/public-event',
+    'actions/notification-preferences',
     'behaviors/useAsyncLoad',
     'utils/navigation',
     'services/admin-auth',
     'services/activity',
     'services/search',
+    'services/public-event',
+    'services/notification-preferences',
+    'services/event-api',
+    'utils/event-timeline',
     'utils/search-history',
   ];
   for (const stem of movedModules) {
@@ -125,9 +137,11 @@ function checkSubpackageOnlyModules() {
 
   // 普通分包保持本地依赖；校验共享副本，避免修复只落在某个分包。
   const sharedCopies = [
-    ['behaviors/useAsyncLoad.ts', ['subpkg_activity', 'subpkg_community', 'subpkg_exam', 'subpkg_user']],
-    ['utils/navigation.ts', ['subpkg_activity', 'subpkg_exam', 'subpkg_user']],
+    ['behaviors/useAsyncLoad.ts', ['subpkg_activity', 'subpkg_community', 'subpkg_public_event', 'subpkg_user']],
+    ['utils/navigation.ts', ['subpkg_activity', 'subpkg_public_event', 'subpkg_user']],
     ['services/activity-mapper.ts', ['subpkg_activity', 'subpkg_community']],
+    ['services/event-api.ts', ['subpkg_activity', 'subpkg_public_event']],
+    ['utils/event-timeline.ts', ['subpkg_activity', 'subpkg_public_event']],
   ];
   for (const [relative, packages] of sharedCopies) {
     let baseline;
@@ -184,7 +198,7 @@ function packageOwner(relative) {
 function findCrossPackageImports(files) {
   const violations = [];
   const sourceFiles = files.filter((file) => sourceExtensions.has(path.extname(file.relative)));
-  const importPattern = /(?:from\s+|require\s*\()\s*['"]([^'"]+)['"]/g;
+  const importPattern = /(?:from\s+|require\s*\(|import\s+)\s*['"]([^'"]+)['"]/g;
 
   for (const file of sourceFiles) {
     const sourceOwner = packageOwner(file.relative);
@@ -192,8 +206,16 @@ function findCrossPackageImports(files) {
     for (const match of source.matchAll(importPattern)) {
       const specifier = match[1];
       if (!specifier.startsWith('.')) continue;
+      if (resolvesOnlyThroughDirectoryIndex(file.relative, specifier)) {
+        violations.push(
+          `${file.relative} 使用了原生小程序不能可靠解析的目录入口：${specifier}，请显式引用 ${specifier}/index`,
+        );
+      }
       const target = resolveLocalImport(file.relative, specifier);
       if (!target) continue;
+      if (isPackIgnored(target)) {
+        violations.push(`${file.relative} 引用了发布配置已排除的模块：${specifier}`);
+      }
       const targetOwner = packageOwner(target);
       if (sourceOwner === 'main' && targetOwner !== 'main') {
         violations.push(`主包 ${file.relative} 不应引用分包 ${targetOwner}：${specifier}`);
@@ -203,6 +225,17 @@ function findCrossPackageImports(files) {
     }
   }
   return [...new Set(violations)];
+}
+
+function resolvesOnlyThroughDirectoryIndex(sourceRelative, specifier) {
+  const base = normalize(path.join(path.dirname(sourceRelative), specifier));
+  const directCandidates = [base, `${base}.ts`, `${base}.js`, `${base}.json`];
+  if (directCandidates.some((candidate) => fs.existsSync(path.join(projectRoot, candidate)))) {
+    return false;
+  }
+  return [`${base}/index.ts`, `${base}/index.js`].some((candidate) =>
+    fs.existsSync(path.join(projectRoot, candidate)),
+  );
 }
 
 function findLocalResourceViolations(files) {
@@ -228,6 +261,9 @@ function findLocalResourceViolations(files) {
       if (!fs.existsSync(path.join(projectRoot, target))) {
         violations.push(`${file.relative} 引用了不存在的本地资源：${reference}`);
         continue;
+      }
+      if (isPackIgnored(target)) {
+        violations.push(`${file.relative} 引用了发布配置已排除的资源：${reference}`);
       }
 
       const targetOwner = packageOwner(target);

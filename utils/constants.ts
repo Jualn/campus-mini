@@ -67,6 +67,22 @@ export const NOTIFY_TYPES = {
   EXAM_REMIND: { value: 'EXAM_REMIND', code: 5, text: '考试提醒' },
   AUDIT_RESULT: { value: 'AUDIT_RESULT', code: 6, text: '审核结果' },
   SYSTEM: { value: 'SYSTEM', code: 7, text: '系统通知' },
+  ACTIVITY_START_REMINDER: { value: 'ACTIVITY_START_REMINDER', code: 8, text: '活动开始提醒' },
+  ACTIVITY_REGISTRATION_DEADLINE_REMINDER: {
+    value: 'ACTIVITY_REGISTRATION_DEADLINE_REMINDER',
+    code: 9,
+    text: '活动报名截止提醒',
+  },
+  PUBLIC_EVENT_START_REMINDER: {
+    value: 'PUBLIC_EVENT_START_REMINDER',
+    code: 10,
+    text: '公共事项开始提醒',
+  },
+  PUBLIC_EVENT_REGISTRATION_DEADLINE_REMINDER: {
+    value: 'PUBLIC_EVENT_REGISTRATION_DEADLINE_REMINDER',
+    code: 11,
+    text: '公共事项报名截止提醒',
+  },
 } as const;
 
 export type NotifyType = keyof typeof NOTIFY_TYPES;

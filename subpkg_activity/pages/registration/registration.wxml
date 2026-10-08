@@ -1,0 +1,209 @@
+<view class="registration-page">
+  <view class="hero-card">
+    <view class="hero-card__eyebrow">ACTIVITY REGISTRATION</view>
+    <text class="hero-card__title">个人报名</text>
+    <text class="hero-card__desc">平台只收集本次活动所需信息，报名与订阅相互独立。</text>
+    <view wx:if="{{info}}" class="hero-card__meta">
+      <text>已提交 {{info.submittedCount}} 份</text>
+      <view class="hero-card__dot"></view>
+      <text>{{info.registrationLimit === null ? '未设限额' : '限 ' + info.registrationLimit + ' 份'}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{error || message}}" class="notice-card {{error ? 'notice-card--error' : 'notice-card--success'}}">
+    <view class="notice-card__mark">{{error ? '!' : '✓'}}</view>
+    <view class="notice-card__body">
+      <text class="notice-card__title">{{error ? '暂时无法继续' : '状态已更新'}}</text>
+      <text class="notice-card__text">{{error || message}}</text>
+    </view>
+    <button wx:if="{{error || unknown}}" class="compact-button" bindtap="reload" disabled="{{busy || loading}}">
+      重新查询
+    </button>
+  </view>
+
+  <view wx:if="{{loading}}" class="surface-card loading-card">
+    <view class="loading-card__dot"></view>
+    <text>正在读取报名信息…</text>
+  </view>
+
+  <view wx:if="{{mine && !loading}}" class="surface-card status-card">
+    <view class="section-heading">
+      <view>
+        <text class="section-heading__kicker">当前状态</text>
+        <text class="section-heading__title">{{statusLabel}}</text>
+      </view>
+      <view class="status-pill {{mine.status === 'SUBMITTED' ? 'status-pill--success' : 'status-pill--muted'}}">
+        {{mine.status === 'SUBMITTED' ? '报名有效' : '未占名额'}}
+      </view>
+    </view>
+    <text class="supporting-text">最近提交：{{mine.submittedAt}}</text>
+    <text wx:if="{{mine.status === 'CANCELLED'}}" class="supporting-text">
+      已取消的答案仍保留；重新提交会恢复同一条记录，并重新检查报名窗口与名额。
+    </text>
+    <text wx:if="{{conflict}}" class="answer-list__heading">服务端当前保存的答案</text>
+    <view wx:if="{{(!canSubmit || conflict) && answerDisplays.length}}" class="answer-list">
+      <view wx:for="{{answerDisplays}}" wx:key="key" class="answer-row">
+        <text class="answer-row__label">{{item.label}}</text>
+        <text class="answer-row__value" user-select>{{item.value}}</text>
+      </view>
+    </view>
+    <button
+      wx:if="{{mine.status === 'SUBMITTED' && mine.canCancel}}"
+      class="secondary-button secondary-button--danger"
+      bindtap="onCancel"
+      disabled="{{busy || unknown}}"
+    >
+      取消提交
+    </button>
+  </view>
+
+  <view wx:if="{{!loading && !canSubmit && !mine && !error}}" class="surface-card unavailable-card">
+    <text class="unavailable-card__title">当前暂不接受平台报名</text>
+    <text class="supporting-text">请返回活动详情查看报名时间与参与安排。</text>
+  </view>
+
+  <view wx:if="{{canSubmit && !loading}}" class="surface-card form-card">
+    <view class="section-heading form-heading">
+      <view>
+        <text class="section-heading__kicker">报名信息</text>
+        <text class="section-heading__title">请按实际情况填写</text>
+      </view>
+      <text class="required-legend"><text class="required-star">*</text> 为必填</text>
+    </view>
+
+    <view wx:if="{{validationSummary}}" class="validation-summary">
+      <text class="validation-summary__icon">!</text>
+      <text>{{validationSummary}}</text>
+    </view>
+
+    <view class="reuse-setting">
+      <view class="reuse-setting__copy">
+        <text class="reuse-setting__title">保存常用报名信息</text>
+        <text class="reuse-setting__desc"
+          >提交成功后仅在本机保存姓名、学号、班级和联系电话，其他活动可点击候选填入。</text
+        >
+      </view>
+      <switch checked="{{rememberReusableFields}}" bindchange="onRememberChange" color="#2f7cf6" disabled="{{busy}}" />
+    </view>
+    <text wx:if="{{hasReusableCandidates}}" class="reuse-setting__available"
+      >已找到本机历史填写，可在对应字段下选择。</text
+    >
+
+    <view
+      wx:for="{{fields}}"
+      wx:key="key"
+      id="registration-field-{{index}}"
+      class="field-block {{fieldErrors[item.key] ? 'field-block--error' : ''}}"
+    >
+      <view class="field-block__heading">
+        <text class="field-block__number">{{index + 1}}</text>
+        <view class="field-block__label-wrap">
+          <text class="field-block__label">{{item.label}}</text>
+          <text wx:if="{{item.required}}" class="required-badge">必填</text>
+          <text wx:else class="optional-badge">选填</text>
+        </view>
+      </view>
+      <text wx:if="{{item.helpText}}" class="field-block__help">{{item.helpText}}</text>
+      <text wx:if="{{item.formatHint}}" class="field-block__format-hint">{{item.formatHint}}</text>
+
+      <radio-group
+        wx:if="{{item.type === 'single_select'}}"
+        class="choice-group"
+        data-key="{{item.key}}"
+        bindchange="onInput"
+      >
+        <label wx:for="{{item.options}}" wx:for-item="option" wx:key="value" class="choice-tile">
+          <radio
+            value="{{option.value}}"
+            checked="{{answers[item.key] === option.value}}"
+            color="#2f7cf6"
+            disabled="{{busy}}"
+          />
+          <text>{{option.label}}</text>
+        </label>
+      </radio-group>
+
+      <checkbox-group
+        wx:elif="{{item.type === 'multi_select'}}"
+        class="choice-group"
+        data-key="{{item.key}}"
+        bindchange="onInput"
+      >
+        <label wx:for="{{item.options}}" wx:for-item="option" wx:key="value" class="choice-tile">
+          <checkbox value="{{option.value}}" checked="{{option.checked}}" color="#2f7cf6" disabled="{{busy}}" />
+          <text>{{option.label}}</text>
+        </label>
+      </checkbox-group>
+
+      <view wx:else class="text-input-wrap {{fieldErrors[item.key] ? 'text-input-wrap--error' : ''}}">
+        <input
+          class="text-input"
+          type="{{item.inputType}}"
+          value="{{answers[item.key]}}"
+          data-key="{{item.key}}"
+          bindinput="onInput"
+          maxlength="{{item.inputMaxLength || 2000}}"
+          placeholder="请填写{{item.label}}"
+          placeholder-class="text-input__placeholder"
+          disabled="{{busy}}"
+        />
+        <text wx:if="{{item.inputMaxLength}}" class="text-input__limit">最多 {{item.inputMaxLength}} 个字符</text>
+      </view>
+
+      <view wx:if="{{fieldCandidates[item.key] && fieldCandidates[item.key].length}}" class="field-candidates">
+        <text class="field-candidates__label">历史填写</text>
+        <view class="field-candidates__list">
+          <button
+            wx:for="{{fieldCandidates[item.key]}}"
+            wx:for-item="candidate"
+            wx:key="*this"
+            class="field-candidate {{answers[item.key] === candidate ? 'field-candidate--active' : ''}}"
+            data-key="{{item.key}}"
+            data-value="{{candidate}}"
+            bindtap="onUseCandidate"
+            disabled="{{busy}}"
+          >
+            {{candidate}}
+          </button>
+        </view>
+      </view>
+
+      <view wx:if="{{fieldErrors[item.key]}}" class="field-error">
+        <text class="field-error__icon">!</text>
+        <text>{{fieldErrors[item.key]}}</text>
+      </view>
+    </view>
+
+    <view class="submit-area">
+      <view
+        wx:if="{{mine && mine.status === 'SUBMITTED'}}"
+        class="save-state {{isDirty ? 'save-state--dirty' : 'save-state--clean'}}"
+      >
+        <view class="save-state__dot"></view>
+        <text wx:if="{{busy}}">正在保存修改…</text>
+        <text wx:elif="{{isDirty}}">内容已修改，尚未保存</text>
+        <text wx:else>当前内容未修改</text>
+      </view>
+      <button
+        class="submit-button"
+        bindtap="onSubmit"
+        loading="{{busy}}"
+        disabled="{{busy || unknown || (mine && mine.status === 'SUBMITTED' && !isDirty)}}"
+      >
+        <text wx:if="{{mine && mine.status === 'CANCELLED'}}">重新提交</text>
+        <text wx:elif="{{mine && mine.status === 'SUBMITTED' && isDirty}}">保存修改</text>
+        <text wx:elif="{{mine && mine.status === 'SUBMITTED'}}">当前未修改</text>
+        <text wx:else>提交报名信息</text>
+      </button>
+      <text class="submit-area__hint">提交只代表平台已收表，不代表官方录取或外部步骤已完成。</text>
+    </view>
+  </view>
+
+  <view class="surface-card followup-card">
+    <view>
+      <text class="followup-card__title">还需完成其他步骤？</text>
+      <text class="supporting-text">若活动另有外部报名或加入方式，请返回详情继续办理。</text>
+    </view>
+    <button class="secondary-button" bindtap="onActivity">查看活动安排</button>
+  </view>
+</view>

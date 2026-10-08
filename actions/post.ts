@@ -127,6 +127,7 @@ export const getUserLikedPosts = async (
   userId: string,
   options?: Parameters<typeof postService.getUserLikedPosts>[1],
 ) => {
+  if (!userId || userId !== getUserId()) throw new Error('只能查看自己的喜欢内容');
   const page = await postService.getUserLikedPosts(userId, options);
   const { merged } = mergePostSyncCache(page.list);
   return {

@@ -45,6 +45,14 @@ interface ResponseBody<T = unknown> {
   timestamp?: number;
 }
 
+interface ProblemDetails {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  traceId?: string;
+}
+
 export type CancellablePromise<T> = Promise<T> & { abort(): void };
 
 function makeCancellable<T>(promise: Promise<T>, abort: () => void): CancellablePromise<T> {
@@ -61,8 +69,12 @@ function getResponseMessage(body: Partial<ResponseBody> | undefined): string {
   return '操作失败';
 }
 
-function getServerMessage(body: Partial<ResponseBody> | undefined): string | undefined {
-  return body?.message ?? body?.msg;
+function getServerMessage(body: Partial<ResponseBody> | ProblemDetails | undefined): string | undefined {
+  if (!body) return undefined;
+  if ('detail' in body && body.detail?.trim()) return body.detail;
+  if ('message' in body && body.message?.trim()) return body.message;
+  if ('msg' in body && body.msg?.trim()) return body.msg;
+  return undefined;
 }
 
 function unwrapResponse(rawBody: unknown, tag: string): unknown {
@@ -133,9 +145,9 @@ export function upload<T = unknown, D = unknown>(options: UploadOptions<D>): Can
           const { statusCode, data: rawData } = res;
           log.info(`POST ${url} ${String(statusCode)}`);
 
-          let body: ResponseBody<T> | undefined;
+          let body: ResponseBody<T> | ProblemDetails | undefined;
           try {
-            body = JSON.parse(rawData) as ResponseBody<T>;
+            body = JSON.parse(rawData) as ResponseBody<T> | ProblemDetails;
           } catch {
             body = undefined;
           }

@@ -1,17 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <defs>
-    <style>
-      .cls-1 {
-        fill: none;
-        stroke: #000;
-        stroke-miterlimit: 10;
-      }
-    </style>
-  </defs>
-  <g id="图层_2" data-name="图层 2">
-    <g id="搜索">
-      <circle class="cls-1" cx="10.92" cy="10.92" r="6.42"/>
-      <path class="cls-1" d="M15.46,15.46l4.27,4.27"/>
-    </g>
-  </g>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#8293a8"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+  <path d="M21 21l-6 -6" />
 </svg>

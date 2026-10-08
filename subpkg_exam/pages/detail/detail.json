@@ -1,6 +1,0 @@
-{
-  "usingComponents": {
-    "share-panel": "/components/share-panel/index",
-    "load-state": "/components/load-state/index"
-  }
-}

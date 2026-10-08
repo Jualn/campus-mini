@@ -117,7 +117,7 @@ defineComponent<PostCardPrivate>()({
 
     onTapAvatar() {
       void wxNavigateTo({
-        url: `/subpkg_user/pages/user/user?userId=${this.properties.post.userId}`,
+        url: `/subpkg_user/pages/user/user?userId=${encodeURIComponent(this.properties.post.userId)}`,
       }).catch((err: unknown) => {
         log.error('onTapAvatar', err);
       });

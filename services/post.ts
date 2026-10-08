@@ -33,7 +33,6 @@ const mapPostDetail = (post: PostDetailVO): PostDetail => ({
   id: post.id,
   userId: post.author.id,
   nickname: post.author.nickname || '',
-  verified: true, // API 当前未提供认证信息，先默认都认证，后续根据实际数据调整
   avatar: post.author.avatarUrl || '',
   // ipLocation: '', // API 当前未提供IP归属信息，后续根据实际数据调整
   // handle: '', // API 当前未提供用户handle信息，后续根据实际数据调整

@@ -1,4 +1,6 @@
 import type * as ApiTypes from '../types/api';
+import type * as NotificationTypes from '../types/notification-contract';
+import type { UserProfile, UpdateMyProfileRequest } from '../types/profile-contract';
 import { http } from '../utils/request';
 
 export const api = {
@@ -7,26 +9,17 @@ export const api = {
       http.post<ApiTypes.LoginVO>('/v1/auth/login', payload, { auth: 'none' }),
   },
 
-  adminAuth: {
-    confirmQrLogin: (sessionId: string) =>
-      http.post<ApiTypes.AdminQrConfirmationVO>(
-        `/v1/admin/auth/qr-confirmations/${encodeURIComponent(sessionId)}`,
-        undefined,
-        {
-          auth: 'required',
-          showLoading: true,
-        },
-      ),
-  },
-
   user: {
-    getCurrentProfile: () => http.get<ApiTypes.UserProfileVO>('/v1/users/me'),
+    getCurrentProfile: () =>
+      http.get<UserProfile>('/v1/users/me/profile', undefined, { sensitive: true }),
 
-    updateCurrentProfile: (payload: ApiTypes.UserProfileUpdateRequest) =>
-      http.put<ApiTypes.UserProfileVO>('/v1/users/me', payload),
+    updateCurrentProfile: (payload: UpdateMyProfileRequest) =>
+      http.post<UserProfile>('/v1/users/me/profile', payload, { sensitive: true }),
 
     getPublicProfile: (userId: string) =>
-      http.get<ApiTypes.UserPublicProfileVO>(`/v1/users/public/${userId}`),
+      http.get<UserProfile>(`/v1/users/${encodeURIComponent(userId)}/profile`, undefined, {
+        sensitive: true,
+      }),
 
     getAgreementStatus: () => http.get<ApiTypes.UserAgreementStatusVO>('/v1/users/me/agreement'),
 
@@ -37,10 +30,26 @@ export const api = {
       http.post<string>('/v1/users/me/agreement', payload),
   },
 
+  home: {
+    getPublicMatterReminders: () =>
+      http.get<ApiTypes.HomePublicMatterRemindersDTO>(
+        '/v1/home/public-matter-reminders',
+        undefined,
+        {
+          auth: 'required',
+        },
+      ),
+  },
+
   setting: {
     get: () => http.get<ApiTypes.UserSettingVO>('/v1/setting'),
     update: (payload: Partial<ApiTypes.UserSettingUpdateRequest>) =>
       http.put<null>('/v1/setting', payload),
+  },
+
+  wx: {
+    createOfficialAccountBindOauthUrl: () =>
+      http.get<{ url: string }>('/v1/wx/bind/oauth-url', undefined, { auth: 'required' }),
   },
 
   post: {
@@ -102,6 +111,14 @@ export const api = {
   },
 
   activity: {
+    subscribe: (id: string) =>
+      http.post<null>(`/v1/activity/${encodeURIComponent(id)}/subscribe`, undefined, {
+        auth: 'required',
+      }),
+    unsubscribe: (id: string) =>
+      http.del<null>(`/v1/activity/${encodeURIComponent(id)}/subscribe`, undefined, {
+        auth: 'required',
+      }),
     create: (payload: ApiTypes.ActivityCreateRequest) => http.post<string>('/v1/activity', payload),
 
     fetchActivityList: (query: ApiTypes.ActivityPageQuery) =>
@@ -127,18 +144,20 @@ export const api = {
 
   exam: {
     getSimpleList: () => http.get<ApiTypes.ExamSimpleVO[]>('/v1/exam/simple'),
-
     getList: (query: ApiTypes.ExamPageQuery) =>
       http.get<ApiTypes.PageResultExamVO>('/v1/exam', query),
-
-    getDetail: (id: number) => http.get<ApiTypes.ExamDetailVO>(`/v1/exam/${id.toString()}`),
-
-    getTimeline: (id: number) =>
-      http.get<ApiTypes.TimelineVO[]>(`/timeline/target/3/${id.toString()}`),
-
-    subscribe: (id: number) => http.post<string>(`/v1/exam/${id.toString()}/subscribe`),
-
-    unsubscribe: (id: number) => http.del<string>(`/v1/exam/${id.toString()}/subscribe`),
+    getDetail: (id: string) =>
+      http.get<ApiTypes.ExamDetailVO>(`/v1/exam/${encodeURIComponent(id)}`),
+    getTimeline: (id: string) =>
+      http.get<ApiTypes.TimelineVO[]>(`/timeline/target/3/${encodeURIComponent(id)}`),
+    subscribe: (id: string) =>
+      http.post<null>(`/v1/exam/${encodeURIComponent(id)}/subscribe`, undefined, {
+        auth: 'required',
+      }),
+    unsubscribe: (id: string) =>
+      http.del<null>(`/v1/exam/${encodeURIComponent(id)}/subscribe`, undefined, {
+        auth: 'required',
+      }),
   },
 
   media: {
@@ -147,14 +166,62 @@ export const api = {
   },
 
   notify: {
+    getStructuredList: (query: NotificationTypes.NotificationListQuery) =>
+      http.get<NotificationTypes.NotificationListResponse>(
+        '/v1/users/me/notifications',
+        { ...query, representation: 'structured' },
+        { sensitive: true },
+      ),
+    getSummary: (afterCursor?: string) =>
+      http.get<NotificationTypes.NotificationSummary>(
+        '/v1/users/me/notifications/summary',
+        { afterCursor },
+        { sensitive: true },
+      ),
+    getNotification: (id: string) =>
+      http.get<NotificationTypes.NotificationItem>(
+        `/v1/users/me/notifications/${encodeURIComponent(id)}`,
+        undefined,
+        { sensitive: true },
+      ),
+    batchRead: (notificationIds: string[]) =>
+      http.post<NotificationTypes.NotificationReadResult>(
+        '/v1/users/me/notifications:batch-read',
+        { notificationIds },
+        { sensitive: true },
+      ),
+    readThrough: (throughCursor: string) =>
+      http.post<NotificationTypes.NotificationReadResult>(
+        '/v1/users/me/notifications:mark-read-through',
+        { throughCursor },
+        { sensitive: true },
+      ),
     getMyList: (query: ApiTypes.NotificationPageQuery) =>
-      http.get<ApiTypes.PageResultNotificationVO>('/v1/notify/me', query),
+      http.get<ApiTypes.NotificationCursorPage>('/v1/users/me/notifications', query),
 
-    getUnreadCount: () => http.get<number>('/v1/notify/me/unread-count'),
+    getUnreadCount: () =>
+      http.get<ApiTypes.NotificationUnreadCount>('/v1/users/me/notifications/unread-count'),
 
-    markRead: (id: string) => http.put<null>(`/v1/notify/${id}/read`),
+    markRead: (id: string) =>
+      http.put<null>(`/v1/users/me/notifications/${encodeURIComponent(id)}/read-state`, {
+        isRead: true,
+      }),
 
-    markAllRead: () => http.put<null>('/v1/notify/me/read-all'),
+    markAllRead: () => http.post<null>('/v1/users/me/notifications:mark-all-read'),
+
+    getPreferences: () =>
+      http.get<ApiTypes.NotificationPreferences>('/v1/users/me/notification-preferences'),
+
+    batchUpdatePreferences: (data: ApiTypes.UpdateNotificationPreferences) =>
+      http.post<ApiTypes.NotificationPreferences>(
+        '/v1/users/me/notification-preferences:batch-update',
+        data,
+      ),
+
+    getChannelCapabilities: () =>
+      http.get<ApiTypes.NotificationChannelCapabilities>(
+        '/v1/users/me/notification-channel-capabilities',
+      ),
   },
 
   report: {

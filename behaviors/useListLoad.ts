@@ -81,13 +81,16 @@ export function useListLoad(options: UseListLoadOptions = {}) {
     },
 
     methods: {
-      _listLoadSet(patch: Partial<ListLoadState>) {
-        this.setData({
-          listLoad: {
-            ...this.data.listLoad,
-            ...patch,
+      _listLoadSet(patch: Partial<ListLoadState>, callback?: () => void) {
+        this.setData(
+          {
+            listLoad: {
+              ...this.data.listLoad,
+              ...patch,
+            },
           },
-        });
+          callback,
+        );
       },
 
       _listLoadClearTimers() {
@@ -127,20 +130,26 @@ export function useListLoad(options: UseListLoadOptions = {}) {
       /**
        * 首屏加载结束
        */
-      _listLoadEndInitial(options: { success: boolean; hasContent: boolean; hasMore?: boolean }) {
+      _listLoadEndInitial(
+        options: { success: boolean; hasContent: boolean; hasMore?: boolean },
+        callback?: () => void,
+      ) {
         if (this._listLoadSkeletonShowTimer) {
           clearTimeout(this._listLoadSkeletonShowTimer);
           this._listLoadSkeletonShowTimer = null;
         }
 
         const finish = () => {
-          this._listLoadSet({
-            phase: 'idle',
-            skeletonVisible: false,
-            initialError: !options.success && !options.hasContent,
-            hasMore:
-              typeof options.hasMore === 'boolean' ? options.hasMore : this.data.listLoad.hasMore,
-          });
+          this._listLoadSet(
+            {
+              phase: 'idle',
+              skeletonVisible: false,
+              initialError: !options.success && !options.hasContent,
+              hasMore:
+                typeof options.hasMore === 'boolean' ? options.hasMore : this.data.listLoad.hasMore,
+            },
+            callback,
+          );
 
           this._listLoadSkeletonHideTimer = null;
         };
@@ -183,14 +192,20 @@ export function useListLoad(options: UseListLoadOptions = {}) {
       /**
        * 下拉刷新结束
        */
-      _listLoadEndRefresh(options: { success: boolean; hasContent: boolean; hasMore?: boolean }) {
-        this._listLoadSet({
-          phase: 'idle',
-          refreshing: false,
-          initialError: !options.success && !options.hasContent,
-          hasMore:
-            typeof options.hasMore === 'boolean' ? options.hasMore : this.data.listLoad.hasMore,
-        });
+      _listLoadEndRefresh(
+        options: { success: boolean; hasContent: boolean; hasMore?: boolean },
+        callback?: () => void,
+      ) {
+        this._listLoadSet(
+          {
+            phase: 'idle',
+            refreshing: false,
+            initialError: !options.success && !options.hasContent,
+            hasMore:
+              typeof options.hasMore === 'boolean' ? options.hasMore : this.data.listLoad.hasMore,
+          },
+          callback,
+        );
       },
 
       /**
@@ -223,14 +238,17 @@ export function useListLoad(options: UseListLoadOptions = {}) {
       /**
        * 分页加载结束
        */
-      _listLoadEndMore(options: { success: boolean; hasMore?: boolean }) {
-        this._listLoadSet({
-          phase: 'idle',
-          loadingMore: false,
-          loadMoreError: !options.success,
-          hasMore:
-            typeof options.hasMore === 'boolean' ? options.hasMore : this.data.listLoad.hasMore,
-        });
+      _listLoadEndMore(options: { success: boolean; hasMore?: boolean }, callback?: () => void) {
+        this._listLoadSet(
+          {
+            phase: 'idle',
+            loadingMore: false,
+            loadMoreError: !options.success,
+            hasMore:
+              typeof options.hasMore === 'boolean' ? options.hasMore : this.data.listLoad.hasMore,
+          },
+          callback,
+        );
       },
 
       /**

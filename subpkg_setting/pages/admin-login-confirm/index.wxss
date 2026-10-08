@@ -1,0 +1,133 @@
+page {
+  background: var(--color-bg-page);
+}
+.confirm-page {
+  max-width: 900rpx;
+  margin: 0 auto;
+  padding: 56rpx 36rpx;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+}
+.confirm-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16rpx 12rpx 40rpx;
+}
+.confirm-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112rpx;
+  height: 112rpx;
+  margin-bottom: 32rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-light);
+}
+.confirm-icon image {
+  width: 64rpx;
+  height: 64rpx;
+}
+.title {
+  font-size: 38rpx;
+  line-height: 1.4;
+  font-weight: 700;
+}
+.description {
+  margin-top: 18rpx;
+  color: var(--color-text-secondary);
+  font-size: 28rpx;
+  line-height: 1.7;
+}
+.confirm-card {
+  padding: 28rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+}
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24rpx;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+.detail-label {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+.target,
+.expiry-time {
+  text-align: right;
+  overflow-wrap: break-word;
+}
+.target {
+  font-weight: 600;
+}
+.expiry {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid var(--color-border-light);
+}
+.remaining {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: var(--color-text-tertiary);
+}
+.remaining-value {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.actions {
+  margin-top: 36rpx;
+}
+.confirm-button,
+.reject-button,
+.retry-button {
+  width: 100%;
+  padding: 24rpx 20rpx;
+  text-align: center;
+  border-radius: var(--radius-md);
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.confirm-button,
+.retry-button {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+.reject-button {
+  margin-top: 20rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+.retry-button,
+.close-button {
+  margin-top: 36rpx;
+}
+button[disabled] {
+  opacity: 0.45;
+}
+.notice,
+.loading-copy {
+  display: block;
+  text-align: center;
+  font-size: 24rpx;
+  line-height: 1.8;
+  color: var(--color-text-tertiary);
+}
+.notice {
+  margin-top: 32rpx;
+}
+.notice text {
+  display: block;
+}
+.loading-copy {
+  margin-top: 24rpx;
+}

@@ -1,0 +1,148 @@
+<!-- subpkg_public_event/pages/list/list.wxml -->
+<view class="exam-list-page">
+  <!-- 顶部 -->
+  <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
+      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
+        <ui-icon name="chevron-left" size="lg" />
+      </view>
+      <text class="top-bar__title">公共事项</text>
+    </view>
+    <view class="search-bar-wrap">
+      <view class="search-bar">
+        <view class="search-bar__icon-wrap">
+          <ui-icon name="search" size="sm" />
+        </view>
+        <input
+          class="search-bar__input"
+          placeholder="搜索事项名称"
+          placeholder-class="search-bar__placeholder"
+          value="{{keyword}}"
+          bindinput="onSearch"
+          bindconfirm="onSearch"
+          confirm-type="search"
+        />
+        <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClearSearch" aria-role="button" aria-label="清除搜索内容">
+          <ui-icon name="clear" size="sm" />
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view
+    wx:if="{{error && (keyword ? !searchResult.length : !publicEvents.length)}}"
+    class="empty-wrap"
+    bindtap="onRetryLoad"
+    ><text class="empty-text">{{error}}</text></view
+  >
+  <!-- 搜索结果 -->
+  <block wx:if="{{keyword}}">
+    <view class="result-wrap">
+      <text class="result-hint">已加载 {{searchResult.length}} 个结果</text>
+      <block wx:if="{{searchResult.length}}">
+        <view class="matter-directory">
+          <view
+            wx:for="{{searchResult}}"
+            wx:key="id"
+            class="exam-row"
+            hover-class="exam-row--pressed"
+            bindtap="goDetail"
+            data-id="{{item.id}}"
+          >
+            <view class="exam-row__type exam-row__type--{{item.color}}">
+              <text class="exam-row__type-mark">{{item.typeMark}}</text>
+              <text class="exam-row__type-label">{{item.typeLabel}}</text>
+            </view>
+            <view class="exam-row__body">
+              <view class="exam-row__heading">
+                <text class="exam-row__name">{{item.title}}</text>
+                <ui-icon name="chevron-right" size="sm" />
+              </view>
+              <text class="exam-row__sub">{{item.summary}}</text>
+              <view class="exam-row__meta">
+                <text class="exam-row__status exam-row__status--{{item.statusTone}}">{{item.statusLabel}}</text>
+                <text class="exam-row__source">来源：{{item.sourceName}}</text>
+              </view>
+              <view wx:if="{{item.nextNodeLabel}}" class="exam-row__timeline">
+                <view class="exam-row__timeline-marker">
+                  <text class="exam-row__timeline-dot" />
+                  <text class="exam-row__timeline-line" />
+                </view>
+                <view class="exam-row__timeline-copy">
+                  <text class="exam-row__timeline-label">{{item.nextNodeLabel}}</text>
+                  <text wx:if="{{item.nextDate}}" class="exam-row__timeline-date">{{item.nextDate}}</text>
+                </view>
+                <view class="countdown-pill" wx:if="{{item.daysLeft !== null && item.daysLeft > 0}}">
+                  <text class="countdown-pill__num">{{item.daysLeft}}</text>
+                  <text class="countdown-pill__unit">天</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view wx:elif="{{!loading && !error}}" class="empty-wrap">
+        <image class="empty-icon" src="/assets/icons/common/search.svg" mode="aspectFit" />
+        <text class="empty-text">没有找到相关事项</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 正常列表 -->
+  <block wx:else>
+    <view class="matter-directory" wx:if="{{publicEvents.length}}">
+      <view
+        wx:for="{{publicEvents}}"
+        wx:key="id"
+        class="exam-row"
+        hover-class="exam-row--pressed"
+        bindtap="goDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="exam-row__type exam-row__type--{{item.color}}">
+          <text class="exam-row__type-mark">{{item.typeMark}}</text>
+          <text class="exam-row__type-label">{{item.typeLabel}}</text>
+        </view>
+        <view class="exam-row__body">
+          <view class="exam-row__heading">
+            <text class="exam-row__name">{{item.title}}</text>
+            <ui-icon name="chevron-right" size="sm" />
+          </view>
+          <text class="exam-row__sub">{{item.summary}}</text>
+          <view class="exam-row__meta">
+            <text class="exam-row__status exam-row__status--{{item.statusTone}}">{{item.statusLabel}}</text>
+            <text class="exam-row__source">来源：{{item.sourceName}}</text>
+          </view>
+          <view wx:if="{{item.nextNodeLabel}}" class="exam-row__timeline">
+            <view class="exam-row__timeline-marker">
+              <text class="exam-row__timeline-dot" />
+              <text class="exam-row__timeline-line" />
+            </view>
+            <view class="exam-row__timeline-copy">
+              <text class="exam-row__timeline-label">{{item.nextNodeLabel}}</text>
+              <text wx:if="{{item.nextDate}}" class="exam-row__timeline-date">{{item.nextDate}}</text>
+            </view>
+            <view class="countdown-pill" wx:if="{{item.daysLeft !== null && item.daysLeft > 0}}">
+              <text class="countdown-pill__num">{{item.daysLeft}}</text>
+              <text class="countdown-pill__unit">天</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-wrap" wx:if="{{!publicEvents.length && !loading && !error}}"
+      ><text class="empty-text">暂无公共事项</text></view
+    >
+    <!-- 底部免责 -->
+    <view class="list-footer" wx:if="{{publicEvents.length}}">
+      <text class="footer-line">资料仅供参考</text>
+      <text class="footer-line">具体时间及规则以事项最新公告为准</text>
+    </view>
+  </block>
+</view>
+
+<view wx:if="{{hasMore && !loading}}" class="empty-wrap" bindtap="onReachBottom"
+  ><text class="empty-text">加载更多</text></view
+>
+<in-app-banner />

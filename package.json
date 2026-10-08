@@ -7,6 +7,8 @@
     "typecheck": "tsc --noEmit --ignoreDeprecations 6.0",
     "lint": "eslint . --ext .ts",
     "audit:packages": "node scripts/audit-packages.mjs",
+    "validate:icons": "node scripts/validate-icon-registry.mjs",
+    "test:icons": "node scripts/test-icon-system.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -41,13 +41,13 @@
         <!-- 已选图片 -->
         <view wx:for="{{images}}" wx:key="*this" class="image-item">
           <image class="image-item__img" src="{{item}}" mode="aspectFill" />
-          <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}">
-            <text class="image-item__del-icon">✕</text>
+          <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}" aria-role="button" aria-label="移除图片">
+            <ui-icon name="remove" state="inverse" size="sm" />
           </view>
         </view>
         <!-- 添加按钮 -->
-        <view class="image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}">
-          <text class="image-add__icon">🖼</text>
+        <view class="image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}" aria-role="button" aria-label="添加图片">
+          <ui-icon name="image-add" size="lg" />
           <text class="image-add__text" wx:if="{{images.length === 0}}">添加图片</text>
           <text class="image-add__count" wx:else>{{images.length}}/9</text>
         </view>
@@ -58,8 +58,8 @@
     <view class="topics-area" wx:if="{{topics.length}}">
       <view wx:for="{{topics}}" wx:key="*this" class="topic-chip">
         <text class="topic-chip__text"># {{item}}</text>
-        <view class="topic-chip__del" catchtap="onRemoveTopic" data-index="{{index}}">
-          <text class="topic-chip__del-icon">✕</text>
+        <view class="topic-chip__del" catchtap="onRemoveTopic" data-index="{{index}}" aria-role="button" aria-label="移除话题">
+          <ui-icon name="remove" state="inverse" size="sm" />
         </view>
       </view>
     </view>
@@ -73,8 +73,8 @@
     <!-- 左侧工具 -->
     <view class="toolbar-left">
       <!-- 图片 -->
-      <view class="toolbar-btn" catchtap="onAddImage">
-        <text class="toolbar-btn__icon">🖼</text>
+      <view class="toolbar-btn" catchtap="onAddImage" aria-role="button" aria-label="添加图片">
+        <ui-icon name="image-add" size="lg" />
       </view>
       <!-- 话题 -->
       <view class="toolbar-btn" catchtap="onAddTopic">
@@ -82,7 +82,7 @@
       </view>
       <!-- 可见范围 -->
       <view class="toolbar-btn toolbar-btn--text" catchtap="onPickVisibility">
-        <text class="toolbar-btn__icon">👁</text>
+        <ui-icon name="visibility" size="md" />
         <text class="toolbar-btn__label">{{visibilityLabel}}</text>
       </view>
     </view>

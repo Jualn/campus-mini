@@ -3,14 +3,14 @@
 <view id="page-root" class="page">
   <view class="hero glass-card">
     <navigator class="back-nav" open-type="navigateBack" delta="1" hover-class="none">
-      <text class="back-icon">‹</text>
+      <ui-icon name="chevron-left" size="lg" />
       <text class="back-text">返回</text>
     </navigator>
 
     <view class="hero-top">
       <view>
         <view class="hero-title">发布活动</view>
-        <view class="hero-subtitle">上传活动文件，AI 按字段顺序辅助填写</view>
+        <view class="hero-subtitle">填写活动信息，可选用 AI 辅助识别；保存后由管理端审核公开</view>
       </view>
       <view class="hero-badge">AI</view>
     </view>
@@ -45,7 +45,7 @@
     </view>
 
     <view wx:if="{{!aiFile}}" class="upload-card ai-upload-card" bindtap="chooseAiFile">
-      <view class="upload-icon">＋</view>
+      <view class="upload-icon"><ui-icon name="plus" size="lg" /></view>
       <view class="upload-title">上传活动文件</view>
       <view class="upload-desc">仅支持 PDF / DOC / DOCX，最多上传 1 个文件</view>
     </view>
@@ -77,7 +77,7 @@
     </view>
 
     <view class="form-item {{aiStatus.activeField === 'title' ? 'ai-active' : ''}}">
-      <input value="{{form.title}}" data-field="title" bindinput="onTextInput"
+      <input maxlength="128" value="{{form.title}}" data-field="title" bindinput="onTextInput"
         disabled="{{aiStatus.activeField === 'title'}}" placeholder="请输入活动标题" />
     </view>
   </view>
@@ -147,6 +147,8 @@
 
     <view class="form-item {{aiStatus.activeField === 'startTime' ? 'ai-active' : ''}}">
       <view class="time-value">{{form.startTime || '请选择活动开始时间'}}</view>
+      <text class="danger-text" data-field="startTime" bindtap="clearFormTime">设为待定</text>
+      <view class="section-desc">只选日期表示当天；确定时分后再选择时间。</view>
       <view class="time-picker-row">
         <picker mode="date" value="{{today}}" data-field="startTime" bindchange="onFormDateChange"
           disabled="{{aiStatus.activeField === 'startTime'}}">
@@ -170,6 +172,8 @@
 
     <view class="form-item {{aiStatus.activeField === 'endTime' ? 'ai-active' : ''}}">
       <view class="time-value">{{form.endTime || '请选择活动结束时间'}}</view>
+      <text class="danger-text" data-field="endTime" bindtap="clearFormTime">设为待定</text>
+      <view class="section-desc">只选日期表示当天；确定时分后再选择时间。</view>
       <view class="time-picker-row">
         <picker mode="date" value="{{today}}" data-field="endTime" bindchange="onFormDateChange"
           disabled="{{aiStatus.activeField === 'endTime'}}">
@@ -193,6 +197,8 @@
 
     <view class="form-item {{aiStatus.activeField === 'enrollDeadline' ? 'ai-active' : ''}}">
       <view class="time-value">{{form.enrollDeadline || '可不填写'}}</view>
+      <text class="danger-text" data-field="enrollDeadline" bindtap="clearFormTime">设为待定</text>
+      <view class="section-desc">只选日期表示当天；确定时分后再选择时间。</view>
       <view class="time-picker-row">
         <picker mode="date" value="{{today}}" data-field="enrollDeadline" bindchange="onFormDateChange"
           disabled="{{aiStatus.activeField === 'enrollDeadline'}}">
@@ -206,17 +212,21 @@
     </view>
   </view>
 
+  <view class="section glass-card">
+    <view class="section-title">时间补充说明</view>
+    <view class="form-item"><textarea auto-height maxlength="255" value="{{timeDescription}}" bindinput="onTimeDescriptionInput" placeholder="如：具体时间另行通知" /></view>
+  </view>
   <!-- 8 maxParticipants -->
   <view id="field-maxParticipants" class="section glass-card">
     <view class="section-title-row">
       <view>
-        <view class="section-title">最大参与人数</view>
+        <view class="section-title">官方容量（人）</view>
       </view>
     </view>
 
     <view class="form-item {{aiStatus.activeField === 'maxParticipants' ? 'ai-active' : ''}}">
       <input type="number" value="{{form.maxParticipants}}" data-field="maxParticipants" bindinput="onTextInput"
-        disabled="{{aiStatus.activeField === 'maxParticipants'}}" placeholder="不填表示不限" />
+        disabled="{{aiStatus.activeField === 'maxParticipants'}}" placeholder="未提供人数时留空" />
     </view>
   </view>
 
@@ -253,14 +263,14 @@
     <view class="section-title-row">
       <view>
         <view class="section-title">报名二维码</view>
-        <view class="section-desc">qrcodeUrl，由用户上传图片后生成 COS URL</view>
+        <view class="section-desc">上传供参与者查看的二维码</view>
       </view>
     </view>
 
     <view wx:if="{{!qrcodeImage}}" class="upload-card" bindtap="chooseQrcodeImage">
-      <view class="upload-icon">＋</view>
+      <view class="upload-icon"><ui-icon name="plus" size="lg" /></view>
       <view class="upload-title">上传二维码图片</view>
-      <view class="upload-desc">上传成功后写入 qrcodeUrl</view>
+      <view class="upload-desc">请选择清晰、可识别的二维码图片</view>
     </view>
 
     <view wx:else class="qrcode-preview-card">
@@ -269,7 +279,7 @@
       <view class="qrcode-info">
         <view class="upload-title">二维码已选择</view>
         <view class="upload-desc">
-          {{qrcodeImage.status === 'uploaded' ? '已上传 COS' : '等待上传 COS'}}
+          {{qrcodeImage.status === 'uploaded' ? '已上传' : '等待上传'}}
         </view>
         <view class="inline-actions">
           <text bindtap="chooseQrcodeImage">重新选择</text>
@@ -371,6 +381,7 @@
 
         <view class="mini-form-item">
           <text class="mini-label">开始时间</text>
+          <text class="danger-text" data-index="{{index}}" data-key="startTime" bindtap="clearTimelineTime">设为待定</text>
           <view class="time-value small">{{item.startTime || '请选择开始时间'}}</view>
           <view class="time-picker-row">
             <picker mode="date" value="{{today}}" data-index="{{index}}" data-key="startTime"
@@ -386,6 +397,7 @@
 
         <view class="mini-form-item">
           <text class="mini-label">结束时间</text>
+          <text class="danger-text" data-index="{{index}}" data-key="endTime" bindtap="clearTimelineTime">设为待定</text>
           <view class="time-value small">{{item.endTime || '单点时间可不填'}}</view>
           <view class="time-picker-row">
             <picker mode="date" value="{{today}}" data-index="{{index}}" data-key="endTime"
@@ -411,31 +423,52 @@
     <view class="section-title-row">
       <view>
         <view class="section-title">活动详情</view>
-        <view class="section-desc">content，AI 会最后逐段追加</view>
+        <view class="section-desc">活动介绍由 AI 辅助填写，也可手动编辑；其他内容可分节补充</view>
       </view>
     </view>
 
     <view class="form-item content-item {{aiStatus.activeField === 'content' ? 'ai-active' : ''}}">
       <textarea class="content-textarea" value="{{form.content}}" data-field="content" bindinput="onContentInput"
-        disabled="{{aiStatus.activeField === 'content'}}" auto-height maxlength="-1" placeholder="请输入活动详情，支持长文本" />
+        disabled="{{aiStatus.activeField === 'content'}}" auto-height maxlength="10000" placeholder="请输入活动介绍" />
       <!-- 关键：content 尾部锚点 -->
       <view id="content-tail-anchor" class="content-tail-anchor"></view>
     </view>
   </view>
 
+  <view class="section glass-card">
+    <view class="section-title-row"><view class="section-title">补充分节</view><button class="mini-btn" bindtap="addSection" disabled="{{extraSections.length >= 29}}">添加分节</button></view>
+    <view class="section-desc">按添加顺序展示，可分别填写规则、流程、奖励等内容。</view>
+    <view wx:for="{{extraSections}}" wx:key="index" class="contact-card">
+      <view class="mini-form-item"><input maxlength="128" value="{{item.title}}" data-list="extraSections" data-index="{{index}}" data-key="title" bindinput="onInformationInput" placeholder="分节标题" /></view>
+      <view class="mini-form-item"><textarea auto-height maxlength="20000" value="{{item.content}}" data-list="extraSections" data-index="{{index}}" data-key="content" bindinput="onInformationInput" placeholder="分节正文" /></view>
+      <text class="danger-text" data-list="extraSections" data-index="{{index}}" bindtap="removeInformationItem">删除分节</text>
+    </view>
+  </view>
+  <view class="section glass-card">
+    <view class="section-title-row"><view class="section-title">参与入口</view><button class="mini-btn" bindtap="addParticipationAction" disabled="{{participationActions.length >= 20}}">添加入口</button></view>
+    <view class="section-desc">填写网页、群号或办理说明。订阅活动不代表已完成报名。</view>
+    <view wx:for="{{participationActions}}" wx:key="index" class="contact-card">
+      <picker range="{{actionOptions}}" range-key="label" value="{{item.typeIndex}}" data-index="{{index}}" bindchange="onActionTypeChange"><view class="picker-value">{{actionOptions[item.typeIndex].label}}</view></picker>
+      <view class="mini-form-item"><input maxlength="128" value="{{item.label}}" data-list="participationActions" data-index="{{index}}" data-key="label" bindinput="onInformationInput" placeholder="入口名称，如：前往报名" /></view>
+      <view class="mini-form-item"><input maxlength="1024" value="{{item.targetValue}}" data-list="participationActions" data-index="{{index}}" data-key="targetValue" bindinput="onInformationInput" placeholder="网页地址、号码或线下地点" /></view>
+      <view class="mini-form-item"><textarea auto-height maxlength="2000" value="{{item.description}}" data-list="participationActions" data-index="{{index}}" data-key="description" bindinput="onInformationInput" placeholder="入口说明" /></view>
+      <view class="label-row"><text>必经步骤</text><switch checked="{{item.isRequired}}" data-index="{{index}}" bindchange="onActionRequiredChange" /></view>
+      <text class="danger-text" data-list="participationActions" data-index="{{index}}" bindtap="removeInformationItem">删除入口</text>
+    </view>
+  </view>
   <!-- 附件上传，不参与 AI 填写 -->
   <view class="section glass-card">
     <view class="section-title-row">
       <view>
         <view class="section-title">活动附件</view>
         <view class="section-desc">
-          支持 PDF / DOC / DOCX，最多 {{maxAttachmentCount}} 个，可预览
+          支持 PDF / DOC / DOCX，与二维码合计最多 {{maxAttachmentCount}} 个，可预览
         </view>
       </view>
     </view>
 
     <view wx:if="{{attachmentFiles.length < maxAttachmentCount}}" class="upload-card" bindtap="chooseAttachmentFile">
-      <view class="upload-icon">＋</view>
+      <view class="upload-icon"><ui-icon name="plus" size="lg" /></view>
       <view class="upload-title">上传活动附件</view>
       <view class="upload-desc">
         已选择 {{attachmentFiles.length}} / {{maxAttachmentCount}}
@@ -471,7 +504,7 @@
     </view>
   </view>
 
-  <button class="submit-btn" bindtap="submitActivity" loading="{{submitting}}" disabled="{{submitting}}">
-      <text class="submit-btn-text">{{submitting ? '发布中' : '发布活动'}}</text>
+  <button class="submit-btn" bindtap="submitActivity" loading="{{submitting}}" disabled="{{submitting || createdId}}">
+      <text class="submit-btn-text">{{createdId ? '草稿已创建' : submitting ? '保存中' : '保存活动草稿'}}</text>
   </button>
 </view>

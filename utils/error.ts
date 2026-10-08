@@ -1,5 +1,7 @@
 // error.ts
 export interface AppErrorOptions {
+  retryAfterMs?: number;
+  problemType?: string;
   userMessage?: string;
   silent?: boolean;
   raw?: unknown;
@@ -36,6 +38,8 @@ export class NetworkError extends Error {
 }
 
 export class HttpError extends Error {
+  retryAfterMs?: number;
+  problemType?: string;
   statusCode: number;
   raw?: unknown;
   userMessage: string;
@@ -48,6 +52,8 @@ export class HttpError extends Error {
   ) {
     super(message);
     this.name = 'HttpError';
+    this.retryAfterMs = options.retryAfterMs;
+    this.problemType = options.problemType;
     this.statusCode = statusCode;
     this.raw = options.raw;
     this.userMessage = options.userMessage ?? '服务异常，请稍后再试';
@@ -69,13 +75,23 @@ export class AuthError extends Error {
   }
 }
 
-export function getHttpErrorMessage(statusCode: number, serverMessage?: string): string {
+export function getHttpErrorMessage(
+  statusCode: number,
+  serverMessage?: string,
+  problemType?: string,
+): string {
+  if (problemType === '/problems/profile-content-rejected')
+    return '资料内容未通过安全检查，请修改后重试';
+  if (problemType === '/problems/profile-safety-check-unavailable')
+    return '资料安全检查暂不可用，本次修改未生效，请稍后重试';
   const message = serverMessage?.trim();
   if (message) return message;
 
   if (statusCode === 401) return '登录状态已失效，请重试';
   if (statusCode === 403) return '暂无权限执行此操作';
   if (statusCode === 404) return '内容不存在或已被删除';
+  if (statusCode === 412) return '内容已在其他设备更新，请重新加载后再操作';
+  if (statusCode === 428) return '缺少最新版本信息，请重新加载后再操作';
   if (statusCode === 429) return '操作过于频繁，请稍后再试';
   if (statusCode >= 500) return '服务暂时不可用，请稍后再试';
 

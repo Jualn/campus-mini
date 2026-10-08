@@ -16,7 +16,7 @@
     wx:elif="{{listLoad.initialError}}"
     mode="{{listLoad.refreshing ? 'loading' : 'error'}}"
     title="{{listLoad.refreshing ? '正在重新加载' : '暂时无法加载'}}"
-    description="{{listLoad.refreshing ? '' : '网络可能暂时不可用，请稍后再试'}}"
+    description="{{listLoad.refreshing ? '' : profileError}}"
     action-text="{{listLoad.refreshing ? '' : '重新加载'}}"
     fill-viewport
     viewport-offset="112"
@@ -50,6 +50,9 @@
       action-text="重新加载"
       bind:action="retryLikes"
     />
+
+    <load-state wx:elif="{{activeTab === 'posts' && postsError}}" mode="error" variant="section"
+      title="动态暂时无法加载" description="{{postsError}}" action-text="重新加载" bind:action="retryInitial" />
 
     <!-- 列表内容 -->
     <block wx:elif="{{posts.length > 0}}">

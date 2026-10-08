@@ -12,7 +12,7 @@ export * as mediaService from './media';
 export * as commentService from './comment';
 export * as interactService from './interact';
 export * as userService from './user';
+export * as homePublicMatterReminderService from './home-public-matter-reminder';
 
-export * as examService from './exam';
 export * as messageService from './message';
 export * as reportService from './report';

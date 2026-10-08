@@ -135,7 +135,7 @@ Page({
 
     const quickMap: Record<string, string> = {
       activity: '/subpkg_activity/pages/list/list',
-      exam: '/subpkg_exam/pages/list/list',
+      exam: '/subpkg_public_event/pages/list/list',
     };
 
     const target = type ? quickMap[type] : '';

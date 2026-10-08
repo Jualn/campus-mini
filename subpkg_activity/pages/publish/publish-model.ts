@@ -1,3 +1,4 @@
+import type { ActivityCreateRequest } from '../../../types/api';
 import { MEDIA_TYPES, type MediaType } from '../../../utils/constants';
 
 export type UserLockedFields = Partial<Record<FormFieldKey, boolean>>;
@@ -70,6 +71,7 @@ export interface TimelineItem {
 }
 
 export interface QrcodeImage {
+  objectKey?: string;
   path: string;
   previewUrl: string;
   url?: string;
@@ -465,8 +467,8 @@ export function toTimelineList(value: unknown): TimelineItem[] {
 
     const label = toText(item.label).trim();
     const description = toText(item.description).trim();
-    const startTime = normalizeDateTimeForApi(item.startTime ?? item.start_time);
-    const endTime = normalizeDateTimeForApi(item.endTime ?? item.end_time);
+    const startTime = toText(item.startTime ?? item.start_time).trim();
+    const endTime = toText(item.endTime ?? item.end_time).trim();
 
     const sortOrderRaw = item.sortOrder ?? item.sort_order;
     const sortOrderNumber = Number(sortOrderRaw);
@@ -487,4 +489,86 @@ export function toTimelineList(value: unknown): TimelineItem[] {
 
     return list;
   }, []);
+}
+
+export const ACTION_OPTIONS = [
+  { label: '网页', value: 1 },
+  { label: 'QQ群', value: 2 },
+  { label: '邮箱', value: 3 },
+  { label: '微信号', value: 4 },
+  { label: '线下办理', value: 7 },
+  { label: '说明', value: 8 },
+];
+
+/** 日期保持日期精度，不从缺失信息推断时分。 */
+export function toEventTime(value: string | undefined) {
+  const text = (value ?? '').trim();
+  return {
+    value: text ? normalizeDateTimeForApi(text) : null,
+    precision: !text ? 0 : /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(text) ? 1 : 2,
+  };
+}
+
+export function validatePublishInformation(payload: ActivityCreateRequest): string {
+  if (!payload.title || payload.title.length > 128) return '请填写128字以内的活动标题';
+  if (!payload.sections?.length || payload.sections.length > 30)
+    return '请填写活动介绍，正文最多30节';
+  if (
+    payload.sections.some(
+      (s) => !s.title || s.title.length > 128 || !s.content || s.content.length > 20000,
+    )
+  )
+    return '每节需要标题和正文，请检查空白或过长内容';
+  if (payload.content.length > 10000) return '活动介绍不能超过10000字';
+  if (
+    payload.maxParticipants !== null &&
+    (!Number.isInteger(payload.maxParticipants) ||
+      payload.maxParticipants <= 0 ||
+      payload.maxParticipants > 2147483647)
+  )
+    return '官方人数请填写有效正整数，未知可留空';
+  if (payload.contactInfo.length > 512) return '联系人信息过长，请精简';
+  if (
+    payload.organizer.length > 128 ||
+    payload.location.length > 255 ||
+    payload.joinMethod.length > 255
+  )
+    return '主办单位、地点或参与说明过长';
+  const ranges = [
+    { startTime: payload.startTime, endTime: payload.endTime, endPrecision: payload.endPrecision },
+    ...payload.timelineItems,
+  ];
+  if (
+    ranges.some(
+      (r) =>
+        r.startTime &&
+        r.endTime &&
+        r.startTime > (r.endPrecision === 1 ? r.endTime.slice(0, 10) + ' 23:59:59' : r.endTime),
+    )
+  )
+    return '结束时间不能早于开始时间';
+  if (
+    payload.timelineItems.length > 20 ||
+    payload.timelineItems.some((t) => !t.label || t.label.length > 64 || t.description.length > 255)
+  )
+    return '时间节点最多20个，请检查名称和说明';
+  if ((payload.actions?.length ?? 0) > 20) return '参与入口最多20项';
+  for (const a of payload.actions ?? []) {
+    if (
+      !a.label ||
+      a.label.length > 128 ||
+      a.description.length > 2000 ||
+      a.targetValue.length > 1024
+    )
+      return '请检查入口名称及内容长度';
+    if (a.actionType <= 4 && !a.targetValue) return '请填写入口地址或号码';
+    if (a.actionType === 1 && !/^https:\/\/[^/\s@?#]+(?:[/?#][^\s]*)?$/i.test(a.targetValue))
+      return '网页入口需要有效的 HTTPS 地址';
+    if (a.actionType === 2 && !/^\d{5,20}$/.test(a.targetValue)) return 'QQ群号应为5至20位数字';
+    if (a.actionType === 3 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.targetValue))
+      return '请填写有效邮箱';
+    if (a.actionType === 7 && !a.targetValue && !a.description) return '线下办理需要地址或说明';
+    if (a.actionType === 8 && !a.description) return '请填写入口说明';
+  }
+  return '';
 }

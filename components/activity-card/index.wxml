@@ -22,6 +22,7 @@
 
         <text class="activity-card__image-title">{{activity.title}}</text>
 
+        <view class="activity-card__image-meta" wx:if="{{activity.capacityText}}"><text class="activity-card__image-meta-text">官方名额 {{activity.capacityText}}</text></view>
         <view class="activity-card__image-meta" wx:if="{{_deadlineText}}">
           <text
             class="activity-card__image-meta-text {{_isDeadlineUrgent ? 'activity-card__image-meta-text--urgent' : ''}}">⏰ {{_deadlineText}}</text>
@@ -44,7 +45,7 @@
         </view>
 
         <view class="activity-card__deadline-chip" wx:if="{{_isDeadlineUrgent}}">
-          <text class="activity-card__deadline-chip-text">还剩{{activity.daysToDeadline}}天</text>
+          <text class="activity-card__deadline-chip-text">{{activity.cardTimelineLabel || '时间节点'}}还剩{{activity.daysToDeadline}}天</text>
         </view>
       </view>
 
@@ -62,20 +63,20 @@
       </view>
 
       <view class="activity-card__meta">
-        <view class="activity-card__meta-item" wx:if="{{activity.enroll_deadline}}">
+        <view class="activity-card__meta-item" wx:if="{{_deadlineText}}">
           <image class="activity-card__meta-item__icon" src="/assets/icons/detail/important_time.svg"
             mode="aspectFit" />
-          <text class="activity-card__meta-item__text">{{activity.enroll_deadline}}</text>
+          <text class="activity-card__meta-item__text">{{_deadlineText}}</text>
         </view>
 
         <view class="activity-card__meta-item" wx:if="{{activity.location}}">
-          <image class="activity-card__meta-item__icon" src="/assets/icons/detail/location.svg" mode="aspectFit" />
+          <view class="activity-card__meta-item__icon icon-slot"><ui-icon name="location" size="md" /></view>
           <text class="activity-card__meta-item__text"> {{activity.location}}</text>
         </view>
 
-        <view class="activity-card__meta-item" wx:if="{{activity.max_participants}}">
-          <image class="activity-card__meta-item__icon" src="/assets/icons/detail/participants.svg" mode="aspectFit" />
-          <text class="activity-card__meta-item__text">限{{activity.max_participants}}人</text>
+        <view class="activity-card__meta-item" wx:if="{{activity.capacityText}}">
+          <view class="activity-card__meta-item__icon icon-slot"><ui-icon name="participants" size="md" /></view>
+          <text class="activity-card__meta-item__text">官方名额 {{activity.capacityText}}</text>
         </view>
 
       </view>

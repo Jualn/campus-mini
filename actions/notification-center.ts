@@ -1,169 +1,279 @@
-import { createLogger } from '../utils/logger';
+import config from '../config/index';
+import * as notifications from '../services/notification';
 import { eventBus, EVENTS } from '../utils/event-bus';
-import * as messageAction from './message';
-import { isLoggedIn } from '../stores/helper';
+import { getUserId, isLoggedIn } from '../stores/helper';
+import { authReady, ensureLogin } from './auth';
+import { navigateNotificationTarget } from '../utils/notification-target';
+import { showErrorToast } from '../utils/notify';
+import type { NotificationPreview, NotificationTarget } from '../types/notification-contract';
+import type { BannerMessage } from '../types/business';
 
-type BannerOptions = Parameters<typeof messageAction.getUnreadBannerMessages>[0];
-
-export interface NotifyPollingOptions {
-  intervalMs?: number;
-  bannerOptions?: BannerOptions;
-}
-
-const DEFAULT_INTERVAL_MS = 20000;
-const MIN_INTERVAL_MS = 5000;
-
-const log = createLogger('NotifyCenter');
-
-let pollTimer: number | null = null;
-let isPolling = false;
-// let lastUnreadCount: number | null = null;
+let foreground = false;
+let session = 0;
+let account = getUserId();
+let accountRevision = 0;
 let unreadCount = 0;
-let pollIntervalMs = DEFAULT_INTERVAL_MS;
-let bannerOptions: BannerOptions | undefined;
-let activeIntervalMs: number | null = null;
-
-let onBannerTap: ((payload: unknown) => void) | null = null;
-let onLogout: (() => void) | null = null;
-let onLogin: (() => void) | null = null;
-
-const applyOptions = (options?: NotifyPollingOptions) => {
-  if (!options) return;
-
-  if (typeof options.intervalMs === 'number') {
-    pollIntervalMs = Math.max(MIN_INTERVAL_MS, options.intervalMs);
-  }
-
-  if (options.bannerOptions !== undefined) {
-    bannerOptions = options.bannerOptions;
-  }
-};
+let unreadKnown = false;
+let cursor: string | undefined;
+let timer: ReturnType<typeof setTimeout> | undefined;
+let polling = false;
+let intervalMs = config.notificationPollIntervalMs;
+let bound = false;
+const isForeground = () => foreground;
+const isForegroundSession = (generation: number) => foreground && generation === session;
+// Serialize summaries and read writes so older snapshots cannot overwrite newer Badge state.
+let queue: Promise<unknown> = Promise.resolve();
+const suppressedNotificationIds = new Set<string>();
+let pendingEntry: { id: string; running: boolean } | undefined;
+const failedReads = new Set<string>();
 
 export const getUnreadCount = () => unreadCount;
-
-const emitUnreadChange = (count: number) => {
+export const isUnreadKnown = () => unreadKnown;
+export const hasFailedReads = () => failedReads.size > 0;
+const publishCount = (count: number, known = true) => {
   unreadCount = count;
+  unreadKnown = known;
   eventBus.emit(EVENTS.NOTIFY_UNREAD_CHANGE, count);
 };
 
-/**
- * 执行一次轮询（通常在 app onShow 时调用），获取最新的未读数和 Banner 数据，并触发相关事件。
- * 如果正在轮询中，则跳过本次调用，避免重复请求。
- * 如果用户未登录，则不执行轮询。
- * 如果未读数发生变化，触发 NOTIFY_UNREAD_CHANGE 事件；如果有新的 Banner 消息，触发 NOTIFY_BANNER_SHOW 事件。
- *
- * @param options 可选的轮询配置项，包括轮询间隔和 Banner 请求参数
- * @returns Promise<void>
- */
-export const pollOnce = async (options?: NotifyPollingOptions) => {
-  applyOptions(options);
-  if (isPolling) return;
-  if (!isLoggedIn()) return;
+const syncAccount = () => {
+  const next = getUserId();
+  if (account === next) return;
+  account = next;
+  accountRevision += 1;
+  cursor = undefined;
+  suppressedNotificationIds.clear();
+  failedReads.clear();
+  // Only the unverified external entry may be associated with the newly authenticated user.
+  if (pendingEntry) suppressedNotificationIds.add(pendingEntry.id);
+  publishCount(0, false);
+  eventBus.emit(EVENTS.NOTIFY_LIST_REFRESH);
+};
 
-  isPolling = true;
-  try {
-    const count = await messageAction.getUnreadCount();
-    emitUnreadChange(count);
+const ordered = <T>(work: (isCurrent: () => boolean) => Promise<T>): Promise<T> => {
+  syncAccount();
+  const owner = account;
+  const revision = accountRevision;
+  const isCurrent = () => Boolean(owner && owner === getUserId() && revision === accountRevision);
+  const task = queue
+    .catch(() => undefined)
+    .then(async () => {
+      if (!isCurrent()) throw new Error('登录身份已改变，请重新加载消息');
+      const result = await work(isCurrent);
+      if (!isCurrent()) throw new Error('登录身份已改变，请重新加载消息');
+      return result;
+    });
+  queue = task.catch(() => undefined);
+  return task;
+};
 
-    if (count <= 0) return;
-
-    const nextOptions = bannerOptions
-      ? { ...bannerOptions, unreadCount: count }
-      : { unreadCount: count };
-    const banners = await messageAction.getUnreadBannerMessages(nextOptions);
-    if (banners.length > 0) {
-      eventBus.emit(EVENTS.NOTIFY_BANNER_SHOW, banners);
+export const markRead = (ids: string[]) =>
+  ordered(async (isCurrent) => {
+    const result = await notifications.batchRead(ids);
+    if (isCurrent()) {
+      publishCount(result.unreadCount);
+      ids.forEach((id) => failedReads.delete(id));
+      eventBus.emit(EVENTS.NOTIFY_LIST_REFRESH, ids);
     }
-  } catch (err: unknown) {
-    log.warn('pollOnce', 'notify poll failed', err);
+    return result;
+  });
+
+export const markReadThrough = (throughCursor: string) =>
+  ordered(async (isCurrent) => {
+    const result = await notifications.readThrough(throughCursor);
+    if (isCurrent()) {
+      publishCount(result.unreadCount);
+      eventBus.emit(EVENTS.NOTIFY_LIST_REFRESH);
+    }
+    return result;
+  });
+
+export const retryFailedReads = async () => {
+  syncAccount();
+  const ids = [...failedReads];
+  for (let offset = 0; offset < ids.length; offset += 50) {
+    await markRead(ids.slice(offset, offset + 50));
+  }
+};
+
+export const openNotification = async (item: { id: string; target?: NotificationTarget }) => {
+  syncAccount();
+  const owner = getUserId();
+  const revision = accountRevision;
+  const generation = session;
+  suppressedNotificationIds.add(item.id);
+  try {
+    await markRead([item.id]);
+  } catch (err) {
+    if (owner !== getUserId() || revision !== accountRevision) return;
+    failedReads.add(item.id);
+    eventBus.emit(EVENTS.NOTIFY_LIST_REFRESH);
+    showErrorToast(err, { fallback: '已读同步失败，可在消息中心重试' });
+  }
+  if (owner !== getUserId() || revision !== accountRevision || !isForegroundSession(generation))
+    return;
+  try {
+    await navigateNotificationTarget(item.target);
+  } catch (err) {
+    showErrorToast(err, { fallback: '暂时无法打开详情' });
+  }
+};
+
+const toBanner = (preview: NotificationPreview): BannerMessage => ({
+  id: preview.id,
+  title: preview.title,
+  content: preview.body ?? '',
+  type: 'system',
+  tagText: '通知',
+  icon: '/assets/icons/common/message_center.svg',
+  semanticTarget: preview.target,
+  structured: true,
+});
+
+export const pollOnce = async () => {
+  if (!foreground || polling || !isLoggedIn()) return;
+  syncAccount();
+  const generation = session;
+  const afterCursor = cursor;
+  polling = true;
+  try {
+    await ordered(async (isCurrent) => {
+      if (!isForegroundSession(generation)) return;
+      const result = await notifications.getSummary(afterCursor);
+      if (!foreground || generation !== session || !isCurrent()) return;
+      publishCount(result.unreadCount);
+      cursor = result.headCursor;
+      const preview = result.latestNewNotification;
+      if (
+        afterCursor &&
+        result.newCount > 0 &&
+        preview &&
+        !suppressedNotificationIds.has(preview.id)
+      ) {
+        suppressedNotificationIds.add(preview.id);
+        eventBus.emit(EVENTS.NOTIFY_BANNER_SHOW, toBanner(preview));
+      }
+    });
+  } catch (err) {
+    if (
+      isForeground() &&
+      generation === session &&
+      notifications.isInvalidNotificationCursor(err)
+    ) {
+      cursor = undefined;
+    }
+    // Transient failure leaves Badge untouched; a later scheduled GET may recover.
   } finally {
-    isPolling = false;
+    polling = false;
+    if (isForeground()) {
+      if (generation !== session) void pollOnce();
+      else schedule();
+    }
   }
 };
 
-/**
- * 绑定事件监听器，确保在通知 Banner 被点击时能正确处理，以及在用户退出登录时清理状态。
- * 该函数会在 start() 中调用，确保事件绑定只发生一次。
- * onBannerTap 处理 Banner 点击事件，标记对应消息为已读并刷新列表；onLogout 处理用户退出事件，停止轮询并重置状态。
- * 如果事件处理函数已经绑定，则不会重复绑定。
- *
- * @returns void
- */
-const bindEvents = () => {
-  if (!onLogin) {
-    onLogin = () => {
-      start();
-    };
-    eventBus.on(EVENTS.LOGIN_SUCCESS, onLogin);
-  }
-
-  if (!onBannerTap) {
-    onBannerTap = (payload: unknown) => {
-      const item = payload as { id?: string | number; isAggregate?: boolean };
-      if (!item.id || item.isAggregate) return;
-
-      void messageAction
-        .markMessageAsRead(String(item.id))
-        .then(() => {
-          eventBus.emit(EVENTS.NOTIFY_LIST_REFRESH);
-          void pollOnce();
-        })
-        .catch((err: unknown) => {
-          log.warn('onBannerTap', 'mark read failed', err);
-        });
-    };
-    eventBus.on(EVENTS.NOTIFY_BANNER_TAP, onBannerTap);
-  }
-
-  if (!onLogout) {
-    onLogout = () => {
-      stop();
-      unreadCount = 0;
-      messageAction.resetNotificationBannerCache();
-      eventBus.emit(EVENTS.NOTIFY_UNREAD_CHANGE, 0);
-    };
-    eventBus.on(EVENTS.LOGOUT, onLogout);
-  }
-};
-
-/**
- * 启动通知轮询器，开始定期获取未读通知数和相关 Banner 数据。
- * 如果已经在轮询中，则不会重复启动。
- * 可以通过 options 参数自定义轮询间隔和 Banner 请求参数。
- * 如果用户未登录，则不会启动轮询。
- * 轮询过程中会触发相关事件，供界面组件更新显示。
- *
- * @param options 可选的轮询配置项，包括：
- *   - intervalMs: 轮询间隔，单位毫秒，默认为 20000ms，最小不低于 5000ms
- *   - bannerOptions: 获取 Banner 消息时的额外参数，如 unreadCount 等
- * @returns void
- */
-export const start = (options?: NotifyPollingOptions) => {
-  applyOptions(options);
-  bindEvents();
-  if (!isLoggedIn()) return;
-
-  if (pollTimer !== null && activeIntervalMs === pollIntervalMs) return;
-  if (pollTimer !== null) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-
-  activeIntervalMs = pollIntervalMs;
-  void pollOnce();
-  pollTimer = setInterval(() => {
+const schedule = () => {
+  if (timer !== undefined) clearTimeout(timer);
+  timer = setTimeout(() => {
+    timer = undefined;
     void pollOnce();
-  }, activeIntervalMs);
+  }, intervalMs);
 };
 
-/**
- * 停止通知轮询器，清除定时器并重置相关状态。
- * 如果当前没有轮询任务在运行，则调用该函数不会有任何效果。
- * @returns void
- */
+export const refreshUnreadCount = () =>
+  ordered(async (isCurrent) => {
+    const result = await notifications.getSummary();
+    if (isCurrent()) publishCount(result.unreadCount);
+    // Badge refresh does not replace the established foreground stream boundary.
+    return result.unreadCount;
+  });
+
+const processExternalEntry = async () => {
+  const entry = pendingEntry;
+  if (!entry || entry.running || !foreground) return;
+  entry.running = true;
+  try {
+    await authReady;
+    if (pendingEntry !== entry || !isForeground()) return;
+    await ensureLogin();
+    syncAccount();
+    const owner = getUserId();
+    const revision = accountRevision;
+    const item = await notifications.getNotification(entry.id);
+    if (
+      pendingEntry !== entry ||
+      !isForeground() ||
+      owner !== getUserId() ||
+      revision !== accountRevision
+    )
+      return;
+    pendingEntry = undefined;
+    await openNotification(item);
+  } catch (err) {
+    if (pendingEntry === entry) {
+      pendingEntry = undefined;
+      showErrorToast(err, { fallback: '这条通知暂不可用' });
+    }
+  } finally {
+    entry.running = false;
+    if (isForeground() && pendingEntry === entry) void processExternalEntry();
+  }
+};
+
+export const receiveExternalEntry = (query?: Record<string, unknown>) => {
+  const value = query?.notificationId;
+  if (typeof value !== 'string' || !value || value.length > 128) return;
+  suppressedNotificationIds.add(value);
+  pendingEntry = { id: value, running: false };
+  if (foreground) void processExternalEntry();
+};
+
+const bindEvents = () => {
+  if (bound) return;
+  bound = true;
+  eventBus.on(EVENTS.LOGIN_SUCCESS, () => {
+    syncAccount();
+    if (foreground) {
+      void pollOnce();
+      void processExternalEntry();
+    }
+  });
+  eventBus.on(EVENTS.LOGOUT, () => {
+    pendingEntry = undefined;
+    if (timer !== undefined) clearTimeout(timer);
+    timer = undefined;
+    syncAccount();
+    cursor = undefined;
+    suppressedNotificationIds.clear();
+    failedReads.clear();
+    publishCount(0, false);
+    eventBus.emit(EVENTS.NOTIFY_BANNER_CLEAR);
+  });
+  eventBus.on(EVENTS.NOTIFY_BANNER_TAP, (item) => {
+    if (item.structured && item.id) {
+      void openNotification({ id: item.id, target: item.semanticTarget });
+    }
+  });
+};
+
+export const start = (options?: { intervalMs?: number }) => {
+  bindEvents();
+  if (options?.intervalMs) intervalMs = Math.max(5000, options.intervalMs);
+  if (foreground) return;
+  foreground = true;
+  session += 1;
+  cursor = undefined;
+  syncAccount();
+  void pollOnce();
+  void processExternalEntry();
+};
+
 export const stop = () => {
-  if (pollTimer === null) return;
-  clearInterval(pollTimer);
-  pollTimer = null;
-  activeIntervalMs = null;
+  foreground = false;
+  session += 1;
+  cursor = undefined;
+  if (timer !== undefined) clearTimeout(timer);
+  timer = undefined;
+  eventBus.emit(EVENTS.NOTIFY_BANNER_CLEAR);
+  // Suppression survives temporary hiding in this login session, without persistence.
 };

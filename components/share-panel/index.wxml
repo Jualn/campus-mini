@@ -18,8 +18,8 @@
       <view class="sp-header__deco"></view>
       <text class="sp-header__title">分享给朋友</text>
       <view class="sp-close tap-active" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
-        catch:touchend="{{drag.handleClose}}">
-        <image class="sp-close__icon" src="/assets/icons/share-popup/close.svg" mode="aspectFit" />
+        catch:touchend="{{drag.handleClose}}" aria-role="button" aria-label="关闭分享">
+        <ui-icon name="close" size="sm" />
       </view>
     </view>
 
@@ -49,11 +49,11 @@
         <!-- 图片操作 -->
         <view class="sp-img-actions">
           <view class="sp-img-btn tap-active {{!imageLoaded || status !== 'ready' ? 'sp-img-btn--disabled' : ''}}" bindtap="onPreviewImage">
-            <image class="sp-img-btn__icon" src="/assets/icons/share-popup/preview.svg" mode="aspectFit" />
+            <view class="sp-img-btn__icon icon-slot"><ui-icon name="preview" size="xl" /></view>
             <text class="sp-img-btn__label">查看大图</text>
           </view>
           <view class="sp-img-btn sp-img-btn--accent tap-active {{!imageLoaded || status !== 'ready' || saving ? 'sp-img-btn--disabled' : ''}}" bindtap="onSaveImage">
-            <image class="sp-img-btn__icon" src="/assets/icons/share-popup/download.svg" mode="aspectFit" />
+            <view class="sp-img-btn__icon icon-slot"><ui-icon name="download" size="xl" /></view>
             <text class="sp-img-btn__label">{{saving ? '正在保存…' : '保存图片'}}</text>
           </view>
         </view>

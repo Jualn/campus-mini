@@ -8,6 +8,7 @@ import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
 import * as postAction from '../../actions/post';
 import * as userAction from '../../actions/user';
+import { getProfileErrorMessage } from '../../services/user';
 import definePage from '../../utils/definePage';
 import { notifyToast } from '../../utils/notify';
 import { getCurrentProfile, watchCurrentProfile } from '../../actions/current-user';
@@ -47,6 +48,8 @@ definePage({
   ],
   data: {
     // 骨架屏相关
+    profileError: '',
+    postsError: '',
     likesLoading: false,
     likesError: false,
 
@@ -172,7 +175,9 @@ definePage({
 
       const patch: Record<string, unknown> = {
         userInfo: result.userInfo,
+        profileError: '',
         postsCache: result.posts,
+        postsError: result.postsError ?? '',
       };
 
       // 只有当前在 posts tab 才把结果渲染到列表，避免覆盖其他 tab 的数据
@@ -184,7 +189,7 @@ definePage({
 
       const maybeHasMore = (result as { hasMore?: boolean }).hasMore;
       const hasMore = typeof maybeHasMore === 'boolean' ? maybeHasMore : false;
-      const hasContent = !!result.userInfo.id || result.posts.length > 0;
+      const hasContent = !!result.userInfo.userId || result.posts.length > 0;
 
       if (scene === 'initial') {
         this._listLoadEndInitial({
@@ -200,10 +205,13 @@ definePage({
         });
       }
     } catch (err) {
+      this.setData({ profileError: getProfileErrorMessage(err) });
       log.error('_loadProfileAndPosts', '加载我的主页失败', err);
 
       const hasContent =
-        !!this.data.userInfo.id || this.data.postsCache.length > 0 || this.data.posts.length > 0;
+        !!this.data.userInfo.userId ||
+        this.data.postsCache.length > 0 ||
+        this.data.posts.length > 0;
 
       if (scene === 'initial') {
         this._listLoadEndInitial({
@@ -265,11 +273,11 @@ definePage({
     });
 
     try {
-      const userId = this.data.userInfo.id ?? '';
+      const userId = this.data.userInfo.userId;
       if (!userId) throw new Error('missing user id');
 
       const result = await postAction.getUserLikedPosts(userId);
-      if (this.data.userInfo.id !== userId) return;
+      if (this.data.userInfo.userId !== userId) return;
 
       const patch: Record<string, unknown> = {
         likesCache: result.list,

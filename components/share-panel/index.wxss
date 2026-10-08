@@ -92,12 +92,6 @@
   border-radius: 999rpx;
 }
 
-.sp-close__icon {
-  width: 26rpx;
-  height: 26rpx;
-  display: block;
-  opacity: 0.78;
-}
 
 /* ─── 预览卡片区 ─── */
 .sp-preview-wrap {
@@ -449,4 +443,11 @@
 .sp-option[disabled] {
   opacity: 0.45;
   background: transparent;
+}
+
+/* Layout stays with the caller; UiIcon owns the glyph. */
+.icon-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

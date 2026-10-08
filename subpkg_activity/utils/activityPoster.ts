@@ -8,6 +8,7 @@ export interface ActivityData {
   time: string;
   location: string;
   maxPeople: number | null;
+  capacityText?: string;
   cover: string;
 }
 
@@ -41,6 +42,7 @@ function _drawWithCover(
 ): Promise<string> {
   const { ctx, W, H } = PC.initCanvas(canvas);
   const { title, time, location, maxPeople } = data;
+  const capacity = data.capacityText ?? (maxPeople ? `${String(maxPeople)} 人` : '');
   const PAD = 32;
   const imgH = 474;
 
@@ -79,14 +81,14 @@ function _drawWithCover(
   const infoLineH = 72;
   _drawInfoRow(ctx, PAD, infoStartY, W - PAD * 2, '时间', time, PC.BLUE);
   _drawInfoRow(ctx, PAD, infoStartY + infoLineH, W - PAD * 2, '地点', location, '#555555');
-  if (maxPeople) {
+  if (capacity) {
     _drawInfoRow(
       ctx,
       PAD,
       infoStartY + infoLineH * 2,
       W - PAD * 2,
-      '人数',
-      `限 ${String(maxPeople)} 人`,
+      '官方名额',
+      capacity,
       '#fa8c16',
     );
   }
@@ -128,6 +130,7 @@ function _drawNoCover(
 ): Promise<string> {
   const { ctx, W, H } = PC.initCanvas(canvas);
   const { title, time, location, maxPeople } = data;
+  const capacity = data.capacityText ?? (maxPeople ? `${String(maxPeople)} 人` : '');
   const PAD = 32;
 
   ctx.fillStyle = '#ffffff';
@@ -167,7 +170,7 @@ function _drawNoCover(
   const blockGap = 20;
 
   // 时间块（全宽，蓝色背景）
-  const timeBlockH = maxPeople
+  const timeBlockH = capacity
     ? Math.floor((blockH - blockGap * 2) * 0.42)
     : Math.floor((blockH - blockGap) * 0.5);
 
@@ -201,7 +204,7 @@ function _drawNoCover(
   const row2Y = blockY + timeBlockH + blockGap;
   const row2H = blockH - timeBlockH - blockGap;
 
-  if (maxPeople) {
+  if (capacity) {
     const colW = (W - PAD * 2 - blockGap) / 2;
 
     // 地点块
@@ -223,15 +226,11 @@ function _drawNoCover(
     ctx.fill();
     ctx.fillStyle = '#fa8c16';
     ctx.font = 'bold 48px sans-serif';
-    ctx.fillText('人数上限', col2X + 24, row2Y + 54);
+    ctx.fillText('官方名额', col2X + 24, row2Y + 54);
     ctx.fillStyle = '#1a1a1a';
     ctx.font = 'bold 54px sans-serif';
-    const numStr = PC.truncateText(ctx, String(maxPeople), colW - 112);
-    const numWidth = ctx.measureText(numStr).width;
-    ctx.fillText(numStr, col2X + 24, row2Y + row2H / 2 + 22);
-    ctx.fillStyle = '#888888';
-    ctx.font = '54px sans-serif';
-    ctx.fillText('人', col2X + 24 + numWidth + 6, row2Y + row2H / 2 + 22);
+    const capacityText = PC.truncateText(ctx, capacity, colW - 48);
+    ctx.fillText(capacityText, col2X + 24, row2Y + row2H / 2 + 22);
   } else {
     // 地点独占全宽
     ctx.fillStyle = '#f6f6f6';

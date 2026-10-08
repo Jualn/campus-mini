@@ -955,7 +955,9 @@ defineComponent<Private>()({
     /** 跳转到用户主页。 */
     goToUser(e: WechatMiniprogram.TouchEvent) {
       const { userId } = e.currentTarget.dataset as { userId: string };
-      void wxNavigateTo({ url: `/subpkg_user/pages/user/user?userId=${userId}` });
+      void wxNavigateTo({
+        url: `/subpkg_user/pages/user/user?userId=${encodeURIComponent(userId)}`,
+      });
     },
 
     /** 对外暴露的刷新方法，供父组件通过 selectComponent 调用。 */

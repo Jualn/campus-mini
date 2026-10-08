@@ -10,8 +10,18 @@ import type {
   UserPageData,
 } from '../types/business';
 import type { UserSettingUpdateRequest } from '../types/api';
+import { getErrorMessage } from '../utils/notify';
 import { getUserInfo } from '../stores/helper';
 import { getCurrentProfile, peekCurrentProfile, saveCurrentProfile } from './current-user';
+
+async function loadProfilePosts(userId: string) {
+  try {
+    const page = await postAction.getUserPosts(userId, { pageSize: 20 });
+    return { list: page.list, error: '' };
+  } catch (error) {
+    return { list: [], error: getErrorMessage(error, '动态加载失败，请重试') };
+  }
+}
 
 type NotifyKey = keyof Settings['notify'];
 
@@ -26,13 +36,13 @@ const NOTIFY_FIELD_MAP: Record<NotifyKey, (keyof UserSettingUpdateRequest)[]> = 
 const toEditProfileForm = (profile: {
   nickname?: string;
   bio?: string;
-  avatarUrl?: string;
-  bannerUrl?: string;
+  avatarUrl?: string | null;
+  backgroundUrl?: string | null;
 }): EditProfileForm => ({
   nickname: profile.nickname ?? '',
   bio: profile.bio ?? '',
   avatarUrl: profile.avatarUrl ?? '',
-  bannerUrl: profile.bannerUrl ?? '',
+  backgroundUrl: profile.backgroundUrl ?? '',
 });
 
 export const getEditProfileForm = async (): Promise<EditProfileForm> => {
@@ -46,14 +56,15 @@ export const saveEditProfileAndSync = async (data: EditProfileUpdate): Promise<v
 
 export const getMePageData = async (options: { force?: boolean } = {}): Promise<MePageData> => {
   const profile = await getCurrentProfile(options);
-  const userId = profile.id;
+  const userId = profile.userId;
   if (!userId) throw new Error('用户资料缺少身份信息');
-  const postsResult = await postAction.getUserPosts(userId, { pageSize: 20 });
+  const postsResult = await loadProfilePosts(userId);
   if (getUserInfo('id') !== userId) throw new Error('登录状态已变化，请重试');
 
   return {
     userInfo: peekCurrentProfile() ?? profile,
     posts: postsResult.list,
+    postsError: postsResult.error,
     activeTab: 'posts',
   };
 };
@@ -63,15 +74,18 @@ export const getUserPageData = async (
   options: { force?: boolean } = {},
 ): Promise<UserPageData> => {
   if (userId === getUserInfo('id')) return getMePageData(options);
+  const sessionId = getUserInfo('id');
   const [profile, postsResult] = await Promise.all([
     userService.getPublicProfile(userId),
-    postAction.getUserPosts(userId, { pageSize: 20 }),
+    loadProfilePosts(userId),
   ]);
 
+  if (getUserInfo('id') !== sessionId) throw new Error('登录状态已变化，请重试');
   const current = peekCurrentProfile();
   return {
-    userInfo: current?.id === userId ? current : { ...profile, id: userId },
+    userInfo: current?.userId === userId ? current : profile,
     posts: postsResult.list,
+    postsError: postsResult.error,
     activeTab: 'posts',
   };
 };

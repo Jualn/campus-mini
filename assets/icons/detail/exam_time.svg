@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style>.a{fill:#98bdfe}.b{fill:#1876ff}.c{fill:#fff}.d{fill:#ffe08a}</style></defs><rect class="a" x="4.5" y="5.3" width="15" height="14.2" rx="2.2"/><path class="b" d="M6.7 5.3h10.6a2.2 2.2 0 0 1 2.2 2.2v2H4.5v-2a2.2 2.2 0 0 1 2.2-2.2Z"/><rect class="c" x="7.1" y="11.2" width="3" height="2.4" rx=".45"/><rect class="c" x="11" y="11.2" width="3" height="2.4" rx=".45"/><rect class="c" x="14.9" y="11.2" width="2" height="2.4" rx=".45"/><rect class="c" x="7.1" y="14.8" width="3" height="2.4" rx=".45"/><path class="d" d="M14.5 15.3h2.6v1.9h-2.6z"/><rect class="b" x="7.3" y="3.6" width="1.2" height="3.2" rx=".6"/><rect class="b" x="15.5" y="3.6" width="1.2" height="3.2" rx=".6"/></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#52657d"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M10.5 21h-4.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v3" />
+  <path d="M16 3v4" />
+  <path d="M8 3v4" />
+  <path d="M4 11h10" />
+  <path d="M14 18a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+  <path d="M18 16.5v1.5l.5 .5" />
+</svg>

@@ -124,6 +124,7 @@ export const initUserInfo = async (): Promise<void> => {
 };
 
 export const logout = () => {
+  storage.remove(STORAGE_KEYS.REGISTRATION_FIELD_CANDIDATES);
   clearAuth();
   eventBus.emit(EVENTS.LOGOUT);
   // wx.reLaunch({ url: '/pages/login/login' });

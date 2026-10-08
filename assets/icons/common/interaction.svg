@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style>.cls-1{fill:#f7d7ff;}.cls-2{fill:#fc6b79;}.cls-3{fill:#fff;}.cls-4{fill:none;stroke:#330867;stroke-linecap:round;stroke-linejoin:round;stroke-width:.62px;}</style></defs><g id="图层_1" data-name="图层 1"><g id="互动消息"><path class="cls-1" d="M5.33,5H18.67a1.56,1.56,0,0,1,1.56,1.56v8.7a1.56,1.56,0,0,1-1.56,1.56H11.25L7.42,19.52A.29.29,0,0,1,7,19.28V16.82H5.33a1.56,1.56,0,0,1-1.56-1.56V6.56A1.56,1.56,0,0,1,5.33,5Z"/><path class="cls-2" d="M12,14.58S7.55,12.06,7.55,9.53a2.22,2.22,0,0,1,4.11-1.15.41.41,0,0,0,.68,0,2.22,2.22,0,0,1,4.11,1.15C16.45,12.06,12,14.58,12,14.58Z"/><path class="cls-3" d="M14.3,8.45a.93.93,0,0,1,.81.8.27.27,0,0,1-.52.15,1.22,1.22,0,0,0-.41-.43A.27.27,0,0,1,14.3,8.45Z"/><path class="cls-4" d="M7,16.94v2.25a.29.29,0,0,0,.45.24l3.78-2.61h7.44a1.56,1.56,0,0,0,1.56-1.56V6.56A1.56,1.56,0,0,0,18.67,5H5.33A1.56,1.56,0,0,0,3.77,6.56v8.7a1.56,1.56,0,0,0,1.56,1.56h.79"/></g></g></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#bd5b78"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10" />
+  <path d="M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2" />
+</svg>

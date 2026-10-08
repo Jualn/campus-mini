@@ -11,8 +11,8 @@
       class="top-bar"
       style="padding-top: {{statusBarHeight}}px;"
     >
-      <view class="top-bar__back" bindtap="onBack">
-        <text class="top-bar__icon">‹</text>
+      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
+        <ui-icon name="chevron-left" state="inverse" size="lg" />
       </view>
     </view>
   </view>
@@ -43,17 +43,12 @@
     <!-- 名字 + 认证占位 -->
     <view class="name-line">
       <view class="profile-name-skeleton skeleton-block skeleton-radius-sm"></view>
-      <view class="verified-skeleton skeleton-block skeleton-circle"></view>
     </view>
 
     <!-- 简介占位 -->
     <view class="profile-bio-skeleton profile-bio-skeleton--long skeleton-block skeleton-radius-sm"></view>
     <view class="profile-bio-skeleton profile-bio-skeleton--short skeleton-block skeleton-radius-sm"></view>
 
-    <!-- 元信息：加入年份等 -->
-    <view class="meta-row">
-      <view class="meta-item-skeleton skeleton-block skeleton-radius-sm"></view>
-    </view>
   </view>
 
   <!-- Tab：对齐 user-profile，目前只有动态 / 点赞两个 -->
@@ -62,7 +57,7 @@
       <view class="tab-text-skeleton skeleton-block skeleton-radius-sm"></view>
       <view class="tab-active-line skeleton-block"></view>
     </view>
-    <view class="tab-item">
+    <view wx:if="{{type === 'me'}}" class="tab-item">
       <view class="tab-text-skeleton skeleton-block skeleton-radius-sm"></view>
     </view>
   </view>

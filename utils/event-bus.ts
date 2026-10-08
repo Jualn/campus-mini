@@ -49,6 +49,7 @@ export const EVENTS = {
 
   /** 通知弹窗：点击 */
   NOTIFY_BANNER_TAP: 'notify:banner:tap',
+  NOTIFY_BANNER_CLEAR: 'notify:banner:clear',
 
   /** 通知未读数变化 */
   NOTIFY_UNREAD_CHANGE: 'notify:unread:change',
@@ -73,10 +74,11 @@ export interface EventMap {
   [EVENTS.NOTIFY_BANNER_SHOW]: [BannerMessage | BannerMessage[]];
 
   [EVENTS.NOTIFY_BANNER_TAP]: [BannerMessage];
+  [EVENTS.NOTIFY_BANNER_CLEAR]: [];
 
   [EVENTS.NOTIFY_UNREAD_CHANGE]: [unreadCount: number];
 
-  [EVENTS.NOTIFY_LIST_REFRESH]: [];
+  [EVENTS.NOTIFY_LIST_REFRESH]: [readIds?: string[]];
 }
 
 // map 的类型：key 是 string，value 是函数数组

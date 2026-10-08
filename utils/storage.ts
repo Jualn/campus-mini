@@ -4,6 +4,15 @@ import { createLogger } from './logger';
 import { wxGetStorageSync } from './wx-promise';
 import type { UserInfoDTO } from '../types/api';
 
+export type RegistrationReusablePurpose = 'NAME' | 'STUDENT_NUMBER' | 'CLASS' | 'PHONE';
+
+export interface RegistrationFieldCandidateProfile {
+  version: 1;
+  userId: string;
+  updatedAt: number;
+  values: Partial<Record<RegistrationReusablePurpose, { value: string; updatedAt: number }[]>>;
+}
+
 /**
  * Storage 封装（基于 wx 本地存储）
  *
@@ -40,6 +49,7 @@ interface StorageSchema {
   userInfo: UserInfoDTO;
   userSetting: Settings;
   searchHistory: string[];
+  registrationFieldCandidates: RegistrationFieldCandidateProfile;
 }
 
 type StorageKey = keyof StorageSchema;
@@ -49,6 +59,7 @@ export const STORAGE_KEYS = {
   USER_INFO: 'userInfo',
   USER_SETTING: 'userSetting',
   SEARCH_HISTORY: 'searchHistory',
+  REGISTRATION_FIELD_CANDIDATES: 'registrationFieldCandidates',
 } as const satisfies Record<string, StorageKey>;
 
 interface ExpiringStorage<T extends StorageKey> {

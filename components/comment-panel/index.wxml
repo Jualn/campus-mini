@@ -24,8 +24,8 @@
         <text class="cp-sheet__count" wx:if="{{currentTotalCount > 0}}">{{currentTotalCount}}</text>
       </view>
         <view class="cp-sheet__close" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
-          catch:touchend="{{drag.handleClose}}" catchtouchmove="noop">
-          <text class="cp-icon cp-icon--close">✕</text>
+          catch:touchend="{{drag.handleClose}}" catchtouchmove="noop" aria-role="button" aria-label="关闭评论">
+          <ui-icon name="close" size="sm" />
         </view>
       </view>
       <!-- 评论列表 scroll -->
@@ -82,7 +82,7 @@
             <text class="cp-reply-banner_to_title">回复</text>
             <text class="cp-reply-banner__name">@{{replyTarget.nickName}}</text>
           </text>
-          <view class="cp-reply-banner__cancel" bindtap="cancelReply">✕</view>
+          <view class="cp-reply-banner__cancel" bindtap="cancelReply" aria-role="button" aria-label="取消回复"><ui-icon name="close" size="sm" /></view>
         </view>
         <!-- 输入栏 -->
         <view class="cp-inputbar {{keyboardOpen ? 'cp-inputbar--keyboard' : ''}}" catchtouchmove="noop">
@@ -100,7 +100,7 @@
               bindlinechange="onInputLineChange" bindkeyboardheightchange="onInputKeyboardHeightChange" />
           </view>
           <view class="cp-inputbar__send {{canSend ? '' : 'cp-inputbar__send--disabled'}}" bindtap="onSend" aria-role="button" aria-label="发送评论" aria-disabled="{{!canSend}}">
-            <image class="cp-inputbar__send-icon" src="/assets/icons/common/send.svg" mode="aspectFit" />
+            <ui-icon name="send" size="lg" />
           </view>
         </view>
       </view>
@@ -160,7 +160,7 @@
         <view class="cp-imgpreview" wx:if="{{previewImage}}">
           <view class="cp-imgpreview__item">
             <image class="cp-imgpreview__img" src="{{previewImage}}" mode="aspectFill" />
-            <view class="cp-imgpreview__remove" bindtap="removeImage">✕</view>
+            <view class="cp-imgpreview__remove" bindtap="removeImage" aria-role="button" aria-label="移除图片"><ui-icon name="remove" state="inverse" size="sm" /></view>
           </view>
         </view>
         <!-- Inline 回复 Banner -->
@@ -169,7 +169,7 @@
             <text class="cp-reply-banner_to_title">回复</text>
             <text class="cp-reply-banner__name">@{{replyTarget.nickName}}</text>
           </text>
-          <view class="cp-reply-banner__cancel" bindtap="cancelReply">✕</view>
+          <view class="cp-reply-banner__cancel" bindtap="cancelReply" aria-role="button" aria-label="取消回复"><ui-icon name="close" size="sm" /></view>
         </view>
         <!-- Inline 输入栏（固定底部） -->
         <view class="cp-inputbar {{keyboardOpen ? 'cp-inputbar--keyboard' : ''}}">
@@ -187,13 +187,13 @@
               bindlinechange="onInputLineChange" bindkeyboardheightchange="onInputKeyboardHeightChange" />
             <!-- 配图按钮（一级评论可用，回复时禁用） -->
             <view class="cp-inputbar__imgbtn {{replyTarget.nickName ? 'cp-inputbar__imgbtn--disabled' : ''}}"
-              bindtap="onChooseImage">
-              <image class="cp-icon cp-icon--img" src="/assets/icons/common/choose_image.svg" mode="aspectFit"/>
+              bindtap="onChooseImage" aria-role="button" aria-label="添加图片">
+              <ui-icon name="image-add" size="lg" />
             </view>
           </view>
           <view class="cp-inputbar__send {{canSend || previewImage ? '' : 'cp-inputbar__send--disabled'}}"
             bindtap="onSend" aria-role="button" aria-label="发送评论" aria-disabled="{{!canSend && !previewImage}}">
-            <image class="cp-inputbar__send-icon" src="/assets/icons/common/send.svg" mode="aspectFit" />
+            <ui-icon name="send" size="lg" />
           </view>
         </view>
       </view>
@@ -212,7 +212,12 @@
     </view>
     <!-- 主体 -->
     <view class="cp-comment__main">
-      <text class="cp-comment__name">{{comment.nickName}}</text>
+      <view class="cp-comment__header cp-author">
+        <text class="cp-comment__name">{{comment.nickName}}</text>
+        <view class="cp-author__badge" wx:if="{{comment.isPlatformOperator === true}}">
+          <operator-badge />
+        </view>
+      </view>
       <text class="cp-comment__text" user-select="true">{{comment.content}}</text>
       <!-- 配图 -->
       <view class="cp-comment__img-wrap" wx:if="{{comment.imageUrl}}">
@@ -223,22 +228,19 @@
       <view class="cp-comment__footer">
         <text class="cp-comment__time">{{comment.createTime}}</text>
         <view class="cp-action {{comment.isLiked ? 'cp-action--liked' : ''}}" bindtap="onCommentLike"
-          data-comment-id="{{comment.commentId}}" data-is-liked="{{comment.isLiked}}">
-          <view class="cp-action-icon {{comment.isLiked ? 'liked' : ''}}">
-            <image class="icon like-off" src="/images/interact/like.svg" />
-            <image class="icon like-on" src="/images/interact/like-fill.svg" />
-          </view>
+          data-comment-id="{{comment.commentId}}" data-is-liked="{{comment.isLiked}}" aria-role="button" aria-label="{{comment.isLiked ? '取消点赞' : '点赞'}}">
+          <view class="cp-action-icon icon-slot {{ comment.isLiked ? 'liked' : '' }}"><ui-icon name="like" state="{{ comment.isLiked ? 'active' : 'default' }}" size="md" /></view>
           <text class="cp-action__count" wx:if="{{comment.likeCount > 0}}">{{comment.likeCount}}</text>
         </view>
         <view class="cp-action" bindtap="onReplyTap" data-comment-id="{{comment.commentId}}"
           data-nick-name="{{comment.nickName}}" data-user-id="{{comment.userId}}">
-          <image class="cp-action-icon" src="/images/interact/comment.svg" />
+          <view class="cp-action-icon icon-slot"><ui-icon name="reply" size="md" /></view>
           <text class="cp-action__text">回复</text>
         </view>
         <!-- 新增：更多按钮 ↓ -->
-        <view class="cp-comment__more" catchtap="onMoreTap" data-type="comment" data-comment-id="{{comment.commentId}}"
+        <view class="cp-comment__more" catchtap="onMoreTap" aria-role="button" aria-label="更多评论操作" data-type="comment" data-comment-id="{{comment.commentId}}"
           data-user-id="{{comment.userId}}">
-          <image class="cp-more-icon" src="/assets/icons/common/more.svg" mode="aspectFit"/>
+          <view class="cp-more-icon icon-slot"><ui-icon name="more" size="md" /></view>
         </view>
       </view>
       <!-- ======= 二级评论区域 ======= -->
@@ -280,13 +282,18 @@
 <!-- =================== 二级回复模板 =================== -->
 <template name="replyItem">
   <view class="cp-reply__body">
-    <view class="cp-avatar cp-avatar--xs" style="background:{{reply._avatarBg}}">
+    <view class="cp-avatar cp-avatar--xs" bindtap="goToUser" data-user-id="{{reply.userId}}" style="background:{{reply._avatarBg}}">
       <image wx:if="{{reply.avatarUrl}}" class="cp-avatar__img" src="{{reply.avatarUrl}}" mode="aspectFill" />
       <text wx:else class="cp-avatar__char">{{reply._avatarChar}}</text>
     </view>
     <view class="cp-reply__main">
       <view class="cp-reply__header">
-        <text class="cp-reply__name">{{reply.nickName}}</text>
+        <view class="cp-author">
+          <text class="cp-reply__name">{{reply.nickName}}</text>
+          <view class="cp-author__badge" wx:if="{{reply.isPlatformOperator === true}}">
+            <operator-badge />
+          </view>
+        </view>
         <text class="cp-reply__to" wx:if="{{reply.replyToName}}">
           <text class="cp-reply_to_title">回复</text>
           <text class="cp-reply__to-name">@{{reply.replyToName}}</text>
@@ -296,22 +303,19 @@
       <view class="cp-reply__footer">
         <text class="cp-reply__time">{{reply.createTime}}</text>
         <view class="cp-action cp-action--sm {{reply.isLiked ? 'cp-action--liked' : ''}}" bindtap="onReplyLike"
-          data-comment-id="{{parentId}}" data-reply-id="{{reply.replyId}}" data-is-liked="{{reply.isLiked}}">
-          <view class="cp-action-icon {{reply.isLiked ? 'liked' : ''}}">
-            <image class="icon like-off" src="/images/interact/like.svg" />
-            <image class="icon like-on" src="/images/interact/like-fill.svg" />
-          </view>
+          data-comment-id="{{parentId}}" data-reply-id="{{reply.replyId}}" data-is-liked="{{reply.isLiked}}" aria-role="button" aria-label="{{reply.isLiked ? '取消点赞' : '点赞'}}">
+          <view class="cp-action-icon icon-slot {{ reply.isLiked ? 'liked' : '' }}"><ui-icon name="like" state="{{ reply.isLiked ? 'active' : 'default' }}" size="md" /></view>
           <text class="cp-action__count" wx:if="{{reply.likeCount > 0}}">{{reply.likeCount}}</text>
         </view>
         <view class="cp-action cp-action--sm" bindtap="onReplyTap" data-comment-id="{{parentId}}"
           data-nick-name="{{reply.nickName}}" data-user-id="{{reply.userId}}">
-          <image class="cp-action-icon" src="/images/interact/comment.svg" />
+          <view class="cp-action-icon icon-slot"><ui-icon name="reply" size="md" /></view>
           <text class="cp-action__text">回复</text>
         </view>
         <!-- 新增 ↓ -->
         <view class="cp-reply__more" catchtap="onMoreTap" data-type="reply" data-comment-id="{{parentId}}"
           data-reply-id="{{reply.replyId}}" data-user-id="{{reply.userId}}">
-          <image class="cp-more-icon" src="/assets/icons/common/more.svg" mode="aspectFit" />
+          <view class="cp-more-icon icon-slot"><ui-icon name="more" size="md" /></view>
         </view>
       </view>
     </view>

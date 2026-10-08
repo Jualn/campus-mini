@@ -180,6 +180,33 @@
   min-width: 0;
 }
 
+/* 昵称和认证标整体参与换行，标记不压缩、不单独落行。 */
+.cp-author {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.cp-comment__header {
+  display: flex;
+}
+
+.cp-author__badge {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cp-comment__name,
+.cp-reply__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
 .cp-comment__name {
   font-size: 26rpx;
   font-weight: 600;
@@ -252,7 +279,7 @@
 
 .cp-reply__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8rpx;
 }
@@ -395,34 +422,7 @@
 }
 
 /* 点赞图标动画 */
-.icon {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
-  transition: all 0.25s ease;
-}
-
-.like-off {
-  opacity: 1;
-}
-
-.like-on {
-  opacity: 0;
-  transform: scale(0.7);
-}
-
-.liked .like-off {
-  opacity: 0;
-  transform: scale(0.7);
-}
-
-.liked .like-on {
-  opacity: 1;
-  transform: scale(1);
-  animation: likePop 0.3s ease;
-}
+.cp-action-icon.liked { animation: likePop 0.3s ease; }
 
 @keyframes likePop {
   0% {
@@ -535,8 +535,8 @@
 }
 
 .cp-empty__icon {
-  width: 96rpx;
-  height: 96rpx;
+  width: 64rpx;
+  height: 64rpx;
   flex-shrink: 0;
 }
 
@@ -585,14 +585,9 @@
 }
 
 .cp-reply-banner__cancel {
-  font-size: 28rpx;
-  color: var(--cp-text-light);
   padding: 8rpx;
 }
 
-.cp-reply-banner__cancel:active {
-  color: var(--cp-text);
-}
 
 /* sheet 栏参与弹层布局，inline 栏固定于键盘上方。 */
 .cp-bottom-bar {
@@ -720,11 +715,6 @@
   background: #c0ccda;
 }
 
-.cp-inputbar__send-icon {
-  width: 36rpx;
-  height: 36rpx;
-}
-
 /* ============================================
    图片预览条
    ============================================ */
@@ -761,8 +751,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20rpx;
-  color: #fff;
 }
 
 /* ============================================
@@ -839,18 +827,6 @@
   }
 }
 
-/* 图标辅助 */
-.cp-icon--close {
-  font-size: 24rpx;
-  color: var(--cp-text-sub);
-}
-
-.cp-icon--img{
-  width: 40rpx;
-  height: 40rpx;
-  color: #000;
-}
-
 /* ============================================
    更多操作按钮（··· 触发入口）
    ============================================ */
@@ -888,4 +864,11 @@
   width: 54rpx;
   height: 54rpx;
   flex-shrink: 0;
+}
+
+/* Layout stays with the caller; UiIcon owns the glyph. */
+.icon-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

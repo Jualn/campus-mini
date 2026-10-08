@@ -5,8 +5,7 @@
  * Properties:
  *   isSelf        Boolean  是否是自己的主页
  *   userInfo      Object   用户信息
- *     - nickname, avatar, bannerUrl, handle, bio
- *     - school, dept, joinYear, verified
+ *     - userId, nickname, avatarUrl, bio, isPlatformOperator
  *     - followingCount, followerCount, likeCount
  *   isFollowing   Boolean  是否已关注（仅别人主页）
  *   activeTab     String   当前激活的 tab
@@ -94,7 +93,7 @@ defineComponent<UserProfilePrivate>()({
         .then((res) => {
           this.triggerEvent('more', {
             action: res.tapIndex,
-            userId: this.data.userInfo.id,
+            userId: this.data.userInfo.userId,
           });
         })
         .catch(() => {
@@ -104,6 +103,7 @@ defineComponent<UserProfilePrivate>()({
 
     onSwitchTab(e: WechatMiniprogram.TouchEvent) {
       const { tab } = e.currentTarget.dataset as { tab: UserProfileTab };
+      if (tab === 'likes' && !this.data.isSelf) return;
       this.triggerEvent('switchtab', {
         tab,
       });

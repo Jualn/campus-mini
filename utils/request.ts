@@ -16,8 +16,18 @@ export interface RequestOptions<D = unknown> {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   data?: D;
   showLoading?: boolean;
+  sensitive?: boolean;
   auth?: AuthMode;
+  /** False requires stable credentials and surfaces 401 without replaying the operation. */
+  retryAuth?: boolean;
+  headers?: Record<string, string>;
   _retry?: boolean;
+}
+
+export interface HttpResponse<T> {
+  data: T;
+  statusCode: number;
+  headers: Record<string, string>;
 }
 
 interface ResponseBody<T = unknown> {
@@ -26,6 +36,14 @@ interface ResponseBody<T = unknown> {
   msg?: string;
   data: T;
   timestamp?: number;
+}
+
+interface ProblemDetails {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  traceId?: string;
 }
 
 interface Interceptor<T> {
@@ -42,12 +60,23 @@ const interceptors = {
 const SUCCESS_CODE = 200;
 const SILENT_CODES: number[] = [10010];
 
-function getResponseMessage(body: ResponseBody | undefined): string {
-  return body?.message ?? body?.msg ?? '操作失败';
+function getResponseMessage(body: unknown): string {
+  return getServerMessage(body) ?? '操作失败';
 }
 
-function getServerMessage(body: ResponseBody | undefined): string | undefined {
-  return body?.message ?? body?.msg;
+function getServerMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const payload = body as ProblemDetails & Partial<ResponseBody>;
+  if (payload.detail?.trim()) return payload.detail;
+  if (payload.message?.trim()) return payload.message;
+  if (payload.msg?.trim()) return payload.msg;
+  return undefined;
+}
+
+function isLegacyEnvelope<T>(body: unknown): body is ResponseBody<T> {
+  return Boolean(
+    body && typeof body === 'object' && typeof (body as ResponseBody<T>).code === 'number',
+  );
 }
 
 // 对齐 axios 风格：addXxxInterceptor(fulfilled, rejected)
@@ -76,7 +105,18 @@ function rawRequest<
 }
 
 // ── 请求主函数 ────────────────────────────────────────────────────────
-async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Promise<T> {
+function normalizeHeaders(headers: WechatMiniprogram.IAnyObject): Record<string, string> {
+  return Object.entries(headers).reduce<Record<string, string>>((result, [key, value]) => {
+    if (typeof value === 'string' || typeof value === 'number') {
+      result[key.toLowerCase()] = String(value);
+    }
+    return result;
+  }, {});
+}
+
+async function requestWithMeta<T = unknown, D = unknown>(
+  options: RequestOptions<D>,
+): Promise<HttpResponse<T>> {
   // 1. 执行请求拦截器（可在此注入公参等）
   let opts: RequestOptions = { ...options };
   for (const { fulfilled } of interceptors.request) {
@@ -86,40 +126,45 @@ async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Pr
   const {
     url,
     method = 'GET',
-    data = {},
+    data,
     showLoading = false,
     auth = 'required',
+    retryAuth = true,
+    sensitive = false,
+    headers = {},
     _retry = false,
   } = opts;
 
-  const cleanData = (
-    data && typeof data === 'object' && !Array.isArray(data)
-      ? Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
-      : data
-  ) as string | WechatMiniprogram.IAnyObject | ArrayBuffer;
+  const cleanData =
+    data == null
+      ? undefined
+      : typeof data === 'object' && !Array.isArray(data)
+        ? Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
+        : data;
 
   // 只有非重试请求才显示 loading
   if (showLoading && !_retry) void wxShowLoading({ title: '加载中', mask: true });
 
-  createLogger('Request').info(`→ ${method} ${url}`, cleanData);
+  createLogger('Request').info(`→ ${method} ${url}`, sensitive ? '[内容已隐藏]' : cleanData);
 
-  let res: WechatMiniprogram.RequestSuccessCallbackResult<ResponseBody<T>>;
+  let res: WechatMiniprogram.RequestSuccessCallbackResult;
   let requestToken: string;
   try {
-    requestToken = await getAuthToken(auth);
+    requestToken = await getAuthToken(auth, retryAuth);
   } catch (err) {
     if (showLoading) void wxHideLoading();
     throw err;
   }
 
   try {
-    res = await rawRequest<ResponseBody<T>>({
+    res = await rawRequest({
       url: `${config.baseURL}${url}`,
       method,
-      data: cleanData,
+      ...(cleanData === undefined ? {} : { data: cleanData }),
       timeout: config.timeout,
       header: {
         'Content-Type': 'application/json',
+        ...headers,
         ...(requestToken ? { Authorization: `Bearer ${requestToken}` } : {}),
       },
     });
@@ -131,50 +176,76 @@ async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Pr
   if (showLoading) void wxHideLoading();
 
   const { statusCode, data: body } = res;
-  createLogger('Response').info(`← ${method} ${url} ${statusCode.toString()}`, body);
+  createLogger('Response').info(
+    `← ${method} ${url} ${statusCode.toString()}`,
+    sensitive ? '[内容已隐藏]' : body,
+  );
 
   // 2. HTTP 层错误
   if (statusCode === 401) {
-    if (!_retry && auth !== 'none' && requestToken) {
+    if (retryAuth && !_retry && auth !== 'none' && requestToken) {
       await recoverAuthToken(requestToken);
-      return request<T, D>({ ...options, _retry: true }); // 重试，loading 不重复显示
+      return requestWithMeta<T, D>({ ...options, _retry: true }); // 重试，loading 不重复显示
     }
 
     throw new AuthError(`${TAG} auth expired`, {
       userMessage: getHttpErrorMessage(statusCode, getServerMessage(body)),
-      raw: body,
+      raw: sensitive ? undefined : body,
     });
   }
 
   if (statusCode < 200 || statusCode >= 300) {
     throw new HttpError(statusCode, `${TAG} HTTP ${statusCode.toString()} ${url}`, {
-      raw: body,
-      userMessage: getHttpErrorMessage(statusCode, getServerMessage(body)),
+      retryAfterMs: parseRetryAfter(normalizeHeaders(res.header)['retry-after']),
+      problemType:
+        body && typeof body === 'object' && typeof (body as ProblemDetails).type === 'string'
+          ? (body as ProblemDetails).type
+          : undefined,
+      raw: sensitive ? undefined : body,
+      userMessage: getHttpErrorMessage(
+        statusCode,
+        getServerMessage(body),
+        body && typeof body === 'object' ? (body as ProblemDetails).type : undefined,
+      ),
     });
   }
 
-  if (typeof body.code !== 'number') {
-    throw new NetworkError(`${TAG} invalid response body`, body, {
-      userMessage: '服务响应异常，请稍后再试',
-    });
-  }
-
-  // 3. 业务层错误（后端 code 约定）
-  if (body.code !== SUCCESS_CODE) {
+  // 3. 迁移期兼容旧 envelope；新契约的 2xx body 直接返回。
+  if (isLegacyEnvelope<T>(body) && body.code !== SUCCESS_CODE) {
     const userMessage = getResponseMessage(body);
-    throw new BusinessError(body.code, `${TAG} business error: ${userMessage}`, body.data, {
-      userMessage,
-      silent: SILENT_CODES.includes(body.code),
-    });
+    throw new BusinessError(
+      body.code,
+      `${TAG} business error: ${userMessage}`,
+      sensitive ? undefined : body.data,
+      {
+        userMessage,
+        silent: SILENT_CODES.includes(body.code),
+      },
+    );
   }
 
   // 4. 执行响应拦截器
-  let result: unknown = body.data;
+  let result: unknown = isLegacyEnvelope<T>(body) ? body.data : body;
   for (const { fulfilled } of interceptors.response) {
     if (fulfilled) result = await fulfilled(result);
   }
 
-  return result as T;
+  return {
+    data: result as T,
+    statusCode,
+    headers: normalizeHeaders(res.header),
+  };
+}
+
+function parseRetryAfter(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  if (/^\d+$/.test(value)) return Number(value) * 1000;
+  const deadline = Date.parse(value);
+  return Number.isFinite(deadline) ? Math.max(0, deadline - Date.now()) : undefined;
+}
+
+async function request<T = unknown, D = unknown>(options: RequestOptions<D>): Promise<T> {
+  return (await requestWithMeta<T, D>(options)).data;
 }
 
 // ── http 对象（调用侧：http.get / http.post / ...）────────────────────
@@ -249,5 +320,17 @@ export const http = {
     parser?: (line: string) => T | null,
   ) {
     return stream<T>({ url, data, showLoading, parser });
+  },
+};
+
+export const httpWithMeta = {
+  get<T = unknown>(url: string, data?: unknown, opts?: ExtraOpts) {
+    return requestWithMeta<T>({ url, method: 'GET', data, ...opts });
+  },
+  post<T = unknown>(url: string, data?: unknown, opts?: ExtraOpts) {
+    return requestWithMeta<T>({ url, method: 'POST', data, ...opts });
+  },
+  put<T = unknown>(url: string, data?: unknown, opts?: ExtraOpts) {
+    return requestWithMeta<T>({ url, method: 'PUT', data, ...opts });
   },
 };

@@ -5,6 +5,7 @@ import { waitForAuthStable } from '../utils/auth-session';
 import { storage, STORAGE_KEYS } from '../utils/storage';
 import { createLogger } from '../utils/logger';
 import type { EditProfileUpdate, UserProfileInfo } from '../types/business';
+import { isHttpError, isNetworkError } from '../utils/error';
 
 export const PROFILE_TTL_MS = 5 * 60 * 1000;
 const log = createLogger('CurrentUser');
@@ -13,6 +14,7 @@ let generation = 0;
 let revision = 0;
 let reading: Promise<UserProfileInfo> | null = null;
 let saving: Promise<UserProfileInfo> | null = null;
+let needsReconciliation = false;
 
 // 应用级监听与 Action 同寿命；logout 的空身份也会推进代次，阻止同账号重新登录后的旧响应。
 appStore.watch('userInfo', (user) => {
@@ -22,6 +24,7 @@ appStore.watch('userInfo', (user) => {
   revision++;
   reading = null;
   saving = null;
+  needsReconciliation = false;
   appStore.set('currentProfile', null);
 });
 
@@ -67,13 +70,12 @@ export function watchCurrentIdentity(listener: () => void): () => void {
 }
 
 function commitProfile(profile: UserProfileInfo, userId: string): UserProfileInfo {
-  if (profile.id !== userId) throw new Error('资料所属用户已变化，请重试');
+  if (profile.userId !== userId) throw new Error('资料所属用户已变化，请重试');
   const user = appStore.get('userInfo');
   const summary = {
     ...user,
     nickname: profile.nickname,
     avatarUrl: profile.avatarUrl ?? '',
-    role: profile.role ?? user.role,
   };
   appStore.set('currentProfile', { profile, fetchedAt: Date.now() });
   appStore.set('userInfo', summary);
@@ -105,6 +107,7 @@ export async function getCurrentProfile(
     if (startedGeneration !== generation) throw new Error('登录状态已变化，请重试');
     // 旧 GET 不仅不能写 Store，也不能把旧资料交给页面。
     if (startedRevision !== revision) return getCurrentProfile();
+    needsReconciliation = false;
     return commitProfile(profile, userId);
   });
   reading = task;
@@ -115,11 +118,21 @@ export async function getCurrentProfile(
   }
 }
 
+function ensureNoPendingSave(): void {
+  if (saving) throw new Error('资料正在保存，请稍候');
+}
+
 export async function saveCurrentProfile(data: EditProfileUpdate): Promise<UserProfileInfo> {
   await waitForAuthStable();
   const userId = ownerId;
+  const expectedGeneration = generation;
   if (!userId) throw new Error('请先登录');
-  if (saving) throw new Error('资料正在保存，请稍候');
+  ensureNoPendingSave();
+  // Unknown mutation outcome requires an authoritative read before another explicit submission.
+  if (needsReconciliation) await getCurrentProfile({ force: true });
+  if (ownerId !== userId || expectedGeneration !== generation)
+    throw new Error('登录状态已变化，请重试');
+  ensureNoPendingSave();
   const startedGeneration = generation;
   revision++;
   reading = null;
@@ -130,6 +143,17 @@ export async function saveCurrentProfile(data: EditProfileUpdate): Promise<UserP
   saving = task;
   try {
     return await task;
+  } catch (error) {
+    const unknownOutcome =
+      isNetworkError(error) ||
+      (isHttpError(error) &&
+        error.statusCode >= 500 &&
+        error.problemType !== '/problems/profile-safety-check-unavailable');
+    if (unknownOutcome && startedGeneration === generation) {
+      needsReconciliation = true;
+      error.userMessage = '保存结果未确认，请重新加载资料后再试';
+    }
+    throw error;
   } finally {
     if (saving === task) saving = null;
   }

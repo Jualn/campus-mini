@@ -1,0 +1,28 @@
+<view class="confirm-page">
+  <view class="confirm-header">
+    <view class="confirm-icon"><image src="/subpkg_setting/assets/icons/setting/admin_login.svg" mode="aspectFit" /></view>
+    <text class="title">{{title}}</text>
+    <text class="description">{{description}}</text>
+  </view>
+  <view class="confirm-card">
+    <view class="detail-row">
+      <text class="detail-label">登录目标</text>
+      <text class="target">Jualn Campus 管理后台</text>
+    </view>
+    <view wx:if="{{expiresText && (status === 'SCANNED' || status === 'PENDING')}}" class="expiry">
+      <view class="detail-row">
+        <text class="detail-label">有效至</text>
+        <text class="expiry-time">{{expiresText}}</text>
+      </view>
+      <view wx:if="{{remainingText}}" class="remaining"><text>剩余有效时间</text><text class="remaining-value">{{remainingText}}</text></view>
+    </view>
+  </view>
+  <view wx:if="{{status === 'SCANNED'}}" class="actions">
+    <button class="confirm-button" loading="{{loading}}" disabled="{{!canAct}}" bindtap="onConfirm">确认登录</button>
+    <button class="reject-button" disabled="{{!canAct}}" bindtap="onReject">取消登录</button>
+  </view>
+  <button wx:if="{{canRetry}}" class="retry-button" disabled="{{loading}}" bindtap="onRetry">重新加载</button>
+  <button wx:if="{{!loading && status !== 'SCANNED' && !canRetry}}" class="reject-button close-button" bindtap="onClose">返回</button>
+  <text wx:if="{{loading}}" class="loading-copy">正在核对登录请求…</text>
+  <view class="notice"><text>请仅确认你本人正在操作的电脑。</text><text>确认后，请返回电脑完成登录。</text></view>
+</view>

@@ -122,11 +122,6 @@
   box-shadow: var(--shadow-xs, 0 2rpx 8rpx rgba(47, 124, 246, 0.04));
 }
 
-.rp-close__icon {
-  font-size: 22rpx;
-  color: var(--color-text-secondary, rgba(16, 35, 63, 0.74));
-  line-height: 1;
-}
 
 /* ─── 提示卡片 ─── */
 .rp-notice {

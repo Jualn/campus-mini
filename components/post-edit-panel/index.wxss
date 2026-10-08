@@ -219,11 +219,6 @@
   z-index: 2;
 }
 
-.image-item__del-icon {
-  font-size: 20rpx;
-  color: #fff;
-  line-height: 1;
-}
 
 /* 添加按钮：复用 .image-item 尺寸，内容居中 */
 .image-add {
@@ -243,19 +238,18 @@
 
 /* 添加按钮的图标和提示文字：
    因为 .image-item 本身是 padding-top hack，内容需绝对定位居中 */
-.image-add .image-add__icon,
+.image-add .image-add__icon {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 30%;
+}
+
 .image-add .image-add__hint {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
-}
-
-.image-add__icon {
-  top: 30%;
-  font-size: 44rpx;
-  color: #bbb;
-  line-height: 1;
 }
 
 .image-add__hint {

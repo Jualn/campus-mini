@@ -6,12 +6,18 @@ export type AuthMode = 'required' | 'optional' | 'none';
 
 const readToken = (): string => storage.get(STORAGE_KEYS.TOKEN) ?? '';
 
-export async function getAuthToken(mode: AuthMode): Promise<string> {
+export async function getAuthToken(mode: AuthMode, allowRecovery = true): Promise<string> {
   if (mode === 'none') return '';
+
+  const snapshot = readToken();
 
   await waitForAuthStable();
 
   const token = readToken();
+  // Subject-bound workflows must re-scan after any authentication recovery/change.
+  if (!allowRecovery && (!token || token !== snapshot)) {
+    throw new AuthError('Authentication changed before the operation');
+  }
   if (token || mode === 'optional') return token;
 
   return recoverAuthToken();

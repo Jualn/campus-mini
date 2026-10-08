@@ -4,8 +4,8 @@
   <!-- 顶部导航 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav">
-      <view class="top-bar__back" bindtap="onBack">
-        <text class="top-bar__back-icon">‹</text>
+      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
+        <ui-icon name="chevron-left" size="lg" />
       </view>
       <text class="top-bar__title">设置</text>
       <view class="top-bar__placeholder" />
@@ -14,86 +14,127 @@
 
   <view class="setting-body">
 
-    <!-- ===== 通知设置 ===== -->
-    <view class="section-label">通知设置</view>
+    <view
+      wx:if="{{preferenceState !== 'ready'}}"
+      class="preference-state preference-state--{{preferenceState}}"
+      bindtap="onRetryNotificationPreferences"
+      aria-role="button"
+      aria-label="{{preferenceStateTitle}}。{{preferenceStateDesc}}。点击重试"
+    >
+      <view class="preference-state__body">
+        <text class="preference-state__title">{{preferenceStateTitle}}</text>
+        <text wx:if="{{preferenceStateDesc}}" class="preference-state__desc">{{preferenceStateDesc}}</text>
+      </view>
+      <text wx:if="{{preferenceState !== 'loading'}}" class="preference-state__action">重试</text>
+    </view>
+
+    <view class="notification-channel-note">
+      <text>站内消息由应用控制；服务号通知还需在微信侧完成绑定和订阅。</text>
+    </view>
+
+    <view class="section-label">活动通知</view>
+    <view wx:if="{{activityPreferenceRows.length}}" class="setting-group">
+      <block wx:for="{{activityPreferenceRows}}" wx:key="key">
+        <view class="setting-item">
+          <view class="setting-item__left">
+            <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="{{item.channel === 'WECHAT_OFFICIAL_ACCOUNT' ? '../../assets/icons/setting/service_account.svg' : '../../assets/icons/setting/in_app.svg'}}" mode="aspectFit" /></view>
+            <view class="setting-item__text">
+              <text class="setting-item__title">{{item.channelLabel}}</text>
+              <text class="setting-item__desc setting-item__desc--{{item.capabilityTone}}">{{item.capabilityText}}</text>
+              <text wx:if="{{item.legacyMigration}}" class="setting-item__source">沿用旧设置，不代表微信已授权</text>
+            </view>
+          </view>
+          <view class="switch-wrap">
+            <switch
+              class="setting-switch"
+              checked="{{item.enabled}}"
+              disabled="{{preferenceState !== 'ready' || preferenceSavingKey !== ''}}"
+              bindchange="onNotificationPreferenceChange"
+              data-key="{{item.key}}"
+              data-category="{{item.category}}"
+              data-channel="{{item.channel}}"
+              color="#007AFF"
+            />
+            <view wx:if="{{preferenceSavingKey === item.key}}" class="switch-spinner"></view>
+          </view>
+        </view>
+        <view wx:if="{{index < activityPreferenceRows.length - 1}}" class="setting-divider" />
+      </block>
+    </view>
+
+    <view class="section-label">公共事项通知</view>
+    <view wx:if="{{publicEventPreferenceRows.length}}" class="setting-group">
+      <block wx:for="{{publicEventPreferenceRows}}" wx:key="key">
+        <view class="setting-item">
+          <view class="setting-item__left">
+            <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="{{item.channel === 'WECHAT_OFFICIAL_ACCOUNT' ? '../../assets/icons/setting/service_account.svg' : '../../assets/icons/setting/in_app.svg'}}" mode="aspectFit" /></view>
+            <view class="setting-item__text">
+              <text class="setting-item__title">{{item.channelLabel}}</text>
+              <text class="setting-item__desc setting-item__desc--{{item.capabilityTone}}">{{item.capabilityText}}</text>
+              <text wx:if="{{item.legacyMigration}}" class="setting-item__source">沿用旧设置，不代表微信已授权</text>
+            </view>
+          </view>
+          <view class="switch-wrap">
+            <switch
+              class="setting-switch"
+              checked="{{item.enabled}}"
+              disabled="{{preferenceState !== 'ready' || preferenceSavingKey !== ''}}"
+              bindchange="onNotificationPreferenceChange"
+              data-key="{{item.key}}"
+              data-category="{{item.category}}"
+              data-channel="{{item.channel}}"
+              color="#007AFF"
+            />
+            <view wx:if="{{preferenceSavingKey === item.key}}" class="switch-spinner"></view>
+          </view>
+        </view>
+        <view wx:if="{{index < publicEventPreferenceRows.length - 1}}" class="setting-divider" />
+      </block>
+    </view>
+
+    <view class="section-label">其他通知</view>
     <view class="setting-group">
-
       <view class="setting-item">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/activity_reminder.svg" mode="aspectFit" />
-          <view class="setting-item__text">
-            <text class="setting-item__title">活动提醒</text>
-            <text class="setting-item__desc">报名截止、活动开始前提醒</text>
-          </view>
-        </view>
-
-        <view class="switch-wrap">
-          <switch class="setting-switch" checked="{{notify.activity}}" disabled="{{notifyPending.activity}}"
-            bindchange="onNotifyChange" data-key="activity" color="#007AFF" />
-          <view wx:if="{{notifyPending.activity}}" class="switch-spinner"></view>
-          <view wx:if="{{notifyError.activity}}" class="switch-error-dot"></view>
-        </view>
-      </view>
-      <view class="setting-divider" />
-
-      <!-- <view class="setting-item">
-        <view class="setting-item__left">
-          <text class="setting-item__icon">📖</text>
-          <view class="setting-item__text">
-            <text class="setting-item__title">考试提醒</text>
-            <text class="setting-item__desc">报名开始、考试倒计时提醒</text>
-          </view>
-        </view>
-        <switch class="setting-switch" checked="{{notify.exam}}" bindchange="onNotifyChange" data-key="exam"
-          color="#007AFF" />
-      </view>
-      <view class="setting-divider" /> -->
-
-      <view class="setting-item">
-        <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/interaction_message.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/interaction_message.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">互动消息</text>
-            <text class="setting-item__desc">点赞、评论、关注通知</text>
+            <text class="setting-item__desc">点赞、评论和回复通知</text>
           </view>
         </view>
-
         <view class="switch-wrap">
-          <switch class="setting-switch" checked="{{notify.interaction}}" disabled="{{notifyPending.interaction}}"
-            bindchange="onNotifyChange" data-key="interaction" color="#007AFF" />
-          <view wx:if="{{notifyPending.interaction}}" class="switch-spinner"></view>
-          <view wx:if="{{notifyError.interaction}}" class="switch-error-dot"></view>
+          <switch class="setting-switch" checked="{{legacyNotify.interaction}}" disabled="{{legacyNotifyPending.interaction}}"
+            bindchange="onLegacyNotifyChange" data-key="interaction" color="#007AFF" />
+          <view wx:if="{{legacyNotifyPending.interaction}}" class="switch-spinner"></view>
+          <view wx:if="{{legacyNotifyError.interaction}}" class="switch-error-dot"></view>
         </view>
       </view>
       <view class="setting-divider" />
-
       <view class="setting-item">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/system_announcement.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/system_announcement.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">系统公告</text>
             <text class="setting-item__desc">平台通知、功能更新</text>
           </view>
         </view>
-
         <view class="switch-wrap">
-          <switch class="setting-switch" checked="{{notify.system}}" disabled="{{notifyPending.system}}"
-            bindchange="onNotifyChange" data-key="system" color="#007AFF" />
-          <view wx:if="{{notifyPending.system}}" class="switch-spinner"></view>
-          <view wx:if="{{notifyError.system}}" class="switch-error-dot"></view>
+          <switch class="setting-switch" checked="{{legacyNotify.system}}" disabled="{{legacyNotifyPending.system}}"
+            bindchange="onLegacyNotifyChange" data-key="system" color="#007AFF" />
+          <view wx:if="{{legacyNotifyPending.system}}" class="switch-spinner"></view>
+          <view wx:if="{{legacyNotifyError.system}}" class="switch-error-dot"></view>
         </view>
       </view>
       <view class="setting-divider" />
-
       <view class="setting-item" bindtap="bindMp">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/bind_service_account.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/bind_service_account.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">绑定服务号</text>
-            <text class="setting-item__desc">推送通知到服务号</text>
+            <text class="setting-item__desc">绑定后，还需在服务号菜单单独开启通知</text>
           </view>
         </view>
-        <text class="setting-item__arrow">›</text>
+        <ui-icon name="chevron-right" size="sm" />
       </view>
     </view>
 
@@ -110,7 +151,7 @@
         </view>
         <view class="setting-item__right">
           <text class="setting-item__value">{{privacy.postVisibilityLabel}}</text>
-          <text class="setting-item__arrow">›</text>
+          <ui-icon name="chevron-right" size="sm" />
         </view>
       </view>
       <view class="setting-divider" />
@@ -148,34 +189,14 @@
 
       <view class="setting-item" bindtap="onGoEditProfile">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/edit_profile.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/edit_profile.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">编辑资料</text>
           </view>
         </view>
-        <text class="setting-item__arrow">›</text>
+        <ui-icon name="chevron-right" size="sm" />
       </view>
       <view class="setting-divider" />
-
-      <view
-        wx:if="{{canUseAdminLogin}}"
-        class="setting-item"
-        hover-class="setting-item--pressed"
-        bindtap="onScanAdminLogin"
-      >
-        <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/admin_login.svg" mode="aspectFit" />
-          <view class="setting-item__text">
-            <text class="setting-item__title">扫码登录管理端</text>
-            <text class="setting-item__desc">扫描管理端登录页面上的二维码</text>
-          </view>
-        </view>
-        <view class="setting-item__right">
-          <view wx:if="{{adminLoginPending}}" class="action-spinner" />
-          <text wx:else class="setting-item__arrow">›</text>
-        </view>
-      </view>
-      <view wx:if="{{canUseAdminLogin}}" class="setting-divider" />
 
       <!-- <view class="setting-item" bindtap="onGoBindPhone">
         <view class="setting-item__left">
@@ -186,7 +207,7 @@
         </view>
         <view class="setting-item__right">
           <text class="setting-item__value">{{account.phone || '未绑定'}}</text>
-          <text class="setting-item__arrow">›</text>
+          <ui-icon name="chevron-right" size="sm" />
         </view>
       </view>
       <view class="setting-divider" /> -->
@@ -199,7 +220,7 @@
 
       <view class="setting-item" bindtap="onGoFeedback">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/feedback.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/feedback.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">意见反馈</text>
           </view>
@@ -207,35 +228,35 @@
         <view class="setting-item__right">
           <text class="setting-item__value">联系：{{wxNumber}}</text>
         </view>
-        <!-- <text class="setting-item__arrow">›</text> -->
+        <!-- <ui-icon name="chevron-right" size="sm" /> -->
       </view>
       <view class="setting-divider" />
 
       <!-- <view class="setting-item" bindtap="onGoAgreement">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/user_agreement.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/user_agreement.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">用户协议</text>
           </view>
         </view>
-        <text class="setting-item__arrow">›</text>
+        <ui-icon name="chevron-right" size="sm" />
       </view>
       <view class="setting-divider" />
 
       <view class="setting-item" bindtap="onGoPrivacyPolicy">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/privacy_policy.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/privacy_policy.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">隐私政策</text>
           </view>
         </view>
-        <text class="setting-item__arrow">›</text>
+        <ui-icon name="chevron-right" size="sm" />
       </view>
       <view class="setting-divider" /> -->
 
       <view class="setting-item">
         <view class="setting-item__left">
-          <image class="setting-item__icon-img" src="../../assets/icons/setting/app_version.svg" mode="aspectFit" />
+          <view class="setting-item__icon-wrap"><image class="setting-item__icon-img" src="../../assets/icons/setting/app_version.svg" mode="aspectFit" /></view>
           <view class="setting-item__text">
             <text class="setting-item__title">当前版本</text>
           </view>

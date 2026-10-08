@@ -8,71 +8,93 @@ import {
   wxSetClipboardData,
   showConfirm,
 } from '../../../utils/wx-promise';
-import * as adminAuthAction from '../../actions/admin-auth';
 import * as authAction from '../../../actions/auth';
 import * as userAction from '../../../actions/user';
+import * as notificationPreferenceAction from '../../actions/notification-preferences';
+import { api } from '../../../services/api';
 import type { Settings } from '../../../types/business';
+import type { NotificationPreferenceRow } from '../../services/notification-preferences';
 import { createLogger } from '../../../utils/logger';
-import { notifyToast, showErrorToast, showSuccessToast } from '../../../utils/notify';
-import { hasRole, ROLES } from '../../../stores/helper';
+import { notifyToast, showErrorToast } from '../../../utils/notify';
 
 const log = createLogger('SettingPage');
 
-type NotifyKey = keyof Settings['notify'];
+type LegacyNotifyKey = 'interaction' | 'system';
 
-const NOTIFY_KEYS: NotifyKey[] = ['activity', 'exam', 'interaction', 'system', 'audit'];
+const LEGACY_NOTIFY_KEYS: LegacyNotifyKey[] = ['interaction', 'system'];
 
-const createFlagMap = (value: boolean): Record<NotifyKey, boolean> =>
-  NOTIFY_KEYS.reduce(
+const createLegacyFlagMap = (value: boolean): Record<LegacyNotifyKey, boolean> =>
+  LEGACY_NOTIFY_KEYS.reduce(
     (acc, key) => {
       acc[key] = value;
       return acc;
     },
-    {} as Record<NotifyKey, boolean>,
+    {} as Record<LegacyNotifyKey, boolean>,
   );
+
+const splitPreferenceRows = (rows: NotificationPreferenceRow[]) => ({
+  activityPreferenceRows: rows.filter(
+    (row) => row.category === 'ACTIVITY' && row.channel !== 'WECHAT_MINI_PROGRAM',
+  ),
+  publicEventPreferenceRows: rows.filter(
+    (row) => row.category === 'PUBLIC_EVENT' && row.channel !== 'WECHAT_MINI_PROGRAM',
+  ),
+});
 
 Page({
   _active: true,
-  _savingKeys: new Set<NotifyKey>(),
-  _pendingTimers: Object.create(null) as Partial<Record<NotifyKey, number>>,
+  _savingKeys: new Set<string>(),
+  _pendingTimers: Object.create(null) as Record<string, number | undefined>,
+  _refreshPreferencesOnShow: false,
 
   data: {
     statusBarHeight: 20,
     wxNumber: 'chan50813',
     version: '1.0.0',
-    canUseAdminLogin: false,
-    adminLoginPending: false,
 
-    // 通知设置
-    notify: {
-      activity: false,
-      exam: false,
+    activityPreferenceRows: [] as NotificationPreferenceRow[],
+    publicEventPreferenceRows: [] as NotificationPreferenceRow[],
+    preferenceState: 'loading',
+    preferenceStateTitle: '正在加载通知偏好',
+    preferenceStateDesc: '',
+    preferenceSavingKey: '',
+    legacyNotify: {
       interaction: false,
       system: true,
-      audit: true,
     },
-    notifyPending: createFlagMap(false),
-    notifyError: createFlagMap(false),
+    legacyNotifyPending: createLegacyFlagMap(false),
+    legacyNotifyError: createLegacyFlagMap(false),
   },
 
   async onLoad() {
     const sys = wxGetWindowInfo();
     this.setData({
       statusBarHeight: sys.statusBarHeight,
-      canUseAdminLogin: hasRole([ROLES.OPERATOR, ROLES.ADMIN]),
     });
     await this._loadSettings();
   },
 
   onShow() {
     this._active = true;
-    // 用本地缓存（只有保存成功才会更新）兜底纠正离开期间残留的乐观状态
+    const preferenceSnapshot = notificationPreferenceAction.peekNotificationPreferences();
     const cached = userAction.getCachedUserSettings();
     this.setData({
-      ...(cached?.notify ? { notify: cached.notify } : {}),
-      notifyPending: createFlagMap(false), // 离开期间发出的请求此时一定已有结果，清掉可能卡住的 spinner
-      canUseAdminLogin: hasRole([ROLES.OPERATOR, ROLES.ADMIN]),
+      ...(preferenceSnapshot ? splitPreferenceRows(preferenceSnapshot.rows) : {}),
+      ...(cached?.notify
+        ? {
+            legacyNotify: {
+              interaction: cached.notify.interaction,
+              system: cached.notify.system,
+            },
+          }
+        : {}),
+      preferenceSavingKey: '',
+      legacyNotifyPending: createLegacyFlagMap(false),
     });
+    if (this._refreshPreferencesOnShow && this.data.preferenceState !== 'loading') {
+      this._refreshPreferencesOnShow = false;
+      void this._loadNotificationPreferences();
+    }
   },
 
   onHide() {
@@ -87,45 +109,172 @@ Page({
   },
 
   async _loadSettings() {
-    const setting = await userAction.getUserSettings();
-
     const accountInfo = wxGetAccountInfoSync();
     this.setData({
-      notify: setting.notify,
       version: accountInfo.miniProgram.version || '开发版',
-      canUseAdminLogin: hasRole([ROLES.OPERATOR, ROLES.ADMIN]),
+    });
+
+    const legacyTask = userAction.getUserSettings().catch((err: unknown) => {
+      log.error('_loadSettings', '加载其他通知设置失败', err);
+      return null;
+    });
+    const preferenceTask = this._loadNotificationPreferences();
+
+    const [setting] = await Promise.all([legacyTask, preferenceTask]);
+    this.setData({
+      ...(setting
+        ? {
+            legacyNotify: {
+              interaction: setting.notify.interaction,
+              system: setting.notify.system,
+            },
+          }
+        : {}),
     });
   },
 
-  async _saveNotify(key: NotifyKey, value: boolean, prevValue: boolean) {
+  async _loadNotificationPreferences() {
+    const existingSnapshot = notificationPreferenceAction.peekNotificationPreferences();
+    this.setData({
+      preferenceState: 'loading',
+      preferenceStateTitle: '正在加载通知偏好',
+      preferenceStateDesc: existingSnapshot ? '已保留上次成功读取的状态' : '',
+    });
+
+    try {
+      const snapshot = await notificationPreferenceAction.getNotificationPreferences({
+        force: true,
+      });
+      if (!this._active) return;
+      this.setData({
+        ...splitPreferenceRows(snapshot.rows),
+        preferenceState: 'ready',
+        preferenceStateTitle: '',
+        preferenceStateDesc: '',
+      });
+    } catch (err) {
+      log.error('_loadNotificationPreferences', '加载 Activity/PublicEvent 通知偏好失败', err);
+      if (!this._active) return;
+
+      const unavailable = notificationPreferenceAction.isNotificationPreferencesUnavailable(err);
+      const hasExisting = Boolean(notificationPreferenceAction.peekNotificationPreferences());
+      this.setData({
+        preferenceState: unavailable ? 'unavailable' : 'error',
+        preferenceStateTitle: unavailable ? '通知偏好暂不可用' : '通知偏好加载失败',
+        preferenceStateDesc: hasExisting
+          ? '已保留上次显示，未改为默认值'
+          : '当前无法确认偏好，不会显示为全部关闭',
+      });
+
+      if (!unavailable) {
+        showErrorToast(err, { fallback: '活动与公共事项通知状态加载失败' });
+      }
+    }
+  },
+
+  onRetryNotificationPreferences() {
+    if (this.data.preferenceState === 'loading') return;
+    void this._loadNotificationPreferences();
+  },
+
+  async onNotificationPreferenceChange(e: WechatMiniprogram.SwitchChange) {
+    if (this.data.preferenceState !== 'ready' || this.data.preferenceSavingKey) return;
+    const { key, category, channel } = e.currentTarget.dataset as {
+      key: string;
+      category: NotificationPreferenceRow['category'];
+      channel: NotificationPreferenceRow['channel'];
+    };
+    const previousSnapshot = notificationPreferenceAction.peekNotificationPreferences();
+    if (!previousSnapshot) {
+      void this._loadNotificationPreferences();
+      return;
+    }
+
+    this.setData({ preferenceSavingKey: key });
+    try {
+      if (e.detail.value && channel === 'WECHAT_OFFICIAL_ACCOUNT') {
+        const confirmed = await showConfirm({
+          title: '服务号通知需单独开通',
+          content:
+            '这里仅开启应用发送。还需绑定服务号，并在服务号订阅页开启对应通知，否则只会收到站内消息。继续开启？',
+        });
+        if (!confirmed) {
+          if (this._active) {
+            this.setData({
+              ...splitPreferenceRows(previousSnapshot.rows),
+              preferenceSavingKey: '',
+            });
+          }
+          return;
+        }
+      }
+
+      const snapshot = await notificationPreferenceAction.updateNotificationPreference({
+        category,
+        channel,
+        enabled: e.detail.value,
+      });
+      if (!this._active) return;
+      this.setData({
+        ...splitPreferenceRows(snapshot.rows),
+        preferenceSavingKey: '',
+      });
+    } catch (err) {
+      log.error('onNotificationPreferenceChange', '保存通知偏好失败', err);
+      if (!this._active) return;
+      const unavailable = notificationPreferenceAction.isNotificationPreferencesUnavailable(err);
+      this.setData({
+        ...splitPreferenceRows(previousSnapshot.rows),
+        preferenceSavingKey: '',
+        ...(unavailable
+          ? {
+              preferenceState: 'unavailable',
+              preferenceStateTitle: '通知偏好暂不可用',
+              preferenceStateDesc: '已恢复保存前状态，请稍后重试',
+            }
+          : {}),
+      });
+      if (!unavailable) showErrorToast(err, { fallback: '通知偏好保存失败' });
+    }
+  },
+
+  async _saveLegacyNotify(key: LegacyNotifyKey, value: boolean, prevValue: boolean) {
     this._savingKeys.add(key);
 
     const timer = setTimeout(() => {
       if (this._active) {
-        this.setData({ [`notifyPending.${key}`]: true });
+        this.setData({ [`legacyNotifyPending.${key}`]: true });
       }
     }, 250);
     this._pendingTimers[key] = timer;
 
     try {
-      await userAction.updateNotifySettingAndSync(key, value, this.data.notify);
+      const currentNotify = userAction.getCachedUserSettings()?.notify;
+      const fallbackNotify: Settings['notify'] = {
+        activity: false,
+        exam: false,
+        interaction: this.data.legacyNotify.interaction,
+        system: this.data.legacyNotify.system,
+        audit: true,
+      };
+      await userAction.updateNotifySettingAndSync(key, value, currentNotify ?? fallbackNotify);
 
       clearTimeout(timer);
       if (this._active) {
         this.setData({
-          [`notify.${key}`]: value,
-          [`notifyPending.${key}`]: false,
+          [`legacyNotify.${key}`]: value,
+          [`legacyNotifyPending.${key}`]: false,
         });
       }
     } catch (e) {
       clearTimeout(timer);
-      log.error('_saveNotify', '????????', e);
+      log.error('_saveLegacyNotify', '保存旧类型通知设置失败', e);
 
       if (this._active) {
         this.setData({
-          [`notify.${key}`]: prevValue,
-          [`notifyPending.${key}`]: false,
-          [`notifyError.${key}`]: true,
+          [`legacyNotify.${key}`]: prevValue,
+          [`legacyNotifyPending.${key}`]: false,
+          [`legacyNotifyError.${key}`]: true,
         });
       }
     } finally {
@@ -134,23 +283,23 @@ Page({
     }
   },
 
-  onNotifyChange(e: WechatMiniprogram.SwitchChange) {
-    const { key } = e.currentTarget.dataset as { key: NotifyKey };
+  onLegacyNotifyChange(e: WechatMiniprogram.SwitchChange) {
+    const { key } = e.currentTarget.dataset as { key: LegacyNotifyKey };
     const value = e.detail.value;
 
     if (this._savingKeys.has(key)) return;
 
-    const prevValue = this.data.notify[key];
+    const prevValue = this.data.legacyNotify[key];
 
     this.setData({
-      [`notify.${key}`]: value,
-      [`notifyError.${key}`]: false,
+      [`legacyNotify.${key}`]: value,
+      [`legacyNotifyError.${key}`]: false,
     });
 
-    void this._saveNotify(key, value, prevValue);
+    void this._saveLegacyNotify(key, value, prevValue);
   },
 
-  bindMp() {
+  async bindMp() {
     const token = authAction.getToken();
 
     if (!token) {
@@ -162,19 +311,24 @@ Page({
       return;
     }
 
-    const h5EntryUrl = `https://api.jualn.cn/third/wx/mp-oauth/start?token=${encodeURIComponent(token)}`;
+    try {
+      const result = await api.wx.createOfficialAccountBindOauthUrl();
+      if (!result.url) throw new Error('服务号绑定地址为空');
 
-    wxNavigateTo({
-      url:
-        '/subpkg_setting/pages/service-subscribe-webview/index?url=' +
-        encodeURIComponent(h5EntryUrl),
-    }).catch((err: unknown) => {
-      log.error('bindMp', '跳转公众号订阅页失败', err);
+      this._refreshPreferencesOnShow = true;
+      await wxNavigateTo({
+        url:
+          '/subpkg_setting/pages/service-subscribe-webview/index?url=' +
+          encodeURIComponent(result.url),
+      });
+    } catch (err) {
+      this._refreshPreferencesOnShow = false;
+      log.error('bindMp', '获取或打开服务号绑定页失败', err);
       notifyToast({
         title: '跳转失败，请稍后再试',
         icon: 'error',
       });
-    });
+    }
   },
 
   onGoFeedback() {
@@ -191,32 +345,6 @@ Page({
     void wxNavigateTo({
       url: '/subpkg_user/pages/edit-profile/edit-profile',
     });
-  },
-
-  async onScanAdminLogin() {
-    if (this.data.adminLoginPending) return;
-    this.setData({ adminLoginPending: true });
-
-    try {
-      const sessionId = await adminAuthAction.scanAdminLoginQr();
-      if (!sessionId) return;
-
-      const confirmed = await showConfirm({
-        title: '确认登录管理端',
-        content: '将使用当前小程序账号登录管理端，请确认二维码来自你正在操作的页面。',
-      });
-      if (!confirmed) return;
-
-      const result = await adminAuthAction.confirmAdminLogin(sessionId);
-      showSuccessToast(
-        result.displayName ? `${result.displayName}，登录已确认` : '管理端登录已确认',
-      );
-    } catch (err) {
-      log.error('onScanAdminLogin', '管理端扫码登录确认失败', err);
-      showErrorToast(err, { fallback: '扫码确认失败，请稍后重试' });
-    } finally {
-      this.setData({ adminLoginPending: false });
-    }
   },
 
   onGoAgreement() {

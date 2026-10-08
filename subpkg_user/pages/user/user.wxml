@@ -17,7 +17,7 @@
     wx:elif="{{listLoad.initialError}}"
     mode="{{listLoad.refreshing ? 'loading' : 'error'}}"
     title="{{listLoad.refreshing ? '正在重新加载' : '暂时无法加载'}}"
-    description="{{listLoad.refreshing ? '' : '网络可能暂时不可用，请稍后再试'}}"
+    description="{{listLoad.refreshing ? '' : profileError}}"
     action-text="{{listLoad.refreshing ? '' : '重新加载'}}"
     fill-viewport
     bind:action="retryInitial"
@@ -35,24 +35,8 @@
       bind:switchtab="onSwitchTab"
     />
 
-    <!-- likes tab 首次加载 -->
-    <post-card-skeleton
-      wx:if="{{activeTab === 'likes' && likesLoading}}"
-      count="{{2}}"
-      media-mode="auto"
-      show-third-line="{{true}}"
-    />
-
-    <!-- likes tab 加载失败 -->
-    <load-state
-      wx:elif="{{activeTab === 'likes' && likesError}}"
-      mode="error"
-      variant="section"
-      title="暂时无法加载"
-      description="点赞内容没有加载成功"
-      action-text="重新加载"
-      bind:action="retryLikes"
-    />
+    <load-state wx:if="{{activeTab === 'posts' && postsError}}" mode="error" variant="section"
+      title="动态暂时无法加载" description="{{postsError}}" action-text="重新加载" bind:action="retryInitial" />
 
     <!-- 列表内容 -->
     <block wx:elif="{{posts.length > 0}}">
@@ -72,7 +56,7 @@
       wx:else
       mode="empty"
       variant="section"
-      title="{{activeTab === 'posts' ? 'TA 还没有发布动态' : 'TA 还没有点赞内容'}}"
+      title="TA 还没有发布动态"
     />
 
     <!-- 分页加载 -->

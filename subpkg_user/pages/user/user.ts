@@ -5,8 +5,8 @@ import { createLogger } from '../../../utils/logger';
 import { TARGET_TYPES } from '../../../utils/constants';
 import { usePostActions } from '../../../behaviors/usePostActions';
 import { useListLoad } from '../../../behaviors/useListLoad';
-import * as postAction from '../../../actions/post';
 import * as userAction from '../../../actions/user';
+import { getProfileErrorMessage } from '../../../services/user';
 import definePage from '../../../utils/definePage';
 import { notifyToast } from '../../../utils/notify';
 import { navigateBackOrHome } from '../../utils/navigation';
@@ -20,6 +20,7 @@ definePage({
   _pullDownRefreshEnabled: false,
   _userId: '',
   _offProfile: null as (() => void) | null,
+  _loadGeneration: 0,
   _navigateBackTimer: null as number | null,
   // _viewedPostIds: new Set<string>(),
   behaviors: [
@@ -36,6 +37,8 @@ definePage({
   data: {
     // 骨架屏相关, 其中包含 posts 数据，避免重复定义
     // isFollowing: false,
+    profileError: '',
+    postsError: '',
     likesLoading: false,
     likesError: false,
 
@@ -72,6 +75,12 @@ definePage({
   },
 
   onLoad(query: { userId: string }) {
+    let userId = '';
+    try {
+      userId = decodeURIComponent(query.userId || '');
+    } catch {
+      // Malformed route input follows the same missing-user recovery path.
+    }
     this._currentScrollTop = 0;
 
     this.setData({
@@ -85,7 +94,7 @@ definePage({
       statusBarHeight: systemInfo.statusBarHeight,
     });
 
-    if (!query.userId) {
+    if (!userId) {
       this._listLoadEndInitial({
         success: false,
         hasContent: false,
@@ -104,11 +113,11 @@ definePage({
       return;
     }
 
-    this._userId = query.userId;
+    this._userId = userId;
     this._offProfile = watchCurrentProfile((profile) => {
-      if (profile?.id === this._userId) this.setData({ userInfo: profile });
+      if (profile?.userId === this._userId) this.setData({ userInfo: profile });
     });
-    void this._loadUserProfile(query.userId, 'initial');
+    void this._loadUserProfile(userId, 'initial');
 
     // if (query.userId === getUserInfo('id')) {
     //   void wxSwitchTab({
@@ -118,10 +127,23 @@ definePage({
   },
 
   onUnload() {
+    this._loadGeneration++;
     this._offProfile?.();
     if (this._navigateBackTimer !== null) {
       clearTimeout(this._navigateBackTimer);
       this._navigateBackTimer = null;
+    }
+  },
+
+  async onPullDownRefresh() {
+    if (!this._userId || !this._listLoadCanRefresh()) {
+      void wx.stopPullDownRefresh();
+      return;
+    }
+    try {
+      await this._loadUserProfile(this._userId, 'refresh');
+    } finally {
+      void wx.stopPullDownRefresh();
     }
   },
 
@@ -142,6 +164,7 @@ definePage({
   },
 
   async _loadUserProfile(userId: string, scene: 'initial' | 'refresh' = 'initial') {
+    const generation = ++this._loadGeneration;
     if (scene === 'initial') {
       this._listLoadBeginInitial();
     } else {
@@ -151,9 +174,12 @@ definePage({
     try {
       const result = await userAction.getUserPageData(userId, { force: scene === 'refresh' });
 
+      if (generation !== this._loadGeneration) return;
       const patch: Record<string, unknown> = {
         userInfo: result.userInfo,
+        profileError: '',
         postsCache: result.posts,
+        postsError: result.postsError ?? '',
       };
 
       // if (typeof (result as { isFollowing?: boolean }).isFollowing === 'boolean') {
@@ -168,7 +194,7 @@ definePage({
 
       const maybeHasMore = (result as { hasMore?: boolean }).hasMore;
       const hasMore = typeof maybeHasMore === 'boolean' ? maybeHasMore : false;
-      const hasContent = !!result.userInfo.id || result.posts.length > 0;
+      const hasContent = !!result.userInfo.userId || result.posts.length > 0;
 
       if (scene === 'initial') {
         this._listLoadEndInitial({
@@ -184,10 +210,14 @@ definePage({
         });
       }
     } catch (err) {
+      if (generation !== this._loadGeneration) return;
+      this.setData({ profileError: getProfileErrorMessage(err) });
       log.error('_loadUserProfile', '加载用户主页失败', err);
 
       const hasContent =
-        !!this.data.userInfo.id || this.data.postsCache.length > 0 || this.data.posts.length > 0;
+        !!this.data.userInfo.userId ||
+        this.data.postsCache.length > 0 ||
+        this.data.posts.length > 0;
 
       if (scene === 'initial') {
         this._listLoadEndInitial({
@@ -208,64 +238,6 @@ definePage({
           });
         }
       }
-    }
-  },
-  async _loadLikes(options: { force?: boolean } = {}) {
-    if (this.data.likesLoading) return;
-
-    if (this.data.likesLoaded && !options.force) {
-      if (this.data.activeTab === 'likes') {
-        this.setData({
-          posts: this.data.likesCache,
-        });
-      }
-      return;
-    }
-
-    this.setData({
-      likesLoading: true,
-      likesError: false,
-    });
-
-    try {
-      const userId = this.data.userInfo.id ?? this._userId;
-      if (!userId) throw new Error('missing user id');
-
-      const result = await postAction.getUserLikedPosts(userId);
-
-      const patch: Record<string, unknown> = {
-        likesCache: result.list,
-        likesLoaded: true,
-        likesError: false,
-      };
-
-      if (this.data.activeTab === 'likes') {
-        patch.posts = result.list;
-      }
-
-      this.setData(patch);
-    } catch (err) {
-      log.error('_loadLikes', '加载用户点赞的帖子失败', err);
-
-      const patch: Record<string, unknown> = {
-        likesLoaded: false,
-        likesError: true,
-      };
-
-      if (this.data.activeTab === 'likes') {
-        patch.posts = [];
-      }
-
-      this.setData(patch);
-
-      notifyToast({
-        title: '加载失败，请稍后再试',
-        icon: 'none',
-      });
-    } finally {
-      this.setData({
-        likesLoading: false,
-      });
     }
   },
   notifyPreviewImage() {
@@ -301,25 +273,13 @@ definePage({
    * @param e 事件对象，包含 detail.tab 用于更新当前激活的 Tab
    */
   onSwitchTab(e: WechatMiniprogram.CustomEvent<{ tab: string }>) {
-    const tab = e.detail.tab;
-    if (tab === this.data.activeTab) return;
-
-    // 合并为一次 setData，避免中间帧数据不一致
-    const posts = tab === 'posts' ? this.data.postsCache : this.data.likesCache;
-    this.setData({ activeTab: tab, posts });
-
-    if (tab === 'likes') {
-      void this._loadLikes();
-    }
+    if (e.detail.tab !== 'posts') return;
+    this.setData({ activeTab: 'posts', posts: this.data.postsCache });
   },
 
   retryInitial() {
     if (!this._userId) return;
     void this._loadUserProfile(this._userId, 'refresh');
-  },
-
-  retryLikes() {
-    void this._loadLikes({ force: true });
   },
 
   retryLoadMore() {

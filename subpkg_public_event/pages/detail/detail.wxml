@@ -1,0 +1,226 @@
+<!-- subpkg_public_event/pages/detail/detail.wxml -->
+<view class="detail-page">
+  <view class="detail-fixed-nav" style="padding-top:{{statusBarHeight}}px;">
+    <view class="detail-fixed-back" bindtap="onBack" aria-role="button" aria-label="返回上一页">
+      <ui-icon name="chevron-left" state="inverse" size="lg" />
+    </view>
+  </view>
+
+  <block wx:if="{{asyncLoad.phase === 'idle' || asyncLoad.phase === 'loading'}}">
+    <view
+      wx:if="{{asyncLoad.skeletonVisible}}"
+      class="public-event-detail-skeleton"
+      aria-role="status"
+      aria-label="公共事项详情加载中"
+    >
+      <view class="public-event-detail-skeleton__hero" style="padding-top:{{statusBarHeight}}px;">
+        <view class="public-event-detail-skeleton__nav-space" />
+        <view class="skeleton-block skeleton-radius-lg public-event-detail-skeleton__hero-icon" />
+        <view class="skeleton-block skeleton-radius-md public-event-detail-skeleton__hero-title" />
+        <view class="skeleton-block skeleton-radius-sm public-event-detail-skeleton__hero-line" />
+      </view>
+      <view wx:for="{{skeletonSections}}" wx:key="*this" class="public-event-detail-skeleton__card skeleton-card">
+        <view class="skeleton-block skeleton-radius-sm public-event-detail-skeleton__card-title" />
+        <view class="skeleton-block skeleton-radius-sm public-event-detail-skeleton__line" />
+        <view
+          class="skeleton-block skeleton-radius-sm public-event-detail-skeleton__line public-event-detail-skeleton__line--short"
+        />
+      </view>
+    </view>
+  </block>
+
+  <view
+    wx:elif="{{asyncLoad.phase === 'error'}}"
+    class="public-event-detail-error"
+    style="padding-top:{{statusBarHeight}}px;"
+  >
+    <view class="public-event-detail-error__nav-space" />
+    <load-state
+      mode="{{asyncLoad.loading ? 'loading' : 'error'}}"
+      title="{{asyncLoad.loading ? '正在重新加载' : '暂时无法加载'}}"
+      description="{{asyncLoad.loading ? '' : (asyncLoad.errorMessage || '网络可能暂时不可用，请稍后再试')}}"
+      action-text="{{asyncLoad.loading ? '' : '重新加载'}}"
+      fill-viewport
+      viewport-offset="150"
+      bind:action="onRetryLoad"
+    />
+  </view>
+
+  <block wx:else>
+    <!-- Hero -->
+    <view class="hero hero--{{publicEvent.color}}" style="padding-top:{{statusBarHeight}}px;">
+      <view class="hero-nav" />
+      <view class="hero-body">
+        <image wx:if="{{publicEvent.icon}}" class="hero-icon" src="{{publicEvent.icon}}" mode="aspectFit" />
+        <text class="hero-name">{{publicEvent.title}}</text>
+        <text class="hero-tagline">{{publicEvent.summary}}</text>
+        <text wx:if="{{publicEvent.organizer}}" class="hero-organizer">主办：{{publicEvent.organizer}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{publicEvent.cover}}" class="section-card"
+      ><image src="{{publicEvent.cover}}" mode="widthFix" style="width: 100%" show-menu-by-longpress
+    /></view>
+    <!-- 本期时间 -->
+    <view class="section-card">
+      <view class="section-title-row">
+        <image class="section-title-icon" src="/assets/icons/detail/exam_time.svg" mode="aspectFit" />
+        <text class="section-title">时间安排</text>
+      </view>
+
+      <!-- 周期说明 -->
+      <view class="freq-tip" wx:if="{{publicEvent.frequency}}">
+        <image class="inline-icon" src="/assets/icons/detail/repeat_rule.svg" mode="aspectFit" />
+        <text class="freq-tip__text">{{publicEvent.frequency}}</text>
+      </view>
+
+      <!-- 动态时间线 -->
+      <view class="timeline">
+        <view
+          wx:for="{{publicEvent.timeline}}"
+          wx:key="key"
+          class="tl-item {{index === publicEvent.timeline.length - 1 ? 'tl-item--last' : ''}}"
+        >
+          <!-- 状态圆点 -->
+          <view class="tl-dot tl-dot--{{item.scheduleKind === 'TEXT' ? 'unknown' : 'future'}}" />
+          <!-- 连接线（最后一项不显示） -->
+          <view class="tl-line" wx:if="{{index < publicEvent.timeline.length - 1}}" />
+
+          <view class="tl-content">
+            <!-- 标签行：名称 + 来源角标 -->
+            <view class="tl-header">
+              <text class="tl-label">{{item.label}}</text>
+              <text class="tl-source" wx:if="{{item.source}}">{{item.source}}</text>
+            </view>
+
+            <view class="tl-datetime">
+              <text class="tl-date">{{item.scheduleText}}</text>
+              <text class="tl-source">{{item.scheduleKindLabel}}</text>
+            </view>
+
+            <!-- 备注（往年规律 / 补充说明） -->
+            <text class="tl-note" wx:if="{{item.note}}">{{item.note}}</text>
+          </view>
+        </view>
+      </view>
+
+      <text class="tl-pending" wx:if="{{!publicEvent.timeline.length}}">时间安排待通知</text>
+      <!-- 时间来源说明 -->
+      <view class="source-tip" wx:if="{{publicEvent.timeSource}}">
+        <image class="inline-icon" src="/assets/icons/detail/info_source.svg" mode="aspectFit" />
+        <text class="source-tip__text">{{publicEvent.timeSource}}</text>
+      </view>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="section-card" wx:if="{{publicEvent.info.length}}">
+      <view class="section-title-row">
+        <image class="section-title-icon" src="/assets/icons/detail/basic_info.svg" mode="aspectFit" />
+        <text class="section-title">基本信息</text>
+      </view>
+      <view class="info-list">
+        <view wx:for="{{publicEvent.info}}" wx:key="label" class="info-row">
+          <text class="info-label">{{item.label}}</text>
+          <view class="info-value-wrap">
+            <text class="info-value">{{item.value}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card" wx:for="{{publicEvent.sections}}" wx:key="key">
+      <view class="section-title-row"><text class="section-title">{{item.title}}</text></view>
+      <text class="section-body" user-select>{{item.content}}</text>
+    </view>
+
+    <!-- 相关入口 -->
+    <view id="resources-section" class="section-card" wx:if="{{publicEvent.resources.length}}">
+      <view class="section-title-row">
+        <image class="section-title-icon" src="/assets/icons/detail/official_link.svg" mode="aspectFit" />
+        <text class="section-title">相关入口</text>
+      </view>
+      <text class="section-disclaimer">网页和号码点击复制，图片可预览，文件可打开。查看入口不代表完成报名或办理。</text>
+      <view class="link-list">
+        <view
+          wx:for="{{publicEvent.resources}}"
+          wx:key="key"
+          class="link-item {{item.primary?'link-item--primary':''}}"
+          bindtap="onOpenLink"
+          data-key="{{item.key}}"
+          data-label="{{item.label}}"
+        >
+          <view class="link-left">
+            <!-- <text class="link-icon">{{item.icon}}</text> -->
+            <view class="link-icon-img icon-slot"><ui-icon name="link" size="xl" /></view>
+            <view class="link-text">
+              <text class="link-label">{{item.label}}</text>
+              <text class="link-desc">{{item.desc}}</text>
+              <text wx:if="{{item.kind === 'text' && item.url}}" class="link-desc" user-select>{{item.url}}</text>
+              <image
+                wx:if="{{item.kind === 'image' && item.url}}"
+                src="{{item.url}}"
+                mode="widthFix"
+                style="width: 240rpx"
+                show-menu-by-longpress
+              />
+            </view>
+          </view>
+          <ui-icon name="chevron-right" size="sm" />
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card subscription-note">
+      <text class="section-disclaimer subscription-note__text"
+        >订阅仅关注本期事项与提醒，不代表报名成功，不占用官方名额。提醒是否发送取决于本期时间安排及个人通知设置。</text
+      >
+    </view>
+    <view class="bottom-safe" />
+
+    <!-- 底部操作 -->
+    <view class="bottom-bar {{publicEvent.resources.length ? '' : 'bottom-bar--secondary-only'}}">
+      <button
+        class="bottom-secondary subscription-btn"
+        bindtap="onToggleSubscription"
+        loading="{{subscriptionBusy}}"
+        disabled="{{subscriptionBusy || (!publicEvent.subscribed && !publicEvent.canSubscribe)}}"
+      >
+        {{publicEvent.subscribed ? '取消订阅' : (publicEvent.canSubscribe ? '订阅事项' : '不可订阅')}}
+      </button>
+      <button class="bottom-secondary share-btn" bind:tap="onShareOpen">
+        <ui-icon name="share" size="lg" />
+        <text class="share-btn__text">分享</text>
+      </button>
+      <button wx:if="{{publicEvent.resources.length}}" class="primary-action" bindtap="onViewResources">
+        查看相关入口
+      </button>
+    </view>
+  </block>
+</view>
+
+<view wx:if="{{showPopup}}" class="popup-touch-blocker" catchtouchmove="noop" bind:tap="onOverlayTap" />
+
+<page-container
+  show="{{showPopup}}"
+  position="bottom"
+  round
+  overlay="{{false}}"
+  close-on-slide-down="{{false}}"
+  z-index="999"
+  bind:afterleave="onPopupAfterLeave"
+  bind:clickoverlay="onOverlayTap"
+>
+  <!-- share弹窗 -->
+  <share-panel
+    wx:if="{{popupType==='share'}}"
+    share-image-path="{{currentShareImage}}"
+    status="{{shareStatus}}"
+    bind:retry="onRetryShare"
+    bind:previewerror="onSharePreviewError"
+    bind:close="onShareClose"
+  />
+</page-container>
+
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px"></canvas>
+
+<in-app-banner />

@@ -3,7 +3,7 @@
  * 考试服务 (Exam Service)
  *
  * 📌 当前状态：使用静态数据（EXAM_DB）
- * 📌 后续切换：恢复下面注释的 API 调用即可
+ * 📌 后续切换：列表、详情、期次 ID、公开可见性与订阅须一起迁移
  *
  * 对齐 OpenAPI：
  * - GET    /v1/exam          → getExamSimpleList
@@ -543,7 +543,7 @@ export const searchExamList = (items: ExamListItem[], keyword: string): ExamSear
  * 获取考试精简列表（用于首页展示）
  *
  * 📌 当前：从 EXAM_DB 静态获取
- * 📌 后续：恢复下面注释代码即可使用 API
+ * 📌 后续：须统一迁移数据源与期次 ID，不能单独启用以下示例
  */
 export const getExamSimpleList = (): IndexExamCardItem[] => {
   // ============ 当前实现：静态数据 ============
@@ -574,7 +574,7 @@ export const getExamSimpleList = (): IndexExamCardItem[] => {
  * 获取所有考试的时间表
  *
  * 📌 当前：从 EXAM_DB 静态获取
- * 📌 后续：恢复下面注释代码即可使用 API
+ * 📌 后续：须统一迁移数据源与期次 ID，不能单独启用以下示例
  */
 export const getExamTimelines = (): Record<string, ExamTimelineItem[]> => {
   // ============ 当前实现：静态数据 ============
@@ -598,7 +598,7 @@ export const getExamTimelines = (): Record<string, ExamTimelineItem[]> => {
  * 获取单个考试的时间表
  *
  * 📌 当前：从 EXAM_DB 静态获取
- * 📌 后续：恢复下面注释代码即可使用 API
+ * 📌 后续：须统一迁移数据源与期次 ID，不能单独启用以下示例
  */
 export const getExamTimeline = async (examId: string): Promise<ExamTimelineItem[]> => {
   if (!examId) {

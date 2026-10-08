@@ -1,0 +1,13 @@
+:host { display: inline-flex; vertical-align: middle; margin-left: 8rpx; }
+.operator-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26rpx;
+  height: 26rpx;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 18rpx;
+  line-height: 1;
+}

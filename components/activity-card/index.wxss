@@ -383,3 +383,9 @@
     opacity: 0.35;
   }
 }
+/* Layout stays with the caller; UiIcon owns the glyph. */
+.icon-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

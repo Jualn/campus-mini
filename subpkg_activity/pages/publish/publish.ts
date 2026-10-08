@@ -13,6 +13,9 @@ import type {
 } from '../../../types/api';
 
 import {
+  ACTION_OPTIONS,
+  toEventTime,
+  validatePublishInformation,
   AI_FIELD_SELECTOR_MAP,
   AI_TO_FORM_FIELD_MAP,
   AUDIENCE_OPTIONS_BASE,
@@ -72,6 +75,17 @@ Page({
    * 页面的初始数据
    */
   data: {
+    actionOptions: ACTION_OPTIONS,
+    extraSections: [] as { title: string; content: string }[],
+    participationActions: [] as {
+      typeIndex: number;
+      label: string;
+      targetValue: string;
+      description: string;
+      isRequired: boolean;
+    }[],
+    timeDescription: '',
+    createdId: '',
     categoryOptions: CATEGORY_OPTIONS,
     categoryIndex: 0,
 
@@ -428,6 +442,57 @@ Page({
     });
   },
 
+  addSection() {
+    if (this.data.extraSections.length >= 29) return;
+    this.setData({ extraSections: [...this.data.extraSections, { title: '', content: '' }] });
+  },
+  addParticipationAction() {
+    if (this.data.participationActions.length >= 20) return;
+    this.setData({
+      participationActions: [
+        ...this.data.participationActions,
+        { typeIndex: 0, label: '', targetValue: '', description: '', isRequired: false },
+      ],
+    });
+  },
+  onInformationInput(e: WechatMiniprogram.Input) {
+    const { list, index, key } = e.currentTarget.dataset;
+    if (list !== 'extraSections' && list !== 'participationActions') return;
+    if (!['title', 'content', 'label', 'targetValue', 'description'].includes(String(key))) return;
+    this.setData({ [`${String(list)}[${String(index)}].${String(key)}`]: e.detail.value });
+  },
+  removeInformationItem(e: WechatMiniprogram.TouchEvent) {
+    const { list, index } = e.currentTarget.dataset;
+    if (list === 'extraSections')
+      this.setData({
+        extraSections: this.data.extraSections.filter((_, i) => i !== Number(index)),
+      });
+    if (list === 'participationActions')
+      this.setData({
+        participationActions: this.data.participationActions.filter((_, i) => i !== Number(index)),
+      });
+  },
+  onActionTypeChange(e: WechatMiniprogram.PickerChange) {
+    this.setData({
+      [`participationActions[${String(e.currentTarget.dataset.index)}].typeIndex`]: Number(
+        e.detail.value,
+      ),
+    });
+  },
+  onActionRequiredChange(e: WechatMiniprogram.SwitchChange) {
+    this.setData({
+      [`participationActions[${String(e.currentTarget.dataset.index)}].isRequired`]: e.detail.value,
+    });
+  },
+  onTimeDescriptionInput(e: WechatMiniprogram.Input) {
+    this.setData({ timeDescription: e.detail.value });
+  },
+  clearFormTime(e: WechatMiniprogram.TouchEvent) {
+    const field = e.currentTarget.dataset.field as FormFieldKey;
+    if (!isMainDateTimeField(field) || this.isAiRunning()) return;
+    this.setData({ [`form.${field}`]: '', [`userLockedFields.${field}`]: true });
+  },
+
   onTextInput(e: WechatMiniprogram.Input) {
     const field = e.currentTarget.dataset.field as FormFieldKey;
     const value = e.detail.value;
@@ -513,7 +578,9 @@ Page({
     const field = e.currentTarget.dataset.field as FormFieldKey;
     const date = String(e.detail.value);
     const current = normalizeDateTime(this.data.form[field] as string);
-    const next = combineDateTime(date, current.time);
+    const next = /[ T]\d{2}:/.test(toText(this.data.form[field]))
+      ? combineDateTime(date, current.time)
+      : date;
 
     this.setData({
       [`form.${field}`]: next,
@@ -524,6 +591,10 @@ Page({
   onFormTimeChange(e: WechatMiniprogram.PickerChange) {
     const field = e.currentTarget.dataset.field as FormFieldKey;
     const time = String(e.detail.value);
+    if (!this.data.form[field]) {
+      notifyToast({ title: '请先选择日期', icon: 'none' });
+      return;
+    }
     const current = normalizeDateTime(this.data.form[field] as string);
     const next = combineDateTime(current.date, time);
 
@@ -898,7 +969,9 @@ Page({
     }
 
     const finalValue = isMainDateTimeField(formField)
-      ? normalizeDateTimeForApi(textValue)
+      ? /^\d{4}-\d{2}-\d{2}$/.test(textValue.trim())
+        ? textValue.trim()
+        : normalizeDateTimeForApi(textValue)
       : textValue;
 
     await this.typeFormFieldSmoothly(formField, finalValue);
@@ -1236,6 +1309,7 @@ Page({
 
   addTimelineNode() {
     const list = this.data.form.timeline;
+    if (list.length >= 20) return;
 
     this.setData({
       'form.timeline': [
@@ -1289,6 +1363,16 @@ Page({
     });
   },
 
+  clearTimelineTime(e: WechatMiniprogram.TouchEvent) {
+    if (this.isAiRunning()) return;
+    const { index, key } = e.currentTarget.dataset;
+    if (key !== 'startTime' && key !== 'endTime') return;
+    this.setData({
+      [`form.timeline[${String(index)}].${String(key)}`]: '',
+      'userLockedFields.timeline': true,
+    });
+  },
+
   onTimelineDateChange(e: WechatMiniprogram.PickerChange) {
     const index = Number(e.currentTarget.dataset.index);
     const key = e.currentTarget.dataset.key as 'startTime' | 'endTime';
@@ -1296,7 +1380,9 @@ Page({
     const current = normalizeDateTime(
       String(this.data.form.timeline[index][key as keyof TimelineItem] ?? ''),
     );
-    const next = combineDateTime(date, current.time);
+    const next = /[ T]\d{2}:/.test(this.data.form.timeline[index][key] ?? '')
+      ? combineDateTime(date, current.time)
+      : date;
 
     this.setData({
       [`form.timeline[${String(index)}].${key}`]: next,
@@ -1308,6 +1394,10 @@ Page({
     const index = Number(e.currentTarget.dataset.index);
     const key = e.currentTarget.dataset.key as 'startTime' | 'endTime';
     const time = String(e.detail.value);
+    if (!this.data.form.timeline[index][key]) {
+      notifyToast({ title: '请先选择日期', icon: 'none' });
+      return;
+    }
     const current = normalizeDateTime(
       String(this.data.form.timeline[index][key as keyof TimelineItem] ?? ''),
     );
@@ -1320,6 +1410,7 @@ Page({
   },
 
   chooseQrcodeImage() {
+    if (this.data.submitting) return;
     wx.chooseMedia({
       count: 1,
       mediaType: ['image'],
@@ -1335,15 +1426,6 @@ Page({
           },
           'userLockedFields.qrcodeUrl': true,
         });
-
-        // 后续在这里接你的 COS 上传：
-        // 上传成功后：
-        // this.setData({
-        //   'qrcodeImage.url': cosUrl,
-        //   'qrcodeImage.previewUrl': cosUrl,
-        //   'qrcodeImage.status': 'uploaded',
-        //   'form.qrcode_url': cosUrl,
-        // });
       },
     });
   },
@@ -1359,6 +1441,7 @@ Page({
   },
 
   removeQrcode() {
+    if (this.data.submitting) return;
     this.setData({
       qrcodeImage: null,
       'form.qrcodeUrl': '',
@@ -1608,6 +1691,10 @@ Page({
 
   validateAttachmentBeforeSubmit() {
     const files = this.data.attachmentFiles;
+    if (files.length + (this.data.qrcodeImage ? 1 : 0) > 9) {
+      notifyToast({ title: '二维码和附件合计最多9个', icon: 'none' });
+      return false;
+    }
 
     const hasUploading = files.some((item) => item.status === 'uploading');
 
@@ -1640,15 +1727,15 @@ Page({
       phone: item.phone.trim(),
     }));
 
-    const timelineItems: TimelineItemRequest[] = form.timeline
-      .map((item: TimelineItem) => ({
-        label: item.label.trim(),
-        description: (item.description ?? '').trim(),
-        startTime: normalizeDateTimeForApi(item.startTime),
-        endTime: normalizeDateTimeForApi(item.endTime),
-        sortOrder: item.sortOrder,
-      }))
-      .filter((item) => item.label);
+    const timelineItems: TimelineItemRequest[] = form.timeline.map((item: TimelineItem) => ({
+      label: item.label.trim(),
+      description: (item.description ?? '').trim(),
+      startTime: toEventTime(item.startTime).value,
+      endTime: toEventTime(item.endTime).value,
+      startPrecision: toEventTime(item.startTime).precision,
+      endPrecision: toEventTime(item.endTime).precision,
+      sortOrder: form.timeline.indexOf(item),
+    }));
 
     const attachmentItems: AttachmentItemRequest[] = this.data.attachmentFiles
       .filter((item) => item.status === 'uploaded')
@@ -1660,15 +1747,62 @@ Page({
         sortOrder: index,
       }));
 
+    const qr = this.data.qrcodeImage;
+    if (qr?.status === 'uploaded' && qr.objectKey && qr.url) {
+      attachmentItems.push({
+        type: resolveAttachmentMediaType('png'),
+        objectKey: qr.objectKey,
+        originalName: '报名二维码',
+        url: qr.url,
+        sortOrder: attachmentItems.length,
+      });
+    }
     return {
       title: form.title.trim(),
       category: form.category,
       organizer: form.organizer.trim(),
       audienceScope: form.audienceScope,
-      startTime: normalizeDateTimeForApi(form.startTime),
-      endTime: normalizeDateTimeForApi(form.endTime),
-      enrollDeadline: normalizeDateTimeForApi(form.enrollDeadline),
-      maxParticipants: form.maxParticipants ? Number(form.maxParticipants) : 0,
+      startTime: toEventTime(form.startTime).value,
+      endTime: toEventTime(form.endTime).value,
+      startPrecision: toEventTime(form.startTime).precision,
+      endPrecision: toEventTime(form.endTime).precision,
+      timeDescription: this.data.timeDescription.trim(),
+      enrollDeadline: toEventTime(form.enrollDeadline).value,
+      registrationEnd: toEventTime(form.enrollDeadline).value,
+      registrationEndPrecision: toEventTime(form.enrollDeadline).precision,
+      maxParticipants: form.maxParticipants.trim() ? Number(form.maxParticipants) : null,
+      sections: [
+        { sectionType: 'INTRO', title: '活动介绍', content: form.content.trim(), sortOrder: 0 },
+        ...this.data.extraSections.map((item, index) => ({
+          sectionType: 'CUSTOM',
+          title: item.title.trim(),
+          content: item.content.trim(),
+          sortOrder: index + 1,
+        })),
+      ],
+      actions: [
+        ...this.data.participationActions.map((item, index) => ({
+          actionType: ACTION_OPTIONS[item.typeIndex].value,
+          label: item.label.trim(),
+          targetValue: item.targetValue.trim(),
+          description: item.description.trim(),
+          isRequired: item.isRequired,
+          sortOrder: index,
+        })),
+        ...(qr?.objectKey
+          ? [
+              {
+                actionType: 5,
+                label: '报名二维码',
+                targetValue: '',
+                description: '',
+                isRequired: false,
+                sortOrder: this.data.participationActions.length,
+                attachmentObjectKey: qr.objectKey,
+              },
+            ]
+          : []),
+      ],
       location: form.location.trim(),
       joinMethod: form.joinMethod.trim(),
       contactInfo: JSON.stringify(contactInfo),
@@ -1680,37 +1814,38 @@ Page({
   },
 
   async submitActivity() {
-    if (this.data.submitting) return;
+    if (this.data.submitting || this.data.createdId) return;
+    if (this.isAiRunning()) {
+      notifyToast({ title: '请等待 AI 填写完成后检查内容', icon: 'none' });
+      return;
+    }
     if (!this.validateAttachmentBeforeSubmit()) return;
 
     let payload = this.buildSubmitPayload();
 
-    if (!payload.title) {
-      notifyToast({
-        title: '请填写活动标题',
-        icon: 'none',
-      });
-      return;
-    }
-
-    if (!payload.content) {
-      notifyToast({
-        title: '请填写活动详情',
-        icon: 'none',
-      });
-      return;
-    }
-
-    if (!payload.startTime || !payload.endTime) {
-      notifyToast({
-        title: '请选择活动开始和结束时间',
-        icon: 'none',
-      });
+    const error = validatePublishInformation(payload);
+    if (error) {
+      notifyToast({ title: error, icon: 'none' });
       return;
     }
 
     this.setData({ submitting: true });
     try {
+      const qr = this.data.qrcodeImage;
+      if (qr && qr.status !== 'uploaded') {
+        const [uploadedQr] = await mediaAction.uploadFilesToCos(TARGET_TYPES.ACTIVITY.value, [
+          { originalName: '报名二维码.png', filePath: qr.path },
+        ]);
+        if (!uploadedQr.objectKey || !uploadedQr.url) throw new Error('二维码上传结果缺失');
+        this.setData({
+          qrcodeImage: {
+            ...qr,
+            status: 'uploaded',
+            url: uploadedQr.url,
+            objectKey: uploadedQr.objectKey,
+          },
+        });
+      }
       const localIndexes = this.data.attachmentFiles
         .map((item, index) => (item.status === 'local' ? index : -1))
         .filter((index) => index >= 0);
@@ -1735,8 +1870,14 @@ Page({
       }
 
       payload = this.buildSubmitPayload();
-      await activityAction.createActivity(payload);
-      notifyToast({ title: '发布成功', icon: 'success' });
+      const finalError = validatePublishInformation(payload);
+      if (finalError) {
+        notifyToast({ title: finalError, icon: 'none' });
+        return;
+      }
+      const createdId = await activityAction.createActivity(payload);
+      this.setData({ createdId });
+      notifyToast({ title: '草稿已创建', icon: 'success' });
     } catch (e) {
       log.error('submitActivity', '发布活动失败', e);
       notifyToast({ title: '发布失败', icon: 'none' });

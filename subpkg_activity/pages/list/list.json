@@ -1,6 +1,7 @@
 {
   "usingComponents": {
     "activity-card": "/components/activity-card/index",
-    "load-state": "/components/load-state/index"
+    "load-state": "/components/load-state/index",
+    "ui-icon": "/components/ui-icon/index"
   }
 }

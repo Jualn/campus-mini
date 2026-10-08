@@ -3,8 +3,8 @@
 <view class="search-page">
   <view class="search-top" style="padding-top: {{statusBarHeight}}px;">
     <view class="search-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
-      <view class="search-nav__back" bindtap="onBack">
-        <text class="search-nav__back-icon">‹</text>
+      <view class="search-nav__back" bindtap="onBack" aria-role="button" aria-label="返回">
+        <ui-icon name="chevron-left" size="lg" />
       </view>
 
       <text class="search-nav__title">校园搜索</text>
@@ -13,15 +13,15 @@
     <view class="search-bar-wrap">
       <view class="search-bar">
         <view class="search-bar__icon-wrap">
-          <image class="search-bar__icon" src="/images/icons/search.svg" mode="aspectFit" />
+          <ui-icon name="search" size="sm" />
         </view>
 
         <input class="search-bar__input" placeholder="搜索动态、活动" placeholder-class="search-bar__placeholder"
           value="{{keyword}}" focus="{{inputFocus}}" confirm-type="search" bindinput="onInput"
           bindconfirm="onConfirm" />
 
-        <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClear">
-          <image class="search-bar__clear-icon" src="/assets/icons/common/clear.svg" mode="aspectFit" />
+        <view wx:if="{{keyword}}" class="search-bar__clear" catchtap="onClear" aria-role="button" aria-label="清除搜索内容">
+          <ui-icon name="clear" size="sm" />
         </view>
       </view>
     </view>

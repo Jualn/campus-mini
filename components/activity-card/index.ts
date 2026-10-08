@@ -9,7 +9,7 @@
  *   activity  Object  活动数据
  *     - id, title, cover, type, scope
  *     - status, statusLabel, typeColor, typeIcon
- *     - enroll_deadline, daysToDeadline
+ *     - cardTimelineLabel, cardTimelineText, cardTimelineKind, daysToDeadline
  *     - location, max_participants
  *     - organizer, published_at, summary
  *
@@ -70,8 +70,13 @@ defineComponent<ActivityCardPrivate>()({
           _scopeList: newVal.scope,
           _statusClass: normalizeStatusClass(newVal.status),
           _typeColorClass: newVal.typeColor || 'default',
-          _deadlineText: this._formatDeadline(newVal.enroll_deadline, daysToDeadline),
-          _isDeadlineUrgent: daysToDeadline !== null && daysToDeadline >= 0 && daysToDeadline <= 3,
+          _deadlineText:
+            newVal.deadlineText ?? this._formatDeadline(newVal.enroll_deadline, daysToDeadline),
+          _isDeadlineUrgent:
+            newVal.cardTimelineKind === 'EXACT_POINT' &&
+            daysToDeadline !== null &&
+            daysToDeadline >= 0 &&
+            daysToDeadline <= 3,
         });
       },
     },
@@ -121,15 +126,14 @@ defineComponent<ActivityCardPrivate>()({
     },
 
     /**
-     * 格式化报名截止时间。
-     * 临近截止时优先展示“还剩 x 天”，否则展示原始截止时间。
+     * 兼容项目内尚在使用的旧活动卡片展示模型。
      */
     _formatDeadline(deadline?: string, daysToDeadline?: number | null) {
       if (!deadline) return '';
       if (typeof daysToDeadline === 'number' && daysToDeadline >= 0 && daysToDeadline <= 3) {
-        return `报名截止 还剩${String(daysToDeadline)}天`;
+        return `还剩${String(daysToDeadline)}天`;
       }
-      return `报名截止 ${deadline}`;
+      return deadline;
     },
 
     /**

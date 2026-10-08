@@ -14,7 +14,8 @@ App({
     void authAction.initUserInfo();
   },
 
-  onShow() {
+  onShow(options) {
+    notificationCenter.receiveExternalEntry(options.query);
     // 应用负责资料预热/过期校验，头像组件只订阅，不各自发请求。
     void getCurrentProfile({ allowStale: true }).catch((err: unknown) => {
       log.warn('onShow', '当前用户资料校验失败', err);

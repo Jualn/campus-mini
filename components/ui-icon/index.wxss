@@ -1,0 +1,22 @@
+.ui-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+.ui-icon--sm {
+  width: 24rpx;
+  height: 24rpx;
+}
+.ui-icon--md {
+  width: 32rpx;
+  height: 32rpx;
+}
+.ui-icon--lg {
+  width: 40rpx;
+  height: 40rpx;
+}
+.ui-icon--xl {
+  width: 48rpx;
+  height: 48rpx;
+}

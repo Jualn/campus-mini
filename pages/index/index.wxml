@@ -22,7 +22,7 @@
         </view>
 
         <view class="skeleton-exam-list">
-          <view class="skeleton-exam-card" wx:for="{{skeletonExamList}}" wx:key="*this">
+          <view class="skeleton-exam-card" wx:for="{{skeletonPublicEventList}}" wx:key="*this">
             <view class="skeleton-block skeleton-radius-sm skeleton-exam-name"></view>
             <view class="skeleton-block skeleton-radius-sm skeleton-exam-date"></view>
             <view class="skeleton-block skeleton-radius-sm skeleton-exam-countdown"></view>
@@ -56,34 +56,58 @@
         </view>
         <view class="search-box g-search-box" bindtap="toSearch" hover-class="search-box--hover">
           <view class="search-box__icon-wrap">
-            <image class="search-box__icon" src="/images/icons/search.svg" mode="aspectFit" />
+            <ui-icon name="search" size="sm" />
           </view>
           <text class="search-box__placeholder g-search-box__placeholder">搜索动态、资料或活动</text>
         </view>
       </view>
-      <!-- 考试卡片 -->
-      <view class="exam-section">
+      <!-- 登录用户的个性化公共事项提醒；成功空集合时整个区域隐藏。 -->
+      <view class="exam-section" wx:if="{{homeReminderError || homeReminderList.length}}">
         <view class="section-title">
-          <text>备考看板</text>
-          <text class="more-link" bind:tap="goToExamList">更多考试 ></text>
+          <text>事项提醒</text>
+          <text class="more-link" bind:tap="goToPublicEventList">更多事项 ></text>
         </view>
-        <scroll-view scroll-x class="exam-scroll" enable-flex>
+        <view
+          wx:if="{{homeReminderError}}"
+          class="reminder-status reminder-status--error"
+          bindtap="onRetryHomeReminders"
+          aria-role="button"
+          aria-label="事项提醒加载失败，点击重试"
+        >
+          {{homeReminderLoading ? '正在重新加载…' : '提醒加载失败，点击重试'}}
+        </view>
+        <scroll-view wx:if="{{homeReminderList.length}}" scroll-x class="exam-scroll" enable-flex>
           <view
-            class="exam-card {{exam.color}}"
-            wx:for="{{examList}}"
-            wx:key="id"
-            wx:for-item="exam"
-            data-id="{{exam.id}}"
-            bind:tap="goToExamDetail"
+            class="exam-card reminder-theme--{{reminder.theme}}"
+            wx:for="{{homeReminderList}}"
+            wx:key="publicMatterId"
+            wx:for-item="reminder"
+            data-id="{{reminder.publicMatterId}}"
+            bind:tap="goToPublicEventDetail"
+            hover-class="exam-card--pressed"
+            aria-role="button"
+            aria-label="{{reminder.name}}，{{reminder.nodeName}}，{{reminder.dateTimeAriaLabel}}，{{reminder.countdownAriaLabel}}"
           >
-            <text class="exam-name">{{exam.name}}</text>
-            <view class="exam-date">{{exam.date}}</view>
-            <view class="exam-countdown">
-              还剩
-              <text class="days">{{exam.days}}</text>
-              天
+            <view class="exam-card__top">
+              <text class="exam-name">{{reminder.name}}</text>
             </view>
-            <image class="card-bg-icon" src="{{exam.icon}}" mode="aspectFit" />
+            <view class="exam-node-pill">{{reminder.nodeName}}</view>
+            <view class="exam-card__bottom">
+              <view class="exam-countdown" aria-role="text" aria-label="{{reminder.countdownAriaLabel}}">
+                <block wx:if="{{reminder.countdownSoon}}">
+                  <text class="exam-countdown__soon">{{reminder.countdownValue}}</text>
+                </block>
+                <block wx:else>
+                  <text class="exam-countdown__prefix">还剩</text>
+                  <text class="exam-countdown__value">{{reminder.countdownValue}}</text>
+                  <text class="exam-countdown__unit">{{reminder.countdownUnit}}</text>
+                </block>
+              </view>
+              <view class="exam-schedule" aria-label="{{reminder.dateTimeAriaLabel}}">
+                <text class="exam-schedule__date">{{reminder.dateText}}</text>
+                <text class="exam-schedule__time">{{reminder.timeText}}</text>
+              </view>
+            </view>
           </view>
         </scroll-view>
       </view>
@@ -91,15 +115,15 @@
       <view class="quick-nav">
         <view class="nav-item" bindtap="goToActivityList">
           <view class="nav-icon act">
-            <image src="/images/icons/activity.svg" mode="aspectFit" />
+            <ui-icon name="calendar-event" size="xl" />
           </view>
           <text>校园活动</text>
         </view>
-        <view class="nav-item" bindtap="goToExamList">
+        <view class="nav-item" bindtap="goToPublicEventList">
           <view class="nav-icon exam">
-            <image src="/images/icons/exam.svg" mode="aspectFit" />
+            <ui-icon name="checklist" size="xl" />
           </view>
-          <text>考试资讯</text>
+          <text>公共事项</text>
         </view>
       </view>
     </view>
@@ -145,7 +169,10 @@
     <view class="activity-section" wx:if="{{index === 2}}">
       <view class="section-header">
         <text class="section-title-text">🎉 校园热门活动</text>
-        <text class="section-more">查看全部 ›</text>
+        <view class="section-more">
+          <text>查看全部</text>
+          <ui-icon name="chevron-right" size="sm" />
+        </view>
       </view>
       <scroll-view
         scroll-x

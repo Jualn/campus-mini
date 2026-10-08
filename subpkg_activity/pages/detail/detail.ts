@@ -6,7 +6,6 @@ import {
   wxPageScrollTo,
   wxPreviewImage,
   wxSetClipboardData,
-  wxShowActionSheet,
   wxShowModal,
 } from '../../../utils/wx-promise';
 import { createLogger } from '../../../utils/logger';
@@ -15,8 +14,9 @@ import { drawActivityPoster } from '../../utils/activityPoster';
 import * as activityAction from '../../actions/activity';
 import { useAsyncLoad } from '../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
-import { showInfoToast, showSuccessToast } from '../../../utils/notify';
+import { showErrorToast, showInfoToast, showSuccessToast } from '../../../utils/notify';
 import { navigateBackOrHome } from '../../utils/navigation';
+import { resolveDetailPrimaryAction, type DetailPrimaryAction } from './detail-actions';
 
 const log = createLogger('ActivityDetailPage');
 const DOCUMENT_TYPES = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'] as const;
@@ -26,172 +26,6 @@ function isDocumentType(type: string): type is (typeof DOCUMENT_TYPES)[number] {
   return DOCUMENT_TYPES.some((item) => item === type);
 }
 
-// ============================================================
-// § 1  基础子类型
-// ============================================================
-
-export interface Contact {
-  name: string;
-  role: string;
-  phone: string;
-  qq: string;
-  email: string;
-  note: string;
-}
-
-export interface Attachment {
-  /** 文件类型，如 'pdf' | 'doc' | 'image' 等 */
-  type: string;
-  name: string;
-  url: string;
-  note: string;
-}
-
-export interface Reward {
-  level: string;
-  /** 获奖名额，为 null 时表示若干名 */
-  count: number | null;
-  prize: string;
-  note: string;
-}
-
-// ============================================================
-// § 2  参与方式（联合类型，按 type 判别）
-// ============================================================
-
-interface JoinMethodBase {
-  label: string;
-  note: string;
-}
-
-export interface JoinMethodQQ extends JoinMethodBase {
-  type: 'qq';
-  group_id: string;
-}
-
-export interface JoinMethodEmail extends JoinMethodBase {
-  type: 'email';
-  email: string;
-}
-
-export interface JoinMethodQRCode extends JoinMethodBase {
-  type: 'qrcode';
-  image_url: string;
-}
-
-export interface JoinMethodWeChat extends JoinMethodBase {
-  type: 'wechat';
-  account: string;
-}
-
-export interface JoinMethodLink extends JoinMethodBase {
-  type: 'link';
-  url: string;
-}
-
-export type JoinMethod =
-  | JoinMethodQQ
-  | JoinMethodEmail
-  | JoinMethodQRCode
-  | JoinMethodWeChat
-  | JoinMethodLink;
-
-// ============================================================
-// § 3  时间轴
-// ============================================================
-
-/** 后端原始时间轴节点 */
-export interface TimelineItem {
-  label: string;
-  /** YYYY-MM-DD，可为空字符串（日期待定） */
-  date: string;
-  time: string;
-  source: string;
-  note: string;
-}
-
-/** injectTimelineStatus 处理后注入的状态字段 */
-export type TimelineStatus = 'done' | 'active' | 'pending';
-
-/** 页面渲染用时间轴节点 */
-export interface TimelineItemWithStatus extends TimelineItem {
-  status: TimelineStatus;
-}
-
-// ============================================================
-// § 4  后端原始活动数据（对接接口时按实际返回完善）
-// ============================================================
-
-export interface ActivityRaw {
-  id: string;
-  title: string;
-  cover: string;
-  /** 活动类型，如 '打卡' | '竞赛' | '志愿' 等 */
-  type: string;
-  /** 参与范围 */
-  scope: string;
-  organizer: string;
-  co_organizer: string;
-  summary: string;
-  description: string;
-  /** 报名开始时间，可为空字符串 */
-  enroll_start: string;
-  /** 报名截止时间，格式 'YYYY-MM-DD HH:mm'，可为空字符串 */
-  enroll_deadline: string;
-  /** 活动开始时间，格式 'YYYY-MM-DD' 或 'YYYY-MM-DD HH:mm' */
-  start_time: string;
-  /** 活动结束时间 */
-  end_time: string;
-  location: string;
-  /** 人数上限，null 表示不限 */
-  max_participants: number | null;
-  timeline: TimelineItem[];
-  rewards: Reward[];
-  join_methods: JoinMethod[];
-  contacts: Contact[];
-  attachments: Attachment[];
-  series_id: string;
-  series_name: string;
-  /** 文件来源，如 '信团发〔2026〕7号' */
-  source: string;
-  published_at: string;
-  published_by: string;
-  is_cancelled: boolean;
-}
-
-// ============================================================
-// § 5  前端视图模型（ActivityRaw + 本地计算字段）
-// ============================================================
-
-export interface ActivityViewModel extends ActivityRaw {
-  /** 当前活动状态码，由 calcActivityStatus 计算 */
-  status: string;
-  /** 状态展示文本，由 STATUS_LABEL 映射 */
-  statusLabel: string;
-  /**  距报名截止剩余天数，无截止时间时为 null */
-  daysToDeadline: number | null;
-  /** 已注入状态的时间轴（覆盖父类原始类型） */
-  timeline: TimelineItemWithStatus[];
-  /** 类型色标，由 TYPE_MAP 映射 */
-  typeColor: string;
-  /** 类型图标 emoji */
-  typeIcon: string;
-  /** 格式化后的简短开始日期，用于卡片展示 */
-  startDateShort: string;
-}
-
-// ============================================================
-// § 6  接口响应结构（对接时按后端实际格式调整）
-// ============================================================
-
-export interface ActivityDetailResponse {
-  data: ActivityRaw;
-}
-
-// ============================================================
-// § 9  Page 实现
-// ============================================================
-
 definePage({
   behaviors: [useAsyncLoad(), useSharePoster()],
 
@@ -199,6 +33,8 @@ definePage({
   _currentScrollTop: 0,
   _openingAttachment: false,
   _unloaded: false,
+  _loadVersion: 0,
+  _registrationPageOpened: false,
 
   data: {
     statusBarHeight: 20,
@@ -208,6 +44,34 @@ definePage({
     lockScrollTop: 0,
     currentActivityId: '',
     skeletonSections: [1, 2, 3],
+    subscriptionBusy: false,
+    registrationStatus: '',
+    primaryAction: null as DetailPrimaryAction | null,
+  },
+
+  onRegistration() {
+    this._registrationPageOpened = true;
+    wx.navigateTo({
+      url: `/subpkg_activity/pages/registration/registration?activityId=${encodeURIComponent(this.data.currentActivityId)}`,
+      fail: () => {
+        this._registrationPageOpened = false;
+        showInfoToast('报名页面暂时无法打开，请重试');
+      },
+    });
+  },
+
+  onPrimaryAction() {
+    const primaryAction = this.data.primaryAction;
+    if (!primaryAction || primaryAction.disabled) return;
+    if (primaryAction.kind === 'registration') {
+      this.onRegistration();
+      return;
+    }
+    if (primaryAction.kind === 'external-actions') {
+      void this.onScrollToExternalActions();
+      return;
+    }
+    void this.onScrollToJoin();
   },
 
   // ── 空操作占位（供 wxml 绑定用） ──────────────────────────
@@ -246,8 +110,15 @@ definePage({
     this._loadActivity(options.activityId);
   },
 
+  onShow() {
+    if (!this._registrationPageOpened) return;
+    this._registrationPageOpened = false;
+    this._loadActivity(this.data.currentActivityId, { preserveError: true });
+  },
+
   onUnload() {
     this._unloaded = true;
+    this._loadVersion += 1;
     if (this._openingAttachment) void wx.hideLoading();
   },
 
@@ -275,25 +146,35 @@ definePage({
       return;
     }
 
+    const version = ++this._loadVersion;
     this._asyncLoadBegin(options);
 
     activityAction
-      .getActivityDetail(id)
-      .then((res) => {
+      .getActivityDetailState(id)
+      .then(({ activity, registrationStatus }) => {
+        if (this._unloaded || version !== this._loadVersion) return;
         this.setData(
           {
-            activity: res,
-            currentSharePath: `/subpkg_activity/pages/detail/detail?activityId=${res.id}&from=share`,
+            activity,
+            registrationStatus,
+            primaryAction: resolveDetailPrimaryAction(
+              activity.registrationMode,
+              activity.availability,
+              registrationStatus,
+            ),
+            currentSharePath: `/subpkg_activity/pages/detail/detail?activityId=${activity.id}&from=share`,
           },
           () => {
+            if (this._unloaded || version !== this._loadVersion) return;
             this._asyncLoadSuccess();
-            void wx.setNavigationBarTitle({ title: res.title });
+            void wx.setNavigationBarTitle({ title: activity.title });
             this._prepareActivityShare();
           },
         );
       })
       .catch((err: unknown) => {
-        this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
+        if (this._unloaded || version !== this._loadVersion) return;
+        this._asyncLoadFail('活动暂时无法查看，可能已下架或请求失败，请稍后重试');
         log.error('_loadActivity', '加载活动失败', err);
       });
   },
@@ -307,6 +188,7 @@ definePage({
       time: activity.start_time,
       location: activity.location,
       maxPeople: activity.max_participants,
+      capacityText: activity.capacityText === '未提供' ? '' : activity.capacityText,
       cover: activity.cover ?? '',
     };
 
@@ -318,6 +200,23 @@ definePage({
   },
 
   // ── 用户操作 ──────────────────────────────────────────────
+  async onToggleSubscription() {
+    if (this.data.subscriptionBusy || !this.data.activity.id) return;
+    const id = this.data.activity.id;
+    const desired = !this.data.activity.subscribed;
+    this.setData({ subscriptionBusy: true });
+    try {
+      const subscribed = await activityAction.setActivitySubscription(id, desired);
+      if (this._unloaded || this.data.activity.id !== id) return;
+      this.setData({ 'activity.subscribed': subscribed });
+      showSuccessToast(subscribed ? '已订阅活动' : '已取消订阅');
+    } catch (err) {
+      if (!this._unloaded) showErrorToast(err, { fallback: '订阅操作未完成，请重试' });
+    } finally {
+      if (!this._unloaded) this.setData({ subscriptionBusy: false });
+    }
+  },
+
   onRetryDetail() {
     this._loadActivity(this.data.currentActivityId, { preserveError: true });
   },
@@ -423,8 +322,17 @@ definePage({
     try {
       await wxPageScrollTo({ selector: '#join-section', duration: 300 });
     } catch (err) {
-      log.warn('onScrollToJoin', '定位报名方式失败', err);
-      showInfoToast('请向下滑动查看报名方式');
+      log.warn('onScrollToJoin', '定位参与入口失败', err);
+      showInfoToast('请向下滑动查看参与方式');
+    }
+  },
+
+  async onScrollToExternalActions() {
+    try {
+      await wxPageScrollTo({ selector: '#external-actions', duration: 300 });
+    } catch (err) {
+      log.warn('onScrollToExternalActions', '定位后续参与步骤失败', err);
+      await this.onScrollToJoin();
     }
   },
 
@@ -440,26 +348,12 @@ definePage({
     this._closePopup(true);
   },
 
-  onEnroll() {
-    showSuccessToast('报名成功');
-  },
-
   onShare() {
     if (!this.data.activity.id) return;
     this._prepareActivityShare();
     this._openPopup({
       popupType: 'share',
     });
-  },
-
-  async onMore() {
-    const res = await wxShowActionSheet({
-      itemList: ['举报', '不感兴趣'],
-    });
-
-    if (res.tapIndex === 0) {
-      showInfoToast('举报已提交');
-    }
   },
 
   onBack() {

@@ -7,10 +7,10 @@
  * 2. 下半部分：页面 / 弹窗可直接调用的 service 方法
  *
  * 对接接口由 api.notify 统一封装：
- * - GET /v1/notify/me
- * - GET /v1/notify/me/unread-count
- * - PUT /v1/notify/{id}/read
- * - PUT /v1/notify/me/read-all
+ * - GET /v1/users/me/notifications
+ * - GET /v1/users/me/notifications/unread-count
+ * - PUT /v1/users/me/notifications/{notificationId}/read-state
+ * - POST /v1/users/me/notifications:mark-all-read
  */
 
 import { api } from './api';
@@ -19,10 +19,11 @@ import { TARGET_TYPES } from '../utils/constants';
 import {
   ROUTES,
   buildActivityDetailRoute,
-  buildExamDetailRoute,
+  buildPublicEventDetailRoute,
   buildPostDetailRoute,
+  buildUserProfileRoute,
 } from '../utils/routes';
-import type { NotificationPageQuery, NotificationVO } from '../types/api';
+import type { InboxNotification, NotificationPageQuery } from '../types/api';
 import type {
   FilterTab,
   MessageFeedData,
@@ -81,8 +82,8 @@ export interface MessagePageCopy {
 }
 
 interface MessageFeedServiceData extends MessageFeedData {
-  hasMore?: boolean;
-  nextCursor?: string | number | null;
+  hasMore: boolean;
+  nextCursor?: string;
   pageCopy: MessagePageCopy;
 }
 
@@ -161,6 +162,12 @@ const NOTIFY_TYPE_TO_MESSAGE_TYPE: Partial<Record<string, MessageType>> = {
   ACTIVITY: 'activity',
   ACTIVITY_REMIND: 'activity',
   ACTIVITY_NOTICE: 'activity',
+  ACTIVITY_START_REMINDER: 'activity',
+  ACTIVITY_REGISTRATION_DEADLINE_REMINDER: 'activity',
+  ACTIVITY_CANCELLED: 'activity',
+  ACTIVITY_TIME_CHANGED: 'activity',
+  ACTIVITY_LOCATION_CHANGED: 'activity',
+  ACTIVITY_ENDED_EARLY: 'activity',
 
   // EXAM: 'exam',
   // EXAM_REMIND: 'exam',
@@ -168,6 +175,11 @@ const NOTIFY_TYPE_TO_MESSAGE_TYPE: Partial<Record<string, MessageType>> = {
   EXAM: 'exam',
   EXAM_REMIND: 'exam',
   EXAM_NOTICE: 'exam',
+  PUBLIC_EVENT_START_REMINDER: 'exam',
+  PUBLIC_EVENT_REGISTRATION_DEADLINE_REMINDER: 'exam',
+  PUBLIC_EVENT_CANCELLED: 'exam',
+  PUBLIC_EVENT_TIME_CHANGED: 'exam',
+  PUBLIC_EVENT_LOCATION_CHANGED: 'exam',
 
   INTERACTION: 'interaction',
   COMMENTED_ME: 'interaction',
@@ -184,6 +196,10 @@ const NOTIFY_TYPE_TO_MESSAGE_TYPE: Partial<Record<string, MessageType>> = {
   '5': 'exam',
   '6': 'system',
   '7': 'system',
+  '8': 'activity',
+  '9': 'activity',
+  '10': 'exam',
+  '11': 'exam',
 };
 
 const NOTIFY_TYPE_OVERRIDES: Partial<Record<string, Partial<TypeConfig>>> = {
@@ -243,11 +259,11 @@ const FILTER_TABS: FilterTab[] = [
     icon: '/assets/icons/common/activity.svg',
     label: '活动',
   },
-  // {
-  //   id: 'exam',
-  //   icon: '/assets/icons/common/exam.svg',
-  //   label: '考试',
-  // },
+  {
+    id: 'exam',
+    icon: '/assets/icons/common/exam.svg',
+    label: '公共事项',
+  },
   {
     id: 'interaction',
     icon: '/assets/icons/common/interaction.svg',
@@ -294,6 +310,7 @@ const normalizeTargetType = (value?: string | number | null): string => {
     case 'ACTIVITY':
       return 'activity';
     case 'EXAM':
+    case 'PUBLIC_EVENT':
       return 'exam';
     case 'COMMENT':
       return 'comment';
@@ -323,8 +340,9 @@ export const resolveNotificationRoute = (
 
   const routes: Record<string, string> = {
     activity: buildActivityDetailRoute(id),
-    exam: buildExamDetailRoute(id),
+    exam: buildPublicEventDetailRoute(id),
     post: buildPostDetailRoute(id),
+    user: buildUserProfileRoute(id),
   };
 
   const url = routes[normalizedType];
@@ -346,22 +364,22 @@ const compareMessageCreatedDesc = (a: MessageItem, b: MessageItem) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* 3. 后端 NotificationVO -> 前端 MessageItem                                  */
+/* 3. Canonical InboxNotification -> 前端 MessageItem                                */
 /* -------------------------------------------------------------------------- */
 
-const mapNotificationToMessage = (item: NotificationVO): MessageItem => {
+const mapNotificationToMessage = (item: InboxNotification): MessageItem => {
   const type = resolveMessageType(item.type);
   const config = resolveTypeConfig(type, item.type);
   const title = safeText(item.title) || config.typeLabel;
   const content = safeText(item.content);
   const displayContent = content || title;
   const createdAt = item.createdAt;
-  const targetType = normalizeTargetType(item.targetType);
-  const targetId = safeText(item.targetId);
+  const targetType = normalizeTargetType(item.target?.type);
+  const targetId = safeText(item.target?.resourceId);
   const timeAgo = formatTime(createdAt, TimeStyle.POST);
 
   return {
-    id: item.id,
+    id: item.notificationId,
     type,
     icon: config.icon,
     title,
@@ -380,7 +398,7 @@ const mapNotificationToMessage = (item: NotificationVO): MessageItem => {
   };
 };
 
-const mapNotificationListToMessages = (list: NotificationVO[] = []) =>
+const mapNotificationListToMessages = (list: InboxNotification[] = []) =>
   list.map(mapNotificationToMessage).sort(compareMessageCreatedDesc);
 
 /* -------------------------------------------------------------------------- */
@@ -579,8 +597,8 @@ const toAggregateBannerMessage = (
  * 适合 App 轮询、消息页刷新、后续 tabBar badge 使用。
  */
 export const getUnreadCount = async (): Promise<number> => {
-  const count = await api.notify.getUnreadCount();
-  return count || 0;
+  const result = await api.notify.getUnreadCount();
+  return Number.isFinite(result.unreadCount) ? result.unreadCount : 0;
 };
 
 /**
@@ -589,19 +607,19 @@ export const getUnreadCount = async (): Promise<number> => {
  */
 export const getUnreadMessages = async (
   options: NotificationPageQuery = {},
-): Promise<ServiceCursorPage<NotificationVO>> => {
-  const { pageSize = DEFAULT_PAGE_SIZE, lastId, type, isRead = 0 } = options;
+): Promise<ServiceCursorPage<InboxNotification>> => {
+  const { pageSize = DEFAULT_PAGE_SIZE, cursor, category, isRead = false } = options;
 
   const page = await api.notify.getMyList({
-    lastId,
+    cursor,
     pageSize,
-    type,
+    category,
     isRead,
   });
 
   return {
-    list: page.list,
-    hasMore: page.hasMore,
+    list: page.items,
+    hasMore: Boolean(page.nextCursor),
     nextCursor: page.nextCursor,
   };
 };
@@ -615,18 +633,16 @@ export const getMessageFeedData = async (
 ): Promise<MessageFeedServiceData> => {
   const [page, unreadCount] = await Promise.all([api.notify.getMyList(options), getUnreadCount()]);
 
-  const allMessages = mapNotificationListToMessages(page.list);
-  const computedUnread = allMessages.filter((item) => !item.isRead).length;
-  const totalUnread = unreadCount > 0 ? unreadCount : computedUnread;
+  const allMessages = mapNotificationListToMessages(page.items);
   const sections = buildMessageSections(allMessages);
 
   return {
     allMessages,
     ...sections,
-    unreadCount: totalUnread,
+    unreadCount,
     totalCount: allMessages.length,
     filterTabs: getFilterTabs(allMessages),
-    hasMore: page.hasMore,
+    hasMore: Boolean(page.nextCursor),
     nextCursor: page.nextCursor,
     pageCopy: MESSAGE_PAGE_COPY,
   };
@@ -651,7 +667,7 @@ export const getUnreadBannerMessages = async (
 
   const page = await getUnreadMessages({
     pageSize: Math.min(pageSize, unreadCount),
-    isRead: 0,
+    isRead: false,
   });
 
   let messages = mapNotificationListToMessages(page.list).filter((item) => !item.isRead);

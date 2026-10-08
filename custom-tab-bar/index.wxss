@@ -78,7 +78,7 @@
 }
 
 .tab-item--active .tab-icon {
-  transform: translateY(-6rpx) scale(1.12);
+  transform: none;
 }
 
 /* ===================== 徽标 ===================== */

@@ -6,6 +6,8 @@
     "comment-panel": "/components/comment-panel/index",
     "share-panel": "/components/share-panel/index",
     "report-panel": "/components/report-panel/index",
-    "load-state": "/components/load-state/index"
+    "load-state": "/components/load-state/index",
+    "ui-icon": "/components/ui-icon/index",
+    "operator-badge": "/components/operator-badge/index"
   }
 }

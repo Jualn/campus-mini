@@ -3,8 +3,8 @@
   <!-- 顶部导航 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav">
-      <view class="top-bar__back" bindtap="onBack">
-        <text class="top-bar__back-icon">‹</text>
+      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
+        <ui-icon name="chevron-left" size="lg" />
       </view>
       <text class="top-bar__title">动态</text>
       <!-- 右侧只保留等宽占位，让标题居中；更多按钮已移到帖子作者行，避免被系统胶囊遮挡 -->
@@ -23,7 +23,7 @@
             <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__time" />
           </view>
           <view class="post-more post-detail-skeleton__muted">
-            <image class="post-more__icon" src="/assets/icons/common/more.svg" mode="aspectFit" />
+            <view class="post-more__icon icon-slot"><ui-icon name="more" size="md" /></view>
           </view>
         </view>
         <view class="post-text post-detail-skeleton__text">
@@ -42,15 +42,15 @@
         </view>
         <view class="post-actions post-detail-skeleton__muted">
           <view class="action-item">
-            <image class="action-icon" src="/images/interact/like.svg" />
+            <view class="action-icon icon-slot"><ui-icon name="like" size="xl" /></view>
             <text class="action-count">点赞</text>
           </view>
           <view class="action-item">
-            <image class="action-icon" src="/images/interact/comment.svg" />
+            <view class="action-icon icon-slot"><ui-icon name="comment" size="xl" /></view>
             <text class="action-count">评论</text>
           </view>
           <view class="action-item">
-            <image class="action-icon" src="/images/interact/share.svg" />
+            <view class="action-icon icon-slot"><ui-icon name="share" size="xl" /></view>
             <text class="action-count">分享</text>
           </view>
         </view>
@@ -94,9 +94,7 @@
         <view class="author-info">
           <view class="author-name-row">
             <text class="author-name">{{post.nickname}}</text>
-            <view class="author-badge" wx:if="{{post.verified}}">
-              <text class="author-badge__text">✓</text>
-            </view>
+            <operator-badge wx:if="{{post.isPlatformOperator === true}}" />
           </view>
           <view class="author-meta">
             <!-- <text class="author-handle" wx:if="{{post.handle}}">@{{post.handle}}</text> -->
@@ -106,8 +104,8 @@
             <!-- <text class="author-ip" wx:if="{{post.ipLocation}}">{{post.ipLocation}}</text> -->
           </view>
         </view>
-        <view class="post-more" catchtap="onMore">
-          <image class="post-more__icon" src="/assets/icons/common/more.svg" mode="aspectFit" />
+        <view class="post-more" catchtap="onMore" aria-role="button" aria-label="更多帖子操作">
+          <view class="post-more__icon icon-slot"><ui-icon name="more" size="md" /></view>
         </view>
         <!-- 关注按钮（非本人） -->
         <!-- <view wx:if="{{!post.isSelf}}" class="follow-btn {{post.isFollowing?'follow-btn--on':''}}"
@@ -138,19 +136,16 @@
 
       <!-- 操作栏 -->
       <view class="post-actions">
-        <view class="action-item" catchtap="onLike">
-          <view class="action-icon {{post.isLiked ? 'liked' : ''}}">
-            <image class="icon like-off" src="/images/interact/like.svg" />
-            <image class="icon like-on" src="/images/interact/like-fill.svg" />
-          </view>
+        <view class="action-item" catchtap="onLike" aria-role="button" aria-label="{{post.isLiked ? '取消点赞' : '点赞'}}">
+          <view class="action-icon icon-slot {{ post.isLiked ? 'liked' : '' }}"><ui-icon name="like" state="{{ post.isLiked ? 'active' : 'default' }}" size="xl" /></view>
           <text class="action-count {{post.isLiked?'action-label--liked':''}}">{{post.likeCount || '点赞'}} </text>
         </view>
-        <view class="action-item" catchtap="onComment">
-          <image class="action-icon" src="/images/interact/comment.svg" />
+        <view class="action-item" catchtap="onComment" aria-role="button" aria-label="评论">
+          <view class="action-icon icon-slot"><ui-icon name="comment" size="xl" /></view>
           <text class="action-count">{{post.commentCount || '评论'}}</text>
         </view>
-        <view class="action-item" catchtap="onShare">
-          <image class="action-icon" src="/images/interact/share.svg" />
+        <view class="action-item" catchtap="onShare" aria-role="button" aria-label="分享">
+          <view class="action-icon icon-slot"><ui-icon name="share" size="xl" /></view>
           <text class="action-count">分享</text>
         </view>
       </view>

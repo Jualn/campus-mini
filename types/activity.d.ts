@@ -5,9 +5,14 @@ export type ActivityUiStatus =
   | 'ended' // 已结束
   | 'cancelled';
 
-export type TimelineNodeStatus = 'done' | 'active' | 'pending';
+export type TimelineNodeStatus = 'done' | 'active' | 'pending' | 'unknown';
 
 export interface TimelineNode {
+  key?: string;
+  endText?: string;
+  scheduleKind?: 'EXACT_POINT' | 'EXACT_RANGE' | 'DATE_POINT' | 'DATE_RANGE' | 'TEXT';
+  scheduleKindLabel?: string;
+  scheduleText?: string;
   label: string;
   /** YYYY-MM-DD */
   date: string;

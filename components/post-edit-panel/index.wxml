@@ -57,12 +57,12 @@
         <view class="image-grid">
           <view wx:for="{{images}}" wx:key="*this" class="image-item">
             <image class="image-item__img" src="{{item}}" mode="aspectFill" />
-            <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}">
-              <text class="image-item__del-icon">✕</text>
+            <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}" aria-role="button" aria-label="移除图片">
+              <ui-icon name="remove" state="inverse" size="sm" />
             </view>
           </view>
-          <view class="image-item image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}">
-            <text class="image-add__icon">＋</text>
+          <view class="image-item image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}" aria-role="button" aria-label="添加图片">
+            <ui-icon class="image-add__icon" name="plus" size="lg" />
             <text class="image-add__hint">{{images.length === 0 ? '添加图片' : images.length + '/9'}}</text>
           </view>
         </view>

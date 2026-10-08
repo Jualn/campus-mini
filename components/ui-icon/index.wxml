@@ -1,0 +1,1 @@
+<image wx:if="{{src}}" class="ui-icon ui-icon--{{resolvedSize}}" src="{{src}}" mode="aspectFit" aria-hidden="true" />

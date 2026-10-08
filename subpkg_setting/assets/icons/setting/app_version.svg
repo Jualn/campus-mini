@@ -1,1 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style>.cls-1{fill:#dbe9ff;}.cls-2{fill:#1876ff;}.cls-3{fill:#fc6b79;}.cls-4{fill:#fff;}.cls-5{fill:#ffe08a;}.cls-6{fill:none;stroke:#144a8a;stroke-linecap:round;stroke-miterlimit:10;stroke-width:.65px;}</style></defs><g id="图层_1" data-name="图层 1"><g id="当前版本"><circle class="cls-1" cx="12" cy="12" r="8.6"/><path class="cls-2" d="M13.09,5.53c2.55.92,3.76,3.42,3.4,6.16l-3.12,3.12-4.13-4.13Z"/><path class="cls-4" d="M13.53,6.96a5.08,5.08,0,0,1,1.53,1.54L13.2,10.36,11.66,8.82Z"/><path class="cls-3" d="M8.86,10.53l-2.2.51a.5.5,0,0,0-.33.74l1.14,1.94Z"/><path class="cls-3" d="M13.48,15.15l-.51,2.2a.5.5,0,0,0,.74.33l1.94-1.14Z"/><path class="cls-5" d="M8.45,14.76l.79,2.07,2.07.79a.23.23,0,0,0,.29-.29l-.78-2.08-2.08-.78A.23.23,0,0,0,8.45,14.76Z"/><path class="cls-6" d="M13.09,5.53c2.55.92,3.76,3.42,3.4,6.16l-3.12,3.12-4.13-4.13Z"/><path class="cls-6" d="M7.12,17.41a3.33,3.33,0,0,0-1.55,1.06"/><path class="cls-6" d="M9.15,18.32a3.8,3.8,0,0,0-1.28,1.52"/></g></g></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#52657d"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+  <path d="M12 9h.01" />
+  <path d="M11 12h1v4h1" />
+</svg>

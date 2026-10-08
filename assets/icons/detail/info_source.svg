@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style>.a{fill:#98bdfe}.b{fill:#1876ff}.c{fill:#fff}.d{fill:#ffe08a}</style></defs><circle class="a" cx="12" cy="12" r="8.5"/><circle class="b" cx="12" cy="12" r="6.5"/><circle class="d" cx="12" cy="8" r="1.2"/><rect class="c" x="10.9" y="10.3" width="2.2" height="6.5" rx="1.1"/></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#52657d"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M3 21l18 0" />
+  <path d="M3 10l18 0" />
+  <path d="M5 6l7 -3l7 3" />
+  <path d="M4 10l0 11" />
+  <path d="M20 10l0 11" />
+  <path d="M8 14l0 3" />
+  <path d="M12 14l0 3" />
+  <path d="M16 14l0 3" />
+</svg>

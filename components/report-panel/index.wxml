@@ -24,8 +24,8 @@
       </view>
 
       <view class="rp-close tap-active" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
-          catch:touchend="{{drag.handleClose}}" catchtouchmove="noop">
-        <text class="rp-close__icon">✕</text>
+          catch:touchend="{{drag.handleClose}}" catchtouchmove="noop" aria-role="button" aria-label="关闭举报">
+        <ui-icon name="close" size="sm" />
       </view>
     </view>
 

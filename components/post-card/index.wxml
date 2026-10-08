@@ -10,10 +10,11 @@
     <view class="post-top-row">
       <view class="post-user">
         <text class="post-nickname">{{post.nickname}}</text>
+        <operator-badge wx:if="{{post.isPlatformOperator === true}}" />
         <text class="post-time">· {{post.createdAt}}</text>
       </view>
-      <view class="post-more" catchtap="onMoreTap" >
-        <image class="more-dot" src="/assets/icons/common/more.svg" mode="aspectFit"/>
+      <view class="post-more" catchtap="onMoreTap" aria-role="button" aria-label="更多帖子操作">
+        <view class="more-dot icon-slot"><ui-icon name="more" size="md" /></view>
       </view>
     </view>
 
@@ -29,26 +30,25 @@
     <!-- 操作栏 -->
     <view class="post-actions">
       <!-- 评论 -->
-      <view class="action-item" catchtap="onComment">
-        <image class="action-icon" src="/images/interact/comment.svg" mode="aspectFit" />
+      <view class="action-item" catchtap="onComment" aria-role="button" aria-label="评论">
+        <view class="action-icon icon-slot"><ui-icon name="comment" size="lg" /></view>
         <text class="action-count">{{post.commentCount > 0 ? post.commentCount : ''}}</text>
       </view>
       <!-- 点赞 -->
-      <view class="action-item" catchtap="onLike">
-        <view class="action-icon {{liked ? 'liked' : ''}}">
-          <image class="icon like-off" src="/images/interact/like.svg" />
-          <image class="icon like-on" src="/images/interact/like-fill.svg" />
+      <view class="action-item" catchtap="onLike" aria-role="button" aria-label="{{liked ? '取消点赞' : '点赞'}}">
+        <view class="action-icon icon-slot {{ liked ? 'liked' : '' }}">
+          <ui-icon name="like" state="{{ liked ? 'active' : 'default' }}" size="lg" />
         </view>
         <text class="action-count {{liked ? 'action-count--liked' : ''}}">{{likeCount > 0 ? likeCount : ''}}</text>
       </view>
       <!-- 浏览量 -->
       <view class="action-item action-item--view">
-        <image class="action-icon" src="/images/interact/view.svg" mode="aspectFit" />
+        <view class="action-icon icon-slot"><ui-icon name="views" size="lg" /></view>
         <text class="action-count action-count--view">{{viewCountText}}</text>
       </view>
       <!-- 分享 -->
-      <view class="action-item action-item--share" catchtap="onShare">
-        <image class="action-icon" src="/images/interact/share.svg" mode="aspectFit" />
+      <view class="action-item action-item--share" catchtap="onShare" aria-role="button" aria-label="分享">
+        <view class="action-icon icon-slot"><ui-icon name="share" size="lg" /></view>
       </view>
     </view>
 

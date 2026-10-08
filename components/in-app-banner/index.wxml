@@ -22,9 +22,9 @@
     <text class="banner__aggregate-tip" wx:if="{{isAggregate}}">点击进入消息中心查看全部</text>
   </view>
 
-  <view class="banner__close-hit" catchtap="onClose">
+  <view class="banner__close-hit" catchtap="onClose" aria-role="button" aria-label="关闭通知">
     <view class="banner__close">
-      <text class="banner__close-icon">×</text>
+      <ui-icon name="close" size="sm" />
     </view>
   </view>
 

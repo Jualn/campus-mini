@@ -1,6 +1,9 @@
 // 业务实体类型
 
 import type { ActivityUiStatus, Attachment, Contact, TimelineNode } from './activity';
+import type { ParticipationAvailabilityState } from './event-contract';
+import type { UserProfile, UpdateMyProfileRequest } from './profile-contract';
+import type { NotificationTarget } from './notification-contract';
 
 // *********************** Service 层返回类型定义 ***********************
 
@@ -17,6 +20,8 @@ export interface ServiceCursorPage<T> {
 
 // components/comment-panel/index.ts 中使用的类型
 export interface ReplyItem {
+  /** Only confirmed current Profile projections supply this until author Contract exists. */
+  isPlatformOperator?: boolean;
   replyId: string;
   userId: string;
   nickName: string;
@@ -36,6 +41,8 @@ export interface ReplyTarget {
   userId: string;
 }
 export interface CommentItem {
+  /** Only confirmed current Profile projections supply this until author Contract exists. */
+  isPlatformOperator?: boolean;
   commentId: string;
   userId: string;
   nickName: string;
@@ -63,25 +70,12 @@ export interface CommentItem {
 
 // user-profile 组件中使用的 tab 值
 export type UserProfileTab = 'posts' | 'likes';
-export interface UserProfileInfo {
-  /** 目前只用于了me页面使用 */
-  id?: string;
-  bannerUrl?: string;
-  avatarUrl?: string;
-  nickname: string;
-  verified?: boolean;
-  /** TODO 目前只是用于同步最新的role，不然只能通过重新登录来同步, 后续可以通过其他方式，不污染展示数据体 */
-  role?: number;
-  // handle?: string;
-  bio?: string;
-  joinYear?: string;
-  // followingCount?: number;
-  // followerCount?: number;
-  //  likeCount?: number;
-}
+export type UserProfileInfo = UserProfile;
 
 // components/post-card/index.ts 中使用的类型
 export interface PostCardItem {
+  /** Only confirmed current Profile projections supply this until author Contract exists. */
+  isPlatformOperator?: boolean;
   id: string;
   userId: string;
   avatarUrl: string;
@@ -99,6 +93,8 @@ export interface PostCardItem {
 export type BannerRouteMethod = 'navigateTo' | 'switchTab';
 
 export type BannerMessage = Partial<{
+  structured: boolean;
+  semanticTarget: NotificationTarget;
   id: string;
   type: string;
   icon: string;
@@ -136,30 +132,24 @@ export interface Settings {
 export interface EditProfileForm {
   nickname: string;
   bio: string;
-  // handle: string;
-  // school: string;
-  // dept: string;
-  // gender: string;
   avatarUrl: string;
-  bannerUrl: string;
+  backgroundUrl: string;
 }
 
-export type EditProfileUpdate = Partial<EditProfileForm> & {
-  avatarObjectKey?: string;
-  backgroundObjectKey?: string;
-};
+export type EditProfileUpdate = UpdateMyProfileRequest;
 
 // subpkg_user/pages/user/user.ts 中使用的类型
 export interface UserPageData {
   userInfo: UserProfileInfo;
+  postsError?: string;
   posts: PostCardItem[];
   activeTab: string;
   // isFollowing: boolean;
 }
 
-// *********************** subpkg_exam 中使用的类型定义 ***********************
+// *********************** subpkg_public_event 中使用的类型定义 ***********************
 
-// subpkg_exam/pages/detail/detail.ts 中使用的类型
+// subpkg_public_event/pages/detail/detail.ts 中使用的类型
 export interface ExamDetail {
   id: string;
   name: string;
@@ -211,7 +201,7 @@ export interface ExamLinkItem {
   primary?: boolean;
 }
 
-// subpkg_exam/pages/list/list.ts 中使用的类型
+// subpkg_public_event/pages/list/list.ts 中使用的类型
 export interface ExamListPagePayload {
   allExams: ExamListItem[];
   hotExam: HotExam;
@@ -258,8 +248,14 @@ export interface ExamListItem {
 // subpkg_activity/pages/list/list.ts 中使用的类型
 /** 列表页卡片（轻量，只含卡片所需字段） */
 export interface ActivityCard {
+  cardTimelineLabel?: string;
+  cardTimelineText?: string;
+  cardTimelineKind?: 'EXACT_POINT' | 'EXACT_RANGE' | 'DATE_POINT' | 'DATE_RANGE' | 'TEXT';
+  capacityText?: string;
+  deadlineText?: string;
   id: string;
   title: string;
+  summary?: string;
   type: string;
   typeIcon: string;
   typeColor: string;
@@ -282,6 +278,40 @@ export interface ActivityCard {
 // subpkg_activity/pages/detail/detail.ts 中使用的类型
 /** 详情页数据（在 ActivityCard 基础上扩展完整字段） */
 export interface ActivityDetail {
+  subscribed: boolean;
+  canSubscribe?: boolean;
+  registrationMode?: number;
+  availability?: ParticipationAvailabilityState;
+  registrationForm?: {
+    allowModification: boolean;
+    fields: {
+      key: string;
+      label: string;
+      helpText?: string;
+      required: boolean;
+      typeLabel: string;
+    }[];
+  };
+  sections?: { key: string; title: string; content: string }[];
+  actions?: {
+    key: string;
+    actionType: number;
+    typeLabel: string;
+    attachmentUrl: string;
+    label: string;
+    description: string;
+    targetValue: string;
+    attachmentIndex: number;
+    isRequired: boolean;
+  }[];
+  hasParticipation?: boolean;
+  deadlineSummary?: string;
+  registrationLabel?: string;
+  capacityText?: string;
+  platformRegistrationText?: string;
+  timeDescription?: string;
+  audienceSummary?: string;
+
   id: string;
   typeIcon: string;
   typeColor: string;
@@ -321,7 +351,7 @@ export interface PostDetail {
   _avatarChar: string;
   userId: string;
   nickname: string;
-  verified?: boolean;
+  isPlatformOperator?: boolean;
   createdAtText: string;
   // ipLocation?: string;
   // handle?: string;
@@ -405,6 +435,58 @@ export interface IndexExamCardItem {
 // ******************************  me 页面中使用的类型定义 *******************************
 export interface MePageData {
   userInfo: UserProfileInfo;
+  postsError?: string;
   posts: PostCardItem[];
   activeTab: string;
+}
+
+/** 公共事项详情展示模型；旧 ExamDetail 仅保留为历史静态资料类型。 */
+export interface PublicEventDetail {
+  id: string;
+  title: string;
+  summary: string;
+  icon: string;
+  color: string;
+  organizer: string;
+  frequency: string;
+  timeSource: string;
+  sections: { key: string; title: string; content: string }[];
+  info: ExamInfoItem[];
+  timeline: (ExamTimelineItem & {
+    key: string;
+    scheduleKind: 'EXACT_POINT' | 'EXACT_RANGE' | 'DATE_POINT' | 'DATE_RANGE' | 'TEXT';
+    scheduleKindLabel: string;
+    scheduleText: string;
+  })[];
+  subscribed: boolean;
+  canSubscribe: boolean;
+  cover: string;
+  resources: {
+    key: string;
+    label: string;
+    desc: string;
+    url: string;
+    primary: boolean;
+    kind: 'copy' | 'image' | 'document' | 'text';
+    fileType: string;
+  }[];
+}
+
+/** 公共事项列表与首页共用卡片，期次和主时间来自公开接口。 */
+export interface PublicEventCard {
+  id: string;
+  title: string;
+  summary: string;
+  icon: string;
+  color: string;
+  typeLabel: string;
+  typeMark: string;
+  sourceName: string;
+  frequency: string;
+  statusLabel: string;
+  statusTone: 'active' | 'ended' | 'cancelled';
+  nextNodeLabel: string;
+  nextDate: string;
+  scheduleKind: 'EXACT_POINT' | 'EXACT_RANGE' | 'DATE_POINT' | 'DATE_RANGE' | 'TEXT' | '';
+  daysLeft: number | null;
 }

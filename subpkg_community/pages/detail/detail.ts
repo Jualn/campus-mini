@@ -295,7 +295,7 @@ definePage({
     const userId = e.currentTarget.dataset.id as string;
 
     void wxNavigateTo({
-      url: `/subpkg_user/pages/user/user?userId=${userId}`,
+      url: `/subpkg_user/pages/user/user?userId=${encodeURIComponent(userId)}`,
     });
   },
 

@@ -33,21 +33,16 @@ page {
 .top-bar__back {
   width: 64rpx;
   height: 64rpx;
-  border-radius: 20rpx;
-  background: #ffffff;
+  border-radius: 50%;
+  background: #f3f6fa;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   flex-shrink: 0;
+  border: none;
 }
 
-.top-bar__back-icon {
-  font-size: 44rpx;
-  color: var(--color-text-primary);
-  line-height: 1;
-  margin-top: -12rpx;
-}
 
 .top-bar__title {
   position: absolute;
@@ -88,14 +83,6 @@ page {
   flex-shrink: 0;
 }
 
-.search-bar__icon {
-  width: 28rpx;
-  height: 28rpx;
-  display: block;
-  opacity: 0.86;
-  flex-shrink: 0;
-}
-
 .search-bar__input {
   flex: 1;
   height: 72rpx;
@@ -116,16 +103,6 @@ page {
   justify-content: center;
 }
 
-.search-bar__clear-icon {
-  width: 40rpx;
-  height: 40rpx;
-  line-height: 40rpx;
-  text-align: center;
-  border-radius: 50%;
-  background: var(--color-bg-input);
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
-}
 
 /* =====================================================
    筛选栏

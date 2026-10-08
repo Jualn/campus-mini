@@ -8,7 +8,6 @@ import type {
   ActivityCategory,
   ActivityStatus,
   MediaType,
-  NotifyType,
   ReportReason,
   TargetType,
 } from '../utils/constants';
@@ -133,18 +132,19 @@ export interface LoginVO {
   userInfo: UserInfoDTO; // UserInfoDTO
 }
 
-/** 管理端二维码登录确认结果 */
-export interface AdminQrConfirmationVO {
-  confirmed: boolean;
-  displayName: string;
-}
-
 // ============================================================
 // 活动相关类型
 // ============================================================
 
 /** 活动创建请求 */
 export interface ActivityCreateRequest {
+  startPrecision?: number;
+  endPrecision?: number;
+  registrationEndPrecision?: number;
+  registrationEnd?: string | null;
+  timeDescription?: string;
+  sections?: EventSectionRequest[];
+  actions?: EventActionRequest[];
   title: string; // string
   content: string; // string
   location: string; // string
@@ -154,10 +154,10 @@ export interface ActivityCreateRequest {
   contactInfo: string; // string
   joinMethod: string; // string
   qrcodeUrl: string; // string
-  startTime: string; // string(date-time)
-  endTime: string; // string(date-time)
-  enrollDeadline: string; // string(date-time)
-  maxParticipants: number; // integer(int32)
+  startTime: string | null; // string(date-time)
+  endTime: string | null; // string(date-time)
+  enrollDeadline: string | null; // string(date-time)
+  maxParticipants: number | null; // integer(int32)
   attachmentItems: AttachmentItemRequest[]; // array
   timelineItems: TimelineItemRequest[]; // array
 }
@@ -182,8 +182,35 @@ export interface ActivityUpdateRequest {
   timelineItems: unknown[]; // array
 }
 
+/** V5 information fields; optional during compatible server rollout. */
+export interface EventInformationFields {
+  registrationEnd?: string | null;
+  registrationStart?: string | null;
+  registrationStartPrecision?: number;
+  startPrecision?: number;
+  endPrecision?: number;
+  registrationEndPrecision?: number;
+  timeDescription?: string | null;
+  registrationMode?: number;
+  registrationStatus?: string;
+  activityPhase?: string;
+  capacity?: number | null;
+  capacityUnit?: number | null;
+  coverAttachmentId?: string | null;
+  audienceSummary?: string | null;
+  sections?: { sectionType: string; title: string; content: string }[];
+  actions?: {
+    actionType: number;
+    label: string;
+    description?: string | null;
+    targetValue?: string | null;
+    attachmentId?: string | null;
+    isRequired: boolean;
+  }[];
+}
+
 /** 活动列表VO */
-export interface ActivityListVO {
+export interface ActivityListVO extends EventInformationFields {
   id: string; // string(long)
   title: string; // string
   location: string; // string
@@ -196,7 +223,7 @@ export interface ActivityListVO {
   publishedAt: string; // string(date-time)
 }
 
-export interface ActivityListBO {
+export interface ActivityListBO extends EventInformationFields {
   id: string; // string(long)
   title: string; // string
   location: string; // string
@@ -210,7 +237,7 @@ export interface ActivityListBO {
 }
 
 /** 活动详情VO */
-export interface ActivityDetailVO {
+export interface ActivityDetailVO extends EventInformationFields {
   id: string; // string(long)
   userId: string; // string(long)
   title: string; // string
@@ -227,7 +254,7 @@ export interface ActivityDetailVO {
   startTime: string; // string(date-time)
   endTime: string; // string(date-time)
   enrollDeadline: string; // string(date-time)
-  maxParticipants: number; // integer(int32)
+  maxParticipants: number | null; // integer(int32)
   commentCount: number; // integer(int32)
   likeCount: number; // integer(int32)
   viewCount: number; // integer(int32)
@@ -236,7 +263,7 @@ export interface ActivityDetailVO {
   attachmentItems: MediaAttachmentBO[]; // array
   timelineItems: TimelineItemDTO[]; // array
   liked: boolean; // boolean
-  enrolled: boolean; // boolean
+  enrolled: boolean; // 当前用户是否订阅，与平台报名独立
 }
 
 export interface ActivityUploadBO {
@@ -283,36 +310,51 @@ export interface ExamSimpleVO {
   examDate: string;
 }
 
-/** 考试VO */
-export interface ExamVO {
-  id: string; // string(long)
-  title: string; // string
-  category: number; // integer(int32)
-  content: string; // string
-  registrationStart: string; // string(date-time)
-  registrationEnd: string; // string(date-time)
-  examDate: string; // string(date)
-  examDateEnd: string; // string(date)
-  officialUrl: string; // string
-  commentCount: number; // integer(int32)
-  likeCount: number; // integer(int32)
-  viewCount: number; // integer(int32)
-  publishedAt: string; // string(date-time)
-  author: UserSimpleBO; // UserSimpleBO
-  attachmentItems: unknown[]; // array
-  timelineItems: unknown[]; // array
+/** 运维发布的公共事项；每条记录对应独立期次。 */
+export interface ExamVO extends EventInformationFields {
+  id: string;
+  title: string;
+  category: number;
+  content: string | null;
+  summary: string | null;
+  editionLabel: string | null;
+  eventType: number;
+  publishStatus: number;
+  startTime: string | null;
+  endTime: string | null;
+  organizer: string | null;
+  location: string | null;
+  audienceScope: number | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  participantMode: number;
+  officialUrl: string | null;
+  attachmentItems: MediaAttachmentBO[] | null;
+  timelineItems:
+    | (Omit<TimelineItemDTO, 'startTime' | 'endTime'> & {
+        startTime: string | null;
+        endTime: string | null;
+      })[]
+    | null;
 }
 
-/** 考试详情VO */
-export interface ExamDetailVO {
-  id: string; // string(long)
-  title: string; // string
-  category: number; // integer(int32)
-  content: string; // string
-  examDate?: string; // string(date)
-  officialUrl?: string; // string
-  attachmentItems: unknown[]; // array
-  timelineItems: unknown[]; // array
+export interface ExamDetailVO extends ExamVO {
+  subscribed: boolean;
+  liked: boolean;
+}
+
+/** GET /v1/home/public-matter-reminders 的 canonical 响应。 */
+export interface HomePublicMatterRemindersDTO {
+  evaluatedAt: string;
+  source: 'SUBSCRIPTIONS' | 'DEFAULT';
+  items: PublicMatterReminderDTO[];
+}
+
+export interface PublicMatterReminderDTO {
+  publicMatterId: string;
+  name: string;
+  nodeName: string;
+  reminderAt: string;
 }
 
 // ============================================================
@@ -400,10 +442,12 @@ export interface ReplyVO {
 
 /** 时间轴项目请求 */
 export interface TimelineItemRequest {
+  startPrecision?: number;
+  endPrecision?: number;
   label: string; // string
   description: string; // string
-  startTime: string; // string(date-time)
-  endTime: string; // string(date-time)
+  startTime: string | null; // string(date-time)
+  endTime: string | null; // string(date-time)
   sortOrder: number; // integer(int32)
 }
 
@@ -431,6 +475,11 @@ export interface TimelineVO {
 
 /** 时间轴BO */
 export interface TimelineItemDTO {
+  id?: string;
+  startPrecision?: number;
+  endPrecision?: number;
+  timeDescription?: string;
+  location?: string;
   label: string; // string
   description: string; // string
   startTime: string; // string(date-time)
@@ -485,18 +534,65 @@ export interface ViewCountVO {
 // 通知相关类型
 // ============================================================
 
-/** 通知VO */
-export interface NotificationVO {
-  id: string; // string(long)
-  userId: string; // string(long)
-  type: string; // string
-  title: string; // string
-  content: string; // string
-  targetType: TargetType; // string
-  targetId: string; // string(long)
-  senderId: number; // integer(int64)
-  isRead: boolean; // boolean
-  createdAt: string; // string(date-time)
+export type NotificationCategory = 'ACTIVITY' | 'PUBLIC_EVENT';
+export type NotificationChannel = 'IN_APP' | 'WECHAT_MINI_PROGRAM' | 'WECHAT_OFFICIAL_ACCOUNT';
+
+export interface NotificationPreferenceItem {
+  category: string;
+  channel: string;
+  enabled: boolean;
+  source: string;
+}
+
+export interface NotificationPreferences {
+  defaultVersion: string;
+  items: NotificationPreferenceItem[];
+}
+
+export interface UpdateNotificationPreferences {
+  changes: {
+    category: NotificationCategory;
+    channel: NotificationChannel;
+    enabled: boolean | null;
+  }[];
+}
+
+export interface NotificationChannelCapabilityItem {
+  category: string;
+  notificationType: string;
+  channel: string;
+  available: boolean;
+  permission: string;
+  unavailableReasons: string[];
+}
+
+export interface NotificationChannelCapabilities {
+  evaluatedAt: string;
+  items: NotificationChannelCapabilityItem[];
+}
+
+/** Canonical 收件箱通知；未知 type/target 也需保留文本展示。 */
+export interface InboxNotification {
+  notificationId: string;
+  type: string;
+  category?: string;
+  title: string;
+  content: string;
+  target?: {
+    type: string;
+    resourceId: string;
+  };
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationCursorPage {
+  items: InboxNotification[];
+  nextCursor?: string;
+}
+
+export interface NotificationUnreadCount {
+  unreadCount: number;
 }
 
 // ============================================================
@@ -614,10 +710,10 @@ export interface ExamPageQuery {
 }
 
 export interface NotificationPageQuery {
+  cursor?: string;
   pageSize?: number;
-  lastId?: string;
-  type?: NotifyType;
-  isRead?: number;
+  category?: NotificationCategory;
+  isRead?: boolean;
 }
 
 export interface InteractTargetQuery {
@@ -657,13 +753,6 @@ export interface PageResultExamVO {
   nextCursor: string; // string(long)
 }
 
-/** 通知分页结果 */
-export interface PageResultNotificationVO {
-  list: NotificationVO[]; // array
-  hasMore: boolean; // boolean
-  nextCursor: string; // string(long)
-}
-
 /** 帖子列表分页结果 */
 export interface PageResultPostListBO {
   list: PostListBO[]; // array
@@ -695,7 +784,6 @@ export type ResultListTimelineVO = Result<TimelineVO[]>;
 export type ResultPageResultActivityListBO = Result<PageResultActivityListBO>;
 export type ResultPageResultCommentVO = Result<PageResultCommentVO>;
 export type ResultPageResultExamVO = Result<PageResultExamVO>;
-export type ResultPageResultNotificationVO = Result<PageResultNotificationVO>;
 export type ResultPageResultPostListBO = Result<PageResultPostListBO>;
 export type ResultAuditCheckResultVO = Result<AuditCheckResultVO>;
 export type ResultBindQrInfo = Result<BindQrInfo>;
@@ -769,4 +857,22 @@ export interface DetailInfo {
   suggest: string; // string
   label: number; // integer(int32)
   prob: number; // integer(int32)
+}
+
+/** 小程序创建接口支持的分节与入口；资源引用使用字符串 ID 或 objectKey。 */
+export interface EventSectionRequest {
+  sectionType: string;
+  title: string;
+  content: string;
+  sortOrder: number;
+}
+export interface EventActionRequest {
+  actionType: number;
+  label: string;
+  description: string;
+  targetValue: string;
+  attachmentId?: string;
+  attachmentObjectKey?: string;
+  isRequired: boolean;
+  sortOrder: number;
 }

@@ -7,17 +7,19 @@ import type { BannerMessage, BannerRouteMethod } from '../../types/business';
 import {
   ROUTES,
   buildActivityDetailRoute,
-  buildExamDetailRoute,
+  buildPublicEventDetailRoute,
   buildPostDetailRoute,
 } from '../../utils/routes';
 
 interface BannerPrivate {
+  _pageVisible?: boolean;
   _timer?: ReturnType<typeof setTimeout>;
   _nextTimer?: ReturnType<typeof setTimeout>;
   _queue?: BannerMessage[];
   _showing?: boolean;
   _current?: BannerMessage;
   _onShowBanner?: (...args: unknown[]) => void;
+  _onClearBanner?: () => void;
   _touchStartX?: number;
   _touchStartY?: number;
   _lastDeltaX?: number;
@@ -118,7 +120,7 @@ const resolveLocalRoute = (
 
   const routes: Record<string, string> = {
     activity: buildActivityDetailRoute(targetId),
-    exam: buildExamDetailRoute(targetId),
+    exam: buildPublicEventDetailRoute(targetId),
     post: buildPostDetailRoute(targetId),
   };
 
@@ -201,6 +203,7 @@ defineComponent<BannerPrivate>()({
 
   lifetimes: {
     attached() {
+      this._pageVisible = true;
       this._queue = [];
       this._showing = false;
       this._current = undefined;
@@ -208,16 +211,21 @@ defineComponent<BannerPrivate>()({
       this._syncPreviewState();
 
       this._onShowBanner = (payload: unknown) => {
-        if (this.properties.previewMode) return;
+        if (this.properties.previewMode || !this._pageVisible) return;
         // 监听全局通知弹窗事件，payload 支持单条或数组
         this._enqueue(payload as BannerMessage | BannerMessage[]);
       };
 
       // 订阅：全局触发弹窗展示
       eventBus.on(EVENTS.NOTIFY_BANNER_SHOW, this._onShowBanner);
+      this._onClearBanner = () => {
+        this._resetBanner();
+      };
+      eventBus.on(EVENTS.NOTIFY_BANNER_CLEAR, this._onClearBanner);
     },
 
     detached() {
+      if (this._onClearBanner) eventBus.off(EVENTS.NOTIFY_BANNER_CLEAR, this._onClearBanner);
       if (this._onShowBanner) {
         // 取消订阅，避免页面切换后重复触发
         eventBus.off(EVENTS.NOTIFY_BANNER_SHOW, this._onShowBanner);
@@ -232,7 +240,25 @@ defineComponent<BannerPrivate>()({
     },
   },
 
+  pageLifetimes: {
+    show() {
+      this._pageVisible = true;
+    },
+    hide() {
+      this._pageVisible = false;
+      this._resetBanner();
+    },
+  },
+
   methods: {
+    _resetBanner() {
+      this._clearTimer();
+      this._clearNextTimer();
+      this._queue = [];
+      this._showing = false;
+      this._current = undefined;
+      this.setData({ visible: false, opacity: 0, dragging: false });
+    },
     _updateTopOffset() {
       const fixedTop = this.properties.top;
       if (!Number.isNaN(fixedTop) && fixedTop >= 0) {
@@ -536,7 +562,7 @@ defineComponent<BannerPrivate>()({
       // 广播点击事件，外部可联动标记已读/刷新列表
       eventBus.emit(EVENTS.NOTIFY_BANNER_TAP, current);
       this._dismissCurrent('tap');
-      this._navigateByMessage(current);
+      if (!current.structured) this._navigateByMessage(current);
     },
 
     onClose() {

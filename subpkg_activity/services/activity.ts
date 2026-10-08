@@ -1,244 +1,265 @@
-// activity.ts
-/**
- * 活动服务 (Activity Service)
- *
- * 对齐 OpenAPI：
- * - GET    /v1/activity
- * - POST   /v1/activity
- * - GET    /v1/activity/{id}
- * - PUT    /v1/activity/{id}
- * - DELETE /v1/activity/{id}
- */
-
 import { api } from '../../services/api';
-import { createLogger } from '../../utils/logger';
+import { eventApi } from './event-api';
+import type { ActivityCreateRequest, ActivityUploadBO } from '../../types/api';
 import type { ActivityCard, ActivityDetail, ServiceCursorPage } from '../../types/business';
-import type { ActivityCreateRequest, ActivityDetailVO, ActivityUploadBO } from '../../types/api';
-import { ACTIVITY_CATEGORYS, formatDepartmentText } from '../../utils/constants';
-import { formatTime, calcDaysToDeadline, parseDate, TimeStyle } from '../../utils/time-util';
+import type {
+  ActivityDetailDTO,
+  ActivitySummaryDTO,
+  EventAction,
+  EventAttachment,
+  EventTimelineNode,
+} from '../../types/event-contract';
+import type {
+  ActivityUiStatus,
+  Attachment,
+  TimelineNode,
+  TimelineNodeStatus,
+} from '../../types/activity';
+import {
+  exactCountdownDays,
+  formatTimelineSchedule,
+  sortTimeline,
+  timelineStatus,
+} from '../utils/event-timeline';
 
-import type { Attachment, Contact, TimelineNode, TimelineNodeStatus } from '../../types/activity';
-import { STATUS_LABEL, TYPE_MAP, injectIscancelled, toCard } from './activity-mapper';
+const CATEGORY_LABELS: Record<ActivitySummaryDTO['category'], string> = {
+  LECTURE: '学术讲座',
+  COMPETITION: '文体比赛',
+  SPORTS: '体育运动',
+  VOLUNTEERING: '志愿公益',
+  THEMED: '主题活动',
+  OTHER: '其他',
+};
 
-const log = createLogger('ActivityService');
-void log;
+const TYPE_COLORS: Record<ActivitySummaryDTO['category'], string> = {
+  LECTURE: 'lecture',
+  COMPETITION: 'campus',
+  SPORTS: 'competition',
+  VOLUNTEERING: 'volunteer',
+  THEMED: 'campus',
+  OTHER: 'campus',
+};
 
-// ============================================================
-// § 2  内部计算函数（private，不 export，只供本文件使用）
-// ============================================================
-
-function getExtension(name: string): string {
-  const filename = name.split(/[?#]/)[0].split('/').pop() ?? '';
-  const index = filename.lastIndexOf('.');
-
-  if (index <= 0 || index === filename.length - 1) {
-    return '';
-  }
-
-  return filename.substring(index + 1).toLowerCase();
+function uiStatus(raw: ActivitySummaryDTO): ActivityUiStatus {
+  if (raw.lifecycleStatus === 'CANCELLED') return 'cancelled';
+  if (raw.lifecycleStatus === 'ENDED') return 'ended';
+  if (raw.availability.state === 'OPEN') return 'enrolling';
+  if (raw.availability.state === 'NOT_OPEN') return 'not_started';
+  return 'ongoing';
 }
 
-function injectTimelineStatus(items: ActivityDetailVO['timelineItems']): TimelineNode[] {
-  const now = Date.now();
-  let activePicked = false;
+function statusLabel(raw: ActivitySummaryDTO): string {
+  if (raw.lifecycleStatus === 'CANCELLED') return '已取消';
+  if (raw.lifecycleStatus === 'ENDED') return '已结束';
+  const labels: Record<ActivitySummaryDTO['availability']['state'], string> = {
+    NO_REGISTRATION: '无需报名',
+    NOT_OPEN: '报名未开始',
+    OPEN: '报名中',
+    CLOSED: '报名已截止',
+    FULL: '名额已满',
+    EXTERNAL: '外部参与',
+    UNAVAILABLE: '暂不可参与',
+  };
+  return labels[raw.availability.state];
+}
 
-  return items
-    .slice()
-    .sort((a, b) => {
-      if (!a.startTime) return 1;
-      if (!b.startTime) return -1;
-      return parseDate(a.startTime).getTime() - parseDate(b.startTime).getTime();
-    })
+function capacityText(raw: ActivitySummaryDTO): string {
+  if (raw.capacity === undefined) return '';
+  return `${String(raw.capacity)} ${raw.capacityUnit === 'TEAM' ? '队' : '人'}`;
+}
+
+function toCard(raw: ActivitySummaryDTO): ActivityCard {
+  const projected = raw.cardTimeline ? formatTimelineSchedule(raw.cardTimeline.schedule) : null;
+  return {
+    id: raw.activityId,
+    title: raw.title,
+    summary: raw.summary,
+    cover: raw.cover?.url,
+    type: CATEGORY_LABELS[raw.category],
+    typeIcon: '',
+    typeColor: TYPE_COLORS[raw.category],
+    scope: [raw.audienceSummary],
+    location: raw.primaryLocation ?? '',
+    organizer: raw.organizer,
+    max_participants: raw.capacityUnit === 'PERSON' ? (raw.capacity ?? null) : null,
+    capacityText: capacityText(raw),
+    cardTimelineLabel: raw.cardTimeline?.title ?? '',
+    cardTimelineText: projected?.text ?? '',
+    cardTimelineKind: projected?.kind,
+    deadlineText: raw.cardTimeline ? `${raw.cardTimeline.title} · ${projected?.text ?? ''}` : '',
+    status: uiStatus(raw),
+    statusLabel: statusLabel(raw),
+    daysToDeadline: raw.cardTimeline ? exactCountdownDays(raw.cardTimeline.schedule) : null,
+    enroll_deadline: '',
+    published_at: '',
+  };
+}
+
+function toTimeline(items: EventTimelineNode[]): TimelineNode[] {
+  return sortTimeline(items).map((node) => {
+    const display = formatTimelineSchedule(node.schedule);
+    const status: TimelineNodeStatus = timelineStatus(node.schedule);
+    return {
+      key: node.nodeKey,
+      label: node.title,
+      scheduleKind: display.kind,
+      scheduleKindLabel: display.kindLabel,
+      scheduleText: display.text,
+      date: display.dateText,
+      time: display.timeText,
+      endText: display.endText,
+      note: [node.description, node.location].filter(Boolean).join(' · '),
+      status,
+    };
+  });
+}
+
+function attachmentType(item: EventAttachment): string {
+  if (item.kind === 'IMAGE' || item.kind === 'POSTER' || item.kind === 'QR_CODE') return 'image';
+  if (item.kind === 'PDF') return 'pdf';
+  if (item.kind === 'WORD') return 'docx';
+  return 'link';
+}
+
+function actionType(item: EventAction): number {
+  const values: Record<EventAction['type'], number> = {
+    OFFICIAL_SITE: 1,
+    JOIN_GROUP: 5,
+    EMAIL_SUBMISSION: 3,
+    DOWNLOAD: 6,
+    VIEW_ATTACHMENT: 6,
+    EXTERNAL_REGISTRATION: 1,
+    OFFICIAL_NOTICE: 1,
+    OTHER: 8,
+  };
+  return values[item.type];
+}
+
+function toDetail(raw: ActivityDetailDTO, subscribed: boolean): ActivityDetail {
+  const sortedAttachments = [...raw.attachments];
+  const attachments: Attachment[] = sortedAttachments.map((item) => ({
+    type: attachmentType(item),
+    name: item.name,
+    url: item.url,
+  }));
+  const actions = [...raw.actions]
+    .sort((a, b) => a.displayOrder - b.displayOrder || a.actionKey.localeCompare(b.actionKey))
     .map((item) => {
-      const ts = item.startTime ? parseDate(item.startTime).getTime() : NaN;
-      let status: TimelineNodeStatus;
-
-      if (!isNaN(ts) && now > ts) {
-        status = 'done';
-      } else if (!activePicked) {
-        status = 'active';
-        activePicked = true;
-      } else {
-        status = 'pending';
-      }
-
+      const attachmentIndex = item.attachmentId
+        ? sortedAttachments.findIndex((attachment) => attachment.attachmentId === item.attachmentId)
+        : -1;
       return {
-        label: item.label,
-        date: item.startTime ? formatTime(item.startTime, TimeStyle.DATE) : '',
-        time: item.startTime ? formatTime(item.startTime, TimeStyle.TIME) : '',
-        note: item.description,
-        status,
+        key: item.actionKey,
+        actionType: actionType(item),
+        typeLabel: item.type === 'EXTERNAL_REGISTRATION' ? '报名链接' : '参与入口',
+        attachmentUrl: attachmentIndex >= 0 ? sortedAttachments[attachmentIndex].url : '',
+        label: item.title,
+        description: item.description ?? '',
+        targetValue: item.url ?? '',
+        attachmentIndex,
+        isRequired: item.type === 'EXTERNAL_REGISTRATION',
       };
     });
-}
-
-function normalizeAttachments(raw: ActivityDetailVO['attachmentItems']): Attachment[] {
-  return raw.map((a) => ({
-    type:
-      a.type.toLowerCase() === 'link'
-        ? 'link'
-        : getExtension(a.originalName || '') ||
-          getExtension(a.url || '') ||
-          a.type.toLowerCase() ||
-          '',
-    name: a.originalName || '未命名附件',
-    url: a.url,
-    note: undefined,
-  }));
-}
-
-function normalizeContacts(raw: ActivityDetailVO['contactInfo']): Contact[] {
-  // contactInfo 是一个 JSON 字符串，包含联系人数组
-  if (!raw) return [];
-  const contacts = JSON.parse(raw) as Contact[];
-  if (Array.isArray(contacts)) {
-    return contacts.map((c) => ({
-      name: c.name,
-      role: undefined,
-      phone: c.phone ?? undefined,
-      qq: c.qq ?? undefined,
-      email: c.email ?? undefined,
-      note: c.note ?? undefined,
-    }));
-  }
-  return [];
-}
-
-/** ActivityRaw → ActivityDetail（详情页用） */
-function toDetail(raw: ActivityDetailVO): ActivityDetail {
-  const typeInfo = TYPE_MAP[ACTIVITY_CATEGORYS[raw.category].text] ?? {
-    color: 'default',
-    icon: '',
-  };
+  const card = toCard(raw);
+  const registrationMode =
+    raw.registrationMode === 'MINI_PROGRAM'
+      ? 2
+      : raw.registrationMode === 'EXTERNAL'
+        ? 3
+        : raw.registrationMode === 'MINI_PROGRAM_AND_EXTERNAL'
+          ? 4
+          : 1;
 
   return {
-    id: raw.id,
-    title: raw.title,
-    cover: undefined,
-    scope: formatDepartmentText(raw.audienceScope),
-    organizer: raw.organizer,
-    type: ACTIVITY_CATEGORYS[raw.category].text,
-    typeIcon: typeInfo.icon,
-    typeColor: typeInfo.color,
-    statusLabel: STATUS_LABEL[injectIscancelled(raw.status)],
-    daysToDeadline: calcDaysToDeadline(raw.enrollDeadline),
-    startDateShort: formatTime(raw.startTime, TimeStyle.DATE),
-    status: injectIscancelled(raw.status),
-    description: raw.content.replace(/\\n/g, '\n'),
-    location: raw.location,
-    max_participants: raw.maxParticipants,
-    enroll_deadline: formatTime(raw.enrollDeadline, TimeStyle.SHORT_YMDHM),
-    start_time: formatTime(raw.startTime, TimeStyle.FULL),
-    end_time: formatTime(raw.endTime, TimeStyle.FULL),
-    // series_id: raw.series_id,
-    // source: raw.source,
-    published_at: formatTime(raw.publishedAt, TimeStyle.FULL),
-    is_cancelled: injectIscancelled(raw.status) === 'cancelled',
-    timeline: injectTimelineStatus(raw.timelineItems),
-    // rewards: raw.rewards,
-    contacts: normalizeContacts(raw.contactInfo),
-    attachments: normalizeAttachments(raw.attachmentItems),
-    join_method: raw.joinMethod,
-    qrcode_url: raw.qrcodeUrl,
+    ...card,
+    subscribed,
+    canSubscribe: raw.publishStatus === 'PUBLISHED' && raw.lifecycleStatus === 'ACTIVE',
+    registrationMode,
+    availability: raw.availability.state,
+    registrationForm: raw.registrationForm
+      ? {
+          allowModification: raw.registrationForm.allowModification,
+          fields: [...raw.registrationForm.fields]
+            .sort((a, b) => a.displayOrder - b.displayOrder || a.fieldKey.localeCompare(b.fieldKey))
+            .map((field) => ({
+              key: field.fieldKey,
+              label: field.label,
+              helpText: field.helpText,
+              required: field.required,
+              typeLabel:
+                field.type === 'TEXT' ? '填写' : field.type === 'SINGLE_SELECT' ? '单选' : '多选',
+            })),
+        }
+      : undefined,
+    sections: [...raw.sections]
+      .sort((a, b) => a.displayOrder - b.displayOrder || a.sectionKey.localeCompare(b.sectionKey))
+      .map((item) => ({ key: item.sectionKey, title: item.title, content: item.content })),
+    actions,
+    hasParticipation: registrationMode !== 1 || actions.length > 0,
+    deadlineSummary: statusLabel(raw),
+    registrationLabel: statusLabel(raw),
+    platformRegistrationText: raw.platformRegistrationCount
+      ? `平台已提交 ${String(raw.platformRegistrationCount.submittedCount)} 份`
+      : '',
+    timeDescription: card.cardTimelineText ?? '',
+    audienceSummary: raw.audienceSummary,
+    startDateShort: card.cardTimelineText?.length ? card.cardTimelineText : '详见时间线',
+    description: raw.summary,
+    start_time: card.cardTimelineText?.length ? card.cardTimelineText : '详见时间线',
+    end_time: '',
+    timeline: toTimeline(raw.timeline),
+    join_method: '',
+    contacts: raw.contacts.map((item) => ({
+      name: item.name,
+      note: [item.contact, item.remark].filter(Boolean).join(' · '),
+    })),
+    attachments,
+    is_cancelled: raw.lifecycleStatus === 'CANCELLED',
+    enroll_deadline: '',
   };
 }
 
-/**
- * 创建活动
- *
- * POST /v1/activity
- * @param payload - 活动创建请求体，详见 ActivityCreateRequest
- * @returns 新创建的活动ID
- */
-export const create = async (payload: ActivityCreateRequest): Promise<string> => {
-  return api.activity.create(payload);
-};
+export const create = (payload: ActivityCreateRequest): Promise<string> =>
+  api.activity.create(payload);
 
-/**
- * 获取活动列表
- *
- * GET /v1/activity
- * 请求参数: ActivityPageQuery
- * {
- *   lastId?: number,
- *   pageSize?: number,
- *   category?: number,
- *   status?: number,
- *   keyword?: string
- * }
- *
- * 响应体: ResultPageResultActivityListVO
- *
- * @example
- * getActivityList({ page: 1, pageSize: 20, status: 'ongoing' })
- */
-export const getActivityList = async (
-  options: {
-    lastId?: string;
-    pageSize?: number;
-    category?: number;
-    status?: number;
-    keyword?: string;
-  } = {},
-): Promise<ServiceCursorPage<ActivityCard>> => {
-  const { lastId, pageSize = 20, category, status, keyword } = options;
-
-  const page = await api.activity.fetchActivityList({
-    lastId,
-    pageSize,
-    category,
-    status,
-    keyword,
+export async function getActivityList(
+  options: { lastId?: string; pageSize?: number; keyword?: string } = {},
+): Promise<ServiceCursorPage<ActivityCard>> {
+  const cursor = options.lastId?.trim();
+  const keyword = options.keyword?.trim();
+  const page = await eventApi.activities.list({
+    cursor: cursor?.length ? cursor : undefined,
+    pageSize: options.pageSize ?? 20,
+    q: keyword?.length ? keyword : undefined,
+    sort: '-publishedAt',
   });
   return {
-    list: page.list.map(toCard),
-    hasMore: page.hasMore,
+    list: page.items.map(toCard),
+    hasMore: Boolean(page.nextCursor),
     nextCursor: page.nextCursor,
   };
-};
+}
 
-/**
- * 获取活动详情
- *
- * GET /v1/activity/{id}
- * 响应体: ResultActivityDetailVO
- * @param {string} activityId - 活动ID
- * @returns {Promise}
- *
- * @example
- * getActivityDetail('1')
- */
-export const getActivityDetail = async (activityId: string): Promise<ActivityDetail> => {
-  if (!activityId) {
-    return Promise.reject(new Error('activityId不能为空'));
-  }
+export async function getActivityDetail(activityId: string): Promise<ActivityDetail> {
+  if (!activityId) throw new Error('activityId不能为空');
+  const [detail, subscription] = await Promise.all([
+    eventApi.activities.detail(activityId),
+    eventApi.activities.subscription(activityId),
+  ]);
+  return toDetail(detail, subscription.subscribed);
+}
 
-  const detail = await api.activity.fetchActivityDetail(activityId);
-  return toDetail(detail);
-};
+export async function setActivitySubscription(id: string, subscribed: boolean): Promise<boolean> {
+  if (subscribed) return (await eventApi.activities.subscribe(id)).subscribed;
+  await eventApi.activities.unsubscribe(id);
+  return false;
+}
 
-/**
- * 上传提交表单用于ai解析的活动文件
- *
- * @param filePath 文件临时路径
- * @returns Promise<ActivityUploadBO>
- */
-export const upload = async (filePath: string): Promise<ActivityUploadBO> => {
-  if (!filePath) {
-    return Promise.reject(new Error('filePath不能为空'));
-  }
-
+export const upload = (filePath: string): Promise<ActivityUploadBO> => {
+  if (!filePath) return Promise.reject(new Error('filePath不能为空'));
   return api.activity.upload(filePath);
 };
 
-/**
- * 获取活动发布流
- *
- * @param taskId upload中返回的taskId
- * @param skipped 需要跳过的字段json格式的string
- * @param parser 每行数据的解析函数,line就表示传输过程中data:xx的xx信息,返回 T 类型或 null（表示该行数据被过滤掉）
- * @returns
- */
 export const activtyPublishStream = <T>(
   taskId: string,
   skipped?: string,

@@ -78,13 +78,6 @@
   flex-shrink: 0;
 }
 
-.search-box__icon {
-  width: 28rpx;
-  height: 28rpx;
-  display: block;
-  opacity: 0.86;
-  flex-shrink: 0;
-}
 
 .search-box__placeholder {
   flex: 1;
@@ -110,109 +103,197 @@
   color: var(--color-primary);
 }
 
+.reminder-status {
+  margin: 0 30rpx 20rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
+}
+
+.reminder-status--error {
+  color: var(--color-primary);
+}
+
 .exam-scroll {
   white-space: nowrap;
   padding-left: 30rpx;
   display: flex;
-  height: 200rpx;
+  height: 270rpx;
   width: 96%;
 }
 
 .exam-card {
   flex-shrink: 0;
-  width: 280rpx;
-  height: 180rpx;
+  width: 356rpx;
+  height: 250rpx;
   margin-right: 20rpx;
-  border-radius: 24rpx;
-  padding: 24rpx;
+  border-radius: 28rpx;
+  padding: 24rpx 24rpx 22rpx;
+  box-sizing: border-box;
   position: relative;
   overflow: hidden;
   color: #fff;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  box-shadow:
+    0 14rpx 30rpx rgba(27, 72, 134, 0.18),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.exam-card::before,
+.exam-card::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.exam-card::before {
+  width: 180rpx;
+  height: 180rpx;
+  right: -70rpx;
+  top: -92rpx;
+}
+
+.exam-card::after {
+  width: 96rpx;
+  height: 96rpx;
+  right: 64rpx;
+  top: 18rpx;
+  opacity: 0.55;
+}
+
+.exam-card--pressed {
+  transform: scale(0.975);
+  opacity: 0.92;
+}
+
+.exam-card__top {
+  position: relative;
+  z-index: 2;
 }
 
 .exam-name {
-  font-size: 30rpx;
-  font-weight: bold;
-  z-index: 2;
+  display: -webkit-box;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 29rpx;
+  font-weight: 750;
+  line-height: 1.35;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.exam-date {
-  font-size: 20rpx;
-  opacity: 0.8;
+.exam-node-pill {
+  position: relative;
   z-index: 2;
+  align-self: flex-start;
+  max-width: 240rpx;
+  margin-top: 10rpx;
+  padding: 5rpx 14rpx;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.24);
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 21rpx;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exam-card__bottom {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14rpx;
+  margin-top: auto;
 }
 
 .exam-countdown {
-  font-size: 24rpx;
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  min-height: 58rpx;
+  line-height: 1;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
   z-index: 2;
 }
 
-.exam-countdown .days {
-  font-size: 40rpx;
+.exam-countdown__prefix {
+  font-size: 20rpx;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.exam-countdown__value {
+  font-size: 56rpx;
   font-weight: 800;
+  letter-spacing: -2rpx;
 }
 
-/* 卡片装饰图标 */
-.card-bg-icon {
-  position: absolute;
-  right: -10rpx;
-  bottom: -10rpx;
-  width: 178rpx;
-  height: 178rpx;
-  opacity: 0.2;
-  transform: rotate(-15deg);
+.exam-countdown__unit {
+  font-size: 24rpx;
+  font-weight: 700;
 }
 
-/* 卡片颜色
- * 原 red/green 使用非标准色值（red 起始偏橙，green 起始近白），
- * 此处统一与 subpkg_exam 页面使用相同渐变，保持全局一致。
- * 如需恢复原值：red 改为 #fda085→rgb(255,80,80)，green 改为 #F5F5F5→rgb(80,255,80)。
- */
-.blue {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+.exam-countdown__soon {
+  align-self: center;
+  font-size: 34rpx;
+  font-weight: 800;
+  letter-spacing: 1rpx;
 }
 
-.red {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+.exam-schedule {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 112rpx;
+  padding: 9rpx 11rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 14rpx;
+  background: rgba(13, 35, 68, 0.13);
+  line-height: 1.2;
 }
 
-.orange {
-  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+.exam-schedule__date {
+  font-size: 18rpx;
+  font-weight: 500;
+  opacity: 0.82;
 }
 
-.purple {
-  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+.exam-schedule__time {
+  margin-top: 3rpx;
+  font-size: 25rpx;
+  font-weight: 750;
 }
 
-.green {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+.reminder-theme--ocean {
+  background: linear-gradient(145deg, #176fe5 0%, #4fb5ff 100%);
 }
 
-.indigo {
-  background: linear-gradient(135deg, #5b86e5 0%, #36d1dc 100%);
+.reminder-theme--coral {
+  background: linear-gradient(145deg, #e9516f 0%, #ff967a 100%);
 }
 
-.gold {
-  background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+.reminder-theme--violet {
+  background: linear-gradient(145deg, #6758da 0%, #a982ef 100%);
 }
 
-.yellow {
-  background: linear-gradient(135deg, #fce38a 0%, #f38181 100%);
+.reminder-theme--mint {
+  background: linear-gradient(145deg, #138f80 0%, #48c7a5 100%);
 }
 
-.amber {
-  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-}
-
-.slate {
-  background: linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%);
-}
-
-.cyan {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+.reminder-theme--amber {
+  background: linear-gradient(145deg, #ce721e 0%, #efad3f 100%);
 }
 
 /* 快捷入口 */
@@ -245,7 +326,7 @@
 }
 
 .exam {
-  background: var(--color-primary-light);
+  background: #f1edfb;
 }
 
 .nav-item {
@@ -496,6 +577,9 @@
 }
 
 .section-more {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
   font-size: 24rpx;
   color: var(--color-primary);
 }

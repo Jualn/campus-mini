@@ -3,8 +3,9 @@
  * 用户服务 (User Service)
  *
  * 对齐 OpenAPI 中的：
- * - /v1/users/me
- * - /v1/users/public/{userId}
+ * - GET /v1/users/me/profile
+ * - POST /v1/users/me/profile
+ * - GET /v1/users/{userId}/profile
  * - /v1/setting
  * - /v1/users/me/agreement
  *
@@ -20,43 +21,46 @@ import type {
   Settings,
   UserProfileInfo,
 } from '../types/business';
-import type {
-  UserAgreementStatusVO,
-  UserProfileUpdateRequest,
-  UserProfileVO,
-  UserPublicProfileVO,
-  UserSettingUpdateRequest,
-  UserSettingVO,
-} from '../types/api';
-import { formatTime, TimeStyle } from '../utils/time-util';
+import type { UserAgreementStatusVO, UserSettingUpdateRequest, UserSettingVO } from '../types/api';
+import type { UserProfile } from '../types/profile-contract';
+import { getErrorMessage } from '../utils/notify';
+import { HttpError } from '../utils/error';
 
 const log = createLogger('UserService');
 
-const toProfileInfo = (profile: UserProfileVO): UserProfileInfo => ({
-  id: profile.id,
-  nickname: profile.nickname,
-  avatarUrl: profile.avatarUrl,
-  bannerUrl: profile.backgroundUrl,
-  bio: profile.bio,
-  verified: profile.status === 1,
-  joinYear: formatTime(profile.createdAt, TimeStyle.YM),
-  role: profile.role,
-});
-
-const toPublicProfileInfo = (profile: UserPublicProfileVO): UserProfileInfo => ({
-  nickname: profile.nickname,
-  avatarUrl: profile.avatarUrl || '',
-  bannerUrl: profile.backgroundUrl,
-  bio: profile.bio,
-  verified: true,
-  joinYear: formatTime(profile.createdAt, TimeStyle.YM),
-});
+function toProfileInfo(value: unknown): UserProfileInfo {
+  if (!value || typeof value !== 'object')
+    throw new HttpError(502, 'Invalid canonical Profile response');
+  const profile = value as Partial<UserProfile>;
+  if (
+    typeof profile.userId !== 'string' ||
+    !profile.userId.trim() ||
+    typeof profile.nickname !== 'string' ||
+    typeof profile.bio !== 'string' ||
+    !(profile.avatarUrl === null || typeof profile.avatarUrl === 'string') ||
+    !(profile.backgroundUrl === null || typeof profile.backgroundUrl === 'string') ||
+    typeof profile.isPlatformOperator !== 'boolean'
+  ) {
+    throw new HttpError(502, 'Invalid canonical Profile response', {
+      userMessage: '资料响应异常，请稍后重试',
+    });
+  }
+  // Discard unknown properties; none are permissions.
+  return {
+    userId: profile.userId,
+    nickname: profile.nickname,
+    avatarUrl: profile.avatarUrl,
+    backgroundUrl: profile.backgroundUrl,
+    bio: profile.bio,
+    isPlatformOperator: profile.isPlatformOperator,
+  };
+}
 
 export const toEditProfileForm = (profile: UserProfileInfo): EditProfileForm => ({
-  nickname: profile.nickname || '',
-  bio: profile.bio ?? '',
+  nickname: profile.nickname,
+  bio: profile.bio,
   avatarUrl: profile.avatarUrl ?? '',
-  bannerUrl: profile.bannerUrl ?? '',
+  backgroundUrl: profile.backgroundUrl ?? '',
 });
 
 function mapSettings(settings: UserSettingVO): Settings {
@@ -82,81 +86,26 @@ const NOTIFY_FIELD_MAP: Record<NotifyKey, (keyof UserSettingUpdateRequest)[]> = 
   audit: ['notifyAuditResult'],
 };
 
-/**
- * 获取当前登录用户资料
- *
- * GET /v1/users/me
- *
- * 响应体: ResultUserProfileVO
- * {
- *   code: number,
- *   message: string,
- *   data: {
- *     nickname: string,
- *     avatarUrl: string,
- *     backgroundUrl: string,
- *     bio: string,
- *     gender: number,
- *     role: number,
- *     roleDesc: string,
- *     status: number,
- *     statusDesc: string,
- *     banned: boolean,
- *     muted: boolean,
- *     banReason: string,
- *     banExpireAt: string,
- *     capabilities: string[],
- *     createdAt: string
- *   }
- * }
- */
-export const getCurrentProfile = async (): Promise<UserProfileInfo> => {
-  const profile = await api.user.getCurrentProfile();
-  return toProfileInfo(profile);
-};
+export function getProfileErrorMessage(error: unknown): string {
+  if (error instanceof HttpError && error.statusCode === 404) return '用户不存在或暂不可查看';
+  return getErrorMessage(error, '资料加载失败，请稍后重试');
+}
 
-/**
- * 获取公开用户资料
- *
- * GET /v1/users/public/{userId}
- *
- * 响应体: ResultUserPublicProfileVO
- * {
- *   code: number,
- *   message: string,
- *   data: {
- *     id: number,
- *     nickname: string,
- *     avatarUrl: string,
- *     backgroundUrl: string,
- *     bio: string,
- *     gender: number
- *   }
- * }
- */
+/** Canonical reads; no fallback to legacy wire semantics. */
+export const getCurrentProfile = async (): Promise<UserProfileInfo> =>
+  toProfileInfo(await api.user.getCurrentProfile());
+
 export const getPublicProfile = async (userId: string): Promise<UserProfileInfo> => {
-  if (!userId) {
-    return Promise.reject(new Error('userId不能为空'));
-  }
-
-  const profile = await api.user.getPublicProfile(userId);
-
-  return toPublicProfileInfo(profile);
+  if (!userId) throw new Error('userId不能为空');
+  const profile = toProfileInfo(await api.user.getPublicProfile(userId));
+  if (profile.userId !== userId) throw new HttpError(502, 'Profile identity mismatch');
+  return profile;
 };
 
-/**
- * 获取当前用户主页数据
- * 包含用户信息和相关帖子列表
- *
- * @returns 用户主页数据
- */
-// ************************************ 编辑资料相关 ************************************
-export const getEditProfileForm = async (): Promise<EditProfileForm> => {
-  const profile = await getCurrentProfile();
-  return toEditProfileForm(profile);
-};
+export const getEditProfileForm = async (): Promise<EditProfileForm> =>
+  toEditProfileForm(await getCurrentProfile());
 
-export const saveEditProfile = async (data: EditProfileForm): Promise<void> => {
+export const saveEditProfile = async (data: EditProfileUpdate): Promise<void> => {
   await updateUserInfo(data);
 };
 
@@ -173,50 +122,15 @@ export const bindPhone = async (phone: number): Promise<void> => {
   await api.user.bindPhone(phone);
 };
 
-/**
- * 更新用户信息
- * @param {Object} data - 用户信息数据
- * @returns {Promise}
- *
- * @example
- * updateUserInfo({
- *   nickname: '新昵称',
- *   avatar: 'https://...',
- *   bio: '个人签名'
- * })
- */
+/** Partial update: whitelist only fields accepted by UpdateMyProfileRequest. */
 export const updateUserInfo = async (data: EditProfileUpdate): Promise<UserProfileInfo> => {
-  const payload: UserProfileUpdateRequest = {};
-
-  if (data.nickname !== undefined) {
-    payload.nickname = data.nickname;
-  }
-
-  if (data.avatarUrl !== undefined) {
-    payload.avatarUrl = data.avatarUrl;
-  }
-
-  if (data.avatarObjectKey !== undefined) {
-    payload.avatarObjectKey = data.avatarObjectKey;
-  }
-
-  if (data.bannerUrl !== undefined) {
-    payload.backgroundUrl = data.bannerUrl;
-  }
-
-  if (data.backgroundObjectKey !== undefined) {
+  const payload: EditProfileUpdate = {};
+  if (data.nickname !== undefined) payload.nickname = data.nickname;
+  if (data.bio !== undefined) payload.bio = data.bio;
+  if (data.avatarObjectKey !== undefined) payload.avatarObjectKey = data.avatarObjectKey;
+  if (data.backgroundObjectKey !== undefined)
     payload.backgroundObjectKey = data.backgroundObjectKey;
-  }
-
-  if (data.bio !== undefined) {
-    payload.bio = data.bio;
-  }
-
-  // 没有可更新字段时只读取资料，不发送空 PUT。
-  if (Object.keys(payload).length === 0) {
-    return getCurrentProfile();
-  }
-
+  if (!Object.keys(payload).length) return getCurrentProfile();
   return toProfileInfo(await api.user.updateCurrentProfile(payload));
 };
 

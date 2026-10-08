@@ -3,11 +3,11 @@
 
   <!-- 横幅 -->
   <view class="banner-wrap">
-    <image class="banner-img" src="{{userInfo.bannerUrl}}" mode="aspectFill" />
+    <image wx:if="{{userInfo.backgroundUrl}}" class="banner-img" src="{{userInfo.backgroundUrl}}" mode="aspectFill" />
     <!-- 别人主页才显示返回按钮，放左侧远离胶囊 -->
     <view class="top-bar" style="padding-top:{{statusBarHeight}}px;" wx:if="{{!isSelf}}">
-      <view class="top-bar__back" bindtap="onBack">
-        <text class="top-bar__icon">‹</text>
+      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
+        <ui-icon name="chevron-left" state="inverse" size="lg" />
       </view>
     </view>
   </view>
@@ -25,8 +25,8 @@
       <view class="action-btns">
         <!-- 自己：设置 + 编辑资料 -->
         <block wx:if="{{isSelf}}">
-          <view class="btn-icon__wrap" bindtap="onGoSetting">
-            <image class="btn-icon__setting" src="/images/icons/setting.svg" mode="aspectFit" />
+          <view class="btn-icon__wrap" bindtap="onGoSetting" aria-role="button" aria-label="设置">
+            <ui-icon class="btn-icon__setting" name="settings" size="xl" />
           </view>
           <view class="btn-outline" bindtap="onEditProfile">
             <text class="btn-text">编辑资料</text>
@@ -34,8 +34,8 @@
         </block>
         <!-- 别人：··· + 关注 -->
         <block wx:else>
-          <view class="btn-icon" bindtap="onMore">
-            <image class="btn-icon__more" src="/assets/icons/common/more.svg" mode="aspectFit"/>
+          <view class="btn-icon" bindtap="onMore" aria-role="button" aria-label="更多用户操作">
+            <view class="btn-icon__more icon-slot"><ui-icon name="more" size="md" /></view>
           </view>
           <!-- <view class="btn-fill {{isFollowing ? 'btn-fill--grey' : ''}}" bindtap="onToggleFollow">
             <text class="btn-fill__text">{{isFollowing ? '已关注' : '关注'}}</text>
@@ -47,20 +47,10 @@
     <!-- 名字 + 认证 -->
     <view class="name-line">
       <text class="profile-name">{{userInfo.nickname}}</text>
-      <view class="verified" wx:if="{{userInfo.verified}}">
-        <text class="verified__icon">✓</text>
-      </view>
+      <operator-badge wx:if="{{userInfo.isPlatformOperator === true}}" />
     </view>
     <!-- <text class="profile-handle">@{{userInfo.handle}}</text> -->
     <text class="profile-bio" wx:if="{{userInfo.bio}}">{{userInfo.bio}}</text>
-
-    <!-- 元信息 -->
-    <view class="meta-row">
-      <view class="meta-tag" wx:if="{{userInfo.joinYear}}">
-        <image class="meta-tag__icon" src="/images/icons/join_time_tag.svg" mode="aspectFit" />
-        <text class="meta-tag__text">{{userInfo.joinYear}}加入</text>
-      </view>
-    </view>
 
     <!-- 关注统计 -->
     <!-- <view class="stats-row">
@@ -85,7 +75,7 @@
     <view class="tab-item {{activeTab==='posts'?'tab-item--active':''}}" bindtap="onSwitchTab" data-tab="posts">
       <text class="tab-text">动态</text>
     </view>
-    <view class="tab-item {{activeTab==='likes'?'tab-item--active':''}}" bindtap="onSwitchTab" data-tab="likes">
+    <view wx:if="{{isSelf}}" class="tab-item {{activeTab==='likes'?'tab-item--active':''}}" bindtap="onSwitchTab" data-tab="likes">
       <text class="tab-text">点赞</text>
     </view>
   </view>

@@ -1,325 +1,367 @@
-import * as messageAction from '../../actions/message';
-import { createLogger } from '../../utils/logger';
-import type { FilterTab, MessageItem } from '../../types/business';
+import * as notificationCenter from '../../actions/notification-center';
+import { authReady, ensureLogin } from '../../actions/auth';
+import { listNotifications, isInvalidNotificationCursor } from '../../services/notification';
+import type { NotificationBoxCategory } from '../../types/notification-contract';
+import { getUserId } from '../../stores/helper';
+import { eventBus, EVENTS } from '../../utils/event-bus';
 import { getCustomTabBar } from '../../utils/tabbar';
-import { wxNavigateTo } from '../../utils/wx-promise';
 import { showErrorToast, showInfoToast } from '../../utils/notify';
-import {
-  ROUTES,
-  buildActivityDetailRoute,
-  buildExamDetailRoute,
-  buildPostDetailRoute,
-} from '../../utils/routes';
 import { useListLoad } from '../../behaviors/useListLoad';
 import definePage from '../../utils/definePage';
-
-const MESSAGE_TAB_INDEX = 1;
-
-const log = createLogger('MessagePage');
-
-let loadingTask: Promise<void> | null = null;
-
-type LoadOptions = Partial<{
-  fromPullDown: boolean;
-  silent: boolean;
-}>;
+import {
+  mergeNotificationCards,
+  notificationFilterTabs,
+  type NotificationCard,
+} from './message-model';
 
 definePage({
-  behaviors: [
-    useListLoad({
-      skeletonDelay: 140,
-      minSkeletonDuration: 280,
-      defaultHasMore: false,
-    }),
-  ],
+  behaviors: [useListLoad({ skeletonDelay: 140, minSkeletonDuration: 280, defaultHasMore: false })],
+  _generation: 0,
+  _visible: false,
+  _ready: false,
+  _loading: false,
+  _dirty: true,
+  _owner: null as string | null,
+  _observer: null as WechatMiniprogram.IntersectionObserver | null,
+  // Page options must contain simple placeholders; create instance-owned Sets in onLoad.
+  _visibleIds: null as unknown as Set<string>,
+  _attemptedIds: null as unknown as Set<string>,
+  _confirmedReadIds: null as unknown as Set<string>,
+  _readTimer: undefined as ReturnType<typeof setTimeout> | undefined,
+  _reading: false,
+  _onUnread: null as ((count: number) => void) | null,
+  _onRefresh: null as ((ids?: string[]) => void) | null,
+  _onIdentity: null as (() => void) | null,
 
   data: {
-    // pageCopy: messageAction.getMessagePageCopy(),
     statusBarHeight: 20,
     navTopGap: 8,
     navHeight: 32,
-    bannerTop: 80,
-
-    /** 消息卡片骨架数量。 */
     skeletonRows: [1, 2, 3],
-
     activeFilter: '',
-    filterTabs: [] as FilterTab[],
-    totalCount: 0,
-
-    allMessages: [] as MessageItem[],
-    groupedMessages: [] as MessageItem[],
-    urgentMessages: [] as MessageItem[],
-    olderMessages: [] as MessageItem[],
+    filterTabs: notificationFilterTabs,
+    messages: [] as NotificationCard[],
     unreadCount: 0,
+    unreadKnown: false,
+    nextCursor: '',
+    headCursor: '',
+    markingAll: false,
+    readError: false,
   },
 
   onLoad() {
-    this._initLayout();
-    void this._loadMessages();
+    this._visibleIds = new Set<string>();
+    this._attemptedIds = new Set<string>();
+    this._confirmedReadIds = new Set<string>();
+    const sys = wx.getWindowInfo();
+    const menu = wx.getMenuButtonBoundingClientRect();
+    this.setData({
+      statusBarHeight: sys.statusBarHeight || 20,
+      navTopGap: Math.max(menu.top - sys.statusBarHeight, 6),
+      navHeight: menu.height || 32,
+    });
+    this._onUnread = (count) => {
+      this.setData({ unreadCount: count, unreadKnown: notificationCenter.isUnreadKnown() });
+    };
+    this._onRefresh = (ids) => {
+      this._dirty = true;
+      if (notificationCenter.hasFailedReads()) this.setData({ readError: true });
+      if (ids?.length) {
+        ids.forEach((id) => this._confirmedReadIds.add(id));
+        this.setData({
+          messages: this.data.messages.map((item) =>
+            ids.includes(item.id) ? { ...item, isRead: true } : item,
+          ),
+        });
+      }
+    };
+    this._onIdentity = () => {
+      if (this._owner === getUserId()) return;
+      this._generation += 1;
+      this._owner = getUserId();
+      this._loading = false;
+      this._reading = false;
+      this._attemptedIds.clear();
+      this._confirmedReadIds.clear();
+      this._disconnectObserver();
+      this.setData({
+        messages: [],
+        nextCursor: '',
+        headCursor: '',
+        readError: false,
+        markingAll: false,
+      });
+      this._dirty = true;
+      if (this._visible && getUserId()) void this._loadMessages();
+    };
+    eventBus.on(EVENTS.NOTIFY_UNREAD_CHANGE, this._onUnread);
+    eventBus.on(EVENTS.NOTIFY_LIST_REFRESH, this._onRefresh);
+    eventBus.on(EVENTS.LOGIN_SUCCESS, this._onIdentity);
+    eventBus.on(EVENTS.LOGOUT, this._onIdentity);
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function') {
-      getCustomTabBar(this).init();
-    }
-  },
-
-  onPullDownRefresh() {
-    void this._loadMessages({ fromPullDown: true }).finally(() => {
-      void wx.stopPullDownRefresh();
-    });
-  },
-
-  _initLayout() {
-    const sys = wx.getWindowInfo();
-    const menuBtn =
-      typeof wx.getMenuButtonBoundingClientRect === 'function'
-        ? wx.getMenuButtonBoundingClientRect()
-        : null;
-
-    const statusBarHeight = sys.statusBarHeight || 20;
-    let navTopGap = 8;
-    let navHeight = 32;
-    let bannerTop = 80;
-
-    if (menuBtn?.width) {
-      navTopGap = Math.max(menuBtn.top - statusBarHeight, 6);
-      navHeight = menuBtn.height || navHeight;
-      bannerTop = menuBtn.bottom + 16;
-    }
-
+    this._visible = true;
+    getCustomTabBar(this).init();
     this.setData({
-      statusBarHeight,
-      navTopGap,
-      navHeight,
-      bannerTop,
+      unreadCount: notificationCenter.getUnreadCount(),
+      unreadKnown: notificationCenter.isUnreadKnown(),
+      readError: this.data.readError || notificationCenter.hasFailedReads(),
     });
+    if (this._dirty || this._owner !== getUserId()) void this._loadMessages();
+    else this._observeCards();
   },
 
-  _loadMessages(options: LoadOptions = {}) {
-    if (loadingTask) return loadingTask;
-
-    const isInitial = !options.fromPullDown && !this.data.allMessages.length;
-    if (isInitial) this._listLoadBeginInitial();
-    else this._listLoadBeginRefresh();
-
-    loadingTask = messageAction
-      .getMessageFeedData()
-      .then((data) => {
-        const allMessages = data.allMessages;
-        const filterTabs = data.filterTabs;
-        const activeFilter = this._resolveActiveFilter(filterTabs);
-        const totalCount = data.totalCount || allMessages.length;
-        const unreadCount =
-          data.unreadCount || allMessages.filter((m: MessageItem) => !m.isRead).length;
-
-        this._commitMessageState({
-          allMessages,
-          filterTabs,
-          activeFilter,
-          totalCount,
-          unreadCount,
-        });
-
-        if (isInitial) {
-          this._listLoadEndInitial({
-            success: true,
-            hasContent: allMessages.length > 0,
-            hasMore: false,
-          });
-        } else {
-          this._listLoadEndRefresh({
-            success: true,
-            hasContent: allMessages.length > 0,
-            hasMore: false,
-          });
-        }
-      })
-      .catch((err: unknown) => {
-        log.error('_loadMessages', '加载消息失败', err);
-        const hasContent = this.data.allMessages.length > 0;
-
-        if (isInitial) {
-          this._listLoadEndInitial({ success: false, hasContent, hasMore: false });
-        } else {
-          this._listLoadEndRefresh({ success: false, hasContent, hasMore: false });
-        }
-
-        // 首屏已有可操作的错误态，不再叠加 Toast；保留内容时用 Toast 反馈刷新失败。
-        if (!options.silent && (!isInitial || hasContent)) {
-          showErrorToast(err, { fallback: '消息加载失败，请稍后重试' });
-        }
-      })
-      .finally(() => {
-        loadingTask = null;
-      });
-
-    return loadingTask;
+  onReady() {
+    this._ready = true;
+    this._observeCards();
+  },
+  onHide() {
+    this._visible = false;
+    this._generation += 1;
+    if (this._loading || this.data.listLoad.phase === 'initial') this._dirty = true;
+    this._loading = false;
+    this._reading = false;
+    this._attemptedIds.clear();
+    this._disconnectObserver();
+    this._listLoadClearTimers();
+    this.setData({ markingAll: false });
+  },
+  onUnload() {
+    void this.onHide();
+    if (this._onUnread) eventBus.off(EVENTS.NOTIFY_UNREAD_CHANGE, this._onUnread);
+    if (this._onRefresh) eventBus.off(EVENTS.NOTIFY_LIST_REFRESH, this._onRefresh);
+    if (this._onIdentity) {
+      eventBus.off(EVENTS.LOGIN_SUCCESS, this._onIdentity);
+      eventBus.off(EVENTS.LOGOUT, this._onIdentity);
+    }
   },
 
+  async onPullDownRefresh() {
+    await this._loadMessages();
+    void wx.stopPullDownRefresh();
+  },
+  onReachBottom() {
+    if (this._listLoadCanMore(this._loading)) void this._loadMessages(true);
+  },
+  onRetryLoadMore() {
+    void this._loadMessages(true);
+  },
   onRetryInitialLoad() {
-    void this._loadMessages({ fromPullDown: true });
+    void this._loadMessages();
   },
 
-  _resolveActiveFilter(filterTabs: FilterTab[]) {
-    const currentFilter = this.data.activeFilter;
-    if (filterTabs.some((item) => item.id === currentFilter)) {
-      return currentFilter;
+  async _loadMessages(append = false) {
+    if (append && (this._loading || !this.data.nextCursor)) return;
+    const generation = ++this._generation;
+    const filter = this.data.activeFilter;
+    const initial = !append && !this.data.messages.length;
+    this._loading = true;
+    this._reading = false;
+    this._disconnectObserver();
+    if (initial) this._listLoadBeginInitial();
+    else if (append) this._listLoadBeginMore();
+    else this._listLoadBeginRefresh();
+    try {
+      await authReady;
+      await ensureLogin();
+      if (!this._visible || generation !== this._generation) return;
+      const owner = getUserId();
+      this._owner = owner;
+      const page = await listNotifications({
+        boxCategory: filter ? (filter as NotificationBoxCategory) : undefined,
+        cursor: append ? this.data.nextCursor : undefined,
+      });
+      if (!this._isCurrent(generation) || owner !== getUserId()) return;
+      const messages = mergeNotificationCards(append ? this.data.messages : [], page.items).map(
+        (item) => (this._confirmedReadIds.has(item.id) ? { ...item, isRead: true } : item),
+      );
+      this._dirty = false;
+      if (!append) this._attemptedIds.clear();
+      this.setData({ messages, nextCursor: page.nextCursor ?? '', headCursor: page.headCursor });
+      const observe = () => {
+        if (this._isCurrent(generation)) this._observeCards();
+      };
+      if (initial)
+        this._listLoadEndInitial(
+          {
+            success: true,
+            hasContent: !!messages.length,
+            hasMore: page.hasMore,
+          },
+          observe,
+        );
+      else if (append) this._listLoadEndMore({ success: true, hasMore: page.hasMore }, observe);
+      else
+        this._listLoadEndRefresh(
+          {
+            success: true,
+            hasContent: !!messages.length,
+            hasMore: page.hasMore,
+          },
+          observe,
+        );
+    } catch (err) {
+      if (!this._visible || generation !== this._generation) return;
+      if (initial) this._listLoadEndInitial({ success: false, hasContent: false });
+      else if (append) this._listLoadEndMore({ success: false });
+      else this._listLoadEndRefresh({ success: false, hasContent: !!this.data.messages.length });
+      if (!initial) showErrorToast(err, { fallback: '消息加载失败，请重试' });
+    } finally {
+      if (generation === this._generation) this._loading = false;
     }
-
-    return filterTabs[0]?.id ?? '';
-  },
-
-  _commitMessageState(payload: {
-    allMessages: MessageItem[];
-    filterTabs?: FilterTab[];
-    activeFilter?: string;
-    totalCount?: number;
-    unreadCount?: number;
-  }) {
-    const allMessages = payload.allMessages;
-    const filterTabs = payload.filterTabs ?? messageAction.getFilterTabs(allMessages);
-    const activeFilter = payload.activeFilter ?? this._resolveActiveFilter(filterTabs);
-    const unreadCount =
-      payload.unreadCount ?? allMessages.filter((m: MessageItem) => !m.isRead).length;
-    const totalCount = payload.totalCount ?? allMessages.length;
-    const sections = messageAction.applyMessageFilter(allMessages, activeFilter);
-
-    this.setData({
-      allMessages,
-      filterTabs,
-      activeFilter,
-      totalCount,
-      unreadCount,
-      ...sections,
-    });
-
-    this._syncTabBarBadge(unreadCount);
-  },
-
-  _applyFilter(activeFilter?: string) {
-    const currentFilter = activeFilter ?? this.data.activeFilter;
-    const sections = messageAction.applyMessageFilter(this.data.allMessages, currentFilter);
-
-    this.setData({
-      activeFilter: currentFilter,
-      ...sections,
-    });
   },
 
   onSwitchFilter(e: WechatMiniprogram.TouchEvent) {
-    const id = String(e.currentTarget.dataset.id ?? 'all');
-    if (!id || id === this.data.activeFilter) return;
-
-    this._applyFilter(id);
-
-    void wx.pageScrollTo({
-      scrollTop: 0,
-      duration: 180,
+    const id = String(e.currentTarget.dataset.id ?? '');
+    if (!notificationFilterTabs.some((tab) => tab.id === id) || id === this.data.activeFilter)
+      return;
+    this.setData({
+      activeFilter: id,
+      messages: [],
+      nextCursor: '',
+      headCursor: '',
     });
+    void this._loadMessages();
+    void wx.pageScrollTo({ scrollTop: 0, duration: 180 });
+  },
+
+  _disconnectObserver() {
+    this._observer?.disconnect();
+    this._observer = null;
+    this._visibleIds.clear();
+    if (this._readTimer !== undefined) clearTimeout(this._readTimer);
+    this._readTimer = undefined;
+  },
+
+  _isCurrent(generation: number) {
+    return this._visible && generation === this._generation;
+  },
+
+  _observeCards() {
+    this._disconnectObserver();
+    if (
+      !this._visible ||
+      !this._ready ||
+      !this.data.messages.length ||
+      this.data.listLoad.phase === 'initial' ||
+      this.data.listLoad.initialError
+    )
+      return;
+    const generation = this._generation;
+    this.createSelectorQuery()
+      .select('.top-bar')
+      .boundingClientRect((value) => {
+        const rect = value as { bottom: number } | null;
+        if (!this._isCurrent(generation) || !rect) return;
+        this._observer = this.createIntersectionObserver({
+          observeAll: true,
+          thresholds: [0, 0.5, 1],
+        });
+        this._observer
+          .relativeToViewport({ top: -rect.bottom, bottom: -90 })
+          .observe('.notification-card', (entry) => {
+            if (!this._isCurrent(generation)) return;
+            const id = String(entry.dataset.id ?? '');
+            if (entry.intersectionRatio >= 0.5) this._visibleIds.add(id);
+            else this._visibleIds.delete(id);
+            this._scheduleVisibleRead();
+          });
+      })
+      .exec();
+  },
+
+  _scheduleVisibleRead() {
+    if (this._readTimer !== undefined || this._reading || this.data.markingAll) return;
+    this._readTimer = setTimeout(() => {
+      this._readTimer = undefined;
+      void this._readVisible();
+    }, 350);
+  },
+
+  async _readVisible() {
+    if (!this._visible || this._reading || this.data.markingAll) return;
+    const ids = this.data.messages
+      .filter(
+        (item) => !item.isRead && this._visibleIds.has(item.id) && !this._attemptedIds.has(item.id),
+      )
+      .map((item) => item.id)
+      .slice(0, 50);
+    if (!ids.length) return;
+    ids.forEach((id) => this._attemptedIds.add(id));
+    this._reading = true;
+    const generation = this._generation;
+    try {
+      await notificationCenter.markRead(ids);
+      if (!this._isCurrent(generation)) return;
+      this.setData({
+        messages: this.data.messages.map((item) =>
+          ids.includes(item.id) ? { ...item, isRead: true } : item,
+        ),
+      });
+    } catch {
+      if (this._isCurrent(generation)) this.setData({ readError: true });
+    } finally {
+      if (generation === this._generation) {
+        this._reading = false;
+        this._scheduleVisibleRead();
+      }
+    }
+  },
+
+  async onRetryRead() {
+    const generation = this._generation;
+    try {
+      await notificationCenter.retryFailedReads();
+      if (!this._visible || generation !== this._generation) return;
+      this.setData({ readError: false });
+      this._attemptedIds.clear();
+      void this._readVisible();
+    } catch (err) {
+      if (this._visible && generation === this._generation) {
+        showErrorToast(err, { fallback: '已读同步失败，请重试' });
+      }
+    }
+  },
+
+  onToggleMessage(e: WechatMiniprogram.TouchEvent) {
+    const id = String(e.currentTarget.dataset.id ?? '');
+    this.setData(
+      {
+        messages: this.data.messages.map((item) =>
+          item.id === id ? { ...item, expanded: !item.expanded } : item,
+        ),
+      },
+      () => {
+        this._observeCards();
+      },
+    );
   },
 
   onTapMessage(e: WechatMiniprogram.TouchEvent) {
     const id = String(e.currentTarget.dataset.id ?? '');
-    const targetType = String(e.currentTarget.dataset.targetType ?? '');
-    const targetId = String(e.currentTarget.dataset.targetId ?? '');
-
-    if (id) this._markRead(id);
-
-    this._navigate(targetType, targetId);
+    const item = this.data.messages.find((message) => message.id === id);
+    if (item) void notificationCenter.openNotification(item);
   },
 
-  onTapGroupedMessage(e: WechatMiniprogram.TouchEvent) {
-    const targetType = String(e.currentTarget.dataset.targetType ?? '');
-    const targetId = String(e.currentTarget.dataset.targetId ?? '');
-    this._navigate(targetType, targetId);
-  },
-
-  _markRead(id: string) {
-    const current = this.data.allMessages.find((m: MessageItem) => m.id === id);
-    if (!current || current.isRead) return;
-
-    const previousMessages = this.data.allMessages;
-    const nextMessages = previousMessages.map((m: MessageItem) =>
-      m.id === id ? { ...m, isRead: true } : m,
-    );
-
-    this._commitMessageState({
-      allMessages: nextMessages,
-      activeFilter: this.data.activeFilter,
-    });
-
-    void messageAction.markMessageAsRead(id).catch((err: unknown) => {
-      log.error('_markRead', '标记消息已读失败', err);
-      this._commitMessageState({
-        allMessages: previousMessages,
-        activeFilter: this.data.activeFilter,
-      });
-    });
-  },
-
-  onMarkAllRead() {
-    if (!this.data.unreadCount) return;
-
-    const previousMessages = this.data.allMessages;
-    const nextMessages = previousMessages.map((m: MessageItem) => ({ ...m, isRead: true }));
-
-    this._commitMessageState({
-      allMessages: nextMessages,
-      activeFilter: this.data.activeFilter,
-      unreadCount: 0,
-    });
-
-    void messageAction
-      .markAllMessagesAsRead()
-      .then(() => {
-        showInfoToast('已全部标记已读');
-      })
-      .catch((err: unknown) => {
-        log.error('onMarkAllRead', '全部已读失败', err);
-        this._commitMessageState({
-          allMessages: previousMessages,
-          activeFilter: this.data.activeFilter,
-        });
-        showErrorToast(err, { fallback: '操作失败，请稍后重试' });
-      });
-  },
-
-  _syncTabBarBadge(totalUnread: number) {
-    if (totalUnread > 0) {
-      void wx.setTabBarBadge({
-        index: MESSAGE_TAB_INDEX,
-        text: totalUnread > 99 ? '99+' : String(totalUnread),
-      });
-    } else {
-      void wx.removeTabBarBadge({ index: MESSAGE_TAB_INDEX });
+  async onMarkAllRead() {
+    if (this.data.markingAll || !this.data.headCursor) return;
+    const throughCursor = this.data.headCursor;
+    const owner = getUserId();
+    this.setData({ markingAll: true });
+    try {
+      await notificationCenter.markReadThrough(throughCursor);
+      if (!this._visible || owner !== getUserId()) return;
+      showInfoToast('已将当前范围内的全部分类标记已读');
+      await this._loadMessages();
+    } catch (err) {
+      if (!this._visible || owner !== getUserId()) return;
+      if (isInvalidNotificationCursor(err)) {
+        await this._loadMessages();
+        showInfoToast('消息范围已更新，请再次点击全部已读');
+      } else showErrorToast(err, { fallback: '全部已读失败，请重试' });
+    } finally {
+      if (this._visible && owner === getUserId()) this.setData({ markingAll: false });
     }
-  },
-
-  _navigate(targetType: string, targetId: string) {
-    // if (targetType === TARGET_TYPES.COMMENT.value) return; // 评论类消息只标记已读，不跳转
-
-    const normalizedType = (targetType || '').toLowerCase();
-    if (!normalizedType || normalizedType === 'none') return;
-
-    if (normalizedType === 'notification_center') {
-      void wx.switchTab({ url: ROUTES.MESSAGE });
-      return;
-    }
-
-    if (!targetId) return;
-
-    const routes: Record<string, string> = {
-      activity: buildActivityDetailRoute(targetId),
-      exam: buildExamDetailRoute(targetId),
-      post: buildPostDetailRoute(targetId),
-    };
-
-    const url = routes[normalizedType];
-    if (url)
-      wxNavigateTo({ url }).catch((err: unknown) => {
-        log.error('_navigate', '跳转目标页失败', { targetType, targetId }, err);
-      });
   },
 });

@@ -58,11 +58,6 @@ page {
   box-sizing: border-box;
 }
 
-.back-icon {
-  font-size: 42rpx;
-  line-height: 1;
-  transform: translateY(-2rpx);
-}
 
 .back-text {
   line-height: 56rpx;
@@ -346,11 +341,11 @@ textarea {
 .upload-icon {
   width: 66rpx;
   height: 66rpx;
-  line-height: 62rpx;
   margin: 0 auto 16rpx;
   border-radius: 50%;
-  font-size: 42rpx;
-  color: #2384ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(43, 132, 255, 0.12);
 }
 

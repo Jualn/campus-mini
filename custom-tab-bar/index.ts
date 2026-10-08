@@ -47,26 +47,23 @@ defineComponent<Private>()({
     selected: 0,
     isTabBarVisible: true,
 
-    // Tab 配置：两张图片对应未选中 / 选中状态
+    // Tab 配置：semantic 对应 UiIcon，状态资源由 Registry 映射
     tabList: [
       {
         text: '首页',
         url: ROUTES.HOME,
-        icon: '/images/tabbar/home.svg',
-        iconActive: '/images/tabbar/home-active.svg',
+        iconName: 'home',
       },
       {
         text: '消息',
         url: ROUTES.MESSAGE,
-        icon: '/images/tabbar/message.svg',
-        iconActive: '/images/tabbar/message-active.svg',
+        iconName: 'message',
         badge: 0,
       },
       {
         text: '我的',
         url: ROUTES.ME,
-        icon: '/images/tabbar/user.svg',
-        iconActive: '/images/tabbar/user-active.svg',
+        iconName: 'user',
       },
       // {
       //   text: '测试',
