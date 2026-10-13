@@ -128,7 +128,7 @@ Page({
 
     if (type === 'post') {
       void wxSwitchTab({
-        url: '/pages/index/index',
+        url: '/pages/campus/campus',
       });
       return;
     }

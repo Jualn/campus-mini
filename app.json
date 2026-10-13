@@ -2,7 +2,8 @@
   "pages": [
     "pages/index/index",
     "pages/me/me",
-    "pages/message/message"
+    "pages/message/message",
+    "pages/campus/campus"
   ],
   "subPackages": [
     {
@@ -33,17 +34,19 @@
     },
     {
       "root": "subpkg_setting",
-      "pages": ["pages/setting/setting","pages/service-subscribe-webview/index", "pages/admin-login-confirm/index"]
+      "pages": [
+        "pages/setting/setting",
+        "pages/service-subscribe-webview/index",
+        "pages/admin-login-confirm/index"
+      ]
     },
     {
       "root": "subpkg_red",
-      "pages": [
-        "pages/index/index"
-      ]
+      "pages": ["pages/index/index"]
     }
   ],
   "preloadRule": {
-    "pages/index/index": {
+    "pages/campus/campus": {
       "network": "all",
       "packages": ["subpkg_community"]
     }
@@ -64,6 +67,9 @@
     "list": [
       {
         "pagePath": "pages/index/index"
+      },
+      {
+        "pagePath": "pages/campus/campus"
       },
       {
         "pagePath": "pages/message/message"

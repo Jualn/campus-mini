@@ -65,7 +65,7 @@ assert.throws(() =>
 );
 
 const modelExports = {};
-vm.runInNewContext(compile('pages/index/home-model.ts'), {
+vm.runInNewContext(compile('pages/campus/home-model.ts'), {
   exports: modelExports,
   require: () => ({}),
   Date,
@@ -154,7 +154,7 @@ const appStore = {
     return () => undefined;
   },
 };
-vm.runInNewContext(compile('pages/index/index.ts'), {
+vm.runInNewContext(compile('pages/campus/campus.ts'), {
   exports: {},
   require: (name) => {
     if (name.endsWith('/definePage'))
@@ -232,7 +232,7 @@ requests[5].resolve(secondSnapshot);
 await page._reminderInFlight;
 assert.equal(page.data.homeReminderList[0].publicMatterId, 'user-b-matter');
 
-const wxml = fs.readFileSync('pages/index/index.wxml', 'utf8');
+const wxml = fs.readFileSync('pages/campus/campus.wxml', 'utf8');
 assert.match(wxml, /wx:if="\{\{homeReminderError \|\| homeReminderList\.length\}\}"/);
 assert.ok(!wxml.includes('正在加载事项提醒'));
 assert.ok(wxml.includes('{{reminder.nodeName}}'));

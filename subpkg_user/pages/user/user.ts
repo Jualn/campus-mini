@@ -157,7 +157,7 @@ definePage({
   onShareAppMessage(options): WechatMiniprogram.Page.ICustomShareContent {
     if (options.from === 'button') return this._getShareContent();
     return {
-      title: '发现校园里的新鲜事',
+      title: 'E 网同心',
       imageUrl: 'https://cos.jualn.cn/share/index-share.jpg',
       path: '/pages/index/index',
     };

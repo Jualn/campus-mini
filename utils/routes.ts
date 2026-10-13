@@ -1,5 +1,6 @@
 export const ROUTES = {
   HOME: '/pages/index/index',
+  CAMPUS: '/pages/campus/campus',
   MESSAGE: '/pages/message/message',
   ME: '/pages/me/me',
 } as const;

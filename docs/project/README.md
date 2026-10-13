@@ -4,6 +4,7 @@
 
 | 任务 | 文档 |
 |---|---|
+| 红色内容主首页、两版分类与校园辅助页 | [栏目首页展示提案](red-home-layout.md) |
 | 活动发现筛选、分页刷新、结构化范围和启用边界 | [活动发现列表](activity-discovery-list.md) |
 | 当前用户资料、缓存、跨页昵称头像同步 | [当前用户状态](current-user-state.md) |
 | 服务与协议入口、通知集成注意事项 | [集成边界](integration-boundaries.md) |

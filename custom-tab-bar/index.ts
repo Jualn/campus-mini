@@ -26,7 +26,7 @@ export interface CustomTabBar {
    * @param tabIndex Tab 索引
    * @param count 徽标数
    * @example
-   * 用法：getCustomTabBar(this).setBadge(1, 5)
+   * 用法：getCustomTabBar(this).setBadge(2, 5)
    */
   setBadge(tabIndex: number, count: number): void;
 }
@@ -55,6 +55,11 @@ defineComponent<Private>()({
         iconName: 'home',
       },
       {
+        text: '校园',
+        url: ROUTES.CAMPUS,
+        iconName: 'calendar-event',
+      },
+      {
         text: '消息',
         url: ROUTES.MESSAGE,
         iconName: 'message',
@@ -75,10 +80,10 @@ defineComponent<Private>()({
   lifetimes: {
     attached() {
       // 初始化
-      this.setBadge(1, getUnreadCount());
+      this.setBadge(2, getUnreadCount());
 
       this.unreadListener = (unreadCount: number) => {
-        this.setBadge(1, unreadCount);
+        this.setBadge(2, unreadCount);
       };
       eventBus.on(EVENTS.NOTIFY_UNREAD_CHANGE, this.unreadListener);
     },
