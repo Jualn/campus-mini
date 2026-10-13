@@ -46,7 +46,7 @@ Page<PageData, PageCustom>({
     const category = RED_CATEGORIES.find((item) => item.key === key);
     if (!category) return;
     this.setData({ currentCategory: category, expandedItemId: '' });
-    wx.pageScrollTo({ scrollTop: 0, duration: 0 });
+    void wx.pageScrollTo({ scrollTop: 0, duration: 0 });
   },
   toggleTopic(e) {
     const { id } = e.currentTarget.dataset as { id?: string };
@@ -59,7 +59,7 @@ Page<PageData, PageCustom>({
   onBack() {
     if (this.data.currentCategory) {
       this.setData({ currentCategory: null, expandedItemId: '' });
-      wx.pageScrollTo({ scrollTop: 0, duration: 0 });
+      void wx.pageScrollTo({ scrollTop: 0, duration: 0 });
       return;
     }
     if (getCurrentPages().length > 1) {
