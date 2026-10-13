@@ -135,6 +135,10 @@ const timelineJs = ts.transpileModule(fs.readFileSync('subpkg_activity/utils/eve
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 },
 }).outputText;
 vm.runInNewContext(timelineJs, { exports: timelineExports, Date });
+const audienceExports = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('utils/activity-audience.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: audienceExports, Set });
+const mapperExports = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('subpkg_activity/services/activity-card-mapper.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: mapperExports, Date, require(name) { if (name.endsWith('/activity-audience')) return audienceExports; if (name.endsWith('/event-timeline')) return timelineExports; return {}; } });
 const js = ts.transpileModule(fs.readFileSync('subpkg_activity/services/activity.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText;
@@ -142,6 +146,7 @@ vm.runInNewContext(js, {
   exports,
   Date,
   require(name) {
+    if (name.endsWith('/activity-card-mapper')) return mapperExports;
     if (name.endsWith('/event-api')) return { eventApi };
     if (name.endsWith('/api')) return { api: { activity: {} } };
     if (name.endsWith('/event-timeline')) return timelineExports;

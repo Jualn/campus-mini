@@ -9,7 +9,8 @@
     "audit:packages": "node scripts/audit-packages.mjs",
     "validate:icons": "node scripts/validate-icon-registry.mjs",
     "test:icons": "node scripts/test-icon-system.mjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:activity-discovery": "node scripts/test-activity-discovery.mjs"
   },
   "keywords": [],
   "author": "",

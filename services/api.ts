@@ -231,8 +231,5 @@ export const api = {
   search: {
     searchPosts: (query: ApiTypes.SearchQuery) =>
       http.get<ApiTypes.PageResultPostListBO>('/v1/search/posts', query),
-
-    searchActivities: (query: ApiTypes.SearchQuery) =>
-      http.get<ApiTypes.PageResultActivityListBO>('/v1/search/activities', query),
   },
 };

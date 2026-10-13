@@ -1,99 +1,17 @@
+import { toCard } from './activity-card-mapper';
+import type { ActivityListQuery } from './event-api';
 import { api } from '../../services/api';
 import { eventApi } from './event-api';
 import type { ActivityCreateRequest, ActivityUploadBO } from '../../types/api';
 import type { ActivityCard, ActivityDetail, ServiceCursorPage } from '../../types/business';
 import type {
   ActivityDetailDTO,
-  ActivitySummaryDTO,
   EventAction,
   EventAttachment,
   EventTimelineNode,
 } from '../../types/event-contract';
-import type {
-  ActivityUiStatus,
-  Attachment,
-  TimelineNode,
-  TimelineNodeStatus,
-} from '../../types/activity';
-import {
-  exactCountdownDays,
-  formatTimelineSchedule,
-  sortTimeline,
-  timelineStatus,
-} from '../utils/event-timeline';
-
-const CATEGORY_LABELS: Record<ActivitySummaryDTO['category'], string> = {
-  LECTURE: '学术讲座',
-  COMPETITION: '文体比赛',
-  SPORTS: '体育运动',
-  VOLUNTEERING: '志愿公益',
-  THEMED: '主题活动',
-  OTHER: '其他',
-};
-
-const TYPE_COLORS: Record<ActivitySummaryDTO['category'], string> = {
-  LECTURE: 'lecture',
-  COMPETITION: 'campus',
-  SPORTS: 'competition',
-  VOLUNTEERING: 'volunteer',
-  THEMED: 'campus',
-  OTHER: 'campus',
-};
-
-function uiStatus(raw: ActivitySummaryDTO): ActivityUiStatus {
-  if (raw.lifecycleStatus === 'CANCELLED') return 'cancelled';
-  if (raw.lifecycleStatus === 'ENDED') return 'ended';
-  if (raw.availability.state === 'OPEN') return 'enrolling';
-  if (raw.availability.state === 'NOT_OPEN') return 'not_started';
-  return 'ongoing';
-}
-
-function statusLabel(raw: ActivitySummaryDTO): string {
-  if (raw.lifecycleStatus === 'CANCELLED') return '已取消';
-  if (raw.lifecycleStatus === 'ENDED') return '已结束';
-  const labels: Record<ActivitySummaryDTO['availability']['state'], string> = {
-    NO_REGISTRATION: '无需报名',
-    NOT_OPEN: '报名未开始',
-    OPEN: '报名中',
-    CLOSED: '报名已截止',
-    FULL: '名额已满',
-    EXTERNAL: '外部参与',
-    UNAVAILABLE: '暂不可参与',
-  };
-  return labels[raw.availability.state];
-}
-
-function capacityText(raw: ActivitySummaryDTO): string {
-  if (raw.capacity === undefined) return '';
-  return `${String(raw.capacity)} ${raw.capacityUnit === 'TEAM' ? '队' : '人'}`;
-}
-
-function toCard(raw: ActivitySummaryDTO): ActivityCard {
-  const projected = raw.cardTimeline ? formatTimelineSchedule(raw.cardTimeline.schedule) : null;
-  return {
-    id: raw.activityId,
-    title: raw.title,
-    summary: raw.summary,
-    cover: raw.cover?.url,
-    type: CATEGORY_LABELS[raw.category],
-    typeIcon: '',
-    typeColor: TYPE_COLORS[raw.category],
-    scope: [raw.audienceSummary],
-    location: raw.primaryLocation ?? '',
-    organizer: raw.organizer,
-    max_participants: raw.capacityUnit === 'PERSON' ? (raw.capacity ?? null) : null,
-    capacityText: capacityText(raw),
-    cardTimelineLabel: raw.cardTimeline?.title ?? '',
-    cardTimelineText: projected?.text ?? '',
-    cardTimelineKind: projected?.kind,
-    deadlineText: raw.cardTimeline ? `${raw.cardTimeline.title} · ${projected?.text ?? ''}` : '',
-    status: uiStatus(raw),
-    statusLabel: statusLabel(raw),
-    daysToDeadline: raw.cardTimeline ? exactCountdownDays(raw.cardTimeline.schedule) : null,
-    enroll_deadline: '',
-    published_at: '',
-  };
-}
+import type { Attachment, TimelineNode, TimelineNodeStatus } from '../../types/activity';
+import { formatTimelineSchedule, sortTimeline, timelineStatus } from '../utils/event-timeline';
 
 function toTimeline(items: EventTimelineNode[]): TimelineNode[] {
   return sortTimeline(items).map((node) => {
@@ -196,8 +114,8 @@ function toDetail(raw: ActivityDetailDTO, subscribed: boolean): ActivityDetail {
       .map((item) => ({ key: item.sectionKey, title: item.title, content: item.content })),
     actions,
     hasParticipation: registrationMode !== 1 || actions.length > 0,
-    deadlineSummary: statusLabel(raw),
-    registrationLabel: statusLabel(raw),
+    deadlineSummary: card.statusLabel,
+    registrationLabel: card.statusLabel,
     platformRegistrationText: raw.platformRegistrationCount
       ? `平台已提交 ${String(raw.platformRegistrationCount.submittedCount)} 份`
       : '',
@@ -223,15 +141,22 @@ export const create = (payload: ActivityCreateRequest): Promise<string> =>
   api.activity.create(payload);
 
 export async function getActivityList(
-  options: { lastId?: string; pageSize?: number; keyword?: string } = {},
+  options: ActivityListQuery & { lastId?: string; keyword?: string } = {},
 ): Promise<ServiceCursorPage<ActivityCard>> {
-  const cursor = options.lastId?.trim();
-  const keyword = options.keyword?.trim();
+  const cursor = (options.cursor ?? options.lastId)?.trim();
+  const keyword = (options.q ?? options.keyword)?.trim();
+  const audience: ActivityListQuery =
+    options.audienceFilter === 'DEPARTMENT'
+      ? { audienceFilter: 'DEPARTMENT', departmentId: options.departmentId }
+      : { audienceFilter: options.audienceFilter };
   const page = await eventApi.activities.list({
+    ...audience,
     cursor: cursor?.length ? cursor : undefined,
     pageSize: options.pageSize ?? 20,
     q: keyword?.length ? keyword : undefined,
     sort: '-publishedAt',
+    category: options.category,
+    lifecycleStatus: options.lifecycleStatus,
   });
   return {
     list: page.items.map(toCard),

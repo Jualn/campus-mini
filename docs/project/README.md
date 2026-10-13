@@ -4,6 +4,7 @@
 
 | 任务 | 文档 |
 |---|---|
+| 活动发现筛选、分页刷新、结构化范围和启用边界 | [活动发现列表](activity-discovery-list.md) |
 | 当前用户资料、缓存、跨页昵称头像同步 | [当前用户状态](current-user-state.md) |
 | 服务与协议入口、通知集成注意事项 | [集成边界](integration-boundaries.md) |
 | Structured 消息中心、前台会话、外部入口和已读 | [Notification 客户端](notification-center.md) |

@@ -85,7 +85,7 @@
       <view class="info-card__meta">
         <text class="info-card__organizer">{{activity.organizer}}</text>
         <block wx:for="{{activity.scope}}" wx:key="index">
-          <text class="info-card__scope">{{item}}</text>
+          <text class="info-card__scope">参与范围：{{item}}</text>
         </block>
       </view>
 
@@ -160,14 +160,14 @@
       </view>
     </view>
 
+    <view class="section-card" wx:if="{{activity.audienceSummary}}">
+      <view class="section-title-row"><text class="section-title">参与对象说明</text></view>
+      <text class="event-body" user-select>{{activity.audienceSummary}}</text>
+    </view>
     <view class="section-card" wx:for="{{activity.sections}}" wx:key="key"
       ><view class="section-title-row"><text class="section-title">{{item.title}}</text></view
       ><text class="event-body" user-select>{{item.content}}</text></view
     >
-    <view class="section-card" wx:if="{{activity.audienceSummary}}">
-      <view class="section-title-row"><text class="section-title">参与要求</text></view>
-      <text class="event-body" user-select>{{activity.audienceSummary}}</text>
-    </view>
     <!-- 活动介绍 -->
     <view class="section-card" wx:if="{{activity.description && !activity.sections.length}}">
       <view class="section-title-row">

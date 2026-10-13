@@ -16,7 +16,7 @@
         <view class="activity-card__tags activity-card__tags--image">
           <text class="activity-card__tag activity-card__tag--image" wx:if="{{activity.type}}">{{activity.type}}</text>
           <block wx:for="{{_scopeList}}" wx:key="index">
-            <text class="activity-card__tag activity-card__tag--image">{{item}}</text>
+            <text class="activity-card__tag activity-card__tag--image">{{index === 0 ? '参与范围：' : ''}}{{item}}</text>
           </block>
         </view>
 
@@ -58,7 +58,7 @@
       <view class="activity-card__tags">
         <text class="activity-card__tag" wx:if="{{activity.type}}">{{activity.type}}</text>
         <block wx:for="{{_scopeList}}" wx:key="index">
-          <text class="activity-card__tag">{{item}}</text>
+          <text class="activity-card__tag">{{index === 0 ? '参与范围：' : ''}}{{item}}</text>
         </block>
       </view>
 

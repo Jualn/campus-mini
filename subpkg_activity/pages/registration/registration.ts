@@ -262,6 +262,8 @@ definePage({
         this.data.mine,
         this.data.rememberReusableFields,
       );
+      if (typeof this.getOpenerEventChannel === 'function')
+        this.getOpenerEventChannel().emit?.('activityChanged');
       if (this.isAlive()) {
         this.setData({ message: '信息已提交。这不代表官方录取或完成外部步骤。' });
         await this.reload();
@@ -306,6 +308,8 @@ definePage({
       if (!result.confirm || !this.isAlive()) return;
       requested = true;
       await action.cancelRegistration(this.data.activityId, this.data.mine);
+      if (typeof this.getOpenerEventChannel === 'function')
+        this.getOpenerEventChannel().emit?.('activityChanged');
       if (this.isAlive()) {
         this.setData({ message: '已取消报名提交' });
         await this.reload();

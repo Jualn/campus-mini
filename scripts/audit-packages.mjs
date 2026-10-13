@@ -126,6 +126,8 @@ function checkSubpackageOnlyModules() {
     'services/event-api',
     'utils/event-timeline',
     'utils/search-history',
+    'config/activity-discovery',
+    'config/activity-list',
   ];
   for (const stem of movedModules) {
     for (const extension of sourceExtensions) {
@@ -137,11 +139,12 @@ function checkSubpackageOnlyModules() {
 
   // 普通分包保持本地依赖；校验共享副本，避免修复只落在某个分包。
   const sharedCopies = [
+    ['config/activity-list.ts', ['subpkg_activity', 'subpkg_community']],
     ['behaviors/useAsyncLoad.ts', ['subpkg_activity', 'subpkg_community', 'subpkg_public_event', 'subpkg_user']],
     ['utils/navigation.ts', ['subpkg_activity', 'subpkg_public_event', 'subpkg_user']],
-    ['services/activity-mapper.ts', ['subpkg_activity', 'subpkg_community']],
-    ['services/event-api.ts', ['subpkg_activity', 'subpkg_public_event']],
-    ['utils/event-timeline.ts', ['subpkg_activity', 'subpkg_public_event']],
+    ['services/event-api.ts', ['subpkg_activity', 'subpkg_public_event', 'subpkg_community']],
+    ['services/activity-card-mapper.ts', ['subpkg_activity', 'subpkg_community']],
+    ['utils/event-timeline.ts', ['subpkg_activity', 'subpkg_public_event', 'subpkg_community']],
   ];
   for (const [relative, packages] of sharedCopies) {
     let baseline;

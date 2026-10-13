@@ -24,9 +24,15 @@ function harness() {
   const logs = [];
   const history = [];
   let definition;
+  let userId = 'u1';
+  const watchers = new Set();
   const request = (tab, query) =>
     new Promise((resolve, reject) => requests.push({ tab, query, resolve, reject }));
   const imports = {
+    '../../config/activity-list': { ACTIVITY_LIST_MAX_AGE_MS: 60000 },
+    '../../../utils/error': { isHttpError: (error) => !!error.problemType },
+    '../../../stores/helper': { getUserId: () => userId },
+    '../../../stores/index': { appStore: { watch(key, fn) { watchers.add(fn); fn({ id: userId }); return () => watchers.delete(fn); } } },
     '../../../utils/logger': { createLogger: () => ({ error: (...args) => logs.push(args) }) },
     '../../../utils/wx-promise': { wxNavigateBack: () => Promise.resolve() },
     '../../actions/search': {
@@ -57,7 +63,7 @@ function harness() {
     page.onLoad(options);
     return page;
   }
-  return { createPage, requests, logs, history };
+  return { createPage, requests, logs, history, switchUser(id) { userId = id; for (const fn of watchers) fn({ id }); } };
 }
 
 test('首次加载与空结果分开；空结果也按分类缓存', async () => {
@@ -206,4 +212,26 @@ test('未接入考试不出现在分类中，旧路由安全回退，空关键�
   switchTab(empty, 'activity');
   assert.equal(requests.length, 1);
   assert.equal(empty.data.searchKeyword, '');
+});
+
+test('活动查询换账号丢弃旧响应，保留帖子结果；无效 cursor 从第一页恢复', async () => {
+  const { createPage, requests, switchUser } = harness();
+  const page = createPage({ keyword: '校园', tab: 'activity' });
+  requests[0].resolve(result([{ id: 'a' }], true, 'cursor:a'));
+  await flush();
+  page.onReachBottom();
+  requests[1].reject({ problemType: '/problems/invalid-cursor' });
+  await flush();
+  assert.equal(page.data.activityNextCursor, 'cursor:a');
+  page.onRetry();
+  assert.equal(requests[2].query.lastId, undefined);
+  switchUser('u2');
+  requests[2].resolve(result([{ id: 'old-account' }]));
+  requests[3].resolve(result([{ id: 'new-account' }]));
+  await flush();
+  assert.equal(page.data.activityList[0].id, 'new-account');
+  page.onActivityChanged();
+  page.onShow();
+  assert.equal(requests[4].query.lastId, undefined);
+  page.onUnload();
 });

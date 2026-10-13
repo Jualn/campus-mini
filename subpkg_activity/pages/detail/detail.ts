@@ -53,6 +53,12 @@ definePage({
     this._registrationPageOpened = true;
     wx.navigateTo({
       url: `/subpkg_activity/pages/registration/registration?activityId=${encodeURIComponent(this.data.currentActivityId)}`,
+      events: {
+        activityChanged: () => {
+          if (typeof this.getOpenerEventChannel === 'function')
+            this.getOpenerEventChannel().emit?.('activityChanged');
+        },
+      },
       fail: () => {
         this._registrationPageOpened = false;
         showInfoToast('报名页面暂时无法打开，请重试');
