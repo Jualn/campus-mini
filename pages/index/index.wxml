@@ -61,6 +61,10 @@
           <text class="search-box__placeholder g-search-box__placeholder">搜索动态、资料或活动</text>
         </view>
       </view>
+      <navigator class="red-home-entry" url="/subpkg_red/pages/index/index" hover-class="tap-active">
+        <view><text class="red-home-entry__eyebrow">红色阵地</text><view class="red-home-entry__title">E 网同心</view><view class="red-home-entry__summary">学习 · 服务 · 活力 · 传承 · 创新 · 实践</view></view>
+        <ui-icon name="chevron-right" size="lg" />
+      </navigator>
       <!-- 登录用户的个性化公共事项提醒；成功空集合时整个区域隐藏。 -->
       <view class="exam-section" wx:if="{{homeReminderError || homeReminderList.length}}">
         <view class="section-title">

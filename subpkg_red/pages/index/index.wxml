@@ -1,90 +1,54 @@
 <view class="red-page">
-  <view class="hero">
-    <view class="hero__eyebrow">红色阵地</view>
-    <view class="hero__title">E 网同心</view>
-    <view class="hero__subtitle">学习、服务、活动、实践一体化入口</view>
-  </view>
-
-  <view class="structure">
-    <view
-      class="structure__item"
-      wx:for="{{structureItems}}"
-      wx:key="id"
-    >
-      <view class="structure__index">0{{index + 1}}</view>
-      <view class="structure__body">
-        <view class="structure__title">{{item.title}}</view>
-        <view class="structure__summary">{{item.summary}}</view>
-      </view>
+  <view class="red-top" style="padding-top: {{statusBarHeight}}px;">
+    <view class="red-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
+      <view class="red-back" bindtap="onBack" aria-role="button" aria-label="{{currentCategory ? '返回栏目首页' : '返回'}}"><ui-icon name="chevron-left" size="lg" /></view>
+      <text class="red-nav__title">{{currentCategory ? currentCategory.title : 'E 网同心'}}</text>
     </view>
   </view>
-
-  <scroll-view class="category-scroll" scroll-x="true" show-scrollbar="false" enable-flex>
-    <view class="category-tabs">
-      <view
-        class="category-tab {{activeCategoryKey === item.key ? 'category-tab--active' : ''}}"
-        wx:for="{{categories}}"
-        wx:key="key"
-        bindtap="switchCategory"
-        data-key="{{item.key}}"
-      >
-        <text class="category-tab__title">{{item.title}}</text>
+  <block wx:if="{{!currentCategory}}">
+    <view class="red-intro">
+      <text class="red-eyebrow">红色阵地</text>
+      <view class="red-title">E 网同心</view>
+      <view class="red-subtitle">学习、服务、活动、实践一体化入口</view>
+    </view>
+    <view class="red-section-heading"><text>探索栏目</text><text class="red-meta">6 个方向</text></view>
+    <view class="red-grid">
+      <view class="red-category" wx:for="{{categories}}" wx:key="key" data-key="{{item.key}}" bindtap="openCategory" hover-class="red-pressed" aria-role="button" aria-label="{{item.title}}，{{item.items.length}}个栏目">
+        <view class="red-category__number">0{{index + 1}}</view>
+        <view class="red-category__title">{{item.title}}</view>
+        <view class="red-meta">{{item.items.length}} 个栏目</view>
       </view>
     </view>
-  </scroll-view>
-
-  <view class="content">
-    <view class="section-heading">
-      <view>
-        <view class="section-heading__title">{{currentCategory.title}}</view>
-        <view class="section-heading__subtitle">{{currentCategory.subtitle}}</view>
-      </view>
-      <view class="section-heading__count">{{currentCategory.items.length}} 项</view>
+    <view class="red-section-heading"><text>校园入口</text></view>
+    <view class="red-links">
+      <navigator class="red-link" url="/subpkg_activity/pages/list/list"><ui-icon name="calendar-event" size="lg" /><text>校园活动</text><ui-icon name="chevron-right" size="sm" /></navigator>
+      <navigator class="red-link" url="/subpkg_public_event/pages/list/list"><ui-icon name="checklist" size="lg" /><text>公共事项</text><ui-icon name="chevron-right" size="sm" /></navigator>
+      <navigator class="red-link" url="/pages/index/index" open-type="switchTab"><ui-icon name="home" size="lg" /><text>校园动态</text><ui-icon name="chevron-right" size="sm" /></navigator>
     </view>
-
-    <view class="category-summary">{{currentCategory.summary}}</view>
-
-    <view class="topic-list">
-      <view
-        class="topic-card"
-        wx:for="{{currentCategory.items}}"
-        wx:key="id"
-        bindtap="onTopicTap"
-        data-id="{{item.id}}"
-      >
-        <view class="topic-card__main">
-          <view class="topic-card__dot"></view>
-          <view class="topic-card__body">
-            <view class="topic-card__title-row">
-              <text class="topic-card__title">{{item.title}}</text>
-              <view class="topic-card__tags" wx:if="{{item.tags && item.tags.length}}">
-                <text
-                  class="topic-card__tag"
-                  wx:for="{{item.tags}}"
-                  wx:for-item="tag"
-                  wx:key="*this"
-                >{{tag}}</text>
-              </view>
-            </view>
-            <view class="topic-card__summary">{{item.summary}}</view>
-          </view>
+    <view class="red-about">
+      <view class="red-about__toggle" bindtap="toggleIntroduction" aria-role="button" aria-expanded="{{showIntroduction}}"><text>了解阵地</text><text class="red-meta">{{showIntroduction ? '收起' : '展开'}}</text></view>
+      <view wx:if="{{showIntroduction}}">
+        <view class="red-structure" wx:for="{{structureItems}}" wx:key="id"><view class="red-structure__title">{{item.title}}</view><view class="red-description">{{item.summary}}</view></view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <view class="red-directory-header"><view class="red-title">{{currentCategory.title}}</view><view class="red-subtitle">{{currentCategory.items.length}} 个栏目 · 点击名称查看现有说明</view></view>
+    <view class="red-switcher">
+      <view wx:for="{{categories}}" wx:key="key" class="red-switch {{currentCategory.key === item.key ? 'red-switch--active' : ''}}" data-key="{{item.key}}" bindtap="openCategory" aria-role="button" aria-label="{{item.title}}" aria-pressed="{{currentCategory.key === item.key}}">{{item.title}}</view>
+    </view>
+    <view class="red-directory">
+      <view class="red-topic" wx:for="{{currentCategory.items}}" wx:key="id">
+        <view class="red-topic__heading" data-id="{{item.id}}" bindtap="toggleTopic" hover-class="red-pressed" aria-role="button" aria-expanded="{{expandedItemId === item.id}}">
+          <text class="red-topic__title">{{item.title}}</text><text class="red-meta">{{expandedItemId === item.id ? '收起' : '展开'}}</text>
         </view>
-
-        <view class="child-list" wx:if="{{item.children && item.children.length}}">
-          <view
-            class="child-chip"
-            wx:for="{{item.children}}"
-            wx:for-item="child"
-            wx:key="id"
-          >{{child.title}}</view>
+        <view wx:if="{{expandedItemId === item.id}}" class="red-topic__detail">
+          <view class="red-description">{{item.summary || '该栏目暂无内容说明。'}}</view>
+          <view class="red-children" wx:if="{{item.children && item.children.length}}"><text class="red-child" wx:for="{{item.children}}" wx:for-item="child" wx:key="id">{{child.title}}</text></view>
         </view>
       </view>
     </view>
-
-    <view class="selection" wx:if="{{selectedItem}}">
-      <view class="selection__label">当前选中</view>
-      <view class="selection__title">{{selectedItem.title}}</view>
-      <view class="selection__summary">{{selectedItem.summary}}</view>
-    </view>
-  </view>
+  </block>
+  <view class="red-footnote">A 版 · 保留六型结构 · 具体内容与功能待确认</view>
 </view>
+<in-app-banner />

@@ -996,3 +996,9 @@
   height: 1rpx;
   background: var(--color-border);
 }
+
+/* 红色阵地栏目展示入口 */
+.red-home-entry { margin: 12rpx 30rpx 28rpx; padding: 26rpx; display: flex; justify-content: space-between; align-items: center; gap: 16rpx; border-radius: var(--radius-md); background: var(--color-bg-page); }
+.red-home-entry__eyebrow { font-size: 22rpx; color: var(--color-primary); }
+.red-home-entry__title { margin-top: 8rpx; font-size: 34rpx; font-weight: 700; color: var(--color-text-primary); }
+.red-home-entry__summary { margin-top: 10rpx; font-size: 24rpx; line-height: 1.5; color: var(--color-text-secondary); }

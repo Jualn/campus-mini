@@ -1,62 +1,71 @@
-import { DEFAULT_RED_CATEGORY, RED_CATEGORIES, RED_STRUCTURE } from '../../data/red-menu';
-import type { RedCategory, RedCategoryKey, RedTopicItem } from '../../types/red';
-import { showInfoToast } from '../../../utils/notify';
+import { RED_CATEGORIES, RED_STRUCTURE } from '../../data/red-menu';
+import type { RedCategory, RedCategoryKey } from '../../types/red';
+import { wxNavigateBack, wxSwitchTab } from '../../../utils/wx-promise';
 
 interface PageData {
-  activeCategoryKey: RedCategoryKey;
+  statusBarHeight: number;
+  navTopGap: number;
+  navHeight: number;
   categories: RedCategory[];
-  currentCategory: RedCategory;
+  currentCategory: RedCategory | null;
   structureItems: typeof RED_STRUCTURE;
-  selectedItem: RedTopicItem | null;
+  expandedItemId: string;
+  showIntroduction: boolean;
 }
-
 interface PageCustom {
-  switchCategory: (e: WechatMiniprogram.TouchEvent) => void;
-  onTopicTap: (e: WechatMiniprogram.TouchEvent) => void;
+  openCategory: (e: WechatMiniprogram.TouchEvent) => void;
+  toggleTopic: (e: WechatMiniprogram.TouchEvent) => void;
+  toggleIntroduction: () => void;
+  onBack: () => void;
 }
-
 Page<PageData, PageCustom>({
   data: {
-    activeCategoryKey: DEFAULT_RED_CATEGORY.key,
+    statusBarHeight: 0,
+    navTopGap: 8,
+    navHeight: 32,
     categories: RED_CATEGORIES,
-    currentCategory: DEFAULT_RED_CATEGORY,
+    currentCategory: null,
     structureItems: RED_STRUCTURE,
-    selectedItem: null,
+    expandedItemId: '',
+    showIntroduction: false,
   },
-
+  onLoad() {
+    const sys = wx.getWindowInfo();
+    const menu = wx.getMenuButtonBoundingClientRect();
+    this.setData({
+      statusBarHeight: sys.statusBarHeight || 0,
+      navTopGap: menu.width ? Math.max(menu.top - (sys.statusBarHeight || 0), 6) : 8,
+      navHeight: menu.height || 32,
+    });
+  },
   onShareAppMessage() {
-    return {
-      title: '先锋 e 站',
-      path: '/subpkg_red/pages/index/index',
-    };
+    return { title: 'E 网同心', path: '/subpkg_red/pages/index/index' };
   },
-
-  switchCategory(e) {
+  openCategory(e) {
     const { key } = e.currentTarget.dataset as { key?: RedCategoryKey };
-    if (!key || key === this.data.activeCategoryKey) return;
-
-    const nextCategory = RED_CATEGORIES.find((category) => category.key === key);
-    if (!nextCategory) return;
-
-    this.setData({
-      activeCategoryKey: nextCategory.key,
-      currentCategory: nextCategory,
-      selectedItem: null,
-    });
+    const category = RED_CATEGORIES.find((item) => item.key === key);
+    if (!category) return;
+    this.setData({ currentCategory: category, expandedItemId: '' });
+    wx.pageScrollTo({ scrollTop: 0, duration: 0 });
   },
-
-  onTopicTap(e) {
+  toggleTopic(e) {
     const { id } = e.currentTarget.dataset as { id?: string };
-    if (!id) return;
-
-    const selectedItem = this.data.currentCategory.items.find((item) => item.id === id) ?? null;
-
-    this.setData({
-      selectedItem,
-    });
-
-    if (selectedItem) {
-      showInfoToast(selectedItem.title, { duration: 1200 });
+    if (!id || !this.data.currentCategory?.items.some((item) => item.id === id)) return;
+    this.setData({ expandedItemId: this.data.expandedItemId === id ? '' : id });
+  },
+  toggleIntroduction() {
+    this.setData({ showIntroduction: !this.data.showIntroduction });
+  },
+  onBack() {
+    if (this.data.currentCategory) {
+      this.setData({ currentCategory: null, expandedItemId: '' });
+      wx.pageScrollTo({ scrollTop: 0, duration: 0 });
+      return;
+    }
+    if (getCurrentPages().length > 1) {
+      void wxNavigateBack().catch(() => wxSwitchTab({ url: '/pages/index/index' }));
+    } else {
+      void wxSwitchTab({ url: '/pages/index/index' });
     }
   },
 });

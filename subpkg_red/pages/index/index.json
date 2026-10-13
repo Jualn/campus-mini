@@ -1,4 +1,5 @@
 {
   "usingComponents": {
+    "ui-icon": "/components/ui-icon/index"
   }
 }
