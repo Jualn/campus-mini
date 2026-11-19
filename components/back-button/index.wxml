@@ -1,0 +1,14 @@
+<view class="back-button-host back-button-host--{{variant}}">
+  <button
+    class="back-button back-button--{{variant}} {{inverse ? 'back-button--inverse' : ''}}"
+    bindtap="onBack"
+    disabled="{{navigating}}"
+    hover-class="back-button--pressed"
+    hover-start-time="10"
+    hover-stay-time="70"
+    aria-label="返回上一页"
+  >
+    <ui-icon name="chevron-left" state="{{inverse ? 'inverse' : 'default'}}" size="lg" />
+    <text wx:if="{{variant !== 'nav'}}" class="back-button__label">返回</text>
+  </button>
+</view>

@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "back-button": "/components/back-button/index"
+  }
+}
