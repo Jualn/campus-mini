@@ -4,6 +4,57 @@
 
 Define engineering rules for WXML/WXSS structure, reusable UI components, visual state, interaction feedback, layout adaptation, theme support, accessibility, forms, native controls, renderer-specific presentation, and UI-library usage. This is not a brand/visual-design manual.
 
+## Page design is not an API schema projection
+
+Contracts describe what may be exchanged with the backend. They do not decide the Page's information architecture, visual hierarchy, navigation, interaction model, or which response fields should be shown. A structurally valid CRUD UI generated from DTO fields can still fail the user's task.
+
+Use explicit product requirements and accepted designs first, then existing product conventions and the available Contract capabilities. For new Pages or materially changed flows, form a bounded interaction plan before implementation:
+
+- **User task and entry:** who enters, from tab/list/search/share/notification, and the single primary outcome;
+- **Information hierarchy:** what the user must see or decide first, what is supporting/optional, and what should not be displayed merely because an API returns it;
+- **Actions and transitions:** primary/secondary/destructive actions, confirmation, feedback, return/back behavior, and recovery after interruption;
+- **State map:** initial/loading/content/empty/error, pending/success/rejected/disabled, auth/permission and business-specific statuses when applicable;
+- **Component map:** existing Page patterns, Components, tokens and native controls to reuse, with explicit ownership of state/events;
+- **Platform fit and evidence:** Page/tabBar/route and subpackage entry, renderer/native-component behavior, safe-area/keyboard/scroll, base-library support, and acceptance checks.
+
+This may be a short implementation plan or task note; do not require a permanent wireframe, design file or checklist document for every minor edit. When a supplied wireframe/design exists, follow it within verified platform and Contract constraints. When consequential product choices are unspecified, state the assumption/decision gap rather than inventing a workflow. If required interaction data is absent from Contracts, surface the protocol gap; do not fabricate client authority or display fake facts.
+
+## Design decisions and component reuse
+
+Before adding a new Page/component, inspect relevant existing Pages, actual Component source and usage sites, the UI foundation/tokens (if they exist), loading/error patterns and supported project conventions. Do not assume a complete catalog, tokens or accepted wireframes are present. Decide in this order:
+
+1. **Reuse directly** when existing semantics and interactions match.
+2. **Configure or extend** an existing Component when a documented API can cover a genuinely shared variant without breaking other consumers.
+3. **Compose** existing controls at Page/feature level when the combination is feature-specific.
+4. **Create** a new Component for repeated, independently meaningful UI/interaction behavior, with defined properties/events, state owner, style isolation and accessibility.
+
+Do not copy-paste behaviorally identical controls into each Page. Equally, do not force unrelated feature semantics into one gigantic configurable component, build wrappers with no policy value, or redesign existing components during unrelated work. Promote a pattern to shared UI only when reuse and lifecycle ownership justify it. API/DTO shapes must not become generic component APIs by default.
+
+## UI change scope and design artifacts
+
+Distinguish changes before deciding validation and documentation impact:
+
+- **Local Page styles/copy/layout:** modify the Page implementation; inspect the affected view/interaction, not all consumers or permanent designs by default.
+- **Shared Component internals:** preserve the Component's public behavior; validate representative consumer contexts where styles, dimensions or event behavior could regress.
+- **Shared Component public contract:** a change to properties, events, slots, public commands, supported styling/isolation, defaults or state meaning requires impact analysis of actual consumers, compatibility assessment and appropriate Component/consumer tests. Update usage documentation only when a maintained public rule changes.
+- **Global UI foundations/tokens/theme:** review visual effects across affected Components/Pages, compatibility and source-of-truth configuration; update durable design policy or Profile only when those facts change.
+- **Product flow/state semantics:** update the accepted product design only when a durable user-facing decision changes; Contracts separately own any cross-system protocol effect.
+
+Design sketches, experiments and screenshots may support the current task but do not become permanent merely because an Agent produced them. Accepted product goals, important state transitions and exceptional interaction decisions may be documented concisely; avoid maintaining a pixel-for-pixel duplicate of live WXML/WXSS. If code and an accepted design differ, determine whether the implementation is wrong or the decision was superseded; do not automatically rewrite the design to describe accidental behavior. See [maintenance](maintenance.md#durable-documents-and-temporary-artifacts).
+
+## Native Mini Program experience boundary
+
+A Mini Program Page is not a browser route or arbitrary DOM tree. Determine the *configured* renderer/component framework and supported base-library/client versions before assuming an API, CSS/WXSS behavior, event, animation or layout property is available. Check actual project configuration and supported official platform documentation for compatibility-sensitive behavior.
+
+- **Navigation:** distinguish tabBar switching, normal Page stack navigation, replacement and reLaunch; design return/deep-entry/share paths rather than assuming Web History or a prior Page instance.
+- **Layout:** consider navigation/capsule/system chrome, safe areas, screen sizes, text scaling, keyboard lift and bottom actions; do not transplant viewport-height/CSS recipes from H5 without validation.
+- **Native controls:** input, scroll-view, picker, map, video and other native/platform Components can differ in events, layers, styling and device behavior. Prefer verified native semantics over DOM assumptions.
+- **Renderer:** WebView and Skyline do not have identical rendering/compatibility trade-offs. Use only the renderer/features enabled in this repository; no isolated feature may silently switch renderer or component framework.
+- **Interaction cost:** logic/view synchronization (`setData`), long lists, nested scroll regions, images and rapid gesture/progress updates have platform-dependent cost. Design for bounded render updates.
+- **Platform gates:** sensitive capabilities, privacy/permissions, share entry, network domains and subpackage load/ownership must be considered as part of the user flow, not only after UI markup exists.
+
+Do not turn these into universal fixed numeric limits: the applicable navigation, packaging, API and renderer constraints depend on verified project/platform configuration and require matching compiler/runtime/device evidence.
+
 ## Presentation model
 
 ```text
@@ -117,6 +168,10 @@ WXS/Worklet are specialized presentation execution mechanisms. Keep them in pres
 
 Share content creates an external entry path. Shared Pages must be independently reconstructible from safe route identity and authenticated backend state; they must not require EventChannel or previous Page memory. Treat incoming share parameters as untrusted route input.
 
+## Page-level acceptance
+
+Review whether the user can finish the intended task from every supported entry, not just whether requests return data. For meaningful Page changes, verify relevant navigation and back behavior, discoverability of the primary action, status meaning, incomplete/slow/failed data, recoverable mutation errors, component consistency, safe-area and keyboard behavior, and share/direct-entry recovery where exposed. Avoid a universal visual-approval gate for trivial edits; target tests to the changed interaction risks.
+
 ## UI validation
 
 Layer evidence:
@@ -132,7 +187,7 @@ Test boundary conditions: long/empty text, large/one-item lists, missing optiona
 
 ## Agent rule
 
-Before UI changes, identify existing UI library, tokens, reusable Components, theme strategy, renderer, style isolation, and existing loading/empty/error components. Reuse established semantics before inventing another system. Preserve accessibility and avoid unrelated visual rewrites.
+For meaningful UI changes, identify the user task, affected entry/interaction, actual reusable capabilities, applicable theme/renderer/platform constraints and state/feedback patterns. Avoid inventing UI from DTO fields. Scope design and validation to the changed behavior; preserve existing semantics for minor edits, inspect consumers for shared changes, and avoid unnecessary permanent design artifacts.
 
 ## Core invariant
 

@@ -36,6 +36,14 @@ bytes → decode → optional validation/normalization → typed application val
 
 Validation depth follows risk.
 
+## Cross-workspace Contract handoff
+
+Task entry is not always Contract-first. A task may implement an already accepted Contract, change only local Page/Component behavior, or discover a missing server-owned capability while designing or implementing a Page/backend flow. Only changes to cross-system protocol facts require the Contracts owner; send the requirement, real use case, affected operation/fields/statuses and constraints back as a **proposal**, then consume the accepted Contract after it is decided. Do not edit or reinterpret a sibling workspace's authority in this repository.
+
+After an accepted protocol change, send a **short handoff** with the pinned revision or verifiable change reference, affected operations/schemas, compatibility/breaking status, affected consumers and validation/rollout obligations. Consumers locate exact definitions themselves; the handoff does not duplicate schema, constitute a second Contract source or require a permanent coordination file. Align each consumer to a known accepted version before integration. Requirement-to-Contracts proposals may need more context than Contracts-to-consumer handoffs.
+
+Parallel backend/client implementation does not imply simultaneous deployment. Older Mini Program clients and newer backend versions may coexist; coordinate rollout according to backward/forward compatibility (see [09](09-build-ci-release.md#clientbackend-release-skew)). A DTO defines transport facts, not Page information hierarchy, interaction or component composition (see [11](11-ui-interaction-accessibility.md#page-design-is-not-an-api-schema-projection)). Do not create a new server field to display a value already safely derivable from authoritative existing facts; do not compute server-only authorization/eligibility in the client.
+
 ## Success layers
 
 Distinguish:

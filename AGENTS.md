@@ -8,12 +8,7 @@ Before relying on paths, base-library capabilities, renderer behavior, package l
 
 ## Read before non-trivial work
 
-Read, in order:
-
-1. [Project Profile](docs/engineering/mini-program/project-profile.md)
-2. [Engineering routing index](docs/engineering/mini-program/README.md)
-3. only the Mini Program Engineering documents relevant to the change
-4. applicable Contracts before changing client/backend protocol behavior
+For non-trivial work, first use the [Engineering routing index](docs/engineering/mini-program/README.md) to classify the affected boundaries. Consult only relevant facts/rows of the [Project Profile](docs/engineering/mini-program/project-profile.md), their executable authorities, the corresponding Engineering modules, and applicable Contracts when protocol behavior is involved. Do not mechanically load the full Profile and all modules for each task.
 
 For repository-specific state/component/capability work, follow the [project documentation index](docs/project/README.md) as relevant. Respect its evidence labels; design notes are not proof that implementation or runtime behavior was verified.
 
@@ -44,13 +39,19 @@ Follow existing ownership before creating abstractions. Prefer the smallest suff
 
 Do not introduce `Action`, `Service`, `Repository`, `Manager`, `Store`, `Adapter`, or similar layers when they only forward calls. Do not introduce a global EventBus or global Store for local state by default.
 
+## Change routing and UI
+
+Classify the change before expanding context: local Page/UI, shared Component or tokens, client state/platform, Contract/protocol, or cross-workspace workflow. Read only relevant modules, Profile facts, accepted product decisions and existing source/consumers. A local UI change does not imply a Contract change; if the Page needs new server-owned facts or semantics, report the gap to Contracts and resume against the accepted revision.
+
+For new Pages or meaningful flow changes, reason about user task, entry, information priority, actions, transitions, feedback and recovery before implementing the relevant Contract data. Reuse established Page/Component patterns and verified native Mini Program capabilities. For local styling edits, do not require a new design document. For shared Component or theme changes, inspect consumers and public behavior; see [UI engineering](docs/engineering/mini-program/11-ui-interaction-accessibility.md) and [Architecture](docs/engineering/mini-program/02-architecture.md).
+
 ## Contracts and backend boundary
 
 Contracts define cross-system protocol facts. Do not independently redefine request/response fields, enum values, nullability, authentication semantics, pagination models, or backend error meanings for client convenience.
 
 For protected operations, client permission checks are presentation behavior; backend authorization remains authoritative. Client duplicate-submit guards do not replace backend idempotency or concurrency protection.
 
-Modify generated Contract artifacts through their authoritative source/generator rather than editing generated output manually.
+Modify generated Contract artifacts through their authoritative source/generator rather than editing generated output manually. Cross-workspace handoff identifies an accepted Contract revision/change reference, affected operations/schemas, compatibility and consumers—not copied schema text. Page/backend discoveries may request Contract changes; do not independently redefine protocol or assume parallel implementation permits simultaneous release. See [Contract handoff](docs/engineering/mini-program/05-network-contracts-errors.md#cross-workspace-contract-handoff).
 
 ## Runtime and state
 
@@ -94,7 +95,7 @@ Consider compiled package impact when adding runtime dependencies or large stati
 
 Use the commands defined by the Project Profile and repository scripts. Choose validation according to the affected boundary.
 
-Select the smallest sufficient validation set from module 07 for the changed behavior. Typecheck, lint, tests, compile, runtime, and device checks are complementary tools, not a mandatory full checklist for every edit. Documentation-only changes use the docs-integrity command below.
+Select the smallest sufficient validation set from module 07 for the changed behavior. Typecheck, lint, tests, compile, runtime, and device checks are complementary tools, not a mandatory full checklist for every edit. Define scope before running costly suites or starting dependent services. Never create/reset shared test databases, containers, or external services without appropriate environment ownership/authorization. Documentation-only changes use the docs-integrity command below.
 
 Do not claim a higher-fidelity behavior was validated by a lower-fidelity environment. If required validation cannot be performed, report exactly what remains unverified.
 
@@ -112,9 +113,9 @@ Run `node docs/engineering/mini-program/scripts/check-docs.mjs` after governance
 
 ## Documentation synchronization
 
-Update durable documentation when the change alters a durable repository fact, including source root, base-library baseline, renderer/component framework, package manager/toolchain, architecture boundary, Contract generation/location, shared-state mechanism, package topology, UI foundation/theme strategy, platform-capability inventory, validation commands, build/release workflow, or observability/correlation convention.
+Maintain only the authority whose lasting fact or decision changed: Contracts for protocol; code/config for current implementation and Component public API; Project Profile for verified repository-wide facts; accepted project design for durable product behavior; the owning Engineering module for reusable policy. Local styling, routine implementation and temporary design explorations do not automatically create or update permanent documents. For shared Component API, state semantics or global tokens, inspect and update impacted consumers/tests and any maintained usage contract. See [document maintenance](docs/engineering/mini-program/maintenance.md).
 
-Do not update the Project Profile for ordinary feature work when none of those facts changed.
+Do not update the Project Profile for ordinary feature work when its durable facts did not change. Git retains change history; do not create routine audit or task-summary documents.
 
 ## Git collaboration
 
