@@ -1,0 +1,41 @@
+<page-navigation title="官方内容" fixed surface="page" />
+<view class="content-page">
+  <view wx:if="{{loading && !content}}" class="article-skeleton">
+    <view class="skeleton-block skeleton-pill skeleton-category"></view>
+    <view class="skeleton-block skeleton-title"></view>
+    <view class="skeleton-block skeleton-title skeleton-title--short"></view>
+    <view class="skeleton-block skeleton-meta"></view>
+    <view class="skeleton-block skeleton-summary"></view>
+    <view class="skeleton-block skeleton-line" wx:for="{{[1, 2, 3, 4, 5]}}" wx:key="index"></view>
+  </view>
+
+  <load-state wx:if="{{error && !content}}" mode="error" title="内容暂时无法打开" description="{{error}}" action-text="重新加载" bind:action="load" fill-viewport viewport-offset="200" />
+  <view wx:if="{{error && content}}" class="inline-error"><text>{{error}}</text><button class="text-button" bindtap="load">重新加载</button></view>
+
+  <block wx:if="{{content}}">
+    <view class="article-paper">
+      <view class="article-header">
+        <view class="category">{{content.categoryLabel}}</view>
+        <view class="title">{{content.title}}</view>
+        <view class="meta"><text class="publisher">{{content.publisher}}</text><text class="publish-date">{{content.publishedDate}}</text></view>
+        <view wx:if="{{content.summary}}" class="summary">{{content.summary}}</view>
+      </view>
+      <view class="article-content">
+        <text class="body" selectable>{{content.body}}</text>
+
+        <view wx:for="{{content.images}}" wx:key="attachmentId" class="media-block">
+          <view wx:if="{{failedMedia[item.attachmentId]}}" class="media-failed"><text>图片加载失败</text><button class="retry-button" data-key="{{item.attachmentId}}" bindtap="retryMedia">重新加载</button></view>
+          <image wx:else class="image" src="{{item.url}}" mode="widthFix" lazy-load data-key="{{item.attachmentId}}" data-url="{{item.url}}" bindtap="previewImage" binderror="mediaError" aria-label="{{item.name}}" />
+          <text wx:if="{{item.name}}" class="caption">{{item.name}}</text>
+        </view>
+
+        <view wx:if="{{content.video}}" class="media-block">
+          <view wx:if="{{failedMedia[content.video.attachmentId]}}" class="media-failed"><text>视频加载失败</text><button class="retry-button" data-key="{{content.video.attachmentId}}" bindtap="retryMedia">重新加载</button></view>
+          <video wx:else class="video" src="{{content.video.url}}" controls object-fit="contain" data-key="{{content.video.attachmentId}}" binderror="mediaError" />
+          <text wx:if="{{content.video.name}}" class="caption">{{content.video.name}}</text>
+        </view>
+        <view class="reading-end"><text>正文结束</text></view>
+      </view>
+    </view>
+  </block>
+</view>

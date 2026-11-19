@@ -1,0 +1,46 @@
+<page-navigation title="党建宣传" fixed surface="page" />
+<view class="content-page">
+  <view class="page-hero">
+    <view class="hero-kicker">历史官方内容</view>
+    <view class="hero-title">党建宣传与品牌内容</view>
+    <view class="hero-description">回顾党建资讯、支部动态与品牌建设成果</view>
+  </view>
+
+  <view class="filter-panel">
+    <view class="filter-label">内容分类</view>
+    <picker range="{{categories}}" value="{{categoryIndex}}" bindchange="changeCategory">
+      <view class="filter-control" aria-role="button" aria-label="当前分类 {{categories[categoryIndex]}}，点击切换"><text>{{categories[categoryIndex]}}</text>
+        <ui-icon name="chevron-right" size="sm" />
+      </view>
+    </picker>
+  </view>
+
+  <view class="list-heading">已发布内容</view>
+  <navigator wx:for="{{items}}" wx:key="id" class="card" url="/subpkg_red/pages/content-detail/detail?id={{item.id}}" hover-class="card--pressed">
+    <view class="card-top">
+      <view class="category">{{item.categoryLabel}}</view>
+      <ui-icon name="chevron-right" size="sm" />
+    </view>
+    <view class="title">{{item.title}}</view>
+    <view wx:if="{{item.summary}}" class="summary">{{item.summary}}</view>
+    <view class="meta"><text class="publisher">{{item.publisher}}</text><text wx:if="{{item.publishedDate}}" class="date">{{item.publishedDate}}</text></view>
+  </navigator>
+
+  <block wx:if="{{loading && !items.length}}">
+    <view class="content-skeleton" wx:for="{{[1, 2, 3]}}" wx:key="index">
+      <view class="skeleton-block skeleton-pill skeleton-category"></view>
+      <view class="skeleton-block skeleton-title"></view>
+      <view class="skeleton-block skeleton-line"></view>
+      <view class="skeleton-block skeleton-line skeleton-line--short"></view>
+      <view class="skeleton-block skeleton-meta"></view>
+    </view>
+  </block>
+
+  <load-state wx:elif="{{error && !items.length}}" mode="error" title="内容暂时加载失败" description="{{error}}" action-text="重新加载" bind:action="retry" />
+  <load-state wx:elif="{{!loading && !items.length}}" mode="empty" title="当前分类暂无内容" description="可以切换其他分类，或稍后再来查看。" />
+
+  <view wx:if="{{error && items.length}}" class="inline-state"><text>{{error}}</text><button class="text-button" bindtap="retry">重试</button></view>
+  <view wx:if="{{loading && items.length}}" class="list-status">正在更新内容…</view>
+  <button wx:if="{{hasMore && !loading && !error}}" class="more-button btn btn-ghost" bindtap="more">加载更多</button>
+  <view wx:if="{{!hasMore && items.length && !loading && !error}}" class="list-end"><text>已显示全部内容</text></view>
+</view>

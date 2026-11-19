@@ -102,3 +102,8 @@ export const isBusinessError = (e: unknown): e is BusinessError => e instanceof 
 export const isNetworkError = (e: unknown): e is NetworkError => e instanceof NetworkError;
 export const isHttpError = (e: unknown): e is HttpError => e instanceof HttpError;
 export const isAuthError = (e: unknown): e is AuthError => e instanceof AuthError;
+
+/** A failed refresh may retain content only while its access/existence has not been rejected. */
+export function isReadAccessError(error: unknown): boolean {
+  return isAuthError(error) || (isHttpError(error) && [401, 403, 404].includes(error.statusCode));
+}

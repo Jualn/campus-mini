@@ -1,0 +1,10 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "党建宣传",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index",
+    "ui-icon": "/components/ui-icon/index"
+  }
+}

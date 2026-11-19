@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "官方内容",
+  "usingComponents": {
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index"
+  }
+}

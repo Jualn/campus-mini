@@ -42,7 +42,11 @@
     },
     {
       "root": "subpkg_red",
-      "pages": ["pages/index/index"]
+      "pages": [
+        "pages/index/index",
+        "pages/content-list/list",
+        "pages/content-detail/detail"
+      ]
     }
   ],
   "preloadRule": {
