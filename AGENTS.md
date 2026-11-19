@@ -116,6 +116,21 @@ Update durable documentation when the change alters a durable repository fact, i
 
 Do not update the Project Profile for ordinary feature work when none of those facts changed.
 
+## Git collaboration
+
+Follow the shared [Git collaboration baseline](../Operations/git-collaboration.md). Implementation work may selectively stage and commit coherent, task-owned changes within the authorized scope. Preserve existing edits and staged changes. Check authorization separately for pushing, opening PRs, merging, and production actions. WeChat preview, upload, and release follow the platform rules below.
+
+The user authorizes ongoing, judgment-based local Git management in this repository; routine safe local operations and task-owned commits do not require repeated confirmation. Apply these rules:
+
+- Start by checking the branch/upstream, worktrees, staged changes and working-tree changes. Distinguish current task changes, reviewed backlog, unrelated work and uncertain files; branch names and file names alone do not establish ownership or completion.
+- Reuse the relevant development branch. Create a branch when it gives an independent task or backlog integration a clear home; preserve existing branch references. Do not move mixed working changes between branches/worktrees without checking that they remain intact.
+- Commit a coherent behavior or independently useful phase with its required consumers, assets and tests. Inspect new files as well as tracked diffs. Do not use blanket staging or a catch-all commit merely to obtain a clean working tree. Backlog cleanup requires explicit review of boundaries and dependencies.
+- Stage explicit paths or reviewed hunks, then inspect the entire staged diff, including pre-existing staged content, for scope, omissions and sensitive data. Preserve unrelated staged changes; if they prevent a safe commit, leave them intact and ask the user to decide. Check status again after committing.
+- Validate the content being committed. Tests run against a mixed working tree do not prove that a smaller staged commit works independently; verify its dependencies or validate an isolated candidate when necessary. Record actual checks and limitations. A WIP checkpoint needs a deliberate preservation purpose and a clear unfinished scope; it does not imply acceptance or release readiness.
+- When ownership, intended behavior, removal, grouping or conflicting changes cannot be established from evidence, present the concrete files/options and ask the user. Continue independent safe work. Never infer that old, unused-looking, duplicate or failing files may be discarded.
+- Deleting branches/worktrees, dropping stashes, discarding files, broad restore/reset/clean, rebasing/amending existing history, merging into main and remote/production actions require authorization for the specific action. Do not use stash, ignore rules or backup commits simply to hide unresolved work. Check concurrent changes before any mutation that could overwrite them.
+- Finish with the branch, relevant commits, checks and remaining uncommitted scope or decisions. A clean working tree is an outcome only when all included work has been deliberately accounted for.
+
 ## Privileged actions
 
 Ordinary engineering work may run local/repository validation such as typecheck, lint, tests, build, Mini Program compile validation, and package analysis.
