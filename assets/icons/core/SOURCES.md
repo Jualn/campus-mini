@@ -26,6 +26,15 @@
 | `attachment` | `attachment.svg` | Tabler Icons | 3.48.0 | `paperclip` | MIT | yes, metadata removed; explicit #52657d |
 | `file` | `file.svg` | Tabler Icons | 3.48.0 | `file-description` | MIT | yes, metadata removed; explicit #52657d |
 | `link` | `link.svg` | Tabler Icons | 3.48.0 | `link` | MIT | yes, metadata removed; explicit #52657d |
+| `home-news` | `home-news.svg` | Project / Tabler visual language | 1.0 | `home-news` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #c43b4a / #fcebed |
+| `home-book` | `home-book.svg` | Project / Tabler visual language | 1.0 | `home-book` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #c43b4a / #fcebed |
+| `platform-operator` | `platform-operator.svg` | Project / Tabler visual language | 1.0 | `platform-operator` | Project-owned | circle and check for platform operator badges; 24px, 2px rounded strokes; explicit #2469bd, transparent fill |
+| `home-classroom` | `home-classroom.svg` | Project / Tabler visual language | 1.0 | `home-classroom` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #2469bd / #eaf2fc |
+| `home-competition` | `home-competition.svg` | Project / Tabler visual language | 1.0 | `home-competition` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #2469bd / #eaf2fc |
+| `home-safety` | `home-safety.svg` | Project / Tabler visual language | 1.0 | `home-safety` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #2469bd / #eaf2fc |
+| `home-materials` | `home-materials.svg` | Project / Tabler visual language | 1.0 | `home-materials` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #2469bd / #eaf2fc |
+| `home-tasks` | `home-tasks.svg` | Project / Tabler visual language | 1.0 | `home-tasks` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #c43b4a / #fcebed |
+| `home-events` | `home-events.svg` | Project / Tabler visual language | 1.0 | `home-events` | Project-owned | created for home navigation; 24px, 2px rounded strokes; explicit #c43b4a / #fcebed |
 | `home` | `home.svg` | Tabler Icons | 3.48.0 | `home` | MIT | yes, metadata removed; explicit #64748b |
 | `home active` | `home-active.svg` | Tabler Icons | 3.48.0 | `home` | MIT | yes, metadata removed; explicit #2f7cf6; blue silhouette with white internal detail |
 | `message` | `message.svg` | Tabler Icons | 3.48.0 | `message-2` | MIT | yes, metadata removed; explicit #64748b |
@@ -35,8 +44,10 @@
 | `settings` | `settings.svg` | Tabler Icons | 3.48.0 | `settings` | MIT | yes, metadata removed; explicit #52657d |
 | `like` | `like.svg` | Tabler Icons | 3.48.0 | `heart` | MIT | yes, metadata removed; explicit #52657d |
 | `like active` | `like-active.svg` | Tabler Icons | 3.48.0 | `heart` | MIT | yes, metadata removed; explicit #e45768; same outline filled for selected state |
+| `bookmark` | `bookmark.svg` | Project / Tabler visual language | 1.0 | `bookmark` | Project-owned | 24px, 2px rounded strokes; explicit #52657d |
+| `bookmark active` | `bookmark-active.svg` | Project / Tabler visual language | 1.0 | `bookmark` | Project-owned | same outline with explicit #c43b4a stroke and fill |
 | `share` | `share.svg` | Tabler Icons | 3.48.0 | `share-3` | MIT | yes, metadata removed; explicit #52657d |
-| `calendar-event` | `calendar-event.svg` | Tabler Icons | 3.48.0 | `calendar-event` | MIT | yes, metadata removed; explicit #2f7cf6; pale #d7e6ff body fill |
+| `calendar-event` | `calendar-event.svg` | Tabler Icons | 3.48.0 | `calendar-event` | MIT | yes, metadata removed; explicit #3e75bd; pale #eaf2fc body fill |
 | `checklist` | `checklist.svg` | Tabler Icons | 3.48.0 | `clipboard-list` | MIT | yes, metadata removed; explicit #7561b7; pale #e9e0f8 body and white clip fill |
 
-Source: [Tabler Icons v3.48.0](https://github.com/tabler/tabler-icons/tree/v3.48.0/icons/outline). Original 24×24 geometry, 2px stroke and rounded caps/joins are preserved. Selected navigation states preserve path geometry and use blue fills with white internal details; painting order is adjusted for the message silhouette; selected like fills the same heart outline. The upstream MIT license is retained in [LICENSE](LICENSE).
+Source: [Tabler Icons v3.48.0](https://github.com/tabler/tabler-icons/tree/v3.48.0/icons/outline). Tabler-derived records preserve the original 24×24 geometry, 2px stroke and rounded caps/joins. Project / Tabler visual language records are project-composed home icons using the same canvas and stroke rules. Selected navigation states preserve path geometry and use colored fills with white internal details; painting order is adjusted for the message silhouette; selected like fills the same heart outline. The upstream MIT license is retained in [LICENSE](LICENSE).

@@ -37,7 +37,7 @@ for (const [semantic, descriptor] of Object.entries(ICON_REGISTRY)) {
   for (const state of Object.keys(descriptor)) {
     assert.ok(
       state === 'default' ||
-        (['like', 'home', 'message', 'user'].includes(semantic) && state === 'active') ||
+        (['like', 'bookmark', 'home', 'message', 'user'].includes(semantic) && state === 'active') ||
         (['chevron-left', 'remove'].includes(semantic) && state === 'inverse'),
       `${semantic} 暴露了未批准的 state：${state}`,
     );
@@ -93,7 +93,7 @@ function verifyVisualAsset(asset, color) {
 }
 
 for (const file of registeredCoreFiles) verifyVisualAsset(`assets/icons/core/${file}`);
-for (const name of ['home', 'message', 'user', 'like']) {
+for (const name of ['home', 'message', 'user', 'like', 'bookmark']) {
   const descriptor = ICON_REGISTRY[name];
   assert.equal(
     verifyVisualAsset(descriptor.default.slice(1)),
