@@ -2,7 +2,6 @@ export * as authAction from './auth';
 export * as commentAction from './comment';
 
 export * as mediaAction from './media';
-export * as messageAction from './message';
 export * as postAction from './post';
 export * as reportAction from './report';
 export * as userAction from './user';

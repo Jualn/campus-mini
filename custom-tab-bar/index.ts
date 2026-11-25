@@ -1,7 +1,7 @@
 import { eventBus, EVENTS } from '../utils/event-bus';
 import { wxPageScrollTo, wxSwitchTab } from '../utils/wx-promise';
 import defineComponent from '../utils/defineComponent';
-import { getUnreadCount } from '../actions/notification-center';
+import { getUnreadCount, isUnreadKnown } from '../actions/notification-center';
 import { ROUTES } from '../utils/routes';
 
 /**
@@ -26,7 +26,7 @@ export interface CustomTabBar {
    * @param tabIndex Tab 索引
    * @param count 徽标数
    * @example
-   * 用法：getCustomTabBar(this).setBadge(1, 5)
+   * 用法：getCustomTabBar(this).setBadge(2, 5)
    */
   setBadge(tabIndex: number, count: number): void;
 }
@@ -52,18 +52,23 @@ defineComponent<Private>()({
       {
         text: '首页',
         url: ROUTES.HOME,
-        iconName: 'home',
+        iconName: 'tab-home',
+      },
+      {
+        text: '校园',
+        url: ROUTES.CAMPUS,
+        iconName: 'tab-campus',
       },
       {
         text: '消息',
         url: ROUTES.MESSAGE,
-        iconName: 'message',
+        iconName: 'tab-message',
         badge: 0,
       },
       {
         text: '我的',
         url: ROUTES.ME,
-        iconName: 'user',
+        iconName: 'tab-profile',
       },
       // {
       //   text: '测试',
@@ -75,10 +80,10 @@ defineComponent<Private>()({
   lifetimes: {
     attached() {
       // 初始化
-      this.setBadge(1, getUnreadCount());
+      this.setBadge(2, isUnreadKnown() ? getUnreadCount() : 0);
 
       this.unreadListener = (unreadCount: number) => {
-        this.setBadge(1, unreadCount);
+        this.setBadge(2, isUnreadKnown() ? unreadCount : 0);
       };
       eventBus.on(EVENTS.NOTIFY_UNREAD_CHANGE, this.unreadListener);
     },

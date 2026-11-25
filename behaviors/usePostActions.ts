@@ -1,3 +1,4 @@
+import { resolvePostType } from '../utils/post-policy';
 import { useSharePoster } from './useSharePoster';
 import { drawPostPoster } from '../utils/share_poster/postPoster';
 import { getAvatarInfo } from '../utils/avatar';
@@ -206,7 +207,7 @@ export function usePostActions<TExtraThis extends object = object>(
           }),
 
           eventBus.on(EVENTS.POST_CREATED, (post) => {
-            if (!post.id) return;
+            if (!post.id || resolvePostType(post.postType) !== 'NORMAL') return;
             onPostCreated?.call(this as unknown as PostActionsThis<TExtraThis>, post);
           }),
         );
@@ -459,7 +460,7 @@ export function usePostActions<TExtraThis extends object = object>(
         const { postId, commentCount } = e.detail;
         if (!postId) return;
 
-        this._recordPostView(postId);
+        void postAction.getPostDetail(postId).then(() => { this._recordPostView(postId); }).catch(() => { /* The panel displays the read failure. */ });
         void wxHideKeyboard();
 
         this._openPopup({
@@ -478,7 +479,7 @@ export function usePostActions<TExtraThis extends object = object>(
        * @param e 事件对象，包含 detail.postId
        */
       onPostView(e: WechatMiniprogram.CustomEvent<{ postId: string }>) {
-        this._recordPostView(e.detail.postId);
+        void e; // Detail read owns valid-open reporting.
       },
 
       /** 页面拥有分享任务及唯一画布，卡片只报告 postId。 */
@@ -497,6 +498,7 @@ export function usePostActions<TExtraThis extends object = object>(
         };
         this._prepareShare({
           key: JSON.stringify([post.id, data]),
+          postId: post.postType === 'NORMAL' ? post.id : undefined,
           path: `/subpkg_community/pages/detail/detail?postId=${post.id}&from=share`,
           render: (scope) => drawPostPoster(scope, data),
         });

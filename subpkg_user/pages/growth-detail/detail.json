@@ -1,0 +1,13 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f6f8fc",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index",
+    "comment-panel": "/components/comment-panel/index",
+    "report-panel": "/components/report-panel/index",
+    "ui-icon": "/components/ui-icon/index"
+  }
+}

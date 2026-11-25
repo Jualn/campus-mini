@@ -1,8 +1,8 @@
 <!-- subpkg_public_event/pages/detail/detail.wxml -->
 <view class="detail-page">
   <view class="detail-fixed-nav" style="padding-top:{{statusBarHeight}}px;">
-    <view class="detail-fixed-back" bindtap="onBack" aria-role="button" aria-label="返回上一页">
-      <ui-icon name="chevron-left" state="inverse" size="lg" />
+    <view class="detail-fixed-back">
+      <back-button variant="nav" inverse auto-back="{{false}}" bind:back="onBack" />
     </view>
   </view>
 

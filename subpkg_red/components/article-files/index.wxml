@@ -1,0 +1,15 @@
+<view wx:if="{{files.length}}" class="files">
+  <view class="files-heading">
+    <view class="title">学习附件</view>
+    <view class="count">{{files.length}} 个文件</view>
+  </view>
+  <button wx:for="{{views}}" wx:key="attachmentId" class="file-button" data-id="{{item.attachmentId}}" bindtap="open" loading="{{pendingId === item.attachmentId}}" disabled="{{!!pendingId}}" aria-label="打开附件 {{item.name}}，{{item.typeLabel}}，{{item.sizeLabel}}">
+    <view class="file-icon"><ui-icon name="file" size="lg" /></view>
+    <view class="file-copy">
+      <view class="file-name">{{item.name}}</view>
+      <view class="file-meta"><text class="file-type">{{item.typeLabel}}</text><text>{{item.sizeLabel}}</text></view>
+    </view>
+    <ui-icon name="download" size="md" />
+  </button>
+  <view wx:if="{{error}}" class="file-error" role="alert">{{error}}；可再次点击文件重试</view>
+</view>

@@ -1,0 +1,16 @@
+{
+  "navigationStyle": "default",
+  "navigationBarTitleText": "导师在线答疑",
+  "navigationBarBackgroundColor": "#F0F5FC",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#F0F5FC",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "post-card": "/components/post-card/index",
+    "post-card-skeleton": "/components/post-card-skeleton/index",
+    "load-state": "/components/load-state/index",
+    "ui-icon": "/components/ui-icon/index",
+    "filter-bar": "/components/filter-bar/index"
+  }
+}

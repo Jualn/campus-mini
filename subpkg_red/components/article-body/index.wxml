@@ -1,0 +1,14 @@
+<template name="runs">
+  <text class="run-group" user-select="true"><text wx:for="{{runs}}" wx:for-item="run" wx:key="key" class="{{run.className}} {{run.href ? 'link run-underline' : ''}}" data-href="{{run.href}}" bindtap="link">{{run.text}}</text></text>
+</template>
+<view wx:for="{{nodes}}" wx:key="key" class="node node--{{item.type}} heading-{{item.level}}" style="text-align:{{item.align}};">
+  <view wx:if="{{item.type === 'PARAGRAPH' || item.type === 'HEADING' || item.type === 'QUOTE'}}"><template is="runs" data="{{runs:item.runs}}" /></view>
+  <view wx:elif="{{item.type === 'LIST'}}"><view wx:for="{{item.items}}" wx:for-item="entry" wx:key="index" class="list-row"><text class="marker">{{entry.marker}}</text><view class="list-copy"><template is="runs" data="{{runs:entry.runs}}" /></view></view></view>
+  <block wx:elif="{{item.type === 'IMAGE' || item.type === 'VIDEO'}}">
+    <view wx:if="{{failed[item.key]}}" class="failed"><text>{{item.type === 'IMAGE' ? '图片加载失败' : '视频加载失败'}}</text><button class="retry-button" data-key="{{item.key}}" bindtap="retryMedia">重新加载</button></view>
+    <image wx:elif="{{item.type === 'IMAGE'}}" class="image" src="{{item.url}}" mode="widthFix" lazy-load data-key="{{item.key}}" data-url="{{item.url}}" bindtap="preview" binderror="mediaError" aria-label="{{item.alt}}" />
+    <video wx:else id="article-video-{{item.key}}" class="video" style="height:{{item.height}}rpx;" src="{{item.url}}" poster="{{item.poster}}" controls object-fit="contain" data-key="{{item.key}}" binderror="mediaError" />
+    <text wx:if="{{item.caption}}" class="caption" user-select>{{item.caption}}</text>
+  </block>
+  <view wx:elif="{{item.type === 'DIVIDER'}}" class="divider" />
+</view>

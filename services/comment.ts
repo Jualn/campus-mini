@@ -1,3 +1,4 @@
+import { hasAnswerAttribution, mentorAnswerAvatar } from '../utils/mentor-qa';
 // comment.ts
 /**
  * 评论服务 (Comment Service)
@@ -9,32 +10,43 @@
  */
 
 import { api } from './api';
+import { community } from './post-community';
+import type { PostThreadRoot } from '../types/post-contract';
 import { createLogger } from '../utils/logger';
-import type { CommentCreateRequest, CommentPageQuery, CommentVO, ReplyVO } from '../types/api';
+import type { CommentPageQuery } from '../types/api';
+import type { CommentCreateRequest, CommentVO, ReplyVO } from '../types/post-contract';
 import type { CommentItem, ReplyItem, ServiceCursorPage } from '../types/business';
 import { getAvatarInfo } from '../utils/avatar';
 import { formatTime, TimeStyle } from '../utils/time-util';
 
 const log = createLogger('CommentService');
 
-function transformReplyItem(reply: ReplyVO): ReplyItem {
+export function transformReplyItem(reply: ReplyVO): ReplyItem {
   return {
+    kind: reply.kind,
     replyId: reply.id,
+    replyPermission: reply.replyPermission,
+    replyToCommentId: reply.replyToCommentId,
     userId: reply.author.id || '',
-    nickName: reply.author.nickname || '',
+    nickName: reply.author.nickname ?? '',
     content: reply.content,
-    avatarUrl: reply.author.avatarUrl,
+    avatarUrl: reply.author.avatarUrl ?? undefined,
     createTime: formatTime(reply.createdAt, TimeStyle.POST) || '',
     likeCount: reply.likeCount,
     isLiked: reply.liked || false,
-    replyToName: reply.replyToUser.nickname || '',
-    replyToUserId: reply.replyToUser.id,
-    _avatarChar: getAvatarInfo(reply.author.nickname).char,
-    _avatarBg: getAvatarInfo(reply.author.nickname).bg,
+    replyToName: reply.replyToUser?.nickname ?? '',
+    replyToUserId: reply.replyToUser?.id,
+    _avatarChar: getAvatarInfo(reply.author.nickname ?? '').char,
+    _avatarBg: getAvatarInfo(reply.author.nickname ?? '').bg,
   };
 }
 
-function mapCommentItem(comment: CommentVO): CommentItem {
+export function mapCommentItem(comment: CommentVO): CommentItem {
+  const answer =
+    comment.kind === 'MENTOR_ANSWER' && hasAnswerAttribution(comment.mentorAnswer)
+      ? comment.mentorAnswer
+      : undefined;
+  const avatar = answer ? mentorAnswerAvatar(answer) : getAvatarInfo(comment.author.nickname ?? '');
   let repliesExpanded = true;
   let hasMoreReplies = false;
   let remainReplies = 0;
@@ -49,11 +61,14 @@ function mapCommentItem(comment: CommentVO): CommentItem {
   }
 
   return {
+    kind: comment.kind,
+    mentorAnswer: answer,
     commentId: comment.id,
+    replyPermission: comment.replyPermission,
     userId: comment.author.id || '',
-    nickName: comment.author.nickname || '',
+    nickName: answer?.profileAtAnswer.realName ?? comment.author.nickname ?? '',
     content: comment.content || '',
-    avatarUrl: comment.author.avatarUrl,
+    avatarUrl: comment.author.avatarUrl ?? undefined,
     imageUrl: comment.imageUrl,
     createTime: formatTime(comment.createdAt, TimeStyle.POST) || '',
     likeCount: comment.likeCount || 0,
@@ -66,8 +81,47 @@ function mapCommentItem(comment: CommentVO): CommentItem {
     loadingReplies: false,
     remainReplies: remainReplies,
     lastId: '',
-    _avatarChar: getAvatarInfo(comment.author.nickname).char,
-    _avatarBg: getAvatarInfo(comment.author.nickname).bg,
+    _avatarChar: avatar.char,
+    _avatarBg: avatar.bg,
+  };
+}
+
+export function mapThreadRoot(root: PostThreadRoot, postType?: string): CommentItem {
+  if (
+    root.state === 'VISIBLE' &&
+    postType === 'MENTOR_QA' &&
+    (root.kind !== 'MENTOR_ANSWER' ||
+      !hasAnswerAttribution(root.mentorAnswer) ||
+      root.previewReplies.some((x) => x.kind !== 'DISCUSSION'))
+  )
+    throw new Error('正式回答的历史身份或讨论表示暂不可确认');
+  if (root.state === 'VISIBLE') return { ...mapCommentItem(root), threadState: root.state };
+  if (!['AUTHOR_DELETED', 'ADMIN_HIDDEN'].includes(root.state))
+    throw new Error('评论服务尚未返回受支持的线程表示');
+  // Whitelist placeholder fields; never copy removed body, image or author extensions.
+  return {
+    commentId: root.id,
+    placeholder: true,
+    threadState: root.state,
+    userId: '',
+    nickName: '',
+    content: '',
+    avatarUrl: '',
+    imageUrl: '',
+    createTime: '',
+    likeCount: 0,
+    isLiked: false,
+    replyPermission: root.replyPermission,
+    replyCount: root.replyCount,
+    replyPreview: root.previewReplies.map(transformReplyItem),
+    replyList: [],
+    repliesExpanded: false,
+    hasMoreReplies: root.replyCount > root.previewReplies.length,
+    loadingReplies: false,
+    remainReplies: Math.max(0, root.replyCount - root.previewReplies.length),
+    lastId: '',
+    _avatarChar: '',
+    _avatarBg: '',
   };
 }
 
@@ -92,24 +146,34 @@ function mapCommentItem(comment: CommentVO): CommentItem {
  * }
  */
 export const getCommentList = async (
-  query: CommentPageQuery,
+  query: CommentPageQuery & { representation?: 'thread'; postType?: string },
 ): Promise<ServiceCursorPage<CommentItem>> => {
-  const page = await api.comment.getList(query);
+  const thread = query.targetType === 'POST' && query.representation === 'thread';
+  const page = thread
+    ? await community.roots(query.targetId, query.lastId, query.pageSize)
+    : await api.comment.getList((({ postType: _postType, ...wire }) => wire)(query));
   return {
-    list: page.list.map(mapCommentItem),
+    list: thread
+      ? (page.list as PostThreadRoot[]).map((x) => mapThreadRoot(x, query.postType))
+      : (page.list as CommentVO[]).map(mapCommentItem),
     hasMore: page.hasMore,
-    nextCursor: page.nextCursor,
+    nextCursor: page.nextCursor ?? undefined,
   };
 };
 
 export const getReplyList = async (
-  query: CommentPageQuery,
+  query: CommentPageQuery & { representation?: 'thread'; postType?: string },
 ): Promise<ServiceCursorPage<ReplyItem>> => {
-  const page = await api.comment.getReplyList(query);
+  const page =
+    query.targetType === 'POST' && query.representation === 'thread'
+      ? await community.replies(query.targetId, query.parentId ?? '', query.lastId, query.pageSize)
+      : await api.comment.getReplyList((({ postType: _postType, ...wire }) => wire)(query));
+  if (query.postType === 'MENTOR_QA' && page.list.some((x) => x.kind !== 'DISCUSSION'))
+    throw new Error('讨论表示暂不支持');
   return {
     list: page.list.map(transformReplyItem),
     hasMore: page.hasMore,
-    nextCursor: page.nextCursor,
+    nextCursor: page.nextCursor ?? undefined,
   };
 };
 

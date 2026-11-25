@@ -13,14 +13,16 @@ const TAG = 'Request';
 
 export interface RequestOptions<D = unknown> {
   url: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   data?: D;
   showLoading?: boolean;
   sensitive?: boolean;
   auth?: AuthMode;
-  /** False requires stable credentials and surfaces 401 without replaying the operation. */
+  /** Defaults to GET only. False requires stable credentials and never replays on 401. */
   retryAuth?: boolean;
   headers?: Record<string, string>;
+  /** Keep the success envelope for domain-owned sibling fields such as submission. */
+  preserveEnvelope?: boolean;
   _retry?: boolean;
 }
 
@@ -39,6 +41,7 @@ interface ResponseBody<T = unknown> {
 }
 
 interface ProblemDetails {
+  errors?: unknown;
   type?: string;
   title?: string;
   status?: number;
@@ -129,11 +132,18 @@ async function requestWithMeta<T = unknown, D = unknown>(
     data,
     showLoading = false,
     auth = 'required',
-    retryAuth = true,
+    retryAuth = method === 'GET',
     sensitive = false,
     headers = {},
     _retry = false,
   } = opts;
+
+  // Native wx.request's supported method union excludes PATCH. Keep the
+  // canonical operation explicit and fail closed until a supported transport
+  // is agreed in Contracts; never silently substitute POST/PUT or an override.
+  if (method === 'PATCH') {
+    throw new Error('当前编辑服务暂不可用，草稿已保留');
+  }
 
   const cleanData =
     data == null
@@ -170,7 +180,11 @@ async function requestWithMeta<T = unknown, D = unknown>(
     });
   } catch (err) {
     if (showLoading) void wxHideLoading();
-    throw new NetworkError(`${TAG} ${method} ${url} network error`, err);
+    throw new NetworkError(`${TAG} ${method} ${url} network error`, err, {
+      ...(method === 'GET'
+        ? {}
+        : { userMessage: '操作结果暂未确认，请先查询最新状态，勿重复提交' }),
+    });
   }
 
   if (showLoading) void wxHideLoading();
@@ -195,7 +209,20 @@ async function requestWithMeta<T = unknown, D = unknown>(
   }
 
   if (statusCode < 200 || statusCode >= 300) {
+    const fields = body && typeof body === 'object' ? (body as ProblemDetails).errors : undefined;
+    const validationErrors = Array.isArray(fields)
+      ? fields.flatMap((value: unknown) => {
+          if (!value || typeof value !== 'object') return [];
+          const item = value as Record<string, unknown>;
+          return typeof item.in === 'string' &&
+            typeof item.pointer === 'string' &&
+            typeof item.code === 'string'
+            ? [{ in: item.in, pointer: item.pointer, code: item.code }]
+            : [];
+        })
+      : undefined;
     throw new HttpError(statusCode, `${TAG} HTTP ${statusCode.toString()} ${url}`, {
+      validationErrors,
       retryAfterMs: parseRetryAfter(normalizeHeaders(res.header)['retry-after']),
       problemType:
         body && typeof body === 'object' && typeof (body as ProblemDetails).type === 'string'
@@ -225,7 +252,7 @@ async function requestWithMeta<T = unknown, D = unknown>(
   }
 
   // 4. 执行响应拦截器
-  let result: unknown = isLegacyEnvelope<T>(body) ? body.data : body;
+  let result: unknown = isLegacyEnvelope<T>(body) && !options.preserveEnvelope ? body.data : body;
   for (const { fulfilled } of interceptors.response) {
     if (fulfilled) result = await fulfilled(result);
   }
@@ -324,6 +351,9 @@ export const http = {
 };
 
 export const httpWithMeta = {
+  patch<T = unknown>(url: string, data?: unknown, opts?: ExtraOpts) {
+    return requestWithMeta<T>({ url, method: 'PATCH', data, ...opts });
+  },
   get<T = unknown>(url: string, data?: unknown, opts?: ExtraOpts) {
     return requestWithMeta<T>({ url, method: 'GET', data, ...opts });
   },

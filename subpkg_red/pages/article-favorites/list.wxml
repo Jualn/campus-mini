@@ -1,0 +1,48 @@
+<page-navigation title="文章收藏" fixed surface="page" />
+<view class="page">
+  <view class="page-hero">
+    <view class="hero-kicker">我的内容</view>
+    <view class="hero-title">文章收藏</view>
+    <view class="hero-description">收藏有价值的资讯与学习资料，随时继续阅读</view>
+  </view>
+
+  <load-state wx:if="{{!enabled}}" mode="empty" title="收藏功能暂未开放" description="文章收藏待服务接入，请稍后再来。" />
+  <block wx:else>
+    <block wx:if="{{loading && !items.length}}">
+      <view class="article-skeleton" wx:for="{{[1, 2, 3]}}" wx:key="index">
+        <view class="skeleton-copy">
+          <view class="skeleton-block skeleton-pill skeleton-category"></view>
+          <view class="skeleton-block skeleton-title"></view>
+          <view class="skeleton-block skeleton-line"></view>
+          <view class="skeleton-block skeleton-line skeleton-line--short"></view>
+        </view>
+        <view class="skeleton-block skeleton-radius-md skeleton-cover"></view>
+      </view>
+    </block>
+
+    <load-state wx:elif="{{error && !items.length}}" mode="error" title="收藏暂时读取失败" description="{{error}}" action-text="重新读取" bind:action="retry" fill-viewport viewport-offset="420" />
+
+    <load-state wx:elif="{{!loading && !items.length}}" mode="empty" title="还没有收藏文章" description="阅读资讯时点击收藏，内容会保存在这里。" action-text="去看资讯" bind:action="browse" fill-viewport viewport-offset="420" />
+
+    <view wx:for="{{items}}" wx:key="articleId" class="favorite-item">
+      <article-card wx:if="{{item.availability === 'AVAILABLE'}}" article="{{item.article}}" bind:open="open" />
+      <view wx:else class="unavailable-card">
+        <view class="unavailable-badge">暂不可见</view>
+        <view class="unavailable-title">文章已下架或当前不可访问</view>
+        <view class="unavailable-description">你可以保留收藏等待内容恢复，或取消这条收藏。</view>
+      </view>
+      <view class="favorite-footer">
+        <text class="favorite-date">收藏于 {{item.favoritedDate}}</text>
+        <button class="remove-button" data-id="{{item.articleId}}" bindtap="remove" disabled="{{!!pendingId}}" loading="{{pendingId === item.articleId}}" aria-label="取消收藏{{item.availability === 'AVAILABLE' ? item.article.title : '不可用文章'}}">取消收藏</button>
+      </view>
+    </view>
+
+    <view wx:if="{{error && items.length}}" class="inline-state"><text>{{error}}</text><button class="text-button" bindtap="retry">重试</button></view>
+
+    <view wx:if="{{loading && items.length}}" class="list-status">正在更新收藏…</view>
+
+    <button wx:if="{{hasMore && !loading && !error}}" class="more-button btn btn-ghost" bindtap="more">加载更多</button>
+    
+    <view wx:if="{{!hasMore && items.length && !loading && !error}}" class="list-end"><text>已显示全部收藏</text></view>
+  </block>
+</view>

@@ -168,6 +168,7 @@ const uploadFiles = async (
     filePath: sourceFiles[i].filePath,
     contentType: options.contentType ?? sourceFiles[i].mimeType,
     headers: options.headers,
+    timeout: options.timeout,
     onProgress: options.onProgress
       ? (progress) => {
           options.onProgress?.(i, progress);
@@ -250,8 +251,9 @@ export const selectImages = async (count = 1): Promise<SelectedMediaFile[]> => {
 
 /**
  * 第二步：批量上传（用户确认提交后调用）。
- * 内部流程：获取 STS 凭证 → 后端登记 PENDING objectKey → 批量上传 COS →
- * 返回 attachmentItems，由业务保存事务完成绑定；超时未绑定对象由后端定时清理。
+ * 内部流程：分配精确对象 STS 凭证 → 逐文件安全 PUT → 返回原业务引用。
+ * COS 成功只表示传输完成，业务保存成功才正式保留；失败/取消不由客户端删除对象。
+ * 普通媒体与头像不调用管理端 createAttachment，也不推算管理附件候选期限。
  */
 export const uploadFilesToCos = (
   targetType: TargetType,

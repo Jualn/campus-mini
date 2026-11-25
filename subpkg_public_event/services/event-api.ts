@@ -1,4 +1,7 @@
+import type { ActivityCategory } from '../../types/event-contract';
+import type { ActivityDepartmentId } from '../../utils/activity-audience';
 import type {
+  MyActivityRegistrationPage,
   ActivityCursorPageDTO,
   ActivityDetailDTO,
   ActivityRegistrationDTO,
@@ -17,12 +20,17 @@ export interface EventListQuery {
   lifecycleStatus?: 'ACTIVE' | 'ENDED' | 'CANCELLED';
 }
 
+export type ActivityListQuery = EventListQuery & { category?: ActivityCategory } & (
+    | { audienceFilter?: 'ALL' | 'CAMPUS'; departmentId?: never }
+    | { audienceFilter: 'DEPARTMENT'; departmentId: ActivityDepartmentId }
+  );
+
 const activityBase = (id: string) => `/v1/activities/${encodeURIComponent(id)}`;
 const publicEventBase = (id: string) => `/v1/public-events/${encodeURIComponent(id)}`;
 
 export const eventApi = {
   activities: {
-    list: (query: EventListQuery & { category?: string } = {}) =>
+    list: (query: ActivityListQuery = {}) =>
       http.get<ActivityCursorPageDTO>('/v1/activities', query, { auth: 'required' }),
     detail: (id: string) =>
       http.get<ActivityDetailDTO>(activityBase(id), undefined, { auth: 'required' }),
@@ -64,6 +72,13 @@ export const eventApi = {
       }),
   },
   registrations: {
+    listMine: (
+      query: { cursor?: string; pageSize?: number; status?: 'SUBMITTED' | 'CANCELLED' } = {},
+    ) =>
+      http.get<MyActivityRegistrationPage>('/v1/users/me/activity-registrations', query, {
+        auth: 'required',
+        sensitive: true,
+      }),
     mine: (id: string) =>
       httpWithMeta.get<ActivityRegistrationDTO>(`${activityBase(id)}/registrations/me`, undefined, {
         auth: 'required',

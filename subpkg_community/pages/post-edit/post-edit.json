@@ -2,6 +2,7 @@
   "navigationStyle": "custom",
   "backgroundColor": "#00000000",
   "usingComponents": {
-    "ui-icon": "/components/ui-icon/index"
+    "ui-icon": "/components/ui-icon/index",
+    "post-topic-picker": "/components/post-topic-picker/index"
   }
 }

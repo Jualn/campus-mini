@@ -1,0 +1,78 @@
+:host {
+  display: block;
+  flex-shrink: 0;
+}
+
+.back-button-host--nav {
+  display: inline-flex;
+}
+
+.back-button-host--inline {
+  display: flex;
+  padding: 36rpx 0 calc(36rpx + constant(safe-area-inset-bottom));
+  padding: 36rpx 0 calc(36rpx + env(safe-area-inset-bottom));
+}
+
+.back-button-host--floating {
+  position: fixed;
+  left: 24rpx;
+  bottom: calc(22rpx + constant(safe-area-inset-bottom));
+  bottom: calc(22rpx + env(safe-area-inset-bottom));
+  z-index: 700;
+  pointer-events: none;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 80rpx;
+  margin: 0;
+  padding: 0 28rpx;
+  border: 1px solid rgba(255, 255, 255, 0.84);
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, rgba(255, 255, 252, 0.94) 0%, rgba(248, 251, 255, 0.88) 52%, rgba(235, 244, 252, 0.82) 100%);
+  -webkit-backdrop-filter: blur(10px) saturate(145%);
+  backdrop-filter: blur(10px) saturate(145%);
+  box-shadow: inset 0 1rpx 1rpx rgba(255, 255, 255, 0.92), 0 16rpx 48rpx rgba(77, 105, 139, 0.12), 0 4rpx 14rpx rgba(99, 125, 153, 0.06);
+  color: #65758f;
+  font-size: 26rpx;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: auto;
+  transition: transform 160ms ease;
+}
+
+.back-button::after {
+  border: 0;
+}
+
+.back-button--nav {
+  width: 72rpx;
+  height: 72rpx;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.back-button--inverse {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(16, 35, 63, 0.56);
+  box-shadow: none;
+  color: #fff;
+}
+
+.back-button__label {
+  margin-left: 8rpx;
+  color: inherit;
+  letter-spacing: 0.3rpx;
+}
+
+.back-button--pressed {
+  transform: scale(0.94);
+}
+
+.back-button[disabled] {
+  opacity: 0.55;
+}

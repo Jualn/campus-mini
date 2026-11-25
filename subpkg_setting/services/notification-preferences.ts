@@ -4,11 +4,67 @@ import type {
   NotificationCategory,
   NotificationChannel,
   NotificationChannelCapabilities,
-  NotificationChannelCapabilityItem,
   NotificationPreferences,
   UpdateNotificationPreferences,
 } from '../../types/api';
 
+export const NOTIFICATION_CATEGORIES: { value: NotificationCategory; label: string }[] = [
+  { value: 'ACTIVITY', label: '活动提醒' },
+  { value: 'PUBLIC_EVENT', label: '事项提醒' },
+  { value: 'COMMENT', label: '评论' },
+  { value: 'REPLY', label: '回复' },
+  { value: 'LIKE', label: '点赞' },
+  { value: 'AUDIT_RESULT', label: '审核与处理结果' },
+  { value: 'SYSTEM', label: '系统消息' },
+  { value: 'LEARNING_TASK', label: '学习任务' },
+  { value: 'POINTS', label: '积分结果' },
+];
+const CHANNELS: NotificationChannel[] = [
+  'IN_APP',
+  'WECHAT_MINI_PROGRAM',
+  'WECHAT_OFFICIAL_ACCOUNT',
+];
+// Required first-release combinations; future types/channels are ignored, never synthesized.
+const TYPES: Record<NotificationCategory, string[]> = {
+  ACTIVITY: [
+    'ACTIVITY_REGISTRATION_START_REMINDER',
+    'ACTIVITY_REGISTRATION_DEADLINE_REMINDER',
+    'ACTIVITY_START_REMINDER',
+    'ACTIVITY_CANCELLED',
+    'ACTIVITY_TIME_CHANGED',
+    'ACTIVITY_LOCATION_CHANGED',
+    'ACTIVITY_ENDED_EARLY',
+  ],
+  PUBLIC_EVENT: [
+    'PUBLIC_EVENT_START_REMINDER',
+    'PUBLIC_EVENT_REGISTRATION_DEADLINE_REMINDER',
+    'PUBLIC_EVENT_CANCELLED',
+    'PUBLIC_EVENT_TIME_CHANGED',
+    'PUBLIC_EVENT_LOCATION_CHANGED',
+  ],
+  COMMENT: ['POST_COMMENTED'],
+  REPLY: ['COMMENT_REPLIED'],
+  LIKE: ['POST_LIKED', 'COMMENT_LIKED'],
+  AUDIT_RESULT: ['AUDIT_RESULT', 'POST_CONTENT_HANDLED', 'POST_REPORT_RESOLVED'],
+  SYSTEM: ['SYSTEM'],
+  LEARNING_TASK: [
+    'LEARNING_TASK_ASSIGNED',
+    'LEARNING_TASK_ASSIGNMENT_ADDED',
+    'LEARNING_TASK_FIRST_DEADLINE_REMINDER',
+    'LEARNING_TASK_REVIEW_APPROVED',
+    'LEARNING_TASK_REVIEW_REJECTED',
+    'LEARNING_TASK_SUPPLEMENT_DEADLINE_REMINDER',
+    'LEARNING_TASK_DEADLINE_CHANGED',
+    'LEARNING_TASK_CANCELLED',
+    'LEARNING_TASK_ASSIGNMENT_REVOKED',
+  ],
+  POINTS: [
+    'POINT_APPLICATION_APPROVED',
+    'POINT_APPLICATION_REJECTED',
+    'POINT_GRANT_REVERSED',
+    'POINT_GRANT_CORRECTED',
+  ],
+};
 export interface NotificationPreferenceRow {
   key: string;
   category: NotificationCategory;
@@ -16,142 +72,101 @@ export interface NotificationPreferenceRow {
   channel: NotificationChannel;
   channelLabel: string;
   enabled: boolean;
-  source: string;
-  sourceText: string;
-  legacyMigration: boolean;
   capabilityText: string;
-  capabilityTone: 'available' | 'partial' | 'unavailable' | 'unknown';
 }
-
 export interface NotificationPreferenceSnapshot {
   defaultVersion: string;
   rows: NotificationPreferenceRow[];
   evaluatedAt: string;
 }
+const keyOf = (category: string, channel: string) => `${category}:${channel}`;
 
-const CATEGORIES: { value: NotificationCategory; label: string }[] = [
-  { value: 'ACTIVITY', label: '活动通知' },
-  { value: 'PUBLIC_EVENT', label: '公共事项通知' },
-];
-
-const CHANNELS: { value: NotificationChannel; label: string }[] = [
-  { value: 'IN_APP', label: '站内消息' },
-  { value: 'WECHAT_MINI_PROGRAM', label: '微信小程序' },
-  { value: 'WECHAT_OFFICIAL_ACCOUNT', label: '微信服务号' },
-];
-
-const preferenceKey = (category: string, channel: string) => `${category}:${channel}`;
-const rowKey = (category: string, channel: string) => `${category}__${channel}`;
-
-const getPreferenceSourceText = (source: string) => {
-  switch (source) {
-    case 'SYSTEM_DEFAULT':
-      return '系统默认';
-    case 'USER_OVERRIDE':
-      return '个人设置';
-    case 'LEGACY_MIGRATION':
-      return '沿用旧设置';
-    default:
-      return '当前有效设置';
+const preferenceMap = (preferences: NotificationPreferences) => {
+  if (
+    (preferences as Partial<NotificationPreferences> | null)?.defaultVersion !== '1' ||
+    !Array.isArray(preferences.items)
+  ) {
+    throw new Error('通知设置暂不可用');
   }
-};
-
-const isDeliverable = (item: NotificationChannelCapabilityItem) =>
-  item.available &&
-  item.unavailableReasons.length === 0 &&
-  (item.permission === 'NOT_REQUIRED' ||
-    item.permission === 'GRANTED' ||
-    item.permission === 'PROVIDER_VERIFIED_AT_SEND');
-
-const summarizeCapabilities = (
-  items: NotificationChannelCapabilityItem[],
-): Pick<NotificationPreferenceRow, 'capabilityText' | 'capabilityTone'> => {
-  if (!items.length) return { capabilityText: '能力状态未知', capabilityTone: 'unknown' };
-
-  const readyCount = items.filter(isDeliverable).length;
-  const providerVerifiedAtSend = items.some(
-    (item) => isDeliverable(item) && item.permission === 'PROVIDER_VERIFIED_AT_SEND',
-  );
-  if (readyCount === items.length) {
-    return providerVerifiedAtSend
-      ? { capabilityText: '当前可用', capabilityTone: 'available' }
-      : { capabilityText: '当前可用', capabilityTone: 'available' };
+  const map = new Map<string, NotificationPreferences['items'][number]>();
+  for (const item of preferences.items) {
+    const key = keyOf(item.category, item.channel);
+    if (map.has(key) || typeof item.enabled !== 'boolean' || typeof item.source !== 'string') {
+      throw new Error('通知设置暂不可用');
+    }
+    map.set(key, item);
   }
-  if (readyCount > 0) {
-    return providerVerifiedAtSend
-      ? { capabilityText: '部分通知可用', capabilityTone: 'partial' }
-      : { capabilityText: '部分通知类型可用', capabilityTone: 'partial' };
+  for (const category of NOTIFICATION_CATEGORIES) {
+    for (const channel of CHANNELS) {
+      if (!map.has(keyOf(category.value, channel))) throw new Error('通知设置暂不可用');
+    }
   }
-
-  const configuredReasons = new Set(
-    items.filter((item) => item.available).flatMap((item) => item.unavailableReasons),
-  );
-  if (configuredReasons.has('IDENTITY_REQUIRED')) {
-    return { capabilityText: '需先完成对应微信身份绑定', capabilityTone: 'unavailable' };
-  }
-  if (configuredReasons.has('PERMISSION_REQUIRED')) {
-    return { capabilityText: '尚未获得对应通知授权', capabilityTone: 'unavailable' };
-  }
-  if (configuredReasons.has('PERMISSION_UNKNOWN')) {
-    return { capabilityText: '授权状态暂时无法确认', capabilityTone: 'unknown' };
-  }
-
-  const reasons = new Set(items.flatMap((item) => item.unavailableReasons));
-  if (reasons.has('NOT_CONFIGURED')) {
-    return { capabilityText: '通知通道尚未配置', capabilityTone: 'unavailable' };
-  }
-  if (reasons.has('CHANNEL_DISABLED')) {
-    return { capabilityText: '通知通道暂未启用', capabilityTone: 'unavailable' };
-  }
-  if (reasons.has('IDENTITY_REQUIRED')) {
-    return { capabilityText: '需先完成对应微信身份绑定', capabilityTone: 'unavailable' };
-  }
-  if (reasons.has('PERMISSION_REQUIRED')) {
-    return { capabilityText: '尚未获得对应通知授权', capabilityTone: 'unavailable' };
-  }
-  if (reasons.has('PERMISSION_UNKNOWN')) {
-    return { capabilityText: '授权状态暂时无法确认', capabilityTone: 'unknown' };
-  }
-  return { capabilityText: '当前渠道暂不可用', capabilityTone: 'unavailable' };
+  return map;
 };
 
 export const buildPreferenceSnapshot = (
   preferences: NotificationPreferences,
   capabilities: NotificationChannelCapabilities,
 ): NotificationPreferenceSnapshot => {
-  const preferenceMap = new Map(
-    preferences.items.map((item) => [preferenceKey(item.category, item.channel), item]),
-  );
-
-  const rows = CATEGORIES.flatMap((category) =>
+  const preferencesByKey = preferenceMap(preferences);
+  if (
+    !(capabilities as NotificationChannelCapabilities | null) ||
+    !Array.isArray(capabilities.items) ||
+    typeof capabilities.evaluatedAt !== 'string'
+  ) {
+    throw new Error('通知设置暂不可用');
+  }
+  const capabilityMap = new Map<string, NotificationChannelCapabilities['items'][number]>();
+  for (const item of capabilities.items) {
+    const key = keyOf(item.notificationType, item.channel);
+    if (
+      capabilityMap.has(key) ||
+      typeof item.available !== 'boolean' ||
+      typeof item.permission !== 'string' ||
+      !Array.isArray(item.unavailableReasons) ||
+      item.unavailableReasons.some((reason) => typeof reason !== 'string')
+    ) {
+      throw new Error('通知设置暂不可用');
+    }
+    capabilityMap.set(key, item);
+  }
+  for (const category of NOTIFICATION_CATEGORIES) {
+    for (const type of TYPES[category.value]) {
+      for (const channel of CHANNELS) {
+        if (capabilityMap.get(keyOf(type, channel))?.category !== category.value) {
+          throw new Error('通知设置暂不可用');
+        }
+      }
+    }
+  }
+  const rows = NOTIFICATION_CATEGORIES.flatMap((category) =>
     CHANNELS.map((channel) => {
-      const key = preferenceKey(category.value, channel.value);
-      const preference = preferenceMap.get(key);
-      if (!preference) throw new Error(`通知偏好响应缺少组合 ${key}`);
-
-      const capabilityItems = capabilities.items.filter(
-        (item) => item.category === category.value && item.channel === channel.value,
+      const preference = preferencesByKey.get(keyOf(category.value, channel));
+      if (!preference) throw new Error('通知设置暂不可用');
+      const items = capabilities.items.filter(
+        (item) => item.category === category.value && item.channel === channel,
       );
-
+      const ready = items.filter(
+        (item) =>
+          item.available &&
+          item.unavailableReasons.length === 0 &&
+          ['NOT_REQUIRED', 'GRANTED', 'PROVIDER_VERIFIED_AT_SEND'].includes(item.permission),
+      ).length;
       return {
-        key: rowKey(category.value, channel.value),
+        key: `${category.value}__${channel}`,
         category: category.value,
         categoryLabel: category.label,
-        channel: channel.value,
-        channelLabel: channel.label,
+        channel,
+        channelLabel: channel === 'IN_APP' ? '站内消息' : '微信提醒',
         enabled: preference.enabled,
-        source: preference.source,
-        sourceText: getPreferenceSourceText(preference.source),
-        legacyMigration: preference.source === 'LEGACY_MIGRATION',
-        ...summarizeCapabilities(capabilityItems),
+        capabilityText: ready === items.length ? '' : ready > 0 ? '部分提醒暂不可用' : '暂不可用',
       };
     }),
   );
-
   return {
     defaultVersion: preferences.defaultVersion,
-    evaluatedAt: capabilities.evaluatedAt,
     rows,
+    evaluatedAt: capabilities.evaluatedAt,
   };
 };
 
@@ -163,48 +178,22 @@ export const getNotificationPreferenceSnapshot = async () => {
   return buildPreferenceSnapshot(preferences, capabilities);
 };
 
-const applyPreferenceRepresentation = (
-  snapshot: NotificationPreferenceSnapshot,
-  preferences: NotificationPreferences,
-): NotificationPreferenceSnapshot => {
-  const preferenceMap = new Map(
-    preferences.items.map((item) => [preferenceKey(item.category, item.channel), item]),
-  );
-  const rows = snapshot.rows.map((row) => {
-    const preference = preferenceMap.get(preferenceKey(row.category, row.channel));
-    if (!preference) {
-      throw new Error(`通知偏好更新响应缺少组合 ${row.category}:${row.channel}`);
-    }
-    return {
-      ...row,
-      enabled: preference.enabled,
-      source: preference.source,
-      sourceText: getPreferenceSourceText(preference.source),
-      legacyMigration: preference.source === 'LEGACY_MIGRATION',
-    };
-  });
-  if (preferenceMap.size !== rows.length) {
-    throw new Error('通知偏好更新响应包含未知或重复组合');
-  }
-  return { ...snapshot, defaultVersion: preferences.defaultVersion, rows };
-};
-
 export const updateNotificationPreferences = async (
   snapshot: NotificationPreferenceSnapshot,
   changes: UpdateNotificationPreferences['changes'],
-) => {
+): Promise<NotificationPreferenceSnapshot> => {
   const preferences = await api.notify.batchUpdatePreferences({ changes });
-  return applyPreferenceRepresentation(snapshot, preferences);
+  const map = preferenceMap(preferences);
+  return {
+    ...snapshot,
+    defaultVersion: preferences.defaultVersion,
+    rows: snapshot.rows.map((row) => {
+      const preference = map.get(keyOf(row.category, row.channel));
+      if (!preference) throw new Error('通知设置暂不可用');
+      return { ...row, enabled: preference.enabled };
+    }),
+  };
 };
-
 export const getNotificationChannelCapabilities = () => api.notify.getChannelCapabilities();
-
-export const isNotificationPreferencesUnavailable = (err: unknown) => {
-  if (!isHttpError(err) || err.statusCode !== 503) return false;
-  if (!err.raw || typeof err.raw !== 'object') return true;
-  const problemType = (err.raw as { type?: unknown }).type;
-  return (
-    typeof problemType !== 'string' ||
-    problemType === '/problems/notification-preferences-unavailable'
-  );
-};
+export const isNotificationPreferencesUnavailable = (error: unknown) =>
+  isHttpError(error) && error.statusCode === 503;

@@ -158,3 +158,14 @@ export async function saveCurrentProfile(data: EditProfileUpdate): Promise<UserP
     if (saving === task) saving = null;
   }
 }
+
+/** Account transitions invalidate drafts; nickname/avatar changes do not. */
+export function watchCurrentAccount(listener: () => void): () => void {
+  let previous = getCurrentIdentity().id;
+  return appStore.watch('userInfo', () => {
+    const next = getCurrentIdentity().id;
+    if (next === previous) return;
+    previous = next;
+    listener();
+  });
+}

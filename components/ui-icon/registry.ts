@@ -24,6 +24,32 @@ export const ICON_REGISTRY = {
   attachment: { default: '/assets/icons/core/attachment.svg' },
   file: { default: '/assets/icons/core/file.svg' },
   link: { default: '/assets/icons/core/link.svg' },
+  'home-news': { default: '/assets/icons/core/home-news.svg' },
+  'home-book': { default: '/assets/icons/core/home-book.svg' },
+  'platform-operator': { default: '/assets/icons/core/platform-operator.svg' },
+  'home-classroom': { default: '/assets/icons/core/home-classroom.svg' },
+  'home-competition': { default: '/assets/icons/core/home-competition.svg' },
+  'home-safety': { default: '/assets/icons/core/home-safety.svg' },
+  'home-materials': { default: '/assets/icons/core/home-materials.svg' },
+  'home-tasks': { default: '/assets/icons/core/home-tasks.svg' },
+  'home-events': { default: '/assets/icons/core/home-events.svg' },
+  // 专用于自定义 TabBar，避免改变业务页面中的通用图标。
+  'tab-home': {
+    default: '/assets/icons/tabbar/home-default.svg',
+    active: '/assets/icons/tabbar/home-active.svg',
+  },
+  'tab-campus': {
+    default: '/assets/icons/tabbar/campus-default.svg',
+    active: '/assets/icons/tabbar/campus-active.svg',
+  },
+  'tab-message': {
+    default: '/assets/icons/tabbar/message-default.svg',
+    active: '/assets/icons/tabbar/message-active.svg',
+  },
+  'tab-profile': {
+    default: '/assets/icons/tabbar/profile-default.svg',
+    active: '/assets/icons/tabbar/profile-active.svg',
+  },
   home: { default: '/assets/icons/core/home.svg', active: '/assets/icons/core/home-active.svg' },
   message: {
     default: '/assets/icons/core/message.svg',
@@ -32,6 +58,10 @@ export const ICON_REGISTRY = {
   user: { default: '/assets/icons/core/user.svg', active: '/assets/icons/core/user-active.svg' },
   settings: { default: '/assets/icons/core/settings.svg' },
   like: { default: '/assets/icons/core/like.svg', active: '/assets/icons/core/like-active.svg' },
+  bookmark: {
+    default: '/assets/icons/core/bookmark.svg',
+    active: '/assets/icons/core/bookmark-active.svg',
+  },
   share: { default: '/assets/icons/core/share.svg' },
   'calendar-event': { default: '/assets/icons/core/calendar-event.svg' },
   checklist: { default: '/assets/icons/core/checklist.svg' },

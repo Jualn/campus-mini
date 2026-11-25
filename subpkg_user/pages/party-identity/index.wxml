@@ -1,0 +1,51 @@
+<page-navigation title="身份认证" />
+<view class="identity-page">
+  <view class="identity-card g-glass-strong">
+    <view class="identity-title">党建身份</view>
+    <load-state wx:if="{{identityLoading}}" mode="loading" variant="inline" title="正在查询" />
+    <load-state wx:elif="{{identityError}}" mode="error" variant="inline" title="暂时无法确认身份"
+      description="{{identityError}}" action-text="重试" bind:action="refreshIdentity" />
+    <block wx:elif="{{identity}}">
+      <view class="identity-status">{{identity.effectiveStatus === 'ACTIVE' ? stageLabel : identityLabel}}</view>
+      <view wx:if="{{stageLabel && identity.effectiveStatus !== 'ACTIVE'}}" class="identity-note">原记录为{{stageLabel}}</view>
+      <view wx:if="{{identity.currentRecord}}" class="identity-note">
+        有效期 {{identityDates}}
+      </view>
+      <view wx:if="{{methodLabel}}" class="identity-note">核实方式 {{methodLabel}}</view>
+      <button class="identity-refresh" bindtap="refreshIdentity" disabled="{{submitting}}">重新查询</button>
+    </block>
+  </view>
+
+  <view wx:if="{{submitting || unresolved || (identity && identity.effectiveStatus === 'UNBOUND') || message}}" class="identity-card g-glass-strong">
+    <view class="identity-title">关联个人档案</view>
+    <view wx:if="{{message}}" class="identity-message" role="alert">{{message}}</view>
+    <block wx:if="{{submitting || unresolved || (identity && identity.effectiveStatus === 'UNBOUND')}}">
+      <view class="identity-note">填写学校登记的姓名和学号。</view>
+      <label class="identity-field">姓名
+        <input class="input-base" aria-label="姓名" placeholder="请输入姓名" data-field="realName" value="{{realName}}" maxlength="100" disabled="{{submitting || unresolved}}" bindinput="onInput" />
+      </label>
+      <label class="identity-field">学号
+        <input class="input-base" aria-label="学号" placeholder="请输入学号" type="text" data-field="studentNumber" value="{{studentNumber}}" maxlength="100" disabled="{{submitting || unresolved}}" bindinput="onInput" />
+      </label>
+      <view wx:if="{{unresolved}}" class="identity-note">上次提交的结果还未确认。可以用已保留的信息继续核对。</view>
+      <button class="btn btn-primary identity-action" bindtap="submit" loading="{{submitting}}" disabled="{{submitting || loading}}">
+        {{unresolved ? '核对上次提交' : '关联档案'}}
+      </button>
+    </block>
+  </view>
+
+  <view class="identity-card g-glass-strong">
+    <view class="identity-title">档案关联记录</view>
+    <load-state wx:if="{{loading && !items.length}}" mode="loading" variant="inline" title="正在查询" />
+    <load-state wx:elif="{{error}}" mode="error" variant="inline" description="{{error}}" action-text="重试" bind:action="refresh" />
+    <view wx:elif="{{!items.length}}" class="identity-note">还没有成功关联的记录</view>
+    <view wx:for="{{items}}" wx:key="applicationId" class="identity-record">
+      <text>关联成功</text>
+      <text class="identity-note">{{item.dateText}}</text>
+    </view>
+    <button wx:if="{{hasMore && !error}}" class="btn btn-ghost identity-action" bindtap="more" loading="{{loading}}" disabled="{{loading || submitting}}">加载更多</button>
+  </view>
+  <view class="identity-mentor">
+    <mentor-certification user-id="{{userId}}" refresh-revision="{{mentorRevision}}" />
+  </view>
+</view>

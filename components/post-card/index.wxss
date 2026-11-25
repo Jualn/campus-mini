@@ -2,52 +2,46 @@
 
 .post-card {
   display: flex;
-  padding: 26rpx 26rpx 22rpx;
-  background: var(--glass-bg-strong);
-  border: 1rpx solid var(--color-border-grey);
-  box-shadow: var(--shadow-card);
+  padding: 24rpx;
+  border: 1rpx solid var(--color-border-light);
+  background: var(--color-bg-card);
 }
 
 .post-card:active {
-  opacity: 0.94;
-  transform: scale(0.992);
+  opacity: 0.96;
 }
 
 .post-left {
-  width: 80rpx;
+  width: 76rpx;
   flex-shrink: 0;
   margin-right: 20rpx;
 }
 
 .post-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
   display: flex;
+  width: 76rpx;
+  height: 76rpx;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  flex-shrink: 0;
-  box-shadow:
-    0 10rpx 22rpx rgba(47, 124, 246, 0.15),
-    0 0 0 4rpx rgba(255, 255, 255, 0.82);
+  border-radius: 50%;
 }
 
 .post-avatar:active {
-  opacity: 0.86;
-  transform: scale(0.96);
+  opacity: 0.82;
 }
 
 .post-avatar__img {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
 }
 
 .post-avatar__char {
   color: var(--color-text-inverse);
-  font-weight: var(--weight-bold);
   font-size: 28rpx;
+  font-weight: var(--weight-semibold);
 }
 
 .post-right {
@@ -57,62 +51,79 @@
 
 .post-top-row {
   display: flex;
+  min-height: 64rpx;
   align-items: center;
-  margin-bottom: 8rpx;
 }
 
 .post-user {
   display: flex;
-  align-items: center;
   flex: 1;
+  align-items: center;
   min-width: 0;
 }
 
 .post-nickname {
-  max-width: 320rpx;
-  font-size: 28rpx;
-  font-weight: var(--weight-heavy);
-  color: var(--color-text-primary);
+  max-width: 300rpx;
   overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .post-time {
-  margin-left: 8rpx;
-  font-size: var(--font-sm);
-  color: rgba(16, 35, 63, 0.46);
   flex-shrink: 0;
+  margin-left: var(--space-xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
 }
 
 .post-more {
-  padding: 0 4rpx 0 16rpx;
   flex-shrink: 0;
-}
-
-.post-more:active {
-  opacity: 0.6;
+  margin-right: -12rpx;
+  padding-left: var(--space-sm);
 }
 
 .more-dot {
-  width: 58rpx;
-  height: 58rpx;
+  width: 64rpx;
+  height: 64rpx;
   flex-shrink: 0;
 }
 
+.post-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-md);
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--font-sm);
+}
+
+.post-question-title {
+  margin: var(--space-xs) 0;
+  color: var(--color-text-primary);
+  font-size: 34rpx;
+  font-weight: var(--weight-semibold);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .post-body {
-  margin: 8rpx 0 20rpx;
+  position: relative;
+  margin: var(--space-xs) 0 var(--space-sm);
 }
 
 .post-text {
-  font-size: 29rpx;
-  color: #172a46;
-  line-height: 1.68;
   display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
   overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 30rpx;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
   word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 .post-text--expanded {
@@ -120,51 +131,80 @@
   -webkit-line-clamp: unset;
 }
 
+.post-text--measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+  -webkit-line-clamp: unset;
+}
+
 .post-expand {
-  margin-top: 10rpx;
+  display: flex;
+  min-height: 64rpx;
+  align-items: center;
+  margin-top: var(--space-2xs);
 }
 
 .post-expand__text {
-  font-size: var(--font-sm);
   color: var(--color-primary);
-  font-weight: var(--weight-semibold);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
 }
 
-/* 操作栏 */
+.post-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-md);
+  margin: var(--space-sm) 0 var(--space-xs);
+}
+
+.post-topic {
+  color: var(--color-primary);
+  font-size: var(--font-base);
+  line-height: 1.5;
+}
+
 .post-actions {
   display: flex;
   align-items: center;
-  padding: 16rpx 0 2rpx;
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1rpx solid var(--color-border-light);
 }
 
 .action-item {
   display: flex;
+  min-width: 112rpx;
+  min-height: 72rpx;
   align-items: center;
-  min-width: 120rpx;
 }
 
 .action-item:active {
-  opacity: 0.7;
-  transform: scale(0.98);
+  opacity: 0.68;
 }
 
 .action-item--share {
+  min-width: 72rpx;
+  margin-right: 0;
   margin-left: auto;
-  margin-right: 20rpx;
-  min-width: unset;
+  justify-content: flex-end;
 }
 
 .action-item--view {
-  min-width: 100rpx;
+  min-width: 96rpx;
 }
 
 .action-icon {
+  position: relative;
   width: 40rpx;
   height: 40rpx;
   flex-shrink: 0;
-  position: relative;
-  opacity: 1;
-  margin-right: 6rpx;
+  margin-right: var(--space-2xs);
 }
 
 .action-item--share .action-icon {
@@ -172,9 +212,9 @@
 }
 
 .action-count {
-  font-size: var(--font-sm);
-  color: rgba(16, 35, 63, 0.62);
   min-width: 28rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-sm);
 }
 
 .action-count--liked {
@@ -186,23 +226,22 @@
   color: var(--color-text-tertiary);
 }
 
-/* 点赞图标动画 */
-.action-icon.liked { animation: likePop 0.3s ease; }
+.action-icon.liked {
+  animation: likePop 0.24s ease;
+}
 
 @keyframes likePop {
   0% {
-    transform: scale(0.6);
+    transform: scale(0.72);
   }
-
-  60% {
-    transform: scale(1.18);
+  65% {
+    transform: scale(1.12);
   }
-
   100% {
     transform: scale(1);
   }
 }
-/* Layout stays with the caller; UiIcon owns the glyph. */
+
 .icon-slot {
   display: flex;
   align-items: center;

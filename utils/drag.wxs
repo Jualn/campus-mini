@@ -62,6 +62,18 @@ function handleEnd(e, ins) {
   var mask = ins.selectComponent('.J-mask')
 
   if (dy > 80 || velocity > 0.4) {
+    if (isTrue(e.currentTarget.dataset.closeGuard)) {
+      sheet.setStyle({
+        transform: 'translateY(0px)',
+        transition: 'transform .35s cubic-bezier(0.32,0.72,0,1)',
+      })
+      mask.setStyle({
+        opacity: '1',
+        transition: 'opacity .35s ease',
+      })
+      ins.callMethod('onRequestClose', {})
+      return
+    }
     // ✅ 直接在 WXS 里做关闭动画，不再交给 JS 做
     sheet.setStyle({
       transform: 'translateY(100%)', // 原本 _panelH px
@@ -164,6 +176,18 @@ function scrollEnd(e, ins) {
   var mask = ins.selectComponent('.J-mask')
 
   if (dy > 80 || velocity > 0.4) {
+    if (isTrue(e.currentTarget.dataset.closeGuard)) {
+      sheet.setStyle({
+        transform: 'translateY(0px)',
+        transition: 'transform .35s cubic-bezier(0.32,0.72,0,1)',
+      })
+      mask.setStyle({
+        opacity: '1',
+        transition: 'opacity .35s ease',
+      })
+      ins.callMethod('onRequestClose', {})
+      return
+    }
     sheet.setStyle({
       transform: 'translateY(100%)', // 原本 _panelH px
       transition: 'transform .32s cubic-bezier(0.32,0.72,0,1)',
@@ -192,6 +216,10 @@ function handleClose(e, ins) {
   // 从 dataset 读 panelH，关闭按钮和 mask 上都加 data-panel-h
   var panelH = e.currentTarget.dataset.panelH || _panelH || 600
 
+  if (isTrue(e.currentTarget.dataset.closeGuard)) {
+    ins.callMethod('onRequestClose', {})
+    return
+  }
 
   ins.selectComponent('.J-sheet').setStyle({
     transform: 'translateY(100%)', // 原本 panelH px

@@ -27,6 +27,7 @@ Classify the disputed fact first; these sources are not a universal ranking. Exp
 | Platform capability and limits | Official WeChat runtime documentation, with evidence for the supported client/base-library matrix |
 | Executable project facts | Relevant project/app/compiler/package/lockfile/CI configuration |
 | Cross-system protocol | The designated Contract and its authoritative generator/source |
+| Product goals and approved interaction decisions | Explicit task requirements and accepted project designs; Contracts alone do not define UX |
 | Repository decisions and verified snapshot | Project Profile, with evidence; resolve stale entries against their owning source |
 | Reusable engineering policy | The relevant module in this directory |
 | Local implementation convention | Existing implementation as evidence, not automatically intended design |
@@ -55,9 +56,14 @@ When current configuration cannot support intended behavior, surface the compati
 
 ## Common routing
 
-- Component change → Architecture + Runtime + UI + Testing.
+Classify by **changed responsibility**, not file extension or API name. These are routes to relevant sections, not a requirement to read every named module in full:
+
+- Local Page styling/copy → existing Page/visual conventions + relevant UI rules; verify affected presentation; no Contract by default.
+- New Page or meaningful interaction flow → UI (task, states, entry/recovery, native fit) + Architecture/Runtime/Testing as relevant; Contracts only for protocol facts or discovered server gaps.
+- Shared Component/public API → Architecture + UI + consumers + Component tests; distinguish internal style from properties/events/slots/public methods/styling contract changes.
+- Global tokens/theme → UI + relevant Component consumers + visual/runtime validation; update the owning token system rather than many copied style guides.
 - Behavior change → Architecture + Runtime + Testing.
-- HTTP/API/DTO change → Network + Contracts + Security + Testing.
+- HTTP/API/DTO change → Network + Contracts + Security + Testing; if user-visible, separately assess Page/interaction impact.
 - Page lifecycle/state change → Runtime + Testing, plus UI if user-visible.
 - Subpackage/preload change → Architecture + Performance + Build.
 - Login/privacy/device capability → Security + Runtime + Testing + UI as applicable.
@@ -83,7 +89,7 @@ A platform API does not automatically create a new Engineering domain. Place it 
 
 ## Project design notes
 
-Use the [project documentation index](../../project/README.md) for current-user synchronization, component integration and local capability design when relevant. These notes carry their own evidence status and do not replace Contracts or VERIFIED Profile facts.
+Start from the [docs entry](../../README.md) when the owner is unclear. Use the [project documentation index](../../project/README.md) for domain interaction, current-user synchronization and shared UI usage when relevant. Fixed inputs and retained historical evidence have a separate [operations index](../../operations/README.md); old results do not define current behavior. Project notes do not replace Contracts or VERIFIED Profile facts.
 
 ## Project-specific facts
 
@@ -101,7 +107,7 @@ Mini Program Engineering
 → how the client safely consumes it
 ```
 
-Generated Contract artifacts should be edited through their authoritative Contract/generator, not manually.
+Generated Contract artifacts should be edited through their authoritative Contract/generator, not manually. For a cross-workspace change, the handoff contains a Contract revision, changed operations/schemas, compatibility and consumer impact; it links to authoritative definitions instead of reproducing them. See [05 Network](05-network-contracts-errors.md#cross-workspace-contract-handoff).
 
 ## Machine enforcement
 
@@ -120,19 +126,16 @@ Do not convert subjective architectural judgment into brittle lint rules merely 
 
 ## Working sequence
 
-For non-trivial Mini Program work:
+For non-trivial work, use this adaptive sequence (skip inapplicable branches):
 
 ```text
-AGENTS.md
-→ project-profile.md
-→ this README routing map
-→ relevant Engineering module(s)
-→ relevant Contracts
-→ implementation
-→ change-driven validation
+AGENTS.md → classify change/owners → task-relevant Profile + source + modules
+                         ├─ protocol gap? → Contracts decision/revision → consumers
+                         └─ local UI? → existing patterns/Component usages → implement
+→ validate affected behavior/consumers → maintain changed durable facts only
 ```
 
-Do not load every Engineering document mechanically for every edit.
+A task may start from an accepted Contract or from a Page/backend discovery. No UI design document, Contract revision or full-module read is required merely because code changed. Do not mechanically read the whole Profile or all Engineering documents.
 
 ## Core invariant
 

@@ -3,7 +3,8 @@ import * as interactService from '../services/interact';
 import type { SelectedMediaFile } from './media';
 import { uploadFilesToCos } from './media';
 import { TARGET_TYPES, type TargetType } from '../utils/constants';
-import type { CommentCreateRequest, CommentPageQuery } from '../types/api';
+import type { CommentPageQuery } from '../types/api';
+import type { CommentCreateRequest } from '../types/post-contract';
 import type { CommentItem, ReplyItem } from '../types/business';
 import { peekCurrentProfile } from './current-user';
 import { projectCommentAuthor } from '../utils/user-projection';
@@ -11,12 +12,16 @@ import { projectCommentAuthor } from '../utils/user-projection';
 export const syncCommentAuthor = <T extends CommentItem | ReplyItem>(item: T): T =>
   projectCommentAuthor(item, peekCurrentProfile());
 
-export const getCommentList = async (query: CommentPageQuery) => {
+export const getCommentList = async (
+  query: CommentPageQuery & { representation?: 'thread'; postType?: string },
+) => {
   const page = await commentService.getCommentList(query);
   return { ...page, list: page.list.map(syncCommentAuthor) };
 };
 
-export const getReplyList = async (query: CommentPageQuery) => {
+export const getReplyList = async (
+  query: CommentPageQuery & { representation?: 'thread'; postType?: string },
+) => {
   const page = await commentService.getReplyList(query);
   return { ...page, list: page.list.map(syncCommentAuthor) };
 };
@@ -28,6 +33,7 @@ export const createCommentWithImage = async (options: {
   targetType: TargetType;
   content: string;
   parentId?: string;
+  replyToCommentId?: string;
   imageFile?: SelectedMediaFile;
 }): Promise<string> => {
   let imageUrl = '';
@@ -46,6 +52,7 @@ export const createCommentWithImage = async (options: {
     imageUrl,
     imageObjectKey,
     parentId: options.parentId,
+    replyToCommentId: options.replyToCommentId,
   });
 };
 

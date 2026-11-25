@@ -7,13 +7,41 @@ page {
   background: var(--color-bg-card);
 }
 
-.list-footer {
-  padding: 50rpx 0 120rpx;
-  display: flex;
-  justify-content: center;
+.function-center {
+  margin: 0 var(--page-padding) var(--space-sm);
 }
 
-.footer-text {
-  font-size: 24rpx;
-  color: var(--color-text-tertiary);
+.function-center__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.function-entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  min-height: 80rpx;
+  padding: var(--space-xs);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
+  text-align: center;
+}
+
+.function-entry--pressed {
+  background: var(--color-bg-page-deep);
+}
+
+.function-entry__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.function-entry__label {
+  font-size: var(--font-sm);
+  line-height: 1.35;
 }

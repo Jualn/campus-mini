@@ -1,0 +1,234 @@
+@import "../../../styles/comment-composer.wxss";
+@import "../../../styles/discussion.wxss";
+.comments {
+  padding-top: var(--space-lg);
+}
+
+.article-comment-entry {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  width: 100%;
+  min-height: 80rpx;
+  margin: 20rpx 0 0;
+  padding: 0 24rpx;
+  border-radius: 24rpx;
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
+  font-size: 28rpx;
+}
+.article-comment-entry::after { border: 0; }
+.article-comment-entry[disabled],
+.article-comment-entry--readonly {
+  background: var(--color-bg-page);
+  color: var(--color-text-tertiary);
+}
+
+.hint,
+.empty-comments {
+  padding: var(--space-md) 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-base);
+  line-height: 1.6;
+  text-align: center;
+}
+
+
+.comment {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+}
+
+.highlight {
+  background: var(--color-brand-red-tint);
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--color-bg-page-deep);
+}
+
+.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-inverse);
+  font-size: var(--font-base);
+}
+
+.author-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.author-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2rpx 12rpx;
+  overflow-wrap: anywhere;
+}
+
+.author-name {
+  color: var(--color-text-secondary);
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
+}
+
+.content {
+  display: block;
+  padding: 8rpx 0 4rpx 84rpx;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reply-recipient {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding-left: 84rpx;
+}
+
+.date {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+}
+
+.tools button,
+.text-button,
+.more-button {
+  margin: 0;
+}
+
+.tools button::after,
+.text-button::after,
+.more-button::after {
+  border: 0;
+}
+
+.tool-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  min-height: 56rpx;
+  padding: 0 16rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
+  font-size: var(--font-sm);
+  line-height: 1.3;
+}
+
+.tool-button--thread {
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+}
+
+.tool-button--active {
+  color: var(--color-brand-red-deep);
+}
+
+.tool-button--danger {
+  color: var(--color-danger);
+}
+
+.tool-button[disabled] {
+  background: var(--color-bg-page);
+  color: var(--color-text-tertiary);
+  opacity: 0.55;
+}
+
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.error-state {
+  padding: var(--space-md) 0;
+  color: var(--color-danger);
+  font-size: var(--font-base);
+  line-height: 1.6;
+}
+
+.text-button {
+  flex-shrink: 0;
+  padding: 12rpx 0 12rpx 16rpx;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-base);
+  line-height: 1.4;
+}
+
+.more-button {
+  width: 100%;
+  min-height: 72rpx;
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+  font-size: var(--font-base);
+  line-height: 72rpx;
+}
+
+.thread {
+  margin: 12rpx 0 12rpx 84rpx;
+  padding: 0 20rpx 16rpx;
+  border: 1rpx solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
+}
+
+.thread-top {
+  display: flex;
+  align-items: center;
+  min-height: 60rpx;
+  border-bottom: 1rpx solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.article-composer-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.18);
+}
+.article-composer .discussion-avatar {
+  width: 72rpx;
+  height: 72rpx;
+}
+.article-composer .discussion-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 340px) {
+  .thread { margin-left: 24rpx; }
+  .content,
+  .tools {
+    padding-left: 0;
+  }
+}

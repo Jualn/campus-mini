@@ -127,7 +127,9 @@ Keep these primarily review-driven:
 - retry/idempotency semantic safety;
 - package/preload/cache trade-offs;
 - whether client UI permission logic is being mistaken for backend authorization;
-- UX/accessibility/theme quality.
+- UX/accessibility/theme quality;
+- user-task information hierarchy, interaction completeness, API-schema-to-UI misuse and justifiable Component reuse;
+- public Component contract compatibility/consumer impact, cross-Page token effects and whether product-design documentation genuinely changed.
 
 ## Skills
 
@@ -158,7 +160,7 @@ Do not create Skills for ordinary “create Page”, “call API”, or “run l
 | 08 Security/Privacy | secret scan + redaction/client-policy tests | runtime/device permission tests | trust/privacy/auth boundary |
 | 09 Build/CI/Release | CI workflows + protected credentials | release gate | production authorization |
 | 10 Observability | redaction/correlation/telemetry tests | production metrics | signal selection/sampling |
-| 11 UI/A11y | Component tests + compile | runtime/device/a11y | UX/theme/accessibility quality |
+| 11 UI/A11y | Component tests + compile | user-task runtime/device/a11y | UX flow, information hierarchy, Component reuse, theme/accessibility quality |
 
 ## Migration order
 
@@ -176,7 +178,7 @@ Each stage should leave the repository green. Do not enable dozens of rules and 
 
 Record current commands and their evidence as VERIFIED, unresolved facts as UNKNOWN, and approved future decisions as TARGET in the [Project Profile](project-profile.md). Proposed gates in this matrix are recommendations, not evidence that CI already runs them.
 
-The standalone docs check is implemented: `node docs/engineering/mini-program/scripts/check-docs.mjs`. It checks document presence, routing coverage, local Markdown links/anchors, Profile schema/status and VERIFIED evidence paths. ACTIVE additionally requires resolved critical facts. It does not execute project commands, inspect source, test remote links, prove evidence content, or claim CI wiring. See [maintenance](maintenance.md).
+The standalone docs check is implemented: `node docs/engineering/mini-program/scripts/check-docs.mjs`. It checks document presence, routing coverage, Markdown links/anchors, Profile schema/status and VERIFIED evidence link paths. ACTIVE additionally requires resolved critical facts. For standalone checkouts, `--allow-external-unchecked` permits out-of-repository links to be explicitly reported as unresolved. It does not execute project commands, inspect source, test remote URLs, prove evidence content, validate Contract drift, or claim CI wiring. See [maintenance](maintenance.md).
 
 ## Core invariant
 

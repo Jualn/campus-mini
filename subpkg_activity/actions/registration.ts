@@ -79,9 +79,16 @@ async function forCurrentUser<T>(operation: (userId: string) => Promise<T> | T):
   return result;
 }
 
-export async function loadRegistration(id: string) {
+export async function loadRegistration(id: string, historyOnly = false) {
   return forCurrentUser(() =>
-    Promise.all([settle(service.readRegistrationForm(id)), settle(service.readMyRegistration(id))]),
+    Promise.all([
+      settle(
+        historyOnly
+          ? Promise.reject(new Error('公开详情暂不可访问'))
+          : service.readRegistrationForm(id),
+      ),
+      settle(service.readMyRegistration(id)),
+    ]),
   );
 }
 

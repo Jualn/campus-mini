@@ -1,7 +1,12 @@
+import type {
+  MentorAnswerAttribution,
+  PostOrganization,
+  PostWritePermission,
+} from './post-contract';
 // 业务实体类型
 
 import type { ActivityUiStatus, Attachment, Contact, TimelineNode } from './activity';
-import type { ParticipationAvailabilityState } from './event-contract';
+import type { ActivitySummaryDTO, ParticipationAvailabilityState } from './event-contract';
 import type { UserProfile, UpdateMyProfileRequest } from './profile-contract';
 import type { NotificationTarget } from './notification-contract';
 
@@ -11,6 +16,7 @@ export interface ServiceDataResult<T> {
   data: T;
 }
 export interface ServiceCursorPage<T> {
+  cursor?: string;
   list: T[];
   hasMore: boolean;
   nextCursor?: string;
@@ -20,6 +26,10 @@ export interface ServiceCursorPage<T> {
 
 // components/comment-panel/index.ts 中使用的类型
 export interface ReplyItem {
+  kind?: string;
+  localPreview?: boolean;
+  replyToCommentId?: string;
+  replyPermission?: PostWritePermission;
   /** Only confirmed current Profile projections supply this until author Contract exists. */
   isPlatformOperator?: boolean;
   replyId: string;
@@ -36,11 +46,18 @@ export interface ReplyItem {
   _avatarBg: string;
 }
 export interface ReplyTarget {
+  replyToCommentId?: string;
   commentId: string;
   nickName: string;
   userId: string;
 }
 export interface CommentItem {
+  kind?: string;
+  mentorAnswer?: MentorAnswerAttribution;
+  localPreview?: boolean;
+  placeholder?: boolean;
+  threadState?: string;
+  replyPermission?: PostWritePermission;
   /** Only confirmed current Profile projections supply this until author Contract exists. */
   isPlatformOperator?: boolean;
   commentId: string;
@@ -73,7 +90,10 @@ export type UserProfileTab = 'posts' | 'likes';
 export type UserProfileInfo = UserProfile;
 
 // components/post-card/index.ts 中使用的类型
-export interface PostCardItem {
+export interface PostCardItem extends PostOrganization {
+  /** UI-only title after suppressing a title that merely repeats the body opening. */
+  displayTitle?: string;
+  qaStateLabel?: string;
   /** Only confirmed current Profile projections supply this until author Contract exists. */
   isPlatformOperator?: boolean;
   id: string;
@@ -140,6 +160,9 @@ export type EditProfileUpdate = UpdateMyProfileRequest;
 
 // subpkg_user/pages/user/user.ts 中使用的类型
 export interface UserPageData {
+  hasMore?: boolean;
+  nextCursor?: string;
+  cursor?: string;
   userInfo: UserProfileInfo;
   postsError?: string;
   posts: PostCardItem[];
@@ -248,6 +271,7 @@ export interface ExamListItem {
 // subpkg_activity/pages/list/list.ts 中使用的类型
 /** 列表页卡片（轻量，只含卡片所需字段） */
 export interface ActivityCard {
+  audienceScope?: ActivitySummaryDTO['audienceScope'];
   cardTimelineLabel?: string;
   cardTimelineText?: string;
   cardTimelineKind?: 'EXACT_POINT' | 'EXACT_RANGE' | 'DATE_POINT' | 'DATE_RANGE' | 'TEXT';
@@ -344,7 +368,10 @@ export interface ActivityDetail {
 // ************************** subpkg_community 中使用的类型定义 ***********************
 
 // subpkg_community/pages/detail/detail.ts 中使用的类型
-export interface PostDetail {
+export interface PostDetail extends PostOrganization {
+  /** UI-only title after suppressing a title that merely repeats the body opening. */
+  displayTitle?: string;
+  qaStateLabel?: string;
   id: string;
   avatar: string;
   _avatarBg: string;
@@ -364,52 +391,6 @@ export interface PostDetail {
   likeCount: number;
   commentCount: number;
   isLiked: boolean;
-}
-
-// *************************** message 页面中使用的类型定义 *******************************
-export interface MessageFeedData {
-  allMessages: MessageItem[];
-  groupedMessages: MessageItem[];
-  urgentMessages: MessageItem[];
-  olderMessages: MessageItem[];
-  unreadCount: number;
-  totalCount: number;
-  filterTabs: FilterTab[];
-}
-/**
- * 通知消息类型
- */
-export type MessageType = 'system' | 'activity' | 'exam' | 'interaction';
-/**
- * 通知消息项
- */
-export interface MessageItem {
-  id: string;
-  type: MessageType;
-  icon: string;
-  title: string;
-  content: string;
-  isRead: boolean;
-  createdAt: string;
-  targetType: string;
-  targetId: string;
-  timeAgo?: string;
-  shortTitle?: string;
-  shortContent?: string;
-  typeLabel?: string;
-  actionLabel?: string;
-  isUrgent?: boolean;
-  senderInitial?: string;
-  _isGroup?: boolean;
-  _grouped?: MessageItem[];
-  groupTitle?: string;
-  timeRange?: string;
-}
-export interface FilterTab {
-  id: string;
-  icon: string;
-  label: string;
-  count?: number;
 }
 
 // ****************************** index 页面中使用的类型定义 *******************************
@@ -434,6 +415,9 @@ export interface IndexExamCardItem {
 
 // ******************************  me 页面中使用的类型定义 *******************************
 export interface MePageData {
+  hasMore?: boolean;
+  nextCursor?: string;
+  cursor?: string;
   userInfo: UserProfileInfo;
   postsError?: string;
   posts: PostCardItem[];

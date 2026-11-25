@@ -1,3 +1,6 @@
+import { prepareAnswers } from '../../services/registration';
+import { createBusinessSubscription } from '../../../services/business-subscriptions';
+import { getCurrentIdentity, watchCurrentIdentity } from '../../../actions/current-user';
 import definePage from '../../../utils/definePage';
 import * as action from '../../actions/registration';
 import type {
@@ -8,6 +11,7 @@ import type {
 } from '../../types/registration';
 import { wxShowModal } from '../../../utils/wx-promise';
 import { isHttpError } from '../../../utils/error';
+import { createLeaveGuard } from '../../../utils/leave-guard';
 
 const initialAnswers: RegistrationAnswers = {};
 const initialFieldCandidates: Record<string, string[]> = {};
@@ -72,16 +76,21 @@ function answerDisplays(
 
 definePage({
   _version: 0,
+  _owner: '',
+  _offIdentity: null as (() => void) | null,
   _unloaded: false,
   _baselineAnswers: {},
+  _businessSubscription: null as ReturnType<typeof createBusinessSubscription> | null,
   data: {
     activityId: '',
+    historyOnly: false,
     loading: true,
     busy: false,
     error: '',
     message: '',
     unknown: false,
     conflict: false,
+    registrationInvalidated: false,
     info: null as RegistrationForm | null,
     mine: null as MyRegistration | null,
     fields: [] as RegistrationField[],
@@ -96,19 +105,56 @@ definePage({
     canSubmit: false,
     statusLabel: '',
   },
-  onLoad(options: { activityId?: string }) {
-    this.setData({ activityId: options.activityId ?? '' });
+  _leaveGuard: null as ReturnType<typeof createLeaveGuard> | null,
+  onLoad(options: { activityId?: string; history?: string }) {
+    this._businessSubscription = createBusinessSubscription(() => !this._unloaded);
+    this._leaveGuard = createLeaveGuard();
+    this.setData({ activityId: options.activityId ?? '', historyOnly: options.history === '1' });
+    this._owner = getCurrentIdentity().id;
+    this._offIdentity = watchCurrentIdentity(() => {
+      const owner = getCurrentIdentity().id;
+      if (owner === this._owner) return;
+      this._leaveGuard?.(false);
+      this._owner = owner;
+      ++this._version;
+      this._baselineAnswers = {};
+      this.setData({
+        mine: null,
+        registrationInvalidated: false,
+        info: null,
+        answers: {},
+        fields: [],
+        answerDisplays: [],
+        fieldCandidates: {},
+        canSubmit: false,
+        isDirty: false,
+        busy: false,
+        loading: false,
+        unknown: true,
+        message: '',
+        error: '登录身份已变化，请重新查询本人报名',
+      });
+    });
   },
   onShow() {
-    if (!this.data.busy) void this.reload();
+    void this._businessSubscription?.prepare('ACTIVITY_REGISTER', this.data.activityId);
+    this._leaveGuard?.resume();
+    if (!this.data.busy)
+      void this._reloadRegistration(
+        this.data.isDirty ? cloneAnswers(this.data.answers) : undefined,
+      );
   },
   reload() {
-    return this._reloadRegistration();
+    return this._reloadRegistration(
+      this.data.isDirty ? cloneAnswers(this.data.answers) : undefined,
+    );
   },
   isAlive(): boolean {
     return !this._unloaded;
   },
   onUnload() {
+    this._businessSubscription?.dispose();
+    this._offIdentity?.();
     this._unloaded = true;
     this._version++;
   },
@@ -120,11 +166,17 @@ definePage({
       return;
     }
     try {
-      const [formResult, mineResult] = await action.loadRegistration(this.data.activityId);
+      const [formResult, mineResult] = await action.loadRegistration(
+        this.data.activityId,
+        this.data.historyOnly,
+      );
       if (!this.isAlive() || version !== this._version) return;
       const info = formResult.status === 'fulfilled' ? formResult.value : null;
       if (mineResult.status === 'rejected') throw new Error('本人报名记录未能确认，请重试');
       const mine = mineResult.value;
+      const registrationInvalidated =
+        this.data.registrationInvalidated ||
+        (mine?.status === 'CANCELLED' && mine.cancellationOrigin === 'ADMIN');
       const fields = info?.fields ?? [];
       const candidateState = info
         ? await action.readRegistrationCandidates(fields)
@@ -136,6 +188,7 @@ definePage({
       this.setData({
         info,
         mine,
+        registrationInvalidated,
         answers,
         isDirty: !answersEqual(fields, answers, baselineAnswers),
         unknown: false,
@@ -148,17 +201,23 @@ definePage({
         rememberReusableFields: candidateState.hasProfile || this.data.rememberReusableFields,
         answerDisplays: answerDisplays(fields, mine?.answers ?? {}),
         canSubmit:
+          !registrationInvalidated &&
           Boolean(info) &&
           (mine?.status === 'SUBMITTED' ? mine.canModify : info?.availability === 'OPEN'),
         statusLabel: mine
-          ? ({ SUBMITTED: '已提交', CANCELLED: '已取消' } as const)[mine.status]
+          ? registrationInvalidated
+            ? '管理员已作废'
+            : ({ SUBMITTED: '已提交', CANCELLED: '已取消' } as const)[mine.status]
           : '尚未提交',
         error: !info && !mine ? '报名表暂不可读取，请重试或返回活动详情' : '',
       });
       this.syncFields();
+      this._leaveGuard?.(this.data.isDirty);
     } catch (e) {
-      if (this.isAlive() && version === this._version)
+      if (this.isAlive() && version === this._version) {
         this.setData({ error: e instanceof Error ? e.message : '加载失败', unknown: true });
+        this._leaveGuard?.(true);
+      }
     } finally {
       if (this.isAlive() && version === this._version) this.setData({ loading: false });
     }
@@ -199,6 +258,7 @@ definePage({
       message: '',
     });
     this.syncFields();
+    this._leaveGuard?.(this.data.isDirty || this.data.unknown);
   },
   async onRememberChange(e: WechatMiniprogram.CustomEvent<{ value: boolean }>) {
     const enabled = e.detail.value;
@@ -247,6 +307,8 @@ definePage({
       validationSummary: '',
       fieldErrors: {},
     });
+    this._leaveGuard?.(true);
+    const owner = getCurrentIdentity().id;
     const attemptedAnswers = Object.fromEntries(
       Object.entries(this.data.answers).map(([key, value]) => [
         key,
@@ -255,6 +317,9 @@ definePage({
     );
     try {
       if (!this.data.info) return;
+      if (this.data.mine?.status !== 'SUBMITTED') prepareAnswers(this.data.info.fields, this.data.answers);
+      if (this.data.mine?.status !== 'SUBMITTED' && this._businessSubscription &&
+          !await this._businessSubscription.request('ACTIVITY_REGISTER', this.data.activityId)) return;
       await action.submitRegistration(
         this.data.activityId,
         this.data.info,
@@ -262,17 +327,35 @@ definePage({
         this.data.mine,
         this.data.rememberReusableFields,
       );
+      if (owner !== getCurrentIdentity().id) return;
+      if (typeof this.getOpenerEventChannel === 'function')
+        this.getOpenerEventChannel().emit?.('activityChanged');
       if (this.isAlive()) {
-        this.setData({ message: '信息已提交。这不代表官方录取或完成外部步骤。' });
+        this.setData({
+          message:
+            this.data.mine?.status === 'SUBMITTED'
+              ? '报名信息已更新'
+              : `${this.data.info.successLabel ?? '报名成功'}，已获得有效平台名额。${this.data.info.hasExternalSteps ? '请继续按活动说明完成外部步骤。' : ''}`,
+        });
         await this.reload();
       }
     } catch (e) {
+      if (owner !== getCurrentIdentity().id) return;
       if (e instanceof Error && e.name === 'RegistrationValidationError') {
         if (this.isAlive()) {
           const validationError = e as RegistrationValidationLike;
           const fieldErrors = validationError.fieldErrors ?? {};
           this.setData({ validationSummary: e.message, fieldErrors });
           this.scrollToFirstInvalidField(fieldErrors);
+        }
+      } else if (isHttpError(e) && e.problemType?.endsWith('/registration-invalidated')) {
+        if (this.isAlive()) {
+          this.setData({
+            registrationInvalidated: true,
+            canSubmit: false,
+            message: '报名已被管理员作废，不能重新提交。请查看本人记录。',
+          });
+          await this._reloadRegistration(attemptedAnswers);
         }
       } else if (isHttpError(e) && e.statusCode === 412) {
         if (this.isAlive()) {
@@ -283,7 +366,7 @@ definePage({
         }
       } else await this.confirmOutcome(e, attemptedAnswers);
     } finally {
-      if (this.isAlive()) this.setData({ busy: false });
+      if (this.isAlive() && owner === getCurrentIdentity().id) this.setData({ busy: false });
     }
   },
   async onCancel() {
@@ -296,25 +379,35 @@ definePage({
     )
       return;
     this.setData({ busy: true, error: '', message: '' });
+    const owner = getCurrentIdentity().id;
     let requested = false;
     try {
       const result = await wxShowModal({
-        title: '取消报名提交',
+        title: '取消报名',
         content:
-          '取消将释放平台收表名额。以后重新提交仍会重新检查活动状态、报名窗口和名额，确认取消吗？',
+          '取消将释放平台报名名额。以后重新提交仍会重新检查活动状态、报名窗口和名额，确认取消吗？',
       });
-      if (!result.confirm || !this.isAlive()) return;
+      if (!result.confirm || !this.isAlive() || owner !== getCurrentIdentity().id) return;
       requested = true;
       await action.cancelRegistration(this.data.activityId, this.data.mine);
+      if (owner !== getCurrentIdentity().id) return;
+      if (typeof this.getOpenerEventChannel === 'function')
+        this.getOpenerEventChannel().emit?.('activityChanged');
       if (this.isAlive()) {
-        this.setData({ message: '已取消报名提交' });
+        this.setData({ message: '已取消报名' });
         await this.reload();
       }
     } catch (e) {
-      if (requested) await this.confirmOutcome(e);
+      if (owner !== getCurrentIdentity().id) return;
+      if (requested && isHttpError(e) && e.statusCode === 409) {
+        if (this.isAlive()) {
+          this.setData({ message: '当前已不可取消报名。已请求刷新最新状态，请核对下方记录。' });
+          await this.reload();
+        }
+      } else if (requested) await this.confirmOutcome(e);
       else if (this.isAlive()) this.setData({ error: '确认窗口未能打开，请重试' });
     } finally {
-      if (this.isAlive()) this.setData({ busy: false });
+      if (this.isAlive() && owner === getCurrentIdentity().id) this.setData({ busy: false });
     }
   },
   async confirmOutcome(error: unknown, preservedAnswers?: RegistrationAnswers) {
@@ -332,6 +425,7 @@ definePage({
           canSubmit: false,
           error: '操作结果暂未确认，请点击重新查询；确认前请勿重复提交。',
         });
+      this._leaveGuard?.(true);
     }
   },
   async onActivity() {
@@ -345,6 +439,7 @@ definePage({
       if (!result.confirm || !this.isAlive()) return;
     }
 
+    this._leaveGuard?.(false);
     const pages = getCurrentPages();
     const previousPage = pages.length > 1 ? pages[pages.length - 2] : undefined;
     if (previousPage?.route === 'subpkg_activity/pages/detail/detail') {

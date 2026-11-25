@@ -3,7 +3,7 @@ import * as registrationService from '../services/registration';
 import { ensureLogin } from '../../actions/auth';
 import { getUserId } from '../../stores/helper';
 import { searchActivities as searchActivityList } from '../services/search';
-import type { ActivityCreateRequest, ActivityPageQuery, ActivityUploadBO } from '../../types/api';
+import type { ActivityCreateRequest, ActivityUploadBO } from '../../types/api';
 import type { ActivityCard, ServiceCursorPage } from '../../types/business';
 
 export const createActivity = (payload: ActivityCreateRequest): Promise<string> =>
@@ -18,7 +18,7 @@ async function forCurrentUser<T>(operation: () => Promise<T>): Promise<T> {
   return result;
 }
 
-export const getActivityList = (query?: ActivityPageQuery) =>
+export const getActivityList = (query?: Parameters<typeof activityService.getActivityList>[0]) =>
   forCurrentUser(() => activityService.getActivityList(query));
 
 export const searchActivities = (query: {

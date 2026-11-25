@@ -1,0 +1,212 @@
+<page-navigation title="积分申请" surface="page" />
+<view class="points-page">
+  <view class="apply-guide">
+    <view class="apply-guide__steps" aria-label="申报流程">
+      <view class="apply-guide__step apply-guide__step--current">
+        <text class="apply-guide__number">1</text>
+        <text class="apply-guide__label">填写申请</text>
+      </view>
+      <view class="apply-guide__line" aria-hidden="true" />
+      <view class="apply-guide__step">
+        <text class="apply-guide__number">2</text>
+        <text class="apply-guide__label">安全上传</text>
+      </view>
+      <view class="apply-guide__line" aria-hidden="true" />
+      <view class="apply-guide__step">
+        <text class="apply-guide__number">3</text>
+        <text class="apply-guide__label">组织审核</text>
+      </view>
+    </view>
+    <text class="apply-guide__caption">提交成功不代表积分到账，审核结果可在申请记录中查看。</text>
+  </view>
+
+  <load-state
+    wx:if="{{loading}}"
+    mode="loading"
+    title="正在确认申请资格"
+    description="正在核对人员档案、业务阶段和受理组织"
+    fill-viewport
+    viewport-offset="330"
+  />
+  <load-state
+    wx:elif="{{error}}"
+    mode="error"
+    title="暂时无法确认申请资格"
+    description="{{error}}"
+    action-text="重新查询"
+    bind:action="refresh"
+    fill-viewport
+    viewport-offset="330"
+  />
+
+  <view wx:elif="{{result}}" class="result-sheet" role="status">
+    <view class="result-sheet__heading">
+      <text class="result-sheet__label">申请回执</text>
+      <text class="points-status points-status--{{resultStatusTone}}">{{resultStatusLabel}}</text>
+    </view>
+    <text class="result-sheet__title">{{result.status === 'PENDING' ? '申请已提交，等待审核' : result.status === 'APPROVED' ? '申请已审核通过' : result.status === 'REJECTED' ? '申请未通过审核' : '申请已结束'}}</text>
+    <text class="result-sheet__description">{{result.status === 'PENDING' ? '受理组织将继续审核。积分是否入账、入账多少，以最终审核与账务记录为准。' : '进入详情可查看完整审核信息与后续账务记录。'}}</text>
+
+    <view class="result-sheet__summary">
+      <view class="result-sheet__row">
+        <text class="result-sheet__row-label">申请事项</text>
+        <text class="result-sheet__row-value">{{result.title}}</text>
+      </view>
+      <view class="result-sheet__row">
+        <text class="result-sheet__row-label">申请编号</text>
+        <text class="result-sheet__row-value result-sheet__row-value--id" selectable>{{result.applicationId}}</text>
+      </view>
+      <view wx:if="{{result.reviewNote}}" class="result-sheet__row">
+        <text class="result-sheet__row-label">审核说明</text>
+        <text class="result-sheet__row-value points-text">{{result.reviewNote}}</text>
+      </view>
+      <view wx:if="{{result.status === 'APPROVED'}}" class="result-sheet__awarded">
+        <text>原审核积分</text>
+        <text class="result-sheet__awarded-value">+{{result.awardedPoints}} 分</text>
+      </view>
+    </view>
+
+    <button class="points-button points-button--primary result-sheet__primary" bindtap="openResult">查看申请详情</button>
+    <navigator class="points-button points-button--plain result-sheet__secondary" url="/subpkg_user/pages/points-applications/index">查看全部申请</navigator>
+  </view>
+
+  <view wx:elif="{{notice}}" class="points-surface eligibility-state">
+    <view class="eligibility-state__mark" aria-hidden="true">!</view>
+    <text class="eligibility-state__title">当前暂不能提交申请</text>
+    <text class="eligibility-state__description">{{notice}}</text>
+    <navigator class="points-button points-button--secondary eligibility-state__button" url="/subpkg_user/pages/party-identity/index">查看人员关联与身份</navigator>
+    <button class="points-button points-button--plain eligibility-state__button" bindtap="refresh">重新查询资格</button>
+  </view>
+
+  <block wx:elif="{{eligible}}">
+    <view class="points-section form-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">先说明申请事项</text>
+          <text class="points-section__description">带 <text class="required-star">*</text> 的内容必须填写</text>
+        </view>
+      </view>
+
+      <view class="points-surface form-sheet">
+        <view class="field-block">
+          <view class="field-block__label-row">
+            <text class="field-block__label">积分事项 <text class="required-star">*</text></text>
+            <text class="field-block__counter">{{titleLength}}/120</text>
+          </view>
+          <input
+            class="form-control"
+            value="{{title}}"
+            maxlength="120"
+            placeholder="例如：参与社区志愿服务"
+            placeholder-class="form-control__placeholder"
+            disabled="{{locked || submitting}}"
+            aria-label="积分事项，必填"
+            aria-invalid="{{titleError ? 'true' : 'false'}}"
+            bindinput="inputTitle"
+          />
+          <text class="field-block__help">用一句话说清本次申报的事项，便于受理与审核。</text>
+          <text wx:if="{{titleError}}" class="points-field-error" role="alert">{{titleError}}</text>
+        </view>
+
+        <view class="field-block">
+          <view class="field-block__label-row">
+            <text class="field-block__label">申请说明 <text class="required-star">*</text></text>
+            <text class="field-block__counter">{{descriptionLength}}/10000</text>
+          </view>
+          <textarea
+            class="form-control form-control--textarea"
+            value="{{description}}"
+            maxlength="10000"
+            auto-height
+            placeholder="说明事项经过、个人贡献，以及证明材料能佐证的内容"
+            placeholder-class="form-control__placeholder"
+            disabled="{{locked || submitting}}"
+            aria-label="申请说明，必填"
+            aria-invalid="{{descriptionError ? 'true' : 'false'}}"
+            bindinput="inputDescription"
+          />
+          <text class="field-block__help">按实际情况填写，审核时会结合证明材料综合核定。</text>
+          <text wx:if="{{descriptionError}}" class="points-field-error" role="alert">{{descriptionError}}</text>
+        </view>
+
+        <view class="field-block field-block--last">
+          <view class="field-block__label-row">
+            <text class="field-block__label">受理组织 <text class="required-star">*</text></text>
+            <button class="points-text-button" bindtap="refresh" disabled="{{locked || submitting || selecting}}">重新查询</button>
+          </view>
+          <picker range="{{organizations}}" range-key="name" value="{{organizationIndex}}" disabled="{{locked || submitting}}" bindchange="chooseOrganization">
+            <view class="picker-control {{organizationIndex < 0 ? 'picker-control--placeholder' : ''}}" aria-label="选择受理组织">
+              <text>{{organizationIndex >= 0 ? organizations[organizationIndex].name : '请选择受理组织'}}</text>
+              <ui-icon name="chevron-right" size="sm" />
+            </view>
+          </picker>
+          <text class="field-block__help">提交后由所选组织受理，请在提交前确认无误。</text>
+          <text wx:if="{{organizationError}}" class="points-field-error" role="alert">{{organizationError}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="points-section form-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">再添加证明材料</text>
+          <text class="points-section__description">至少一份，提交时逐份安全上传并登记</text>
+        </view>
+        <text class="points-section__aside">{{files.length}}/9</text>
+      </view>
+
+      <view class="points-surface materials-sheet">
+        <text class="materials-sheet__description">支持 JPG、PNG、WebP、PDF、Word、MP4，每份不超过 10MiB。材料仅用于本次申请与审核。</text>
+
+        <view wx:if="{{files.length}}" class="material-list">
+          <view wx:for="{{files}}" wx:key="key" class="material-item">
+            <view class="material-item__type"><text>{{item.typeLabel}}</text></view>
+            <view class="material-item__body">
+              <text class="material-item__name">{{item.name}}</text>
+              <text class="material-item__status">{{item.status}}</text>
+            </view>
+            <button class="material-item__remove" data-index="{{index}}" disabled="{{locked || submitting || selecting}}" bindtap="removeFile" aria-label="移除材料 {{item.name}}">
+              <ui-icon name="close" size="sm" />
+            </button>
+          </view>
+        </view>
+
+        <button class="add-material {{files.length ? 'add-material--compact' : ''}}" bindtap="chooseFile" disabled="{{locked || submitting || selecting || files.length >= 9}}" loading="{{selecting}}" hover-class="add-material--hover">
+          <view wx:if="{{!selecting}}" class="add-material__icon"><ui-icon name="plus" size="md" /></view>
+          <view class="add-material__copy">
+            <text class="add-material__title">{{selecting ? '正在选择文件…' : files.length >= 9 ? '已添加 9 份材料' : '从微信聊天选择文件'}}</text>
+            <text wx:if="{{!selecting && files.length < 9}}" class="add-material__description">{{files.length ? '继续添加材料' : '图片、文档或视频，提交前仍可移除'}}</text>
+          </view>
+        </button>
+        <text wx:if="{{materialError}}" class="points-field-error materials-sheet__error" role="alert">{{materialError}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{unknown}}" class="points-notice points-notice--warning" role="alert">
+      <text class="points-notice__mark">!</text>
+      <view class="points-notice__body">
+        <text class="points-notice__title">提交结果尚未确认</text>
+        <text class="points-notice__text">请勿离开或另建申请。下方按钮会沿用本次操作查询或恢复，避免重复申报。</text>
+      </view>
+    </view>
+    <view wx:if="{{feedback && !materialError}}" class="points-notice points-notice--error" role="alert">
+      <text class="points-notice__mark">!</text>
+      <view class="points-notice__body">
+        <text class="points-notice__title">暂时还不能提交</text>
+        <text class="points-notice__text">{{feedback}}</text>
+      </view>
+    </view>
+
+    <view class="submit-area">
+      <button class="points-button points-button--primary submit-area__button" bindtap="submit" loading="{{submitting}}" disabled="{{submitting || selecting}}" hover-class="points-button--hover">
+        {{unknown ? '查询并恢复本次提交' : submitting ? '正在安全上传并提交…' : '提交积分申请'}}
+      </button>
+      <text class="submit-area__hint">提交后由受理组织审核，审核通过才会计入人员积分。</text>
+    </view>
+  </block>
+
+  <view wx:if="{{feedback && !eligible && !result && !loading && !error}}" class="points-notice points-notice--error" role="alert">
+    <text class="points-notice__mark">!</text>
+    <view class="points-notice__body"><text class="points-notice__text">{{feedback}}</text></view>
+  </view>
+</view>

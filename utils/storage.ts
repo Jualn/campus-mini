@@ -44,8 +44,12 @@ export interface RegistrationFieldCandidateProfile {
 
 const log = createLogger('Storage');
 
+export interface PostCreationKey { owner: string; kind: 'post' | 'comment'; key: string; createdAt: number }
+
 interface StorageSchema {
+  postCreationKeys: PostCreationKey[];
   token: string;
+  authLoggedOut: boolean;
   userInfo: UserInfoDTO;
   userSetting: Settings;
   searchHistory: string[];
@@ -55,7 +59,9 @@ interface StorageSchema {
 type StorageKey = keyof StorageSchema;
 
 export const STORAGE_KEYS = {
+  POST_CREATION_KEYS: 'postCreationKeys',
   TOKEN: 'token',
+  AUTH_LOGGED_OUT: 'authLoggedOut',
   USER_INFO: 'userInfo',
   USER_SETTING: 'userSetting',
   SEARCH_HISTORY: 'searchHistory',

@@ -1,0 +1,132 @@
+.cp-reply-banner {
+  background: var(--color-primary-light);
+  padding: 14rpx 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  border-top: 1rpx solid var(--color-border-light);
+  flex-shrink: 0;
+}
+
+.cp-reply-banner__text {
+  flex: 1;
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}
+
+.cp-reply-banner_to_title{
+  padding-right: 8rpx;
+}
+
+.cp-reply-banner__name {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.cp-reply-banner__cancel {
+  padding: 8rpx;
+}
+
+
+/* sheet 栏参与弹层布局，inline 栏固定于键盘上方。 */
+.cp-bottom-bar {
+  flex-shrink: 0;
+  position: relative;
+  left: 0;
+  right: 0;
+  z-index: 902;
+  background: var(--color-bg-card);
+  /* 不叠加 bottom 动画，直接跟随原生键盘高度。安全区只由输入栏 padding 承担。 */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   输入栏
+   ============================================ */
+.cp-inputbar {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 20rpx calc(12rpx + env(safe-area-inset-bottom));
+  gap: 12rpx;
+  background: var(--color-bg-card);
+  border-top: 1rpx solid var(--color-border-light);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.cp-inputbar--keyboard {
+  padding-bottom: 12rpx;
+}
+
+.cp-inputbar-spacer {
+  pointer-events: none;
+}
+
+.cp-bottom-bar--inline {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.cp-inputbar__wrap {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-bg-page);
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  padding: 18rpx 16rpx;
+  gap: 12rpx;
+  min-height: 80rpx;
+  box-shadow: inset 0 0 0 1rpx transparent;
+  box-sizing: border-box;
+}
+
+.cp-inputbar__wrap--focus {
+  box-shadow: inset 0 0 0 1rpx var(--color-primary);
+  background: var(--color-bg-card);
+}
+
+.cp-inputbar__input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 30rpx;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  line-height: 44rpx;
+  min-height: 44rpx;
+  padding: 0;
+  margin: 0;
+  display: block;
+}
+
+.cp-inputbar__placeholder {
+  color: var(--color-text-tertiary);
+  font-size: 30rpx;
+  line-height: 44rpx;
+}
+
+.cp-submit {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 18rpx;
+  min-height: 68rpx;
+  line-height: 68rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: 24rpx;
+}
+.cp-submit::after { border: 0; }
+.cp-submit[disabled] {
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
+}

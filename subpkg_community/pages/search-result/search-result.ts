@@ -1,3 +1,7 @@
+import { ACTIVITY_LIST_MAX_AGE_MS } from '../../config/activity-list';
+import { isHttpError } from '../../../utils/error';
+import { appStore } from '../../../stores/index';
+import { getUserId } from '../../../stores/helper';
 // subpkg_community/pages/search-result/search-result.ts
 
 import type { ActivityCard, PostCardItem } from '../../../types/business';
@@ -28,6 +32,10 @@ function safeDecode(value?: string) {
 Page({
   // 请求归属当前页面实例；切换条件或卸载后，旧响应不再更新页面。
   _requestSeq: 0,
+  _activityUserId: '',
+  _activityFetchedAt: 0,
+  _activityDirty: false,
+  _unwatchActivityUser: null as (() => void) | null,
 
   /**
    * 页面的初始数据
@@ -53,6 +61,7 @@ Page({
     activityHasMore: true,
     activityNextCursor: '',
     activityLoaded: false,
+    activityInvalidCursor: false,
 
     loading: false,
     loaded: false,
@@ -63,6 +72,23 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options: { keyword?: string; tab?: string }) {
+    this._activityUserId = getUserId() ?? '';
+    this._unwatchActivityUser = appStore.watch('userInfo', (user) => {
+      if (user.id === this._activityUserId) return;
+      this._activityUserId = user.id;
+      this.setData({
+        activityList: [],
+        activityNextCursor: '',
+        activityLoaded: false,
+        activityInvalidCursor: false,
+        activityHasMore: true,
+      });
+      if (this.data.activeTab === 'activity') {
+        this._requestSeq++;
+        this.setData({ loading: false, loaded: false, error: false });
+        if (user.id) void this._search(true);
+      }
+    });
     const sys = wx.getWindowInfo();
     const menuButton =
       typeof wx.getMenuButtonBoundingClientRect === 'function'
@@ -108,7 +134,15 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    /* empty */
+    if (
+      this.data.activeTab === 'activity' &&
+      this.data.activityLoaded &&
+      (this._activityDirty || Date.now() - this._activityFetchedAt >= ACTIVITY_LIST_MAX_AGE_MS)
+    )
+      void this._search(true);
+  },
+  onActivityChanged() {
+    this._activityDirty = true;
   },
 
   /**
@@ -122,6 +156,7 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
+    this._unwatchActivityUser?.();
     this._requestSeq++;
   },
 
@@ -215,6 +250,11 @@ Page({
   },
 
   onRetry() {
+    if (this.data.activeTab === 'activity' && this.data.activityInvalidCursor) {
+      this.setData({ activityInvalidCursor: false, activityNextCursor: '' });
+      void this._search(true);
+      return;
+    }
     void this._search(!this.data.loaded);
   },
 
@@ -271,8 +311,18 @@ Page({
 
         if (currentRequest !== this._requestSeq) return;
 
+        this._activityFetchedAt = Date.now();
+        this._activityDirty = false;
         this.setData({
-          activityList: reset ? res.list : [...this.data.activityList, ...res.list],
+          activityInvalidCursor: false,
+          activityList: [
+            ...new Map(
+              (reset ? res.list : [...this.data.activityList, ...res.list]).map((item) => [
+                item.id,
+                item,
+              ]),
+            ).values(),
+          ],
           activityHasMore: res.hasMore,
           activityNextCursor: res.nextCursor ?? '',
           loaded: true,
@@ -283,6 +333,10 @@ Page({
       }
     } catch (err: unknown) {
       if (currentRequest !== this._requestSeq) return;
+      if (activeTab === 'activity')
+        this.setData({
+          activityInvalidCursor: isHttpError(err) && err.problemType === '/problems/invalid-cursor',
+        });
       log.error('_search', '搜索失败', err);
       this.setData({ error: true });
     } finally {

@@ -1,3 +1,5 @@
+import { ensureLogin } from '../../actions/auth';
+import runtimeConfig from '../../config/index';
 import { wxPageScrollTo } from '../../utils/wx-promise';
 import type { PostCardItem, UserProfileInfo } from '../../types/business';
 import { getCustomTabBar } from '../../utils/tabbar';
@@ -11,9 +13,53 @@ import * as userAction from '../../actions/user';
 import { getProfileErrorMessage } from '../../services/user';
 import definePage from '../../utils/definePage';
 import { notifyToast } from '../../utils/notify';
-import { getCurrentProfile, watchCurrentProfile } from '../../actions/current-user';
+import {
+  getCurrentIdentity,
+  getCurrentProfile,
+  watchCurrentAccount,
+  watchCurrentProfile,
+} from '../../actions/current-user';
 
 const log = createLogger('MePage');
+
+const FUNCTION_ENTRIES = [
+  {
+    key: 'registrations',
+    label: '我的报名',
+    icon: 'calendar-event',
+    url: '/subpkg_activity/pages/my-registrations/list',
+  },
+  {
+    key: 'learning-tasks',
+    label: '学习任务',
+    icon: 'checklist',
+    url: '/subpkg_user/pages/learning-task-list/list',
+  },
+  {
+    key: 'growth',
+    label: '成长档案',
+    icon: 'home-book',
+    url: '/subpkg_user/pages/growth-list/list',
+  },
+  {
+    key: 'points',
+    label: '我的积分',
+    icon: 'home-competition',
+    url: '/subpkg_user/pages/person-points/index',
+  },
+  {
+    key: 'community',
+    label: '社区记录',
+    icon: 'home-news',
+    url: '/subpkg_community/pages/my-community/list',
+  },
+  {
+    key: 'identity',
+    label: '身份认证',
+    icon: 'user',
+    url: '/subpkg_user/pages/party-identity/index',
+  },
+];
 
 interface MePageExtraThis {
   _setTabBarHidden: (hidden: boolean) => void;
@@ -21,12 +67,14 @@ interface MePageExtraThis {
 }
 
 definePage({
+  _loadGeneration: 0,
   _currentScrollTop: 0,
   /** 存储当前是否正在预览图片 */
   _isPreviewingImage: false,
   _previewRestoreTimer: null as number | null,
   _pullDownRefreshEnabled: false,
   _tabBarHidden: false,
+  _offAccount: null as (() => void) | null,
   _offProfile: null as (() => void) | null,
 
   behaviors: [
@@ -49,12 +97,15 @@ definePage({
   data: {
     // 骨架屏相关
     profileError: '',
+    postCursor: '',
+    postUsesCursor: false,
     postsError: '',
     likesLoading: false,
     likesError: false,
 
     statusBarHeight: 20,
     activeTab: 'posts',
+    functionEntries: FUNCTION_ENTRIES,
 
     userInfo: {} as UserProfileInfo,
 
@@ -66,13 +117,26 @@ definePage({
   onShareAppMessage(options): WechatMiniprogram.Page.ICustomShareContent {
     if (options.from === 'button') return this._getShareContent();
     return {
-      title: '发现校园里的新鲜事',
+      title: 'e 网同心',
       path: '/pages/index/index',
-      imageUrl: 'https://cos.jualn.cn/share/index-share.jpg',
+      imageUrl: runtimeConfig.defaultShareImageUrl,
     };
   },
 
   onLoad() {
+    this._offAccount = watchCurrentAccount(() => {
+      ++this._loadGeneration;
+      this.setData({
+        posts: [],
+        postsCache: [],
+        likesCache: [],
+        likesLoaded: false,
+        likesLoading: false,
+        postCursor: '',
+      });
+      this._listLoadReset({ initialError: true, hasMore: false });
+      if (getCurrentIdentity().id) void this._loadProfileAndPosts('refresh');
+    });
     this._offProfile = watchCurrentProfile((profile) => {
       this.setData({ userInfo: profile ?? ({} as UserProfileInfo) });
       if (!profile) this.setData({ posts: [], postsCache: [], likesCache: [], likesLoaded: false });
@@ -100,6 +164,8 @@ definePage({
   },
 
   onUnload() {
+    ++this._loadGeneration;
+    this._offAccount?.();
     this._offProfile?.();
     if (this._previewRestoreTimer !== null) {
       clearInterval(this._previewRestoreTimer);
@@ -164,6 +230,7 @@ definePage({
   },
 
   async _loadProfileAndPosts(scene: 'initial' | 'refresh' = 'initial') {
+    const generation = ++this._loadGeneration;
     if (scene === 'initial') {
       this._listLoadBeginInitial();
     } else {
@@ -173,11 +240,14 @@ definePage({
     try {
       const result = await userAction.getMePageData({ force: scene === 'refresh' });
 
+      if (generation !== this._loadGeneration) return;
       const patch: Record<string, unknown> = {
         userInfo: result.userInfo,
         profileError: '',
         postsCache: result.posts,
         postsError: result.postsError ?? '',
+        postCursor: result.nextCursor ?? '',
+        postUsesCursor: !!result.cursor,
       };
 
       // 只有当前在 posts tab 才把结果渲染到列表，避免覆盖其他 tab 的数据
@@ -205,6 +275,7 @@ definePage({
         });
       }
     } catch (err) {
+      if (generation !== this._loadGeneration) return;
       this.setData({ profileError: getProfileErrorMessage(err) });
       log.error('_loadProfileAndPosts', '加载我的主页失败', err);
 
@@ -256,6 +327,7 @@ definePage({
   },
 
   async _loadLikes(options: { force?: boolean } = {}) {
+    const generation = this._loadGeneration;
     if (this.data.likesLoading) return;
 
     if (this.data.likesLoaded && !options.force) {
@@ -277,7 +349,7 @@ definePage({
       if (!userId) throw new Error('missing user id');
 
       const result = await postAction.getUserLikedPosts(userId);
-      if (this.data.userInfo.userId !== userId) return;
+      if (generation !== this._loadGeneration || this.data.userInfo.userId !== userId) return;
 
       const patch: Record<string, unknown> = {
         likesCache: result.list,
@@ -291,6 +363,7 @@ definePage({
 
       this.setData(patch);
     } catch (err) {
+      if (generation !== this._loadGeneration) return;
       log.error('_loadLikes', '加载我点赞的帖子失败', err);
 
       const patch: Record<string, unknown> = {
@@ -309,9 +382,7 @@ definePage({
         icon: 'none',
       });
     } finally {
-      this.setData({
-        likesLoading: false,
-      });
+      if (generation === this._loadGeneration) this.setData({ likesLoading: false });
     }
   },
 
@@ -370,7 +441,15 @@ definePage({
     }
   },
 
-  retryInitial() {
+  async retryInitial() {
+    if (!this.data.userInfo.userId) {
+      try {
+        await ensureLogin({ interactive: true });
+      } catch (error) {
+        this.setData({ profileError: getProfileErrorMessage(error) });
+        return;
+      }
+    }
     void this._loadProfileAndPosts('refresh');
   },
 
@@ -378,8 +457,48 @@ definePage({
     void this._loadLikes({ force: true });
   },
 
+  onReachBottom() {
+    if (this.data.activeTab === 'posts') void this._loadMorePosts();
+  },
+  async _loadMorePosts() {
+    if (!this._listLoadCanMore(this.data.activeTab !== 'posts')) return;
+    const generation = this._loadGeneration;
+    const userId = this.data.userInfo.userId;
+    this._listLoadBeginMore();
+    try {
+      const cursor = this.data.postCursor;
+      if (!cursor) throw new Error('分页信息缺失，请刷新');
+      const page = await postAction.getUserPosts(
+        userId,
+        this.data.postUsesCursor ? { cursor } : { lastId: cursor },
+      );
+      if (generation !== this._loadGeneration || userId !== this.data.userInfo.userId) return;
+      const nextCursor = page.nextCursor ?? '';
+      if (page.hasMore && (!nextCursor || nextCursor === cursor))
+        throw new Error('分页信息异常，请刷新');
+      const seen = new Set(this.data.postsCache.map((x) => x.id));
+      const posts = [
+        ...this.data.postsCache,
+        ...page.list.filter((x) => {
+          if (seen.has(x.id)) return false;
+          seen.add(x.id);
+          return true;
+        }),
+      ];
+      this.setData({
+        postsCache: posts,
+        ...(this.data.activeTab === 'posts' ? { posts } : {}),
+        postCursor: nextCursor,
+        postUsesCursor: !!page.cursor,
+      });
+      this._listLoadEndMore({ success: true, hasMore: page.hasMore });
+    } catch {
+      if (generation === this._loadGeneration) this._listLoadEndMore({ success: false });
+    }
+  },
+
   retryLoadMore() {
     this._listLoadResetMoreError();
-    // 如果后面接分页接口，这里调用 this._loadMorePosts()
+    void this._loadMorePosts();
   },
 });

@@ -68,6 +68,7 @@ Page({
   },
   _scene: '',
   _subject: '',
+  _subjectToken: '',
   _generation: 0,
   _visible: false,
   _disposed: false,
@@ -77,6 +78,7 @@ Page({
   _authRecoveries: 0,
   _timer: null as ReturnType<typeof setInterval> | null,
   _unwatch: null as (() => void) | null,
+  _unwatchToken: null as (() => void) | null,
 
   onLoad(options: { scene?: string }) {
     this._scene = parseAdminLoginScene(options.scene) ?? '';
@@ -85,15 +87,20 @@ Page({
       return;
     }
     let previous = getUserId();
-    this._unwatch = appStore.watch('userInfo', (user) => {
-      if (user.id === previous) return;
-      previous = user.id;
+    let previousToken = appStore.get('token');
+    const invalidate = () => {
+      const subject = getUserId();
+      const token = appStore.get('token');
+      if (subject === previous && token === previousToken) return;
+      previous = subject;
+      previousToken = token;
       this._generation++;
       this._subject = '';
+      this._subjectToken = '';
       this._expiresAt = 0;
       this.setData({
         title: '正在加载登录请求',
-        description: '账号已变化，正在重新核对。',
+        description: '登录状态已变化，正在重新核对。',
         canAct: false,
         loading: false,
         status: '',
@@ -101,7 +108,9 @@ Page({
         remainingText: '',
       });
       if (this._visible) void this._request('scan');
-    });
+    };
+    this._unwatch = appStore.watch('userInfo', invalidate);
+    this._unwatchToken = appStore.watch('token', invalidate);
   },
 
   onShow() {
@@ -126,8 +135,10 @@ Page({
     this._generation++;
     this._stopTimer();
     this._unwatch?.();
+    this._unwatchToken?.();
     this._scene = '';
     this._subject = '';
+    this._subjectToken = '';
   },
 
   _stopTimer() {
@@ -190,13 +201,18 @@ Page({
     )
       return;
     if (operation !== 'scan' && (!this.data.canAct || this._subject !== getUserId())) return;
+    if (operation !== 'scan' && this._subjectToken !== getToken()) {
+      await this._request('scan');
+      return;
+    }
     const generation = ++this._generation;
     this.setData({ loading: true, canAct: false, canRetry: false });
     try {
       await waitForAuthStable();
-      await ensureLogin();
+      await ensureLogin({ interactive: true });
       if (!this._isCurrent(generation)) return;
       const subject = getUserId();
+      const token = getToken();
       if (!subject) throw new Error('Missing Mini Program subject');
       if (operation !== 'scan' && subject !== this._subject) {
         this.setData({ loading: false });
@@ -204,8 +220,9 @@ Page({
         return;
       }
       const result = await requestAdminQrLogin(operation, this._scene);
-      if (!this._isCurrent(generation) || subject !== getUserId()) return;
+      if (!this._isCurrent(generation) || subject !== getUserId() || token !== getToken()) return;
       this._subject = subject;
+      this._subjectToken = token ?? '';
       this._present(result);
       if (operation === 'confirm' && ['CONFIRMED', 'CONSUMED'].includes(result.session.status)) {
         showSuccessToast('登录已确认，请返回电脑');
@@ -217,6 +234,7 @@ Page({
     } catch (error) {
       if (!this._isCurrent(generation)) return;
       this._subject = '';
+      this._subjectToken = '';
       this.setData({ loading: false, canAct: false, status: '' });
       if (isAuthError(error)) {
         this.setData({

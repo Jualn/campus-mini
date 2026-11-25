@@ -1,150 +1,93 @@
-import type { PostCardItem } from '../../types/business';
 import type {
-  HomePublicMatterReminder,
-  HomePublicMatterReminderSnapshot,
-} from '../../services/home-public-matter-reminder';
+  ActivityStage,
+  ExactPointTimelineSchedule,
+  ExactRangeTimelineSchedule,
+} from '../../types/event-contract';
+import { activityStagePresentation } from '../../utils/activity-stage';
+import { buildActivityDetailRoute } from '../../utils/routes';
+import { formatTime, TimeStyle } from '../../utils/time-util';
 
-export interface HomePublicMatterReminderCard {
-  publicMatterId: string;
-  name: string;
-  nodeName: string;
-  dateText: string;
-  timeText: string;
-  dateTimeAriaLabel: string;
-  countdownValue: string;
-  countdownUnit: string;
-  countdownSoon: boolean;
-  countdownAriaLabel: string;
-  theme: string;
+interface HomeCover {
+  url: string;
 }
 
-const REMINDER_THEMES = ['ocean', 'coral', 'violet', 'mint', 'amber'] as const;
+export interface HomeBannerSource {
+  target: { targetType: 'ARTICLE' | 'ACTIVITY'; targetId: string };
+  title: string;
+  cover?: HomeCover;
+}
+
+export interface HomeArticleSource {
+  id: string;
+  title: string;
+  summary: string;
+  publishedAt: string;
+  cover?: HomeCover;
+}
+
+export interface HomeActivitySource {
+  activityId: string;
+  title: string;
+  stage: ActivityStage & { state: 'NOT_STARTED' | 'ONGOING' };
+  schedule: ExactPointTimelineSchedule | ExactRangeTimelineSchedule;
+  cover?: HomeCover;
+}
+
+const articleDetailRoute = (id: string) =>
+  `/subpkg_red/pages/article-detail/detail?articleId=${encodeURIComponent(id)}`;
+
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
+const pad2 = (value: number) => value.toString().padStart(2, '0');
 
-function pad2(value: number): string {
-  return value.toString().padStart(2, '0');
-}
-
-export function formatShanghaiDateTime(timestamp: number): string {
-  const parts = formatShanghaiDateTimeParts(timestamp);
-  return `${parts.year.toString()}年${parts.month.toString()}月${parts.day.toString()}日 ${parts.timeText}`;
-}
-
-export function formatShanghaiDateTimeParts(timestamp: number) {
+function exactDateTime(value: string): string {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return value;
   const date = new Date(timestamp + SHANGHAI_OFFSET_MS);
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth() + 1;
-  const day = date.getUTCDate();
+  return `${date.getUTCFullYear().toString()}.${pad2(date.getUTCMonth() + 1)}.${pad2(
+    date.getUTCDate(),
+  )} ${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}`;
+}
+
+export function toHomeBanner(raw: HomeBannerSource) {
+  const { targetType, targetId } = raw.target;
+  const isArticle = targetType === 'ARTICLE';
+  const key = `banner:${targetType}:${targetId}`;
   return {
-    year,
-    month,
-    day,
-    dateText: `${year.toString()}.${pad2(month)}.${pad2(day)}`,
-    timeText: `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}`,
+    key,
+    kindLabel: isArticle ? '文章' : '活动',
+    title: raw.title,
+    coverUrl: raw.cover?.url ?? '',
+    coverKey: key,
+    route: isArticle ? articleDetailRoute(targetId) : buildActivityDetailRoute(targetId),
   };
 }
 
-export interface ReminderCountdownDisplay {
-  value: string;
-  unit: string;
-  soon: boolean;
-  ariaLabel: string;
-}
-
-export function getReminderCountdownDisplay(remainingMs: number): ReminderCountdownDisplay {
-  if (remainingMs < 60_000) {
-    return { value: '即将到期', unit: '', soon: true, ariaLabel: '不足1分钟，即将到期' };
-  }
-
-  const totalMinutes = Math.floor(remainingMs / 60_000);
-  const days = Math.floor(totalMinutes / (24 * 60));
-  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const value = days > 0 ? days : hours > 0 ? hours : totalMinutes;
-  const unit = days > 0 ? '天' : hours > 0 ? '小时' : '分钟';
+export function toHomeArticle(raw: HomeArticleSource) {
   return {
-    value: value.toString(),
-    unit,
-    soon: false,
-    ariaLabel: `还剩${value.toString()}${unit}`,
+    id: raw.id,
+    title: raw.title,
+    summary: raw.summary,
+    publishedDate: formatTime(raw.publishedAt, TimeStyle.POST),
+    coverUrl: raw.cover?.url ?? '',
+    coverKey: `article:${raw.id}`,
+    route: articleDetailRoute(raw.id),
   };
 }
 
-export function estimateReminderNow(
-  snapshot: HomePublicMatterReminderSnapshot,
-  localNowMs = Date.now(),
-): number {
-  return snapshot.evaluatedAtMs + Math.max(0, localNowMs - snapshot.receivedAtMs);
-}
-
-export function toHomeReminderCards(
-  items: HomePublicMatterReminder[],
-  estimatedNowMs: number,
-): HomePublicMatterReminderCard[] {
-  return items.flatMap((item, index) => {
-    const remainingMs = item.reminderAtMs - estimatedNowMs;
-    if (remainingMs <= 0) return [];
-    const countdown = getReminderCountdownDisplay(remainingMs);
-    const dateTime = formatShanghaiDateTimeParts(item.reminderAtMs);
-    const theme = REMINDER_THEMES[index % REMINDER_THEMES.length];
-    return [
-      {
-        publicMatterId: item.publicMatterId,
-        name: item.name,
-        nodeName: item.nodeName,
-        dateText: dateTime.dateText,
-        timeText: dateTime.timeText,
-        dateTimeAriaLabel: formatShanghaiDateTime(item.reminderAtMs),
-        countdownValue: countdown.value,
-        countdownUnit: countdown.unit,
-        countdownSoon: countdown.soon,
-        countdownAriaLabel: countdown.ariaLabel,
-        theme,
-      },
-    ];
-  });
-}
-
-export interface HomeLayout {
-  fabBottomDock: number;
-  fabMenuBottom: number;
-}
-
-export function calculateHomeLayout({
-  screenHeight,
-  safeAreaBottom,
-  windowWidth,
-}: {
-  screenHeight: number;
-  safeAreaBottom: number;
-  windowWidth: number;
-}): HomeLayout {
-  const safeBottom = screenHeight - safeAreaBottom;
-  const rpxRatio = windowWidth / 750;
-  const tabBarHeight = Math.round(120 * rpxRatio);
-  const tabBarBottom = safeBottom + 16;
-  const fabBottomDock = tabBarBottom + tabBarHeight + 16;
-
+export function toHomeActivity(raw: HomeActivitySource) {
+  const stage = activityStagePresentation(raw.stage);
+  const schedule = raw.schedule;
   return {
-    fabBottomDock,
-    fabMenuBottom: fabBottomDock + 50 + 16,
+    id: raw.activityId,
+    title: raw.title,
+    stageLabel: stage.label,
+    stageStatus: stage.status,
+    timeLabel:
+      schedule.kind === 'EXACT_POINT'
+        ? exactDateTime(schedule.time)
+        : `${exactDateTime(schedule.startTime)} 至 ${exactDateTime(schedule.endTime)}`,
+    coverUrl: raw.cover?.url ?? '',
+    coverKey: `activity:${raw.activityId}`,
+    route: buildActivityDetailRoute(raw.activityId),
   };
-}
-
-export function appendUniquePosts(
-  current: PostCardItem[],
-  incoming: PostCardItem[],
-): PostCardItem[] {
-  const existingIds = new Set(current.map((item) => item.id));
-  return [...current, ...incoming.filter((item) => !existingIds.has(item.id))];
-}
-
-export function generatePostTitle(content: string, maxLength = 10): string {
-  if (!content) return '无标题';
-
-  const text = content
-    .trim()
-    .replace(/\r?\n/g, ' ')
-    .replace(/<[^>]+>/g, '');
-  if (!text) return '无标题';
-  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }

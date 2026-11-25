@@ -1,0 +1,50 @@
+/* Shared presentation for detail actions; each Page owns its operations. */
+.detail-actions-row {
+  display: flex;
+  align-items: stretch;
+  padding: 8rpx 0;
+}
+
+.detail-action-cell {
+  flex: 1;
+  min-width: 0;
+  min-height: 88rpx;
+  margin: 0;
+  padding: 8rpx 2rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.detail-action-cell::after {
+  border: 0;
+}
+
+.detail-action-cell--active {
+  color: var(--color-brand-red-deep);
+}
+
+.detail-action-cell:active {
+  background: var(--color-bg-page);
+}
+
+.detail-action-cell[disabled] {
+  background: transparent;
+  color: var(--color-text-tertiary);
+  opacity: 0.65;
+}
+
+.detail-action-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

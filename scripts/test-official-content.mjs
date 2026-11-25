@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import ts from 'typescript';
+const pending = [];
+const definitions = [];
+const http = { get: (url, data) => new Promise((resolve, reject) => pending.push({ url, data, resolve, reject })) };
+const cache = new Map();
+function load(file) {
+  file = path.resolve(file);
+  if (cache.has(file)) return cache.get(file);
+  const exports = {};
+  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  vm.runInNewContext(code, { exports, Error, Page: (definition) => definitions.push(definition), wx: { stopPullDownRefresh() {}, previewImage() {} }, require(name) {
+    if (name.endsWith('/utils/request')) return { http };
+    if (name.endsWith('/actions/current-user')) return { watchCurrentAccount: () => () => {} };
+    if (name.startsWith('.')) return load(path.resolve(path.dirname(file), `${name}.ts`));
+    throw new Error(`Unexpected import ${name}`);
+  } }, { filename: file });
+  cache.set(file, exports); return exports;
+}
+const api = load('subpkg_red/services/official-content.ts');
+const { HttpError } = load('utils/error.ts');
+const row = { id: '9007199254740993', title: '党建标题', summary: '摘要', publisher: '党支部', category: 'NEWS', publishStatus: 'PUBLISHED', publishedAt: '2026-10-13T10:00:00+08:00' };
+assert.equal(api.mapSummary(row).id, row.id);
+assert.throws(() => api.mapSummary({ ...row, publishStatus: 'DRAFT' }));
+assert.throws(() => api.mapDetail({ ...row, body: '正文', images: [{ attachmentId: '1', kind: 'IMAGE', name: '非法', url: 'javascript:alert(1)' }] }));
+assert.throws(() => api.mapPage({ items: [], hasMore: true }));
+load('subpkg_red/pages/content-list/list.ts');
+const page = { ...definitions[0], data: structuredClone(definitions[0].data), setData(patch) { Object.assign(this.data, patch) } };
+const tick = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+page.onLoad({}); assert.equal(pending[0].url, '/v1/official-contents');
+page.changeCategory({ detail: { value: '5' } }); assert.equal(pending[1].data.category, 'INFO_RED');
+pending[1].resolve({ items: [{ ...row, id: 'new', category: 'INFO_RED' }], hasMore: true, nextCursor: 'opaque' }); await tick();
+pending[0].resolve({ items: [{ ...row, id: 'old' }], hasMore: false }); await tick();
+assert.equal(page.data.items[0].id, 'new');
+page.more(); assert.equal(pending[2].data.cursor, 'opaque');
+pending[2].resolve({ items: [{ ...row, id: 'next', category: 'INFO_RED' }], hasMore: false }); await tick(); assert.equal(page.data.items.length, 2);
+page.retry(); page.onUnload(); pending[3].resolve({ items: [row], hasMore: false }); await tick(); assert.equal(page.data.items.length, 2, 'refresh preserves content and late unloaded results cannot replace it');
+load('subpkg_red/pages/content-detail/detail.ts');
+const detail = { ...definitions[1], data: structuredClone(definitions[1].data), setData(patch) { Object.assign(this.data, patch) } };
+detail.onLoad({ id: '1' }); detail.onShow(); pending[4].resolve({ ...row, body: '第一版正文', images: [] }); await tick(); assert.equal(detail.data.content.body, '第一版正文');
+detail.onShow(); assert.equal(detail.data.content.body, '第一版正文'); pending[5].reject(new HttpError(404,'已撤下')); await tick(); assert.equal(detail.data.content, null); assert.equal(detail.data.error, '已撤下');
+detail.load(); detail.onUnload(); pending[6].resolve({ ...row, body: '迟到的正文', images: [] }); await tick(); assert.equal(detail.data.content, null);
+console.log('PASS: 8 official-content mapper and native Page lifecycle scenarios (wx/network doubles; no device rendering)');

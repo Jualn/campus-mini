@@ -38,8 +38,9 @@
     </view>
     <text class="supporting-text">最近提交：{{mine.submittedAt}}</text>
     <text wx:if="{{mine.status === 'CANCELLED'}}" class="supporting-text">
-      已取消的答案仍保留；重新提交会恢复同一条记录，并重新检查报名窗口与名额。
+      {{registrationInvalidated ? '报名已被管理员作废，答案仍保留，不能重新提交恢复。' : mine.cancellationOrigin === 'SELF' ? '本人已取消，答案仍保留；重新提交会恢复同一条记录，并重新检查报名窗口与名额。' : '报名已取消，答案仍保留；重新提交须由服务端检查是否允许恢复。'}}
     </text>
+    <text wx:if="{{mine.status === 'CANCELLED' && mine.cancellationReason}}" class="supporting-text">原因：{{mine.cancellationReason}}</text>
     <text wx:if="{{conflict}}" class="answer-list__heading">服务端当前保存的答案</text>
     <view wx:if="{{(!canSubmit || conflict) && answerDisplays.length}}" class="answer-list">
       <view wx:for="{{answerDisplays}}" wx:key="key" class="answer-row">
@@ -53,7 +54,7 @@
       bindtap="onCancel"
       disabled="{{busy || unknown}}"
     >
-      取消提交
+      取消报名
     </button>
   </view>
 
@@ -195,11 +196,11 @@
         <text wx:elif="{{mine && mine.status === 'SUBMITTED'}}">当前未修改</text>
         <text wx:else>提交报名信息</text>
       </button>
-      <text class="submit-area__hint">提交只代表平台已收表，不代表官方录取或外部步骤已完成。</text>
+      <text class="submit-area__hint">报名成功即获得有效平台名额；混合模式还需按活动说明完成外部步骤。</text>
     </view>
   </view>
 
-  <view class="surface-card followup-card">
+  <view wx:if="{{!historyOnly}}" class="surface-card followup-card">
     <view>
       <text class="followup-card__title">还需完成其他步骤？</text>
       <text class="supporting-text">若活动另有外部报名或加入方式，请返回详情继续办理。</text>

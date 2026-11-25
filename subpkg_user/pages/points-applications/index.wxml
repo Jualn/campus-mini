@@ -1,0 +1,118 @@
+<page-navigation title="申请记录" surface="page" />
+<view class="points-page">
+  <navigator class="new-application" hover-class="new-application--hover" url="/subpkg_user/pages/points-apply/index">
+    <view class="new-application__mark" aria-hidden="true">＋</view>
+    <view class="new-application__copy">
+      <text class="new-application__title">新建积分申请</text>
+      <text class="new-application__description">核实人员资格，填写事项并提交材料</text>
+    </view>
+    <ui-icon name="chevron-right" size="sm" />
+  </navigator>
+
+  <view class="filter-panel">
+    <view class="filter-panel__heading">
+      <text class="filter-panel__title">申请状态</text>
+      <text class="filter-panel__result">共 {{totalItems}} 份</text>
+    </view>
+    <scroll-view class="filter-scroll" scroll-x show-scrollbar="{{false}}" enhanced>
+      <view class="filter-scroll__inner" role="tablist" aria-label="按申请状态筛选">
+        <button
+          wx:for="{{filters}}"
+          wx:key="*this"
+          class="filter-chip {{filter === index ? 'filter-chip--active' : ''}}"
+          data-index="{{index}}"
+          bindtap="selectFilter"
+          hover-class="filter-chip--hover"
+          role="tab"
+          aria-selected="{{filter === index}}"
+          aria-label="筛选{{item}}申请{{filter === index ? '，当前已选' : ''}}"
+        >{{item}}</button>
+      </view>
+    </scroll-view>
+  </view>
+
+  <load-state
+    wx:if="{{loading && !rows.length}}"
+    mode="loading"
+    title="正在读取申请记录"
+    description="正在同步最新受理与审核状态"
+    fill-viewport
+    viewport-offset="390"
+  />
+  <load-state
+    wx:elif="{{error && !rows.length}}"
+    mode="error"
+    title="暂时无法读取申请"
+    description="{{error}}"
+    action-text="重新查询"
+    bind:action="refresh"
+    fill-viewport
+    viewport-offset="390"
+  />
+  <load-state
+    wx:elif="{{!rows.length}}"
+    mode="empty"
+    title="{{filter === 0 ? '还没有积分申请' : '当前状态下没有申请'}}"
+    description="{{filter === 0 ? '从上方新建申请，提交后可以在这里跟踪审核进度。' : '可以切换其他状态，或下拉刷新最新结果。'}}"
+    fill-viewport
+    viewport-offset="390"
+  />
+
+  <block wx:else>
+    <load-state wx:if="{{error}}" mode="error" variant="inline" description="{{error}}" action-text="重新刷新" bind:action="refresh" />
+    <view wx:if="{{loading}}" class="points-refresh-hint">
+      <view class="points-refresh-hint__dot" />
+      <text>正在同步最新状态，已显示内容仍可打开</text>
+    </view>
+
+    <view class="points-surface application-book">
+      <button
+        wx:for="{{rows}}"
+        wx:key="applicationId"
+        class="application-row"
+        data-id="{{item.applicationId}}"
+        bindtap="open"
+        hover-class="application-row--hover"
+        aria-label="{{item.title}}，{{item.statusLabel}}，查看申请详情"
+      >
+        <view class="application-row__top">
+          <text class="application-row__time">{{item.createdAtText}}</text>
+          <text class="points-status points-status--{{item.statusTone}}">{{item.statusLabel}}</text>
+        </view>
+
+        <text class="application-row__title">{{item.title}}</text>
+        <view class="application-row__organization">
+          <text class="application-row__organization-label">受理组织</text>
+          <text class="application-row__organization-name">{{item.acceptingOrganizationName}}</text>
+        </view>
+
+        <view wx:if="{{item.status === 'APPROVED'}}" class="application-row__points">
+          <view class="application-row__point">
+            <text class="application-row__point-label">原审核积分</text>
+            <text class="application-row__point-value">{{item.awardedPoints}} 分</text>
+          </view>
+          <view class="application-row__point">
+            <text class="application-row__point-label">当前有效核发</text>
+            <text class="application-row__point-value application-row__point-value--effective">{{item.accounting.effectivePoints}} 分</text>
+            <text wx:if="{{item.accounting.status === 'REVOKED'}}" class="application-row__revoked">已撤销</text>
+          </view>
+        </view>
+        <view wx:if="{{item.reviewNote}}" class="application-row__review">
+          <text class="application-row__review-label">审核说明</text>
+          <text class="application-row__review-text points-text">{{item.reviewNote}}</text>
+        </view>
+
+        <view class="application-row__footer">
+          <text>查看申请与材料</text>
+          <ui-icon name="chevron-right" size="sm" />
+        </view>
+      </button>
+    </view>
+
+    <view class="points-list-footer">
+      <load-state wx:if="{{moreError}}" mode="error" variant="inline" description="{{moreError}}" action-text="重试加载" bind:action="more" />
+      <button wx:elif="{{hasMore}}" class="points-button points-button--plain points-button--compact" loading="{{loading}}" disabled="{{loading}}" bindtap="more">加载更多申请</button>
+      <text wx:elif="{{rows.length && !loading}}" class="points-list-footer__text">已显示当前筛选下全部 {{rows.length}} 份申请</text>
+    </view>
+  </block>
+</view>

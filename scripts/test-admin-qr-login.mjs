@@ -93,6 +93,7 @@ const mocks = new Map([
     'utils/auth-session.ts',
     {
       waitForAuthStable: async () => authBarrier,
+      isAuthRecoverySuppressed: () => false,
       refreshAuth: async () => {
         recovered++;
         token = 'refreshed-mini-session';
@@ -414,7 +415,70 @@ assert.equal(
   true,
 );
 
+// Authorization is checked by confirm, even after a successful scan. A cached
+// legacy ADMIN label cannot bypass revocation, and role=USER can confirm when allowed.
+for (const role of [1, 3]) {
+  appStore.set('userInfo', { id: 'subject-rbac', nickname: 'RBAC', avatarUrl: '', role });
+  const revoked = await open();
+  const beforeRecovery = recovered;
+  const beforeDeniedRequest = requests.length;
+  const beforeDeniedToken = token;
+  plans.push(() => problem(403, '/problems/admin-access-denied'));
+  revoked.onConfirm();
+  await flush();
+  assert.equal(revoked.data.canAct, false);
+  assert.equal(revoked.data.title, '暂无后台访问权限');
+  assert.equal(recovered, beforeRecovery, '403 never triggers login recovery or mutation replay');
+  assert.equal(requests.length, beforeDeniedRequest + 1, '403 does not retry confirm or auto-scan');
+  assert.equal(token, beforeDeniedToken, '403 does not replace the ordinary session');
+  assert.equal(revoked.data.canRetry, false);
+  revoked.onConfirm();
+  await flush();
+  assert.equal(requests.length, beforeDeniedRequest + 1, 'denied confirmation remains disabled');
+  assert.deepEqual(Object.keys(requests.at(-1).data), ['sceneCode']);
+  revoked.onUnload();
+}
+appStore.set('userInfo', { id: 'subject-rbac', nickname: 'RBAC', avatarUrl: '', role: 1 });
+const granted = await open();
+granted.onConfirm();
+await flush();
+assert.equal(granted.data.status, 'CONFIRMED', 'legacy USER does not deny server-authorized access');
+granted.onUnload();
+
+// Same-account session replacement invalidates an in-flight confirmation too.
+appStore.set('token', token);
+const sessionRace = await open();
+const oldSession = deferred();
+plans.push(() => oldSession.promise);
+sessionRace.onConfirm();
+await flush();
+const beforeNewSession = navigation.length;
+token = 'same-account-new-session';
+appStore.set('token', token);
+await flush();
+assert.equal(requests.at(-1).url.endsWith('/qr-login-scans'), true);
+assert.equal(sessionRace.data.status, 'SCANNED');
+oldSession.resolve(ok(result('CONFIRMED')));
+await flush();
+assert.equal(sessionRace.data.status, 'SCANNED');
+assert.equal(navigation.length, beforeNewSession, 'late previous-session success cannot exit');
+sessionRace.onUnload();
+const afterUnload = requests.length;
+token = 'session-after-unload';
+appStore.set('token', token);
+await flush();
+assert.equal(requests.length, afterUnload, 'token subscription is released on unload');
+
 // Existing callers retain default 401 recovery; the new opt-out is local to v2.
+const beforeOrdinary403 = requests.length;
+const beforeOrdinaryRecovery = transportRecovered;
+plans.push(() => problem(403, '/problems/forbidden'));
+await assert.rejects(load('utils/request.ts').http.get('/ordinary-forbidden'), (error) => error.statusCode === 403);
+assert.equal(requests.length, beforeOrdinary403 + 1);
+assert.equal(transportRecovered, beforeOrdinaryRecovery, 'ordinary 403 is not authentication expiry');
+assert.equal(requests.some((request) => request.url.includes('/authorization/')), false,
+  'current Mini Program flows do not depend on admin capability reads');
+
 plans.push(
   () => problem(401, '/problems/unauthorized'),
   () => ok({ value: true }),
@@ -424,7 +488,7 @@ assert.equal(transportRecovered, 1);
 
 // Verify the real auth boundary also blocks implicit recovery before sending a mutation.
 mocks.delete('utils/auth-transport.ts');
-mocks.set('utils/storage.ts', { storage: { get: () => token }, STORAGE_KEYS: { TOKEN: 'token' } });
+mocks.set('utils/storage.ts', { storage: { get: key => key === 'token' ? token : undefined }, STORAGE_KEYS: { TOKEN: 'token', AUTH_LOGGED_OUT: 'authLoggedOut' } });
 const realAuthTransport = load('utils/auth-transport.ts');
 const authChange = deferred();
 authBarrier = authChange.promise;

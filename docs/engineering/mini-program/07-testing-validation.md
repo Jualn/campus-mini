@@ -13,6 +13,18 @@ Static checks
 
 These are complementary evidence layers. A test proves only behavior its environment can observe.
 
+## Change-driven scope and cost
+
+Before running tests, map the affected boundary and specific failure risks to the smallest sufficient evidence set below. Static/unit/component/runtime/compile/device checks are complementary, not an obligatory all-at-once suite. Keep cheap deterministic checks first; broaden scope for shared infrastructure, cross-boundary changes, regression risk or formal CI/release gates, not merely because broader testing is possible.
+
+High-cost suites (full UI automation, device farms, real backend integration, repeated compile) should have repo-specific commands, known prerequisites and observed time/resource budgets recorded through appropriate project facts or CI configuration. Prefer controlled clocks and targeted tests to long waits. Do not guess hard timeouts or silently remove mandated gates to shorten a run. When a check exceeds the expected budget, report the affected scope, reason and remaining evidence instead of indefinitely starting larger suites.
+
+## Test environment ownership and cleanup
+
+A Mini Program task does not implicitly authorize creating/resetting a backend database, starting arbitrary Docker services, altering shared test data, or using production endpoints. Unit/component tests prefer isolated mocks at the correct boundary; actual integration uses an explicitly identified non-production environment and owner. If external dependencies are required but unavailable, preserve that validation gap.
+
+Reusable infrastructure (e.g. an existing controlled test backend) may persist across tasks; per-task fixtures/data must be isolated and cleaned up according to their owner. Never destroy a shared service or another task's data as a generic "cleanup" step. If a fresh environment is necessary, use the owning repository's documented provision/teardown workflow rather than inventing shell commands.
+
 ## Static checks
 
 Use TypeScript, ESLint, formatter, stable import restrictions, and configuration validation for cheap deterministic failures. Passing them does not prove lifecycle timing, platform APIs, networking, rendering, permission, or device behavior.
@@ -36,6 +48,8 @@ Test meaningful properties → rendered state, local transitions, custom events,
 `miniprogram-simulate`-style simulation can validate custom Component behavior but is not the real dual-thread Mini Program runtime and does not provide real implementations of every `wx.*` capability. Mocking proves application reaction, not the actual platform API.
 
 Built-in/native component behavior (camera/map/video/input/scroll quirks, etc.) may require Developer Tools/device validation.
+
+For shared Component changes, distinguish private style/refactor from public API/default/event/state/slot/styling-isolation changes. Locate actual consumers and validate representative usages for layout and semantic regressions; expand tests for breaking changes or global tokens. A test of the Component alone does not prove every Page composition remains correct. Do not run a full device matrix for a trivial local change by default.
 
 ## Page/lifecycle tests
 
@@ -101,6 +115,10 @@ Mocked privacy/permission branches prove application policy; actual integration 
 
 Separate tests for progress/state reducer, task adapter, test-backend integration, and device file/media behavior as needed.
 
+## User-task/UI acceptance
+
+Page tests should assert meaningful user outcomes, not only existence of endpoint-driven form fields. For significant UI flows, cover the primary action, relevant transitions/feedback, back and direct/share entry, recovery after error, appropriate empty/loading/submitting states, and reuse of established controls. Geometry/keyboard/native-control behavior needs Developer Tools/device evidence where the platform matters. Design adequacy and component reuse remain engineering review questions rather than brittle line-of-code or snapshot gates. See [11](11-ui-interaction-accessibility.md#page-level-acceptance).
+
 ## Rendering/visual
 
 Use Component assertions, runtime inspection, controlled screenshot regression, manual review, or device inspection according to risk. Snapshot tests are selective, not the default assertion style.
@@ -143,7 +161,7 @@ PR: static checks + unit/component + compile + deterministic gates.
 
 Release: PR checks + package/performance + critical runtime automation + required preview/device/manual checks.
 
-Stable repository commands form the interface used by developers, agents, CI, and Skills.
+Stable repository commands form the interface used by developers, agents, CI, and Skills. If the Profile has UNKNOWN compile/device/test-environment facts, inspect the actual applicable repository authority before selecting a command; do not invent a command or mark a higher-fidelity check complete.
 
 ## Core invariant
 

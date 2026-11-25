@@ -1,1 +1,27 @@
-<text class="operator-badge" aria-label="平台运营账号">✓</text>
+<template name="identity-mark">
+  <ui-icon name="{{kind === 'mentor' ? 'home-book' : 'platform-operator'}}" size="md" />
+</template>
+
+<button class="identity-badge identity-badge--{{kind}}" catchtap="open" aria-label="{{kind === 'mentor' ? '查看导师认证' : '查看平台运营标识'}}">
+  <template is="identity-mark" data="{{kind}}" />
+</button>
+
+<root-portal wx:if="{{opened}}" enable="{{true}}">
+  <view class="g-portal-theme identity-dialog-mask">
+    <view class="identity-dialog-backdrop" catchtap="close" catchtouchmove="noop" />
+    <view class="identity-dialog" aria-role="dialog" aria-modal="true" aria-label="{{kind === 'mentor' ? '导师认证' : '平台运营账号'}}" catchtap="noop">
+      <view class="identity-dialog__header">
+        <template is="identity-mark" data="{{kind}}" />
+        <text class="identity-dialog__title">{{kind === 'mentor' ? '导师认证' : '平台运营账号'}}</text>
+      </view>
+      <block wx:if="{{kind === 'mentor' && mentor}}">
+        <text wx:if="{{historical}}" class="identity-dialog__note">以下为回答发布时的导师资料</text>
+        <view class="identity-dialog__row"><text class="identity-dialog__label">姓名</text><text>{{mentor.realName}}</text></view>
+        <view class="identity-dialog__row"><text class="identity-dialog__label">职务</text><text>{{mentor.position}}</text></view>
+        <view class="identity-dialog__row"><text class="identity-dialog__label">单位</text><text>{{mentor.affiliation}}</text></view>
+      </block>
+      <text wx:else class="identity-dialog__note">这是平台运营账号。</text>
+      <button class="identity-dialog__close" catchtap="close">关闭</button>
+    </view>
+  </view>
+</root-portal>

@@ -1,6 +1,7 @@
 {
   "navigationStyle": "custom",
   "usingComponents": {
-    "ui-icon": "/components/ui-icon/index"
+    "ui-icon": "/components/ui-icon/index",
+    "back-button": "/components/back-button/index"
   }
 }

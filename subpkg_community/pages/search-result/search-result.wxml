@@ -2,9 +2,7 @@
 <view class="search-result-page">
   <view class="search-top" style="padding-top: {{statusBarHeight}}px;">
     <view class="search-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
-      <view class="search-nav__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" size="lg" />
-      </view>
+      <back-button variant="nav" auto-back="{{false}}" bind:back="onBack" />
 
       <text class="search-nav__title">搜索结果</text>
     </view>
@@ -74,7 +72,7 @@
         </view>
         <view wx:else class="activity-result-list">
           <block wx:for="{{activityList}}" wx:key="id" wx:for-item="activity">
-            <activity-card activity="{{activity}}" />
+            <activity-card activity="{{activity}}" bind:changed="onActivityChanged" />
           </block>
         </view>
 
@@ -83,8 +81,8 @@
           wx:elif="{{error}}"
           mode="error"
           variant="inline"
-          title="加载失败"
-          action-text="点击重试"
+          title="{{activeTab === 'activity' && activityInvalidCursor ? '列表游标已失效' : '加载失败'}}"
+          action-text="{{activeTab === 'activity' && activityInvalidCursor ? '从第一页重新加载' : '点击重试'}}"
           bind:action="onRetry"
         />
         <view wx:elif="{{activeTab === 'all' ? !postHasMore : !activityHasMore}}" class="list-state">

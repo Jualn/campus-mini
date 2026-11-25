@@ -6,9 +6,7 @@
     <image wx:if="{{userInfo.backgroundUrl}}" class="banner-img" src="{{userInfo.backgroundUrl}}" mode="aspectFill" />
     <!-- 别人主页才显示返回按钮，放左侧远离胶囊 -->
     <view class="top-bar" style="padding-top:{{statusBarHeight}}px;" wx:if="{{!isSelf}}">
-      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" state="inverse" size="lg" />
-      </view>
+      <back-button variant="nav" inverse auto-back="{{false}}" bind:back="onBack" />
     </view>
   </view>
 
@@ -25,21 +23,18 @@
       <view class="action-btns">
         <!-- 自己：设置 + 编辑资料 -->
         <block wx:if="{{isSelf}}">
-          <view class="btn-icon__wrap" bindtap="onGoSetting" aria-role="button" aria-label="设置">
+          <button class="btn-icon__wrap" bindtap="onGoSetting" hover-class="profile-action--pressed" aria-label="设置">
             <ui-icon class="btn-icon__setting" name="settings" size="xl" />
-          </view>
-          <view class="btn-outline" bindtap="onEditProfile">
+          </button>
+          <button class="btn-outline" bindtap="onEditProfile" hover-class="profile-action--pressed">
             <text class="btn-text">编辑资料</text>
-          </view>
+          </button>
         </block>
-        <!-- 别人：··· + 关注 -->
+        <!-- 别人：更多操作 -->
         <block wx:else>
-          <view class="btn-icon" bindtap="onMore" aria-role="button" aria-label="更多用户操作">
+          <button class="btn-icon" bindtap="onMore" hover-class="profile-action--pressed" aria-label="更多用户操作">
             <view class="btn-icon__more icon-slot"><ui-icon name="more" size="md" /></view>
-          </view>
-          <!-- <view class="btn-fill {{isFollowing ? 'btn-fill--grey' : ''}}" bindtap="onToggleFollow">
-            <text class="btn-fill__text">{{isFollowing ? '已关注' : '关注'}}</text>
-          </view> -->
+          </button>
         </block>
       </view>
     </view>
@@ -48,36 +43,25 @@
     <view class="name-line">
       <text class="profile-name">{{userInfo.nickname}}</text>
       <operator-badge wx:if="{{userInfo.isPlatformOperator === true}}" />
+      <slot name="profile-badges" />
     </view>
-    <!-- <text class="profile-handle">@{{userInfo.handle}}</text> -->
     <text class="profile-bio" wx:if="{{userInfo.bio}}">{{userInfo.bio}}</text>
 
-    <!-- 关注统计 -->
-    <!-- <view class="stats-row">
-      <view class="stats-item" bindtap="onGoFollowing">
-        <text class="stats-num">{{userInfo.followingCount}}</text>
-        <text class="stats-label"> 关注</text>
-      </view>
-      <view class="stats-item" bindtap="onGoFollower">
-        <text class="stats-num">{{userInfo.followerCount}}</text>
-        <text class="stats-label"> 关注者</text>
-      </view>
-      <view class="stats-item">
-        <text class="stats-num">{{userInfo.likeCount}}</text>
-        <text class="stats-label"> 获赞</text>
-      </view>
-    </view> -->
-
   </view>
 
-  <!-- Tab -->
-  <view class="tab-bar">
-    <view class="tab-item {{activeTab==='posts'?'tab-item--active':''}}" bindtap="onSwitchTab" data-tab="posts">
+  <slot name="profile-footer" />
+
+  <view class="tab-bar" wx:if="{{isSelf}}">
+    <button class="tab-item {{activeTab === 'posts' ? 'tab-item--active' : ''}}" bindtap="onSwitchTab" data-tab="posts"
+      aria-label="动态{{activeTab === 'posts' ? '，已选择' : ''}}">
       <text class="tab-text">动态</text>
-    </view>
-    <view wx:if="{{isSelf}}" class="tab-item {{activeTab==='likes'?'tab-item--active':''}}" bindtap="onSwitchTab" data-tab="likes">
+    </button>
+    <button class="tab-item {{activeTab === 'likes' ? 'tab-item--active' : ''}}" bindtap="onSwitchTab" data-tab="likes"
+      aria-label="点赞{{activeTab === 'likes' ? '，已选择' : ''}}">
       <text class="tab-text">点赞</text>
-    </view>
+    </button>
   </view>
-
+  <view class="tab-bar" wx:else>
+    <view class="tab-item tab-item--active"><text class="tab-text">动态</text></view>
+  </view>
 </view>

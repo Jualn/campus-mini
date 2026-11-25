@@ -534,7 +534,16 @@ export interface ViewCountVO {
 // 通知相关类型
 // ============================================================
 
-export type NotificationCategory = 'ACTIVITY' | 'PUBLIC_EVENT';
+export type NotificationCategory =
+  | 'ACTIVITY'
+  | 'PUBLIC_EVENT'
+  | 'COMMENT'
+  | 'REPLY'
+  | 'LIKE'
+  | 'AUDIT_RESULT'
+  | 'SYSTEM'
+  | 'LEARNING_TASK'
+  | 'POINTS';
 export type NotificationChannel = 'IN_APP' | 'WECHAT_MINI_PROGRAM' | 'WECHAT_OFFICIAL_ACCOUNT';
 
 export interface NotificationPreferenceItem {
@@ -571,28 +580,25 @@ export interface NotificationChannelCapabilities {
   items: NotificationChannelCapabilityItem[];
 }
 
-/** Canonical 收件箱通知；未知 type/target 也需保留文本展示。 */
-export interface InboxNotification {
-  notificationId: string;
-  type: string;
-  category?: string;
+export interface NotificationSubscriptionOption {
+  templateId: string;
   title: string;
-  content: string;
-  target?: {
-    type: string;
-    resourceId: string;
-  };
-  isRead: boolean;
-  createdAt: string;
+  subscriptionKind: 'ONE_TIME' | 'LONG_TERM';
+  categories: string[];
+  notificationTypes: string[];
 }
 
-export interface NotificationCursorPage {
-  items: InboxNotification[];
-  nextCursor?: string;
-}
+export type NotificationSubscriptionSceneCode =
+  | 'POST_PUBLISH' | 'MENTOR_QUESTION_PUBLISH' | 'COMMENT_PUBLISH' | 'MENTOR_ANSWER_PUBLISH'
+  | 'ACTIVITY_FOLLOW' | 'PUBLIC_EVENT_FOLLOW' | 'ACTIVITY_REGISTER' | 'LEARNING_SUBMIT' | 'POINTS_APPLY';
 
-export interface NotificationUnreadCount {
-  unreadCount: number;
+export interface NotificationSubscriptionOptions {
+  sceneCode?: NotificationSubscriptionSceneCode;
+  resourceId?: string;
+  evaluatedAt: string;
+  configurationRevision: string;
+  maxTemplatesPerRequest: number;
+  items: NotificationSubscriptionOption[];
 }
 
 // ============================================================
@@ -707,13 +713,6 @@ export interface ExamPageQuery {
   category?: number;
   status?: number;
   keyword?: string;
-}
-
-export interface NotificationPageQuery {
-  cursor?: string;
-  pageSize?: number;
-  category?: NotificationCategory;
-  isRead?: boolean;
 }
 
 export interface InteractTargetQuery {

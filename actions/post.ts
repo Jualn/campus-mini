@@ -1,3 +1,5 @@
+import { POST_CAPABILITIES } from '../config/post-capabilities';
+import { createCommunityPost } from './post-creation';
 import * as interactService from '../services/interact';
 import * as postService from '../services/post';
 import { emitPostCreated, emitPostDeleted, emitPostUpdated } from '../events/post-event';
@@ -6,7 +8,7 @@ import { getUserId } from '../stores/helper';
 import { TARGET_TYPES } from '../utils/constants';
 import { createLogger } from '../utils/logger';
 import type { PostCardItem, PostDetail } from '../types/business';
-import type { PostCreateRequest } from '../types/api';
+import type { PostCreateRequest, PostLifecycle } from '../types/post-contract';
 import type { PostUpdatePayload } from '../events/post-event';
 import { peekCurrentProfile } from './current-user';
 import { projectPostAuthor } from '../utils/user-projection';
@@ -15,22 +17,6 @@ export const syncPostAuthor = <T extends PostCardItem | PostDetail>(post: T): T 
   projectPostAuthor(post, peekCurrentProfile());
 
 const log = createLogger('PostAction');
-
-const VIEW_PATCH_TTL_MS = 10 * 60 * 1000;
-const MAX_VIEWED_POSTS = 500;
-
-const viewedPostIds = new Set<string>();
-
-function pruneViewedOverflow() {
-  if (viewedPostIds.size <= MAX_VIEWED_POSTS) return;
-
-  const removeCount = viewedPostIds.size - MAX_VIEWED_POSTS;
-  const ids = Array.from(viewedPostIds);
-
-  for (let i = 0; i < removeCount; i += 1) {
-    viewedPostIds.delete(ids[i]);
-  }
-}
 
 export function mergePostSyncCache<T extends PostCardItem | PostDetail>(item: T): T;
 export function mergePostSyncCache<T extends PostCardItem | PostDetail>(
@@ -66,7 +52,9 @@ function mergeOnePost<T extends PostCardItem | PostDetail>(post: T): T {
     typeof cached.likeCount === 'number' ? Math.max(0, cached.likeCount) : post.likeCount;
 
   const nextCommentCount =
-    typeof cached.commentCount === 'number' ? Math.max(0, cached.commentCount) : post.commentCount;
+    !POST_CAPABILITIES.communityV1 && typeof cached.commentCount === 'number'
+      ? Math.max(0, cached.commentCount)
+      : post.commentCount;
 
   const serverViewCount = typeof post.viewCount === 'number' ? Math.max(0, post.viewCount) : 0;
   const cachedViewCount =
@@ -144,7 +132,26 @@ export const getPostDetail = async (postId: string): Promise<PostDetail> => {
   };
 };
 
-export const publishPostAndSync = async (data: PostCreateRequest): Promise<PostCardItem> => {
+export const publishPostAndSync = async (
+  data: PostCreateRequest,
+): Promise<{ id: string; lifecycle?: PostLifecycle }> => {
+  if (
+    data.postType === 'MENTOR_QA' &&
+    (!POST_CAPABILITIES.communityV1 ||
+      !POST_CAPABILITIES.mentorQa ||
+      !POST_CAPABILITIES.organization ||
+      !data.categoryId ||
+      !data.content.trim())
+  )
+    throw new Error('答疑尚未开放或缺少正文、适用分类');
+  if (POST_CAPABILITIES.communityV1) {
+    if (!data.content.trim() && !data.attachmentItems?.some((x) => x.type === 'IMAGE' && x.url))
+      throw new Error('请填写正文或添加图片');
+    if ((data.attachmentItems?.length ?? 0) > 9) throw new Error('最多添加九张图片');
+    if (!POST_CAPABILITIES.organization && (data.categoryId || data.topicIds?.length))
+      throw new Error('分类话题服务尚未开放');
+    return createCommunityPost(data);
+  }
   const post = await postService.publishPost(data);
   emitPostCreated(post);
   return post;
@@ -155,49 +162,49 @@ export const deletePostAndSync = async (postId: string): Promise<void> => {
   emitPostDeleted(postId);
 };
 
-export const recordPostView = (postId: string, currentViewCount?: number): boolean => {
-  if (!postId || viewedPostIds.has(postId)) return false;
-
-  viewedPostIds.add(postId);
-  pruneViewedOverflow();
-
-  const cached = postSyncStore.get(postId);
-  const baseCount = Math.max(
-    typeof currentViewCount === 'number' ? currentViewCount : 0,
-    typeof cached?.viewCount === 'number' ? cached.viewCount : 0,
-  );
-
-  const nextViewCount = Math.max(0, baseCount + 1);
-
-  postSyncStore.set(
-    {
-      id: postId,
-      viewCount: nextViewCount,
-    },
-    {
-      ttlMs: VIEW_PATCH_TTL_MS,
-    },
-  );
-
-  syncPostPatch({
-    id: postId,
-    viewCount: nextViewCount,
-  });
-
+const legacyViewedPostIds = new Set<string>();
+export const recordPostView = (
+  postId: string,
+  currentViewCount?: number,
+  postType = 'NORMAL',
+): boolean => {
+  const owner = getUserId();
+  if (!postId || !owner) return false;
+  if (
+    (postType !== 'NORMAL' && !(postType === 'MENTOR_QA' && POST_CAPABILITIES.mentorQa)) ||
+    !POST_CAPABILITIES.communityV1
+  ) {
+    if (!['NORMAL', 'MENTOR_QA'].includes(postType) || legacyViewedPostIds.has(postId))
+      return false;
+    legacyViewedPostIds.add(postId);
+    if (legacyViewedPostIds.size > 500)
+      legacyViewedPostIds.delete(legacyViewedPostIds.values().next().value ?? '');
+    const nextViewCount =
+      Math.max(currentViewCount ?? 0, postSyncStore.get(postId)?.viewCount ?? 0) + 1;
+    postSyncStore.set({ id: postId, viewCount: nextViewCount }, { ttlMs: 10 * 60 * 1000 });
+    syncPostPatch({ id: postId, viewCount: nextViewCount });
+    void interactService
+      .reportView({ targetType: TARGET_TYPES.POST.value, targetId: postId })
+      .catch((error: unknown) => {
+        log.warn('recordPostView', 'report view failed', error);
+      });
+    return true;
+  }
   interactService
-    .reportView({
-      targetType: TARGET_TYPES.POST.value,
-      targetId: postId,
+    .reportView({ targetType: TARGET_TYPES.POST.value, targetId: postId })
+    .then(async () => {
+      const detail = await postService.getPostDetail(postId);
+      if (owner === getUserId()) syncPostPatch({ id: postId, viewCount: detail.viewCount });
     })
     .catch((err: unknown) => {
       log.warn('recordPostView', 'report view failed', err);
     });
-
   return true;
 };
 
 export const clearPostViewHistory = (): void => {
-  viewedPostIds.clear();
+  // Clearing session memory never resets the server-owned NORMAL daily quota.
+  legacyViewedPostIds.clear();
 };
 
 export const togglePostLikeAndSync = async (options: {

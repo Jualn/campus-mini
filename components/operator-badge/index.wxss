@@ -1,13 +1,108 @@
-:host { display: inline-flex; vertical-align: middle; margin-left: 8rpx; }
-.operator-badge {
+:host {
   display: inline-flex;
+  flex: none;
+  vertical-align: middle;
+}
+
+.identity-badge {
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 26rpx;
-  height: 26rpx;
-  border-radius: 50%;
-  background: #3b82f6;
-  color: #fff;
-  font-size: 18rpx;
-  line-height: 1;
+  box-sizing: border-box;
+  width: 44rpx;
+  height: 40rpx;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+.identity-badge::after,
+.identity-dialog__close::after {
+  border: 0;
+}
+
+.identity-dialog-mask {
+  position: fixed;
+  z-index: 1200;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: var(--space-lg, 32rpx);
+}
+
+.identity-dialog-backdrop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(16, 35, 63, 0.44);
+}
+
+.identity-dialog {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 570rpx;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card, #fff);
+  color: var(--color-text-primary, #1f2d45);
+  box-shadow: var(--shadow-card);
+  font-size: var(--font-base);
+  line-height: 1.55;
+  text-align: left;
+  white-space: normal;
+}
+
+.identity-dialog__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.identity-dialog__title {
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+}
+
+.identity-dialog__note {
+  display: block;
+}
+
+.identity-dialog__note,
+.identity-dialog__label {
+  color: var(--color-text-secondary);
+}
+
+.identity-dialog__row {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-xs) 0;
+  overflow-wrap: anywhere;
+}
+
+.identity-dialog__label {
+  flex: none;
+}
+
+.identity-dialog__close {
+  min-height: 72rpx;
+  margin: var(--space-md) 0 0;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--font-base);
+  line-height: 72rpx;
+  text-align: center;
 }

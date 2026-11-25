@@ -1,410 +1,295 @@
-// subpkg_activity/pages/list/list.ts
-
+import type { ActivityListQuery } from '../../services/event-api';
+import { isHttpError } from '../../../utils/error';
 import type { ActivityCard } from '../../../types/business';
-import { ACTIVITY_STATUS_ORDER, DepartmentBit, DepartmentText } from '../../../utils/constants';
-import { createLogger } from '../../../utils/logger';
-import { useListLoad } from '../../../behaviors/useListLoad';
+import type { ActivityCategory, LifecycleStatus } from '../../../types/event-contract';
+import { ACTIVITY_DEPARTMENTS } from '../../../utils/activity-audience';
+import type { ActivityDepartmentId } from '../../../utils/activity-audience';
+import { ACTIVITY_LIST_MAX_AGE_MS } from '../../config/activity-list';
+import { appStore } from '../../../stores/index';
+import { getUserId } from '../../../stores/helper';
 import definePage from '../../../utils/definePage';
-import { wxNavigateBack, wxNavigateTo, wxShowActionSheet } from '../../../utils/wx-promise';
+import { wxNavigateBack } from '../../../utils/wx-promise';
 import * as activityAction from '../../actions/activity';
-import { showErrorToast } from '../../../utils/notify';
 
 const STATUS_TABS = [
-  { id: 'all', label: '全部' },
-  { id: 'enrolling', label: '报名中' },
-  { id: 'not_started', label: '待开始' },
-  { id: 'ongoing', label: '进行中' },
-  { id: 'ended', label: '已结束' },
+  { id: '', label: '全部' },
+  { id: 'ACTIVE', label: '有效' },
+  { id: 'ENDED', label: '已结束' },
+  { id: 'CANCELLED', label: '已取消' },
+];
+const CATEGORIES = [
+  { id: '', label: '全部分类' },
+  { id: 'LECTURE', label: '学术讲座' },
+  { id: 'COMPETITION', label: '比赛' },
+  { id: 'SPORTS', label: '体育运动' },
+  { id: 'VOLUNTEERING', label: '志愿公益' },
+  { id: 'THEMED', label: '主题活动' },
+  { id: 'OTHER', label: '其他' },
+];
+const SCOPES = [
+  { id: 'ALL', label: '全部范围' },
+  { id: 'CAMPUS', label: '全院' },
+  ...ACTIVITY_DEPARTMENTS,
 ];
 
-const PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 700;
-
-let searchRequestSeq = 0;
-let searchDebounceTimer: number | null = null;
-
-const log = createLogger('ActivityListPage');
-
-function clearSearchDebounceTimer() {
-  if (searchDebounceTimer !== null) {
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = null;
-  }
-}
-
-function getScopeList(activity: ActivityCard) {
-  const scope = activity.scope as unknown;
-  if (Array.isArray(scope)) return scope.filter(Boolean) as string[];
-  if (typeof scope === 'string' && scope) return [scope];
-  return [];
-}
-
 definePage({
-  behaviors: [useListLoad({ defaultHasMore: false })],
-
+  _requestSeq: 0,
+  _timer: null as number | null,
+  _unwatch: null as (() => void) | null,
+  _unloaded: false,
+  _visible: false,
+  _userId: '',
+  _fetchedAt: 0,
+  _dirty: false,
   data: {
     statusBarHeight: 20,
     navTopGap: 8,
     navHeight: 32,
     keyword: '',
-    activeStatus: 'all',
-    activeScope: '',
-    statusTabs: STATUS_TABS,
-    allList: [] as ActivityCard[],
-    filteredList: [] as ActivityCard[],
-
-    // 搜索结果改为接口返回的 ActivityCard，不再使用本地静态匹配字段。
-    searchResult: [] as ActivityCard[],
-    searchLoading: false,
-    searchLoaded: false,
-    searchHasMore: true,
-    searchNextCursor: '',
-
-    skeletonItems: [1, 2, 3],
-    // seriesList: [] as Array<{ series_id: string; series_name: string; count: number }>,
-    // activeSeries: '',
+    activeStatus: 'ACTIVE',
+    categoryIndex: 0,
+    scopeIndex: 0,
+    filters: [
+      { key: 'status', label: '状态', title: '活动状态', options: STATUS_TABS, selectedIndex: 1 },
+      { key: 'category', label: '分类', title: '活动分类', options: CATEGORIES, selectedIndex: 0 },
+      { key: 'scope', label: '学科部', title: '参与学科部', options: SCOPES, selectedIndex: 0 },
+    ],
+    list: [] as ActivityCard[],
+    nextCursor: '',
+    initialLoading: false,
+    refreshing: false,
+    loadingMore: false,
+    loaded: false,
+    initialError: '',
+    refreshError: '',
+    moreError: '',
+    invalidCursor: false,
   },
-
   onLoad() {
     const sys = wx.getWindowInfo();
-    const menuButton =
-      typeof wx.getMenuButtonBoundingClientRect === 'function'
-        ? wx.getMenuButtonBoundingClientRect()
-        : null;
-
-    const statusBarHeight = sys.statusBarHeight || 20;
-    let navTopGap = 8;
-    let navHeight = 32;
-
-    if (menuButton?.width) {
-      navTopGap = Math.max(menuButton.top - statusBarHeight, 6);
-      navHeight = menuButton.height || navHeight;
-    }
-
+    const menu = wx.getMenuButtonBoundingClientRect();
     this.setData({
-      statusBarHeight,
-      navTopGap,
-      navHeight,
+      statusBarHeight: sys.statusBarHeight || 20,
+      navTopGap: menu.width ? Math.max(menu.top - (sys.statusBarHeight || 20), 6) : 8,
+      navHeight: menu.height || 32,
     });
-    this._loadActivities();
+    this._userId = getUserId() ?? '';
+    this._unwatch = appStore.watch('userInfo', (user) => {
+      if (this._userId === user.id) return;
+      this._userId = user.id;
+      this._requestSeq++;
+      this._clearTimer();
+      this._fetchedAt = 0;
+      this._dirty = true;
+      this.setData({
+        list: [],
+        nextCursor: '',
+        loaded: false,
+        initialLoading: false,
+        refreshing: false,
+        loadingMore: false,
+        initialError: '',
+        refreshError: '',
+        moreError: '',
+      });
+      void wx.stopPullDownRefresh();
+      if (this._visible && user.id) void this._load('initial');
+    });
+    void this._load('initial');
   },
-
   onShow() {
-    if (!this.data.keyword && this.data.allList.length && this.data.listLoad.phase !== 'initial') {
-      this._applyFilter();
+    this._visible = true;
+    if (
+      this.data.loaded &&
+      (this._dirty || Date.now() - this._fetchedAt >= ACTIVITY_LIST_MAX_AGE_MS)
+    ) {
+      void this._load('refresh');
+    } else if (!this.data.loaded && this._dirty && !this.data.initialLoading) {
+      void this._load('initial');
     }
   },
-
+  onHide() {
+    this._visible = false;
+  },
   onUnload() {
-    clearSearchDebounceTimer();
-    searchRequestSeq++;
-    this._listLoadClearTimers();
+    this._unloaded = true;
+    this._requestSeq++;
+    this._clearTimer();
+    this._unwatch?.();
+    void wx.stopPullDownRefresh();
   },
-
-  _loadActivities(scene: 'initial' | 'refresh' = 'initial') {
-    if (scene === 'refresh') {
-      if (!this._listLoadCanRefresh()) {
-        void wx.stopPullDownRefresh();
-        return;
-      }
-      this._listLoadBeginRefresh();
-    } else {
-      this._listLoadBeginInitial();
-    }
-
-    void activityAction
-      .getActivityList()
-      .then((res) => {
-        const list = res.list;
-        // const seriesMap: { [key: string]: any } = {};
-        // list.forEach((a: any) => {
-        //   if (a.series_id) {
-        //     if (!seriesMap[a.series_id]) {
-        //       seriesMap[a.series_id] = {
-        //         series_id: a.series_id,
-        //         series_name: a.series_name,
-        //         count: 0,
-        //       };
-        //     }
-        //     seriesMap[a.series_id].count++;
-        //   }
-        // });
-
-        this.setData({
-          allList: list,
-          // seriesList: Object.values(seriesMap),
-        });
-
-        // 普通列表仍然走活动列表接口；搜索结果单独走 searchActivities。
-        if (!this.data.keyword) {
-          this._applyFilter();
-        }
-
-        const doneOptions = {
-          success: true,
-          hasContent: list.length > 0,
-          hasMore: false,
-        };
-
-        if (scene === 'refresh') {
-          this._listLoadEndRefresh(doneOptions);
-        } else {
-          this._listLoadEndInitial(doneOptions);
-        }
-      })
-      .catch((err: unknown) => {
-        const hasContent = this.data.allList.length > 0;
-        const doneOptions = {
-          success: false,
-          hasContent,
-          hasMore: false,
-        };
-
-        if (scene === 'refresh') {
-          this._listLoadEndRefresh(doneOptions);
-          if (hasContent) {
-            showErrorToast(err, { fallback: '刷新失败，请稍后重试' });
-          }
-        } else {
-          this._listLoadEndInitial(doneOptions);
-        }
-
-        log.error('_loadActivities', '加载活动失败', err);
-      })
-      .finally(() => {
-        if (scene === 'refresh') void wx.stopPullDownRefresh();
-      });
+  _clearTimer() {
+    if (this._timer !== null) clearTimeout(this._timer);
+    this._timer = null;
   },
-
-  _applyFilter() {
-    const { allList, activeStatus, activeScope } = this.data;
-    let result = [...allList];
-
-    // 状态筛选
-    if (activeStatus !== 'all') {
-      result = result.filter((a) => a.status === activeStatus);
-    }
-
-    // 学科部筛选
-    if (activeScope && activeScope !== DepartmentText[DepartmentBit.ALL]) {
-      result = result.filter((a) => {
-        const scopeList = getScopeList(a);
-        return (
-          scopeList.includes(activeScope) || scopeList.includes(DepartmentText[DepartmentBit.ALL])
-        );
-      });
-    }
-    // if (activeSeries) result = result.filter((a: any) => a.series_id === activeSeries);
-
-    result.sort(
-      (a, b) => (ACTIVITY_STATUS_ORDER[a.status] ?? 9) - (ACTIVITY_STATUS_ORDER[b.status] ?? 9),
-    );
-
+  _resetQuery(debounce = false) {
+    this._clearTimer();
+    this._requestSeq++;
+    this._fetchedAt = 0;
     this.setData({
-      filteredList: result,
+      list: [],
+      nextCursor: '',
+      loaded: false,
+      initialLoading: true,
+      refreshing: false,
+      loadingMore: false,
+      initialError: '',
+      refreshError: '',
+      moreError: '',
+      invalidCursor: false,
     });
+    void wx.stopPullDownRefresh();
+    if (debounce)
+      this._timer = setTimeout(() => {
+        this._timer = null;
+        void this._load('initial');
+      }, 700);
+    else void this._load('initial');
   },
-
-  onSearch(e: WechatMiniprogram.Input) {
-    const kw = e.detail.value.trim();
-    this.setData({
-      keyword: kw,
-    });
-
-    clearSearchDebounceTimer();
-
-    if (!kw) {
-      searchRequestSeq++;
-      this._resetSearch();
-      this._applyFilter();
+  _isCurrent(seq: number) {
+    return !this._unloaded && seq === this._requestSeq;
+  },
+  async _load(scene: 'initial' | 'refresh' | 'more') {
+    if (this._unloaded) return;
+    if (
+      scene === 'more' &&
+      (this.data.initialLoading ||
+        this.data.refreshing ||
+        this.data.loadingMore ||
+        !this.data.nextCursor)
+    )
       return;
-    }
-
-    searchDebounceTimer = setTimeout(() => {
-      void this._searchActivities(true);
-    }, SEARCH_DEBOUNCE_MS);
-  },
-
-  onSearchConfirm(e: WechatMiniprogram.InputConfirm) {
-    const kw = e.detail.value.trim();
+    if (scene === 'refresh') this._clearTimer();
+    const seq = ++this._requestSeq;
+    const query = {
+      keyword: this.data.keyword.trim() || undefined,
+      lastId: scene === 'more' ? this.data.nextCursor : undefined,
+      pageSize: 20,
+      category: (CATEGORIES[this.data.categoryIndex].id as ActivityCategory | '') || undefined,
+      lifecycleStatus: (this.data.activeStatus as LifecycleStatus | '') || undefined,
+    };
+    const scope = SCOPES[this.data.scopeIndex].id;
+    const audience: ActivityListQuery =
+      scope === 'ALL' || scope === 'CAMPUS'
+        ? { audienceFilter: scope }
+        : { audienceFilter: 'DEPARTMENT' as const, departmentId: scope as ActivityDepartmentId };
     this.setData({
-      keyword: kw,
+      initialLoading: scene === 'initial',
+      refreshing: scene === 'refresh',
+      loadingMore: scene === 'more',
+      initialError: '',
+      refreshError: '',
+      moreError: '',
+      invalidCursor: false,
     });
-
-    clearSearchDebounceTimer();
-
-    if (!kw) {
-      searchRequestSeq++;
-      this._resetSearch();
-      this._applyFilter();
-      return;
-    }
-
-    void this._searchActivities(true);
-  },
-
-  async _searchActivities(reset = false) {
-    const keyword = this.data.keyword.trim();
-    if (!keyword) return;
-
-    if (!reset) {
-      if (this.data.searchLoading || !this.data.searchHasMore) return;
-    }
-
-    const currentRequest = ++searchRequestSeq;
-
-    if (reset) {
-      this.setData({
-        searchResult: [],
-        searchHasMore: true,
-        searchNextCursor: '',
-        searchLoaded: false,
-      });
-    }
-
-    this.setData({
-      searchLoading: true,
-    });
-
     try {
-      const res = await activityAction.searchActivities({
-        keyword,
-        lastId: reset ? undefined : this.data.searchNextCursor || undefined,
-        pageSize: PAGE_SIZE,
-      });
-
-      if (currentRequest !== searchRequestSeq) return;
-
-      const list = res.list;
-
+      const result = await activityAction.getActivityList({ ...query, ...audience });
+      if (!this._isCurrent(seq)) return;
+      const list = scene === 'more' ? [...this.data.list] : [];
+      const ids = new Set(list.map((item) => item.id));
+      for (const item of result.list)
+        if (!ids.has(item.id)) {
+          ids.add(item.id);
+          list.push(item);
+        }
+      this._fetchedAt = Date.now();
+      this._dirty = false;
+      this.setData({ list, nextCursor: result.nextCursor ?? '', loaded: true });
+    } catch (error: unknown) {
+      if (!this._isCurrent(seq)) return;
+      const invalidCursor = isHttpError(error) && error.problemType === '/problems/invalid-cursor';
+      const message = invalidCursor ? '列表游标已失效，请从第一页重新加载' : '加载失败，请重试';
       this.setData({
-        searchResult: reset ? list : [...this.data.searchResult, ...list],
-        searchHasMore: res.hasMore,
-        searchNextCursor: res.nextCursor ?? '',
-        searchLoaded: true,
+        invalidCursor,
+        initialError: scene === 'initial' ? message : '',
+        refreshError: scene === 'refresh' ? '刷新失败，已保留原有内容，请重试' : '',
+        moreError: scene === 'more' ? message : '',
       });
-    } catch (err: unknown) {
-      if (currentRequest !== searchRequestSeq) return;
-
-      this.setData({
-        searchLoaded: true,
-        searchHasMore: false,
-      });
-
-      log.error('_searchActivities', '搜索活动失败', err);
-      showErrorToast(err, { fallback: '搜索失败，请稍后再试' });
     } finally {
-      if (currentRequest === searchRequestSeq) {
-        this.setData({
-          searchLoading: false,
-        });
+      if (this._isCurrent(seq)) {
+        this.setData({ initialLoading: false, refreshing: false, loadingMore: false });
+        void wx.stopPullDownRefresh();
       }
     }
   },
-
-  _resetSearch() {
-    this.setData({
-      searchResult: [],
-      searchLoading: false,
-      searchLoaded: false,
-      searchHasMore: true,
-      searchNextCursor: '',
-    });
+  onSearch(e: WechatMiniprogram.Input) {
+    this.setData({ keyword: e.detail.value });
+    this._resetQuery(true);
   },
-
+  onSearchConfirm(e: WechatMiniprogram.InputConfirm) {
+    this.setData({ keyword: e.detail.value.trim() });
+    this._resetQuery();
+  },
   onClearSearch() {
-    clearSearchDebounceTimer();
-    searchRequestSeq++;
+    this.setData({ keyword: '' });
+    this._resetQuery();
+  },
+  onSwitchStatus(e: WechatMiniprogram.CustomEvent<{ value: number }>) {
+    const index = e.detail.value;
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= STATUS_TABS.length ||
+      STATUS_TABS[index].id === this.data.activeStatus
+    )
+      return;
+    this.setData({ activeStatus: STATUS_TABS[index].id, 'filters[0].selectedIndex': index });
+    this._resetQuery();
+  },
+  onCategoryChange(e: WechatMiniprogram.CustomEvent<{ value: number }>) {
+    const index = e.detail.value;
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= CATEGORIES.length ||
+      index === this.data.categoryIndex
+    )
+      return;
+    this.setData({ categoryIndex: index, 'filters[1].selectedIndex': index });
+    this._resetQuery();
+  },
+  onScopeChange(e: WechatMiniprogram.CustomEvent<{ value: number }>) {
+    const index = e.detail.value;
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= SCOPES.length ||
+      index === this.data.scopeIndex
+    )
+      return;
+    this.setData({ scopeIndex: index, 'filters[2].selectedIndex': index });
+    this._resetQuery();
+  },
+  onClearFilters() {
     this.setData({
       keyword: '',
+      activeStatus: 'ACTIVE',
+      categoryIndex: 0,
+      scopeIndex: 0,
+      'filters[0].selectedIndex': 1,
+      'filters[1].selectedIndex': 0,
+      'filters[2].selectedIndex': 0,
     });
-    this._resetSearch();
-    this._applyFilter();
+    this._resetQuery();
   },
-
-  onSwitchStatus(e: WechatMiniprogram.TouchEvent) {
-    const { id } = e.currentTarget.dataset as { id: string };
-    this.setData({
-      activeStatus: id,
-      activeSeries: '',
-    });
-    this._applyFilter();
-  },
-
-  // onFilterSeries(e: any) {
-  //   const id = e.currentTarget.dataset.id;
-  //   const current = this.data.activeSeries;
-  //   this.setData({
-  //     activeSeries: current === id ? '' : id,
-  //     activeStatus: 'all',
-  //   });
-  //   this._applyFilter();
-  // },
-
-  onShowScopeFilter() {
-    const scopes = [
-      DepartmentText[DepartmentBit.ALL],
-      ...new Set(
-        this.data.allList
-          .flatMap((a) => getScopeList(a))
-          .filter((scope) => scope && scope !== DepartmentText[DepartmentBit.ALL]),
-      ),
-    ];
-
-    void wxShowActionSheet({
-      itemList: scopes,
-    })
-      .then((res) => {
-        const selected = res.tapIndex === 0 ? '' : scopes[res.tapIndex];
-        this.setData({
-          activeScope: selected,
-        });
-        this._applyFilter();
-      })
-      .catch(() => {
-        // 用户取消选择，不处理。
-      });
-  },
-
   onRetryInitial() {
-    this._loadActivities('refresh');
+    void this._load('initial');
   },
-
-  onPullDownRefresh() {
-    if (this.data.keyword.trim()) {
-      clearSearchDebounceTimer();
-      void this._searchActivities(true).finally(() => {
-        void wx.stopPullDownRefresh();
-      });
-      return;
-    }
-
-    this._loadActivities('refresh');
+  onRetryRefresh() {
+    void this._load('refresh');
   },
-
-  onReachBottom() {
-    if (this.data.keyword.trim()) {
-      void this._searchActivities(false);
-    }
-  },
-
   onRetryMore() {
-    if (this.data.keyword.trim()) {
-      void this._searchActivities(false);
-      return;
-    }
-
-    this._listLoadResetMoreError();
-    this._loadActivities('refresh');
+    void this._load(this.data.invalidCursor ? 'refresh' : 'more');
   },
-
-  goDetail(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id as string;
-    void wxNavigateTo({
-      url: `/subpkg_activity/pages/detail/detail?activityId=${id}`,
-    });
+  onPullDownRefresh() {
+    void this._load('refresh');
   },
-
+  onReachBottom() {
+    if (!this.data.moreError) void this._load('more');
+  },
+  onActivityChanged() {
+    this._dirty = true;
+  },
   onBack() {
     void wxNavigateBack();
   },

@@ -1,3 +1,8 @@
+// Runtime intent is independent of best-effort native Storage writes.
+let recoverySuppressed = false;
+export const isAuthRecoverySuppressed = (): boolean => recoverySuppressed;
+export const suppressAuthRecovery = (value: boolean): void => { recoverySuppressed = value; };
+
 type AuthRefreshHandler = (failedToken?: string) => Promise<void>;
 
 let authRefreshHandler: AuthRefreshHandler | null = null;
@@ -40,6 +45,7 @@ export async function waitForAuthStable(): Promise<void> {
  * 运行期重新认证。所有并发 401 共用同一个任务，failedToken 用于识别迟到的旧请求。
  */
 export async function refreshAuth(failedToken?: string): Promise<boolean> {
+  if (recoverySuppressed) return false;
   if (!authRefreshHandler) return false;
 
   if (authRefreshPromise) {

@@ -1,6 +1,15 @@
 <!--subpkg_activity/pages/publish/publish.wxml-->
 
-<view id="page-root" class="page">
+<view wx:if="{{publishUnavailableMessage}}" class="page">
+  <view class="hero glass-card">
+    <navigator class="back-nav" open-type="navigateBack" delta="1" hover-class="none">
+      <ui-icon name="chevron-left" size="lg" />
+      <text class="back-text">返回</text>
+    </navigator>
+    <view class="hero-title">{{publishUnavailableMessage}}</view>
+  </view>
+</view>
+<view wx:else id="page-root" class="page">
   <view class="hero glass-card">
     <navigator class="back-nav" open-type="navigateBack" delta="1" hover-class="none">
       <ui-icon name="chevron-left" size="lg" />

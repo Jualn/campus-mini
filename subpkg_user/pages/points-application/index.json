@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "申请详情",
+  "backgroundColor": "#F6F8FC",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index",
+    "ui-icon": "/components/ui-icon/index"
+  }
+}

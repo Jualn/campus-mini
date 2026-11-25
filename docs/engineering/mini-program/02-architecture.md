@@ -20,6 +20,8 @@ wx.* / Backend / persistent platform capability
 
 A Page owns route parameters, Page lifecycle, Page render state, user-interaction orchestration, `setData`, Page-specific feedback, and navigation.
 
+Page content and interaction are guided by user tasks and accepted design decisions, not by blindly rendering every property of a backend response. A Page coordinates semantic actions and Page-owned state; Components encapsulate reusable UI behavior, and domain APIs provide data without specifying layouts.
+
 A Page should not repeatedly own common auth headers, base URL, raw transport normalization, Storage serialization policy, duplicated cross-page workflows, or protocol schema definitions.
 
 ## Component
@@ -29,6 +31,12 @@ A Component owns reusable visual/interaction behavior, properties, local render 
 A normal UI Component should not silently mutate unrelated global state, navigate unrelated Pages, manage authentication, persist unrelated Storage, or perform unrelated backend work.
 
 A capability Component may own platform/network behavior when that behavior is intrinsic to the capability—for example upload, media selection, location, or authentication UI—and should expose documented inputs/results.
+
+### Component reuse and evolution
+
+Find existing capabilities from actual source, registrations/imports and usage sites; do not assume a complete Component catalog or design system exists. Prefer direct reuse when semantics match, Page-level composition for feature-specific combinations, and bounded extension for genuinely shared variants. Visual resemblance alone is not sufficient reason to merge different business responsibilities; avoid generic "everything" Components.
+
+Distinguish private implementation from **consumer-visible contract**: `properties`, semantic events, slots, documented public methods, supported styling extension points/isolation, defaults, state/interaction meaning and accessibility behavior. Internal refactors or local styles should not require consumers or documents to be rewritten unless behavior changes. Before changing a shared contract or global styling behavior, locate its consumers, assess compatibility and migrate/tests affected usages. Update concise maintained usage guidance only if its public meaning changed; do not create one page-design document per Component.
 
 ## Behavior
 

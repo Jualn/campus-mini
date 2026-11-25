@@ -7,7 +7,8 @@
  *
  * Properties:
  *   activity  Object  活动数据
- *     - id, title, cover, type, scope
+ *     - id, title, cover, type, audienceScope
+ *   preferredDepartment  String  当前筛选学科部，优先露出
  *     - status, statusLabel, typeColor, typeIcon
  *     - cardTimelineLabel, cardTimelineText, cardTimelineKind, daysToDeadline
  *     - location, max_participants
@@ -15,12 +16,14 @@
  *
  * Events:
  *   tap  → 点击卡片时触发，{ activityId }
+ *   changed → 详情返回参与事实变更，{ activityId }
  *
  * 说明：
  *   组件默认会跳转到活动详情页。
  *   父页面如果只需要展示，不需要额外处理 tap 事件。
  */
 
+import { activityScopeLabels } from '../../utils/activity-audience';
 import defineComponent from '../../utils/defineComponent';
 import type { ActivityCard } from '../../types/business';
 import { createLogger } from '../../utils/logger';
@@ -57,6 +60,7 @@ defineComponent<ActivityCardPrivate>()({
    * 组件的属性列表
    */
   properties: {
+    preferredDepartment: { type: String, value: '' },
     activity: {
       type: Object as unknown as null,
       value: {} as ActivityCard,
@@ -67,7 +71,11 @@ defineComponent<ActivityCardPrivate>()({
           typeof newVal.daysToDeadline === 'number' ? newVal.daysToDeadline : null;
 
         this.setData({
-          _scopeList: newVal.scope,
+          _scopeList: activityScopeLabels(
+            newVal.audienceScope,
+            this.properties.preferredDepartment,
+            true,
+          ),
           _statusClass: normalizeStatusClass(newVal.status),
           _typeColorClass: newVal.typeColor || 'default',
           _deadlineText:
@@ -79,6 +87,12 @@ defineComponent<ActivityCardPrivate>()({
             daysToDeadline <= 3,
         });
       },
+    },
+  },
+
+  observers: {
+    'activity, preferredDepartment'(activity: ActivityCard, preferred: string) {
+      this.setData({ _scopeList: activityScopeLabels(activity.audienceScope, preferred, true) });
     },
   },
 
@@ -150,7 +164,12 @@ defineComponent<ActivityCardPrivate>()({
       });
 
       void wxNavigateTo({
-        url: `/subpkg_activity/pages/detail/detail?activityId=${id}`,
+        url: `/subpkg_activity/pages/detail/detail?activityId=${encodeURIComponent(id)}`,
+        events: {
+          activityChanged: () => {
+            this.triggerEvent('changed', { activityId: id });
+          },
+        },
       }).catch((err: unknown) => {
         log.error('onTapCard', '跳转活动详情失败', err);
       });

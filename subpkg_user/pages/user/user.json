@@ -2,6 +2,7 @@
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
   "usingComponents": {
+    "mentor-certification": "/components/mentor-certification/index",
     "user-profile": "/components/user-profile/index",
     "post-card": "/components/post-card/index",
     "comment-panel": "/components/comment-panel/index",
@@ -9,6 +10,7 @@
     "share-panel": "/components/share-panel/index",
     "profile-feed-skeleton": "/components/profile-feed-skeleton/index",
     "post-card-skeleton": "/components/post-card-skeleton/index",
-    "load-state": "/components/load-state/index"
+    "load-state": "/components/load-state/index",
+    "back-button": "/components/back-button/index"
   }
 }

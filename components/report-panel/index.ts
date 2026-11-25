@@ -1,3 +1,6 @@
+import { getCurrentIdentity, watchCurrentIdentity } from '../../actions/current-user';
+import { HttpError, NetworkError } from '../../utils/error';
+import { showErrorToast } from '../../utils/notify';
 // components/report-panel/index.ts
 import defineComponent from '../../utils/defineComponent';
 import { createLogger } from '../../utils/logger';
@@ -8,6 +11,10 @@ import * as reportAction from '../../actions/report';
 
 interface ReportPanelPrivate {
   _sheetDismiss?: () => void;
+  _pending?: boolean;
+  _owner: string;
+  _offIdentity: (() => void) | null;
+  _generation: number;
 }
 
 const log = createLogger('ReportPopup');
@@ -115,11 +122,27 @@ defineComponent<ReportPanelPrivate>()({
     isOtherSelected: false,
     remark: '',
     canSubmit: false,
+    submittingLocal: false,
+    resultNotice: '',
+    unknownResult: false,
   },
 
   /**
    * 组件的方法列表
    */
+  lifetimes: {
+    attached() {
+      this._generation = 0;
+      this._owner = getCurrentIdentity().id;
+      this._offIdentity = watchCurrentIdentity(() => {
+        if (this._owner === getCurrentIdentity().id) return;
+        this._owner = getCurrentIdentity().id;
+        ++this._generation; this._pending = false;
+        this.setData({ remark: '', selectedReason: '', canSubmit: false, submittingLocal: false, resultNotice: '', unknownResult: false });
+      });
+    },
+    detached() { ++this._generation; this._offIdentity?.(); },
+  },
   methods: {
     noop() {
       /* empty */
@@ -129,7 +152,7 @@ defineComponent<ReportPanelPrivate>()({
       const selectedReason = this.data.selectedReason || '';
 
       this.setData({
-        canSubmit: selectedReason !== '' && !this.properties.submitting,
+        canSubmit: selectedReason !== '' && !this.properties.submitting && !this.data.submittingLocal && !this.data.unknownResult,
       });
     },
 
@@ -191,7 +214,7 @@ defineComponent<ReportPanelPrivate>()({
         remark: string;
       };
 
-      if (submitting) return;
+      if (submitting || this._pending || this.data.unknownResult) return;
 
       if (!targetId) {
         log.warn('onSubmit', '举报对象参数异常', {
@@ -216,6 +239,9 @@ defineComponent<ReportPanelPrivate>()({
         return;
       }
 
+      const generation = this._generation;
+      this._pending = true;
+      this.setData({ submittingLocal: true, canSubmit: false });
       try {
         await reportAction.submitReport({
           targetType,
@@ -224,6 +250,7 @@ defineComponent<ReportPanelPrivate>()({
           mark: remark.trim(),
         });
 
+        if (generation !== this._generation) return;
         notifyToast({
           title: '举报成功',
           icon: 'success',
@@ -232,11 +259,20 @@ defineComponent<ReportPanelPrivate>()({
         // 评论内举报完成后回到评论区；帖子举报完成后关闭整个弹窗。
         this.triggerEvent('close');
       } catch (err: unknown) {
+        if (generation !== this._generation) return;
         log.error('onReportSubmit', '举报失败', err);
-        notifyToast({
-          title: '举报失败，请稍后再试',
-          icon: 'none',
-        });
+        if (err instanceof HttpError && err.problemType === '/problems/report-duplicate') {
+          this.setData({ resultNotice: '已举报此内容，请查看我的举报记录', unknownResult: true });
+        } else if (err instanceof NetworkError) {
+          this.setData({ resultNotice: '举报结果尚未确认，请先查看本人记录，勿重复提交', unknownResult: true });
+        }
+        showErrorToast(err, { fallback: '举报失败，请稍后再试' });
+      } finally {
+        if (generation === this._generation) {
+          this._pending = false;
+          this.setData({ submittingLocal: false });
+          this.updateCanSubmit();
+        }
       }
     },
   },

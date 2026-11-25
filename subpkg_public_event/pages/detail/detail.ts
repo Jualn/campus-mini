@@ -1,3 +1,4 @@
+import { createBusinessSubscription } from '../../../services/business-subscriptions';
 import { useSharePoster } from '../../../behaviors/useSharePoster';
 // subpkg_public_event/pages/detail/detail.ts
 
@@ -25,6 +26,7 @@ definePage({
   _loadVersion: 0,
   _openingResource: false,
 
+  _businessSubscription: null as ReturnType<typeof createBusinessSubscription> | null,
   data: {
     statusBarHeight: 20,
     publicEventId: '',
@@ -37,6 +39,8 @@ definePage({
   },
 
   onLoad(query: { publicEventId?: string; examId?: string; from?: string }) {
+    this._businessSubscription = createBusinessSubscription(() => !this._unloaded);
+    void this._businessSubscription.prepare('PUBLIC_EVENT_FOLLOW', query.publicEventId ?? query.examId ?? '');
     const sys = wx.getWindowInfo();
     this.setData({
       statusBarHeight: sys.statusBarHeight,
@@ -47,6 +51,7 @@ definePage({
   },
 
   onUnload() {
+    this._businessSubscription?.dispose();
     this._unloaded = true;
     this._loadVersion += 1;
   },
@@ -141,9 +146,11 @@ definePage({
     const desired = !this.data.publicEvent.subscribed;
     this.setData({ subscriptionBusy: true });
     try {
+      if (desired && this._businessSubscription && !await this._businessSubscription.request('PUBLIC_EVENT_FOLLOW', id)) return;
       const subscribed = await publicEventAction.setPublicEventSubscription(id, desired);
       if (this._unloaded || this.data.publicEvent.id !== id) return;
       this.setData({ 'publicEvent.subscribed': subscribed });
+      void this._businessSubscription?.prepare('PUBLIC_EVENT_FOLLOW', id);
       showSuccessToast(subscribed ? '已订阅本期事项' : '已取消订阅');
     } catch (err) {
       if (!this._unloaded) showErrorToast(err, { fallback: '订阅操作未完成，请重试' });

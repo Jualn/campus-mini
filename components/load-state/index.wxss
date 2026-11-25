@@ -28,15 +28,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, #e7f1ff, #ffffff 76%);
-  border: 1rpx solid rgba(47, 124, 246, 0.12);
-  box-shadow: 0 14rpx 34rpx rgba(47, 124, 246, 0.08);
+  background: linear-gradient(145deg, #eaf2fc, #ffffff 76%);
+  border: 1rpx solid rgba(36, 105, 189, 0.12);
+  box-shadow: 0 14rpx 34rpx rgba(36, 105, 189, 0.08);
 }
 
 .load-state__visual--empty {
   background: linear-gradient(145deg, #f1f5fa, #ffffff);
-  border-color: rgba(16, 35, 63, 0.08);
-  box-shadow: 0 14rpx 34rpx rgba(16, 35, 63, 0.05);
+  border-color: rgba(31, 45, 69, 0.08);
+  box-shadow: 0 14rpx 34rpx rgba(31, 45, 69, 0.05);
 }
 
 .load-state__symbol {
@@ -52,14 +52,14 @@
   width: 8rpx;
   height: 34rpx;
   border-radius: 999rpx;
-  background: var(--color-primary, #2f7cf6);
+  background: var(--color-primary, #2469bd);
 }
 
 .load-state__symbol-dot {
   width: 9rpx;
   height: 9rpx;
   border-radius: 50%;
-  background: var(--color-primary, #2f7cf6);
+  background: var(--color-primary, #2469bd);
 }
 
 .load-state__symbol--empty {
@@ -70,7 +70,7 @@
 .load-state__symbol--empty .load-state__symbol-line {
   width: 34rpx;
   height: 7rpx;
-  background: rgba(16, 35, 63, 0.38);
+  background: rgba(31, 45, 69, 0.38);
 }
 
 .load-state__symbol--empty .load-state__symbol-dot {
@@ -87,7 +87,7 @@
   font-size: 31rpx;
   line-height: 1.4;
   font-weight: 700;
-  color: var(--color-text-primary, #10233f);
+  color: var(--color-text-primary, #1f2d45);
 }
 
 .load-state__description {
@@ -95,7 +95,7 @@
   margin-top: 12rpx;
   font-size: 24rpx;
   line-height: 1.65;
-  color: var(--color-text-tertiary, rgba(16, 35, 63, 0.52));
+  color: var(--color-text-tertiary, rgba(31, 45, 69, 0.52));
 }
 
 .load-state__action {
@@ -107,8 +107,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary, #2f7cf6);
-  box-shadow: 0 10rpx 24rpx rgba(47, 124, 246, 0.2);
+  background: var(--color-primary, #2469bd);
+  box-shadow: 0 10rpx 24rpx rgba(36, 105, 189, 0.2);
   font-size: 25rpx;
   font-weight: 600;
   color: #ffffff;
@@ -123,8 +123,8 @@
 .load-state__spinner {
   width: 34rpx;
   height: 34rpx;
-  border: 4rpx solid rgba(47, 124, 246, 0.16);
-  border-top-color: var(--color-primary, #2f7cf6);
+  border: 4rpx solid rgba(36, 105, 189, 0.16);
+  border-top-color: var(--color-primary, #2469bd);
   border-radius: 50%;
   animation: load-state-spin 0.72s linear infinite;
 }
@@ -141,7 +141,7 @@
   padding: 52rpx 32rpx;
   border-radius: 28rpx;
   background: rgba(255, 255, 255, 0.74);
-  border: 1rpx solid rgba(47, 124, 246, 0.08);
+  border: 1rpx solid rgba(36, 105, 189, 0.08);
 }
 
 .load-state--section .load-state__visual {
@@ -195,7 +195,7 @@
 
 .load-state--inline .load-state__title,
 .load-state--compact .load-state__title {
-  color: rgba(16, 35, 63, 0.68);
+  color: rgba(31, 45, 69, 0.68);
 }
 
 .load-state--inline .load-state__action,
@@ -206,7 +206,7 @@
   padding: 4rpx 0;
   background: transparent;
   box-shadow: none;
-  color: var(--color-primary, #2f7cf6);
+  color: var(--color-primary, #2469bd);
   font-size: 23rpx;
 }
 

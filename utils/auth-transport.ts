@@ -1,5 +1,5 @@
 import { AuthError } from './error';
-import { refreshAuth, waitForAuthStable } from './auth-session';
+import { refreshAuth, waitForAuthStable, isAuthRecoverySuppressed } from './auth-session';
 import { storage, STORAGE_KEYS } from './storage';
 
 export type AuthMode = 'required' | 'optional' | 'none';
@@ -8,10 +8,15 @@ const readToken = (): string => storage.get(STORAGE_KEYS.TOKEN) ?? '';
 
 export async function getAuthToken(mode: AuthMode, allowRecovery = true): Promise<string> {
   if (mode === 'none') return '';
+  if (isAuthRecoverySuppressed() || storage.get(STORAGE_KEYS.AUTH_LOGGED_OUT)) {
+    if (mode === 'optional') return '';
+    throw new AuthError('Session logout requires explicit recovery');
+  }
 
   const snapshot = readToken();
 
   await waitForAuthStable();
+  if (isAuthRecoverySuppressed() || storage.get(STORAGE_KEYS.AUTH_LOGGED_OUT)) throw new AuthError('Session ended during authentication');
 
   const token = readToken();
   // Subject-bound workflows must re-scan after any authentication recovery/change.

@@ -1,0 +1,75 @@
+<view id="reader-navigation"><page-navigation title="{{scene.title}}" fixed surface="{{scene.brandNavigation ? 'brand' : 'page'}}" background-color="{{scene.brandNavigation ? '' : scene.surface}}" /></view>
+<view class="page reader--{{scene.layout}}" style="{{scene.accent ? '--article-accent:' + scene.accent + ';--article-tint:' + scene.surface + ';' : ''}}">
+  <view wx:if="{{loading && !article}}" class="article-skeleton">
+    <view class="skeleton-block skeleton-pill skeleton-category"></view>
+    <view class="skeleton-block skeleton-title"></view>
+    <view class="skeleton-block skeleton-title skeleton-title--short"></view>
+    <view class="skeleton-block skeleton-meta"></view>
+    <view class="skeleton-block skeleton-summary"></view>
+    <view class="skeleton-block skeleton-line" wx:for="{{[1, 2, 3, 4, 5]}}" wx:key="index"></view>
+  </view>
+
+  <load-state wx:if="{{error && !article}}" mode="error" title="文章暂时无法打开" description="{{error}}" action-text="重新加载" bind:action="load" fill-viewport viewport-offset="200" />
+
+  <block wx:if="{{article}}">
+    <view wx:if="{{error}}" class="inline-error">
+      <text>{{error}}</text>
+      <button class="text-button" bindtap="load">重新加载</button>
+    </view>
+
+    <view class="article-paper">
+      <view class="article-header">
+        <view wx:if="{{article.category.name !== scene.title}}" class="category">{{article.category.name}}</view>
+        <view class="title">{{article.title}}</view>
+        <view class="meta">
+          <text class="publisher">{{article.publisherDisplayName}}</text>
+          <text wx:if="{{publishedDate}}" class="publish-date">{{publishedDate}}</text>
+        </view>
+        <view wx:if="{{article.summary}}" class="summary">{{article.summary}}</view>
+      </view>
+
+      <article-files wx:if="{{contentV1 && scene.layout === 'resource' && files.length}}" files="{{files}}" />
+      <view class="article-content">
+        <article-body nodes="{{nodes}}" />
+        <button wx:if="{{hasMoreBody}}" class="continue-button btn btn-ghost" bindtap="moreBody">继续阅读正文</button>
+      </view>
+    </view>
+
+    <block wx:if="{{contentV1}}">
+      <article-files wx:if="{{scene.layout !== 'resource' && files.length}}" files="{{files}}" />
+      <view wx:if="{{source}}" class="section-card source-card">
+        <view class="source-name">来源 · {{source.name}}</view>
+        <button wx:if="{{source.url}}" class="text-button" bindtap="copySource">复制原文链接</button>
+      </view>
+    </block>
+
+    <view class="section-card interaction-card">
+      <view class="detail-actions-row">
+        <button class="detail-action-cell {{liked ? 'detail-action-cell--active' : ''}}" bindtap="like" disabled="{{!likeReady || likePending}}" aria-label="{{liked ? '取消点赞' : '点赞'}}，{{article.statistics.likeCount}}">
+          <ui-icon name="like" state="{{liked ? 'active' : 'default'}}" />
+          <text class="detail-action-label">{{article.statistics.likeCount || (liked ? '已点赞' : '点赞')}}</text>
+        </button>
+        <button class="detail-action-cell" bindtap="openComments" aria-label="查看评论，{{article.statistics.commentCount}}条">
+          <ui-icon name="comment" /><text class="detail-action-label">{{article.statistics.commentCount || '评论'}}</text>
+        </button>
+        <button wx:if="{{contentV1}}" class="detail-action-cell {{favorited ? 'detail-action-cell--active' : ''}}" bindtap="favorite" disabled="{{!favoriteReady || favoritePending}}" aria-label="{{favorited ? '取消收藏' : '收藏'}}">
+          <ui-icon name="bookmark" state="{{favorited ? 'active' : 'default'}}" />
+          <text class="detail-action-label">{{favoritePending ? '处理中…' : favorited ? '已收藏' : '收藏'}}</text>
+        </button>
+        <button class="detail-action-cell" open-type="share" aria-label="分享"><ui-icon name="share" /><text>分享</text></button>
+      </view>
+      <view wx:if="{{favoriteError}}" class="action-error">
+        <text>{{favoriteError}}</text>
+        <button class="text-button" bindtap="retryFavorite" disabled="{{favoritePending}}">重新读取收藏状态</button>
+      </view>
+      <view wx:if="{{interactionError}}" class="action-error">
+        <text>{{interactionError}}</text>
+        <button wx:if="{{!likeReady}}" class="text-button" bindtap="retryLike">重新读取点赞状态</button>
+      </view>
+    </view>
+
+    <view class="section-card comments-card" id="discussion-section">
+      <article-comments article-id="{{article.id}}" enabled="{{article.commentsEnabled}}" write-ready="{{!loading && !error}}" total-count="{{article.statistics.commentCount}}" focus-comment-id="{{focusCommentId}}" bind:countchange="countChange" bind:changed="reconcileComments" bind:disabled="commentsDisabled" bind:unavailable="unavailable" />
+    </view>
+  </block>
+</view>

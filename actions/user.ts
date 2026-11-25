@@ -17,9 +17,9 @@ import { getCurrentProfile, peekCurrentProfile, saveCurrentProfile } from './cur
 async function loadProfilePosts(userId: string) {
   try {
     const page = await postAction.getUserPosts(userId, { pageSize: 20 });
-    return { list: page.list, error: '' };
+    return { ...page, error: '' };
   } catch (error) {
-    return { list: [], error: getErrorMessage(error, '动态加载失败，请重试') };
+    return { list: [], hasMore: false, nextCursor: undefined, cursor: undefined, error: getErrorMessage(error, '动态加载失败，请重试') };
   }
 }
 
@@ -65,6 +65,9 @@ export const getMePageData = async (options: { force?: boolean } = {}): Promise<
     userInfo: peekCurrentProfile() ?? profile,
     posts: postsResult.list,
     postsError: postsResult.error,
+    hasMore: postsResult.hasMore,
+    nextCursor: postsResult.nextCursor,
+    cursor: postsResult.cursor,
     activeTab: 'posts',
   };
 };
@@ -86,6 +89,9 @@ export const getUserPageData = async (
     userInfo: current?.userId === userId ? current : profile,
     posts: postsResult.list,
     postsError: postsResult.error,
+    hasMore: postsResult.hasMore,
+    nextCursor: postsResult.nextCursor,
+    cursor: postsResult.cursor,
     activeTab: 'posts',
   };
 };

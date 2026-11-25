@@ -19,6 +19,7 @@ import { getAvatarInfo } from '../../utils/avatar';
 import type { PostCardItem } from '../../types/business';
 import { createLogger } from '../../utils/logger';
 import { wxNavigateTo } from '../../utils/wx-promise';
+import { openUserProfile } from '../../utils/user-profile-navigation';
 import { showErrorToast } from '../../utils/notify';
 import * as postAction from '../../actions/post';
 import { TARGET_TYPES } from '../../utils/constants';
@@ -30,7 +31,10 @@ interface PostCardPrivate {
   _avatarChar: string;
   _avatarBg: string;
   _lastPostId?: string;
+  _lastContent: string;
   _likePending: boolean;
+  _measureTimer: ReturnType<typeof setTimeout> | null;
+  _measureVersion: number;
 }
 
 defineComponent<PostCardPrivate>()({
@@ -47,20 +51,25 @@ defineComponent<PostCardPrivate>()({
         const safeViewCount =
           typeof newVal.viewCount === 'number' ? Math.max(0, newVal.viewCount) : 0;
         const content = newVal.content || '';
-        const canExpand = content.length > 120;
-        const shouldReset = this._lastPostId !== newVal.id;
-        const nextExpanded = shouldReset ? false : this.data.isExpanded;
+        const contentChanged = this._lastContent !== content;
+        const shouldReset = this._lastPostId !== newVal.id || contentChanged;
         this._lastPostId = newVal.id;
-        this.setData({
-          _avatarUrl: newVal.avatarUrl || '',
-          _avatarChar: char,
-          _avatarBg: bg,
-          liked: safeIsLiked,
-          likeCount: safeLikeCount,
-          viewCountText: this._formatViewCount(safeViewCount),
-          canExpand,
-          isExpanded: canExpand ? nextExpanded : false,
-        });
+        this._lastContent = content;
+        this.setData(
+          {
+            _avatarUrl: newVal.avatarUrl || '',
+            _avatarChar: char,
+            _avatarBg: bg,
+            liked: safeIsLiked,
+            likeCount: safeLikeCount,
+            viewCountText: this._formatViewCount(safeViewCount),
+            canExpand: shouldReset ? false : this.data.canExpand,
+            isExpanded: shouldReset ? false : this.data.isExpanded,
+          },
+          () => {
+            if (shouldReset) this._scheduleMeasure();
+          },
+        );
 
         // 确保 images 始终是数组
         if (!Array.isArray(newVal.images)) {
@@ -83,19 +92,64 @@ defineComponent<PostCardPrivate>()({
   },
 
   lifetimes: {
-    attached() {
-      // 私有字段初始化
+    created() {
       this._lastPostId = undefined;
+      this._lastContent = '';
       this._likePending = false;
+      this._measureTimer = null;
+      this._measureVersion = 0;
     },
 
     detached() {
-      // 私有字段重置（以防万一，虽然下次 attached 会重新赋值）
       this._lastPostId = undefined;
+      this._lastContent = '';
       this._likePending = false;
+      ++this._measureVersion;
+      if (this._measureTimer) clearTimeout(this._measureTimer);
+      this._measureTimer = null;
+    },
+  },
+  pageLifetimes: {
+    resize() {
+      this._scheduleMeasure();
     },
   },
   methods: {
+    _scheduleMeasure() {
+      ++this._measureVersion;
+      if (this._measureTimer) clearTimeout(this._measureTimer);
+      this._measureTimer = null;
+      if (!(this.properties.post.content || '').length) {
+        if (this.data.canExpand) this.setData({ canExpand: false, isExpanded: false });
+        return;
+      }
+      const version = this._measureVersion;
+      this._measureTimer = setTimeout(() => {
+        this._measureTimer = null;
+        if (version !== this._measureVersion) return;
+        this.createSelectorQuery()
+          .select('.post-text')
+          .fields({ computedStyle: ['lineHeight', 'fontSize'] })
+          .select('.post-text--measure')
+          .boundingClientRect()
+          .exec((rects: [{ lineHeight?: string; fontSize?: string }, { height: number }]) => {
+            if (version !== this._measureVersion) return;
+            const [style, full] = rects;
+            const lineHeight =
+              Number.parseFloat(style?.lineHeight ?? '') ||
+              Number.parseFloat(style?.fontSize ?? '') * 1.75;
+            if (!lineHeight || !full) return;
+            const canExpand = full.height > lineHeight * 4 + 2;
+            if (canExpand !== this.data.canExpand)
+              this.setData({ canExpand, isExpanded: canExpand && this.data.isExpanded });
+          });
+      }, 40);
+    },
+
+    onAvatarError() {
+      if (this.data._avatarUrl) this.setData({ _avatarUrl: '' });
+    },
+
     noop() {
       /* empty */
     },
@@ -116,9 +170,7 @@ defineComponent<PostCardPrivate>()({
     },
 
     onTapAvatar() {
-      void wxNavigateTo({
-        url: `/subpkg_user/pages/user/user?userId=${encodeURIComponent(this.properties.post.userId)}`,
-      }).catch((err: unknown) => {
+      void openUserProfile(this.properties.post.userId).catch((err: unknown) => {
         log.error('onTapAvatar', err);
       });
     },

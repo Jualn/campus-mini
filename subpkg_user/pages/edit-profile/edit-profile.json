@@ -1,6 +1,7 @@
 {
   "usingComponents": {
     "load-state": "/components/load-state/index",
-    "ui-icon": "/components/ui-icon/index"
+    "ui-icon": "/components/ui-icon/index",
+    "page-navigation": "/components/page-navigation/index"
   }
 }

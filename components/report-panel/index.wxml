@@ -90,6 +90,7 @@
       </view>
     </view>
 
+<view wx:if="{{resultNotice}}"><text>{{resultNotice}}</text><navigator url="/subpkg_community/pages/my-community/list?kind=reports">我的举报记录</navigator></view>
     <!-- 底部操作 -->
     <view class="rp-actions">
       <view class="rp-cancel tap-active" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
@@ -98,7 +99,7 @@
       </view>
 
       <view class="rp-submit {{canSubmit && !submitting ? '' : 'rp-submit--disabled'}} tap-active" bindtap="onSubmit">
-        <text class="rp-submit__text">{{submitting ? '提交中...' : '提交举报'}}</text>
+        <text class="rp-submit__text">{{submitting || submittingLocal ? '提交中...' : '提交举报'}}</text>
       </view>
     </view>
 

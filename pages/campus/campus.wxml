@@ -1,0 +1,309 @@
+<view class="index-page">
+  <view class="nav-mask {{isScrolled ? 'nav-mask--show' : ''}}" style="height: {{statusBarHeight}}px;"> </view>
+  <!--
+    首屏骨架仍保留为首页专属结构，不额外抽 home-feed-skeleton。
+    状态来自 useListLoad：快接口不闪屏，骨架出现后有最短展示时间。
+  -->
+  <block wx:if="{{listLoad.skeletonVisible}}">
+    <view class="skeleton-page" aria-role="status" aria-label="页面内容加载中">
+      <view class="skeleton-header">
+        <view class="skeleton-search-section" style="padding-top: {{statusBarHeight + 20}}px;">
+          <view class="skeleton-block skeleton-radius-md skeleton-greet"></view>
+          <view class="skeleton-block skeleton-radius-sm skeleton-subtitle"></view>
+          <view class="skeleton-search-box">
+            <view class="skeleton-block skeleton-circle skeleton-search-icon"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-search-text"></view>
+          </view>
+        </view>
+
+        <view class="skeleton-section-title">
+          <view class="skeleton-block skeleton-radius-sm skeleton-title-main"></view>
+          <view class="skeleton-block skeleton-radius-sm skeleton-title-more"></view>
+        </view>
+
+        <view class="skeleton-exam-list">
+          <view class="skeleton-exam-card" wx:for="{{skeletonPublicEventList}}" wx:key="*this">
+            <view class="skeleton-block skeleton-radius-sm skeleton-exam-name"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-exam-date"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-exam-countdown"></view>
+          </view>
+        </view>
+
+        <view class="skeleton-quick-nav">
+          <view class="skeleton-quick-item" wx:for="{{skeletonQuickNavList}}" wx:key="*this">
+            <view class="skeleton-block skeleton-radius-lg skeleton-quick-icon"></view>
+            <view class="skeleton-block skeleton-radius-sm skeleton-quick-label"></view>
+          </view>
+        </view>
+      </view>
+
+      <view class="skeleton-feed-header">
+        <view class="skeleton-block skeleton-radius-sm skeleton-feed-title"></view>
+      </view>
+
+      <post-card-skeleton count="{{5}}" show-media="{{true}}" />
+    </view>
+  </block>
+
+  <view wx:elif="{{listLoad.phase === 'initial'}}" class="initial-load-placeholder"></view>
+
+  <view wx:else class="content-ready">
+    <view class="home-header">
+      <view class="search-section">
+        <view class="user-greet" style="margin-top:{{statusBarHeight}}px;">
+          <text class="greet-text">校园生活</text>
+          <text class="sub-text">动态、事项与校园活动</text>
+        </view>
+        <view class="search-box g-search-box" bindtap="toSearch" hover-class="search-box--hover">
+          <view class="search-box__icon-wrap">
+            <ui-icon name="search" size="sm" />
+          </view>
+          <text class="search-box__placeholder g-search-box__placeholder">搜索动态、资料或活动</text>
+        </view>
+      </view>
+      <!-- 登录用户的个性化公共事项提醒；成功空集合时整个区域隐藏。 -->
+      <view class="exam-section" wx:if="{{homeReminderError || homeReminderList.length}}">
+        <view class="section-title">
+          <text>事项提醒</text>
+          <text class="more-link" bind:tap="goToPublicEventList">更多事项 ></text>
+        </view>
+        <view
+          wx:if="{{homeReminderError}}"
+          class="reminder-status reminder-status--error"
+          bindtap="onRetryHomeReminders"
+          aria-role="button"
+          aria-label="事项提醒加载失败，点击重试"
+        >
+          {{homeReminderLoading ? '正在重新加载…' : '提醒加载失败，点击重试'}}
+        </view>
+        <scroll-view wx:if="{{homeReminderList.length}}" scroll-x class="exam-scroll" enable-flex>
+          <view
+            class="exam-card reminder-theme--{{reminder.theme}}"
+            wx:for="{{homeReminderList}}"
+            wx:key="publicMatterId"
+            wx:for-item="reminder"
+            data-id="{{reminder.publicMatterId}}"
+            bind:tap="goToPublicEventDetail"
+            hover-class="exam-card--pressed"
+            aria-role="button"
+            aria-label="{{reminder.name}}，{{reminder.nodeName}}，{{reminder.dateTimeAriaLabel}}，{{reminder.countdownAriaLabel}}"
+          >
+            <view class="exam-card__top">
+              <text class="exam-name">{{reminder.name}}</text>
+            </view>
+            <view class="exam-node-pill">{{reminder.nodeName}}</view>
+            <view class="exam-card__bottom">
+              <view class="exam-countdown" aria-role="text" aria-label="{{reminder.countdownAriaLabel}}">
+                <block wx:if="{{reminder.countdownSoon}}">
+                  <text class="exam-countdown__soon">{{reminder.countdownValue}}</text>
+                </block>
+                <block wx:else>
+                  <text class="exam-countdown__prefix">还剩</text>
+                  <text class="exam-countdown__value">{{reminder.countdownValue}}</text>
+                  <text class="exam-countdown__unit">{{reminder.countdownUnit}}</text>
+                </block>
+              </view>
+              <view class="exam-schedule" aria-label="{{reminder.dateTimeAriaLabel}}">
+                <text class="exam-schedule__date">{{reminder.dateText}}</text>
+                <text class="exam-schedule__time">{{reminder.timeText}}</text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+      <!-- 快捷导航 -->
+      <view class="quick-nav">
+        <view class="nav-item" bindtap="goToMentorQa"><view class="nav-icon act"><ui-icon name="comment" size="xl" /></view><text>导师答疑</text></view>
+        <view class="nav-item" bindtap="goToActivityList">
+          <view class="nav-icon act">
+            <ui-icon name="calendar-event" size="xl" />
+          </view>
+          <text>校园活动</text>
+        </view>
+        <view class="nav-item" bindtap="goToPublicEventList">
+          <view class="nav-icon exam">
+            <ui-icon name="checklist" size="xl" />
+          </view>
+          <text>公共事项</text>
+        </view>
+      </view>
+    </view>
+    <!-- Feed 标题栏 + Tab 切换 -->
+    <view class="feed-header {{homeHeaderHidden ? 'home-header--hidden' : ''}}" style="top: {{statusBarHeight}}px;">
+      <!-- <view class="feed-tab active">全站动态</view> -->
+      <view class="feed-tab active">最新发布</view>
+      <view class="feed-tab-line"> </view>
+    </view>
+    <!-- 下拉刷新保留原列表，只给出轻量、非阻塞的进度反馈 -->
+    <view
+      class="refresh-indicator"
+      wx:if="{{listLoad.refreshing && posts.length}}"
+      aria-role="status"
+      aria-label="正在刷新最新内容"
+    >
+      <view class="state-spinner state-spinner--small"></view>
+      <text>正在刷新最新内容</text>
+    </view>
+
+    <block wx:if="{{listLoad.initialError && !posts.length}}">
+      <load-state
+        mode="{{listLoad.refreshing ? 'loading' : 'error'}}"
+        title="{{listLoad.refreshing ? '正在重新加载' : '暂时无法加载'}}"
+        description="{{listLoad.refreshing ? '' : '网络可能暂时不可用，请稍后再试'}}"
+        action-text="{{listLoad.refreshing ? '' : '重新加载'}}"
+        fill-viewport
+        viewport-offset="740"
+        bind:action="onRetryInitialLoad"
+      />
+    </block>
+    <block wx:elif="{{posts.length}}">
+      <!-- 正常列表 -->
+      <block wx:for="{{posts}}" wx:key="id" wx:for-item="post">
+        <post-card
+          post="{{post}}"
+          bind:comment="onOpenComment"
+          bind:view="onPostView"
+          bind:share="onOpenShare"
+          bind:more="onPostCardMore"
+        />
+        <!-- 活动插片
+    <view class="activity-section" wx:if="{{index === 2}}">
+      <view class="section-header">
+        <text class="section-title-text">🎉 校园热门活动</text>
+        <view class="section-more">
+          <text>查看全部</text>
+          <ui-icon name="chevron-right" size="sm" />
+        </view>
+      </view>
+      <scroll-view
+        scroll-x
+        class="activity-scroll"
+        enable-flex
+      >
+        <view
+          class="activity-card"
+          wx:for="{{activities}}"
+          wx:key="id"
+          wx:for-item="act"
+        >
+          <image
+            src="{{act.poster}}"
+            mode="aspectFill"
+            class="act-poster" />
+          <view class="act-info">
+            <text class="act-name">{{act.title}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view> -->
+      </block>
+
+      <!-- 分页加载使用列表内追加骨架，避免和首屏骨架割裂 -->
+      <post-card-skeleton wx:if="{{listLoad.loadingMore}}" count="{{2}}" show-media="{{false}}" />
+
+      <!-- 分页状态：失败重试、到底、提示分别呈现，不再只依赖 Toast -->
+      <view class="list-footer">
+        <load-state
+          wx:if="{{listLoad.loadMoreError}}"
+          mode="error"
+          variant="inline"
+          title="加载失败"
+          action-text="点击重试"
+          bind:action="onRetryLoadMore"
+        />
+
+        <view class="footer-end" wx:elif="{{!listLoad.hasMore}}">
+          <view class="footer-end__line"></view>
+          <text class="footer-text">已经看到全部内容了</text>
+          <view class="footer-end__line"></view>
+        </view>
+
+        <text class="footer-text" wx:else>继续上滑，查看更多</text>
+      </view>
+    </block>
+    <block wx:else>
+      <!-- 请求成功但没有内容：区别于加载失败 -->
+      <load-state
+        mode="empty"
+        title="还没有新动态"
+        description="分享一点校园见闻，或稍后回来看看"
+        action-text="发布动态"
+        bind:action="onPublishPost"
+      />
+    </block>
+  </view>
+</view>
+<page-container
+  show="{{showPopup}}"
+  position="bottom"
+  round
+  overlay="{{false}}"
+  close-on-slide-down="{{false}}"
+  z-index="999"
+  bind:leave="onPopupLeave"
+>
+  <!-- 评论区弹窗 -->
+  <comment-panel
+    wx:if="{{popupType==='comment'}}"
+    mode="sheet"
+    target-id="{{commentTargetId}}"
+    target-type="{{commentTargetType}}"
+    total-count="{{commentTotalCount}}"
+    visible="{{showPopup && popupType === 'comment'}}"
+    bind:close="onCommentClose"
+    bind:countchange="onCommentCountChange"
+    bind:report="onCommentReport"
+  />
+  <!-- post发布弹窗 -->
+  <post-edit-panel wx:elif="{{popupType==='post-edit'}}" busy="{{postSubmitting}}" bind:submit="onPostSubmit" bind:close="onPostEditClose" />
+  <!-- share弹窗 -->
+  <share-panel
+    wx:elif="{{popupType==='share'}}"
+    share-image-path="{{currentShareImage}}"
+    status="{{shareStatus}}"
+    bind:retry="onRetryShare"
+    bind:previewerror="onSharePreviewError"
+    bind:saved="onPosterSaved"
+    bind:close="onShareClose"
+  />
+  <!-- report弹窗 -->
+  <report-panel
+    wx:elif="{{popupType === 'report'}}"
+    target-type="{{reportTargetType}}"
+    target-id="{{reportTargetId}}"
+    bind:close="onCloseReport"
+  />
+</page-container>
+<!-- FAB + 展开菜单 -->
+<!-- fab-wrap 只做逻辑容器，不参与动画，避免 fixed 子元素不撑高父容器的问题 -->
+<view class="fab-wrap" wx:if="{{listLoad.phase !== 'initial'}}">
+  <!-- 展开菜单遮罩 -->
+  <view class="fab-mask {{fabOpen ? 'fab-mask--show' : ''}}" catchtap="onCloseFab" catch:touchmove="noop" />
+  <!-- 展开的选项 -->
+  <view class="fab-menu {{fabOpen ? 'fab-menu--show' : ''}}" style="bottom:{{fabMenuBottom}}px;">
+    <view class="fab-menu-item" wx:if="{{canPublishActivity}}" catchtap="onPublishActivity">
+      <view class="fab-menu-item__icon-wrap fab-menu-item__icon-wrap--orange">
+        <text class="fab-menu-item__icon">🎉</text>
+      </view>
+      <text class="fab-menu-item__label">发布活动</text>
+    </view>
+    <view class="fab-menu-item" catchtap="onPublishPost">
+      <view class="fab-menu-item__icon-wrap fab-menu-item__icon-wrap--blue">
+        <text class="fab-menu-item__icon">✏️</text>
+      </view>
+      <text class="fab-menu-item__label">发帖子</text>
+    </view>
+  </view>
+  <!-- FAB 主按钮：动画直接写在按钮自身，不依赖父容器高度 -->
+  <view
+    class="fab {{fabOpen ? 'fab--open' : ''}} {{tabBarHidden ? 'fab--hidden' : ''}}"
+    catchtap="onTapFab"
+    style="bottom:{{fabBottomDock}}px;"
+  >
+    <text class="fab__icon">{{fabOpen ? '✕' : '+'}}</text>
+  </view>
+</view>
+
+<in-app-banner />
+
+<canvas type="2d" id="posterCanvas" style="position: fixed; left: -9999px; top: -9999px"></canvas>

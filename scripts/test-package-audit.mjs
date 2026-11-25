@@ -45,7 +45,7 @@ for (const statement of [
   assert.ok(result.messages.some((message) => message.includes('发布配置已排除的模块')));
 }
 const resource = auditWithAddition(
-  'pages/index/index.wxml',
+  'pages/campus/campus.wxml',
   '\n<image src="/images/icons/exam/cte.svg" />\n',
 );
 assert.equal(resource.exitCode, 1, 'excluded resources must fail');

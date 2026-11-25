@@ -1,0 +1,12 @@
+<view wx:if="{{fixed}}" style="height: {{statusBarHeight + rowHeight}}px;" aria-hidden="true" />
+<view
+  class="page-navigation {{fixed ? 'page-navigation--fixed' : ''}} {{surface === 'brand' ? 'page-navigation--brand' : (surface === 'page' ? 'page-navigation--page' : '')}}"
+  style="padding-top: {{statusBarHeight}}px; {{backgroundColor ? 'background-color:' + backgroundColor : ''}}"
+>
+  <view class="page-navigation__row" style="height: {{rowHeight}}px;">
+    <back-button variant="nav" auto-back="{{autoBack}}" bind:back="onBack" />
+    <view class="page-navigation__title" style="left: {{titleInset}}px; right: {{titleInset}}px;">
+      <text>{{title}}</text>
+    </view>
+  </view>
+</view>

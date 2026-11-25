@@ -17,7 +17,7 @@
     mode="{{listLoad.refreshing ? 'loading' : 'error'}}"
     title="{{listLoad.refreshing ? '正在重新加载' : '暂时无法加载'}}"
     description="{{listLoad.refreshing ? '' : profileError}}"
-    action-text="{{listLoad.refreshing ? '' : '重新加载'}}"
+    action-text="{{listLoad.refreshing ? '' : (userInfo.userId ? '重新加载' : '微信登录')}}"
     fill-viewport
     viewport-offset="112"
     bind:action="retryInitial"
@@ -30,8 +30,26 @@
       active-tab="{{activeTab}}"
       status-bar-height="{{statusBarHeight}}"
       bind:switchtab="onSwitchTab"
-    />
-
+    >
+      <mentor-certification slot="profile-badges" wx:if="{{userInfo.userId}}" user-id="{{userInfo.userId}}" compact />
+      <view slot="profile-footer" class="function-center">
+        <view class="function-center__grid">
+          <navigator
+            wx:for="{{functionEntries}}"
+            wx:key="key"
+            class="function-entry"
+            url="{{item.url}}"
+            hover-class="function-entry--pressed"
+            aria-label="{{item.label}}"
+          >
+            <view class="function-entry__icon" aria-hidden="true">
+              <ui-icon name="{{item.icon}}" size="md" />
+            </view>
+            <text class="function-entry__label">{{item.label}}</text>
+          </navigator>
+        </view>
+      </view>
+    </user-profile>
     <!-- likes tab 首次加载：只加载列表区域，不重置 user-profile -->
     <post-card-skeleton
       wx:if="{{activeTab === 'likes' && likesLoading}}"
@@ -91,9 +109,9 @@
     <!-- 没有更多 -->
     <view
       wx:if="{{!listLoad.loadingMore && !listLoad.loadMoreError && !listLoad.hasMore && posts.length > 0}}"
-      class="list-footer"
+      class="g-list-footer"
     >
-      <text class="footer-text">— 已经到底啦 —</text>
+      <text class="g-list-footer__text">没有更多了</text>
     </view>
   </block>
 </view>
@@ -125,6 +143,7 @@
     status="{{shareStatus}}"
     bind:retry="onRetryShare"
     bind:previewerror="onSharePreviewError"
+    bind:saved="onPosterSaved"
     bind:close="onShareClose"
   />
 

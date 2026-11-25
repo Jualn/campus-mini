@@ -1,0 +1,131 @@
+<view class="page page--{{postType}}">
+  <view wx:if="{{enabled && postType === 'MENTOR_QA'}}" class="qa-actions">
+    <button class="qa-ask" bindtap="publish" hover-class="qa-pressed">＋ 我要提问</button>
+    <navigator class="qa-records" url="/subpkg_community/pages/my-community/list?postType=MENTOR_QA" hover-class="qa-pressed">
+      我的提问与回答<ui-icon name="chevron-right" size="sm" />
+    </navigator>
+  </view>
+
+  <view wx:if="{{postType !== 'MENTOR_QA'}}" class="hero">
+    <view class="hero__title">{{pageTitle}}</view>
+    <view class="hero__description">{{pageDescription}}</view>
+    <view wx:if="{{enabled}}" class="hero__actions">
+      <button class="publish-button" bindtap="publish" hover-class="publish-button--hover">
+        <text class="publish-button__plus" aria-hidden="true">+</text>
+        <text>发布动态</text>
+      </button>
+      <navigator
+        class="record-entry"
+        url="/subpkg_community/pages/my-community/list?postType={{postType}}"
+        hover-class="record-entry--hover"
+      >
+        <view class="record-entry__copy">
+          <view class="record-entry__title">我的社区记录</view>
+          <view class="record-entry__description">查看公开状态与历史内容</view>
+        </view>
+        <ui-icon name="chevron-right" size="sm" />
+      </navigator>
+    </view>
+  </view>
+
+  <load-state
+    wx:if="{{!enabled}}"
+    mode="empty"
+    variant="section"
+    title="{{pageTitle}}暂未开放"
+    description="{{postType === 'MENTOR_QA' ? '' : '当前业务入口正在等待接口与资格服务验收，请稍后再来。'}}"
+  />
+
+  <block wx:else>
+    <view wx:if="{{postType === 'MENTOR_QA'}}" class="qa-browse">
+      <filter-bar
+        filters="{{qaFilters}}"
+        bind:statechange="onAnswerStateChange"
+        bind:categorychange="onCategory"
+        bind:topicchange="onTopic"
+        bind:categorymore="loadCategories"
+        bind:topicmore="loadTopics"
+      />
+    </view>
+
+    <view wx:if="{{postType !== 'MENTOR_QA'}}" class="list-heading">
+      <view class="list-heading__copy">
+        <view class="list-heading__title">{{listTitle}}</view>
+        <view class="list-heading__count">{{posts.length ? '已加载 ' + posts.length + ' 条' : '按当前条件展示'}}</view>
+      </view>
+      <button class="heading-action" bindtap="refresh" disabled="{{loading}}" loading="{{loading && posts.length}}">
+        {{loading && posts.length ? '更新中' : '刷新'}}
+      </button>
+    </view>
+
+    <view wx:if="{{loading && !posts.length && postType === 'MENTOR_QA'}}" class="question-list" aria-label="正在加载答疑">
+      <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="question-row">
+        <view class="skeleton-block skeleton-pill question-skeleton-state" />
+        <view class="skeleton-block question-skeleton-title" />
+        <view class="skeleton-block question-skeleton-meta" />
+      </view>
+    </view>
+    <block wx:elif="{{loading && !posts.length}}">
+      <post-card-skeleton class="skeleton-card" count="{{1}}" media-mode="always" show-third-line />
+      <post-card-skeleton class="skeleton-card" count="{{1}}" media-mode="none" />
+    </block>
+    <load-state
+      wx:elif="{{error && !posts.length}}"
+      mode="error"
+      variant="section"
+      title="内容暂时加载失败"
+      description="{{error}}"
+      action-text="{{failedReset ? '重新加载' : '重试加载更多'}}"
+      bind:action="retry"
+    />
+    <load-state
+      wx:elif="{{!posts.length && !hasMore}}"
+      mode="empty"
+      variant="section"
+      title="{{topicId || categoryId || answerState !== 'ALL' ? '没有符合条件的内容' : (postType === 'MENTOR_QA' ? '还没有答疑问题' : '还没有社区动态')}}"
+      description="{{topicId || categoryId || answerState !== 'ALL' ? '试试调整回答状态、分类或话题。' : (postType === 'MENTOR_QA' ? '' : '发布第一条动态，和校友分享校园生活。')}}"
+    />
+
+    <view wx:if="{{posts.length && postType === 'MENTOR_QA'}}" class="question-list">
+      <view wx:for="{{posts}}" wx:key="id" class="question-row" data-id="{{item.id}}" bindtap="open" hover-class="qa-pressed" aria-role="button">
+        <view class="question-row__context">
+          <text class="question-state question-state--{{item.qaSummary.answerState}}">{{item.qaSummary.answerState === 'ANSWERED' ? item.qaSummary.publicAnswerCount + ' 条正式回答' : item.qaStateLabel}}</text>
+          <text wx:if="{{item.category && !categoryId}}" class="question-category">{{item.category.name}}</text>
+        </view>
+        <view class="question-title">{{item.displayTitle || item.content}}</view>
+        <view wx:if="{{item.displayTitle && item.content}}" class="question-preview">{{item.content}}</view>
+        <view class="question-meta">
+          <text wx:if="{{item.nickname}}" class="question-author">{{item.nickname}}</text>
+          <text wx:if="{{item.createdAt}}">{{item.createdAt}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{posts.length && postType !== 'MENTOR_QA'}}" class="post-list">
+      <post-card
+        wx:for="{{posts}}"
+        wx:key="id"
+        class="post-list__item"
+        post="{{item}}"
+        data-id="{{item.id}}"
+        bind:tapcard="open"
+        bind:comment="open"
+        bind:more="open"
+      />
+    </view>
+
+    <load-state
+      wx:if="{{error && posts.length}}"
+      mode="error"
+      variant="inline"
+      description="{{error}}"
+      action-text="{{failedReset ? '重新加载' : '重试'}}"
+      bind:action="retry"
+    />
+    <view wx:if="{{loading && posts.length}}" class="list-status"
+      >{{failedReset ? '正在刷新内容…' : '正在加载更多…'}}</view
+    >
+    <button wx:if="{{hasMore && !loading && !error}}" class="more-button" bindtap="more">加载更多</button>
+    <view wx:if="{{postType !== 'MENTOR_QA' && !hasMore && posts.length && !loading && !error}}" class="list-end"><text>已显示全部内容</text></view>
+  </block>
+</view>

@@ -20,7 +20,7 @@
       <view class="cp-sheet__header" bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
         catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}">
         <view class="cp-sheet__title-wrap">
-        <text class="cp-sheet__title">评论</text>
+        <text class="cp-sheet__title">{{postType === 'MENTOR_QA' ? '导师回答与追问' : '评论'}}</text>
         <text class="cp-sheet__count" wx:if="{{currentTotalCount > 0}}">{{currentTotalCount}}</text>
       </view>
         <view class="cp-sheet__close" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
@@ -47,20 +47,24 @@
           </block>
           <!-- 评论列表 -->
           <block wx:if="{{!firstLoading}}">
-            <block wx:if="{{commentList.length === 0}}">
+            <view wx:if="{{contextNotice || commentsError}}" class="cp-status">
+              <text wx:if="{{contextNotice}}">{{contextNotice}}</text>
+              <button wx:if="{{commentsError}}" class="cp-status__action" bindtap="retryComments">{{commentsError}}</button>
+            </view>
+            <block wx:if="{{commentList.length === 0 && !commentsError && !hasMoreComments}}">
               <view class="cp-empty">
                 <image class="cp-empty__icon" src="/assets/icons/common/post.svg" mode="aspectFit"/>
-                <text class="cp-empty__text">暂无评论，来说点什么吧</text>
+                <text class="cp-empty__text">{{postType === 'MENTOR_QA' ? '暂无已公开导师回答' : '暂无评论，来说点什么吧'}}</text>
               </view>
             </block>
             <block wx:else>
-              <view wx:for="{{commentList}}" wx:key="commentId" wx:for-item="comment" class="cp-comment">
-                <template is="commentItem" data="{{comment, mode}}" />
+              <view wx:for="{{commentList}}" wx:key="commentId" wx:for-item="comment" class="cp-comment {{focusCommentId === comment.commentId ? 'cp-highlight' : ''}}">
+                <template is="commentItem" data="{{comment, mode, postType, focusCommentId, questionAuthorId, failedAvatars}}" />
               </view>
               <!-- 加载更多 -->
-              <view class="cp-loadmore" wx:if="{{hasMoreComments}}">
+              <view class="cp-loadmore" wx:if="{{hasMoreComments && !commentsError}}">
                 <view class="cp-loadmore__btn" bindtap="loadMoreComments" wx:if="{{!loadingMore}}">
-                  <text>查看更多评论</text>
+                  <text>查看更多{{postType === 'MENTOR_QA' ? '讨论' : '评论'}}</text>
                 </view>
                 <view class="cp-loadmore__loading" wx:else>
                   <view class="cp-spinner" />
@@ -68,7 +72,7 @@
                 </view>
               </view>
               <view class="cp-nomore" wx:if="{{!hasMoreComments && commentList.length > 0}}">
-                <text>共 {{currentTotalCount}} 条评论</text>
+                <text>共 {{currentTotalCount}} {{postType === 'MENTOR_QA' ? '条讨论' : '条评论'}}</text>
               </view>
             </block>
           </block>
@@ -76,13 +80,15 @@
       </scroll-view>
       <!-- 输入栏参与面板布局，键盘占位挤压上方评论列表。 -->
       <view class="cp-bottom-bar" style="padding-bottom: {{keyboardBottom}}px;">
+        <template is="composerStatus" data="{{submissionNotice, submittedCommentId, sending, questionConflict, questionVersion, questionNeedsReload, postType}}" />
         <!-- 回复 Banner -->
+        <view wx:if="{{writeFeedback && (postType !== 'MENTOR_QA' || replyTarget.commentId)}}" class="cp-write-feedback">{{writeFeedback}}</view>
         <view class="cp-reply-banner" wx:if="{{replyTarget.nickName}}">
           <text class="cp-reply-banner__text">
             <text class="cp-reply-banner_to_title">回复</text>
             <text class="cp-reply-banner__name">@{{replyTarget.nickName}}</text>
           </text>
-          <view class="cp-reply-banner__cancel" bindtap="cancelReply" aria-role="button" aria-label="取消回复"><ui-icon name="close" size="sm" /></view>
+          <view wx:if="{{!sending}}" class="cp-reply-banner__cancel" bindtap="cancelReply" aria-role="button" aria-label="取消回复"><ui-icon name="close" size="sm" /></view>
         </view>
         <!-- 输入栏 -->
         <view class="cp-inputbar {{keyboardOpen ? 'cp-inputbar--keyboard' : ''}}" catchtouchmove="noop">
@@ -91,17 +97,17 @@
             <text wx:else class="cp-avatar__char">{{selfAvatarChar}}</text>
           </view>
           <view class="cp-inputbar__wrap {{inputFocused ? 'cp-inputbar__wrap--focus' : ''}}">
-            <textarea class="cp-inputbar__input" value="{{inputValue}}"
-              placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : '说点什么…'}}"
+            <textarea disabled="{{!!writeFeedback || sending}}" class="cp-inputbar__input" value="{{inputValue}}"
+              placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : (postType === 'MENTOR_QA' ? '写下正式回答…' : '写下你的评论…')}}"
               placeholder-class="cp-inputbar__placeholder" maxlength="500" auto-height="{{false}}" cursor-spacing="0"
               style="height:{{inputHeightRpx}}rpx;" fixed disable-default-padding
               focus="{{inputAutoFocus}}" show-confirm-bar="{{false}}" adjust-position="{{false}}"
               bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur"
               bindlinechange="onInputLineChange" bindkeyboardheightchange="onInputKeyboardHeightChange" />
           </view>
-          <view class="cp-inputbar__send {{canSend ? '' : 'cp-inputbar__send--disabled'}}" bindtap="onSend" aria-role="button" aria-label="发送评论" aria-disabled="{{!canSend}}">
-            <ui-icon name="send" size="lg" />
-          </view>
+          <button class="cp-submit" bindtap="onSend" disabled="{{sending || !!writeFeedback || (!canSend && (!previewImage || postType === 'MENTOR_QA'))}}">
+            {{sending ? '提交中…' : replyTarget.commentId ? '回复' : postType === 'MENTOR_QA' ? '提交回答' : '发送'}}
+          </button>
         </view>
       </view>
     </view>
@@ -111,11 +117,14 @@
   <block wx:if="{{mode === 'inline'}}">
     <view class="cp-inline">
       <!-- 标题栏 -->
-      <view class="cp-inline__header">
+      <view class="cp-inline__header discussion-heading">
         <text class="cp-inline__title">{{inlineTitle || '评论'}}</text>
-        <text class="cp-inline__count" wx:if="{{currentTotalCount > 0}}">{{currentTotalCount}}</text>
+        <text class="discussion-count">{{currentTotalCount}} {{postType === 'MENTOR_QA' ? '条讨论' : '条评论'}}</text>
       </view>
-      <!-- 评论列表 -->
+      <view wx:if="{{postType === 'MENTOR_QA' && canAnswer && !replyTarget.commentId && (mentorProfileLoading || mentorProfileError)}}" class="cp-answer-preparation">
+        <text wx:if="{{mentorProfileLoading}}">正在准备正式回答输入框…</text>
+        <button wx:else class="cp-status__action" bindtap="startWriting" disabled="{{sending}}">认证信息读取失败，点击重试</button>
+      </view>
       <view class="cp-list cp-list--inline">
         <!-- 初始加载骨架 -->
         <block wx:if="{{firstLoading}}">
@@ -129,19 +138,23 @@
           </view>
         </block>
         <block wx:if="{{!firstLoading}}">
-          <block wx:if="{{commentList.length === 0}}">
+          <view wx:if="{{contextNotice || commentsError}}" class="cp-status">
+            <text wx:if="{{contextNotice}}">{{contextNotice}}</text>
+            <button wx:if="{{commentsError}}" class="cp-status__action" bindtap="retryComments">{{commentsError}}</button>
+          </view>
+          <block wx:if="{{commentList.length === 0 && !commentsError && !hasMoreComments}}">
             <view class="cp-empty">
               <image class="cp-empty__icon" src="/assets/icons/common/post.svg" mode="aspectFit"/>
-              <text class="cp-empty__text">暂无评论，来说点什么吧</text>
+              <text class="cp-empty__text">{{postType === 'MENTOR_QA' ? '暂无已公开导师回答' : '暂无评论，来说点什么吧'}}</text>
             </view>
           </block>
           <block wx:else>
-            <view wx:for="{{commentList}}" wx:key="commentId" wx:for-item="comment" class="cp-comment">
-              <template is="commentItem" data="{{comment, mode}}" />
+            <view wx:for="{{commentList}}" wx:key="commentId" wx:for-item="comment" class="cp-comment {{focusCommentId === comment.commentId ? 'cp-highlight' : ''}}">
+              <template is="commentItem" data="{{comment, mode, postType, focusCommentId, questionAuthorId, failedAvatars}}" />
             </view>
-            <view class="cp-loadmore" wx:if="{{hasMoreComments}}">
+            <view class="cp-loadmore" wx:if="{{hasMoreComments && !commentsError}}">
               <view class="cp-loadmore__btn" bindtap="loadMoreComments" wx:if="{{!loadingMore}}">
-                <text>查看更多评论</text>
+                <text>查看更多{{postType === 'MENTOR_QA' ? '讨论' : '评论'}}</text>
               </view>
               <view class="cp-loadmore__loading" wx:else>
                 <view class="cp-spinner" />
@@ -149,13 +162,15 @@
               </view>
             </view>
             <view class="cp-nomore" wx:if="{{!hasMoreComments && commentList.length > 0}}">
-              <text>共 {{currentTotalCount}} 条评论</text>
+              <text>共 {{currentTotalCount}} {{postType === 'MENTOR_QA' ? '条讨论' : '条评论'}}</text>
             </view>
           </block>
         </block>
       </view>
       <view class="cp-inputbar-spacer" style="height:{{composerHeight + keyboardBottom}}px;" aria-hidden="true" />
-      <view class="cp-bottom-bar cp-bottom-bar--inline" style="bottom: {{keyboardBottom}}px;" catchtouchmove="noop">
+      <view wx:if="{{postType !== 'MENTOR_QA' || replyTarget.commentId || (canAnswer && mentorName)}}"
+        class="cp-bottom-bar cp-bottom-bar--inline" style="bottom: {{keyboardBottom}}px;" catchtouchmove="noop">
+        <template is="composerStatus" data="{{submissionNotice, submittedCommentId, sending, questionConflict: questionConflict && !replyTarget.commentId, questionVersion, questionNeedsReload, postType}}" />
         <!-- 图片预览 -->
         <view class="cp-imgpreview" wx:if="{{previewImage}}">
           <view class="cp-imgpreview__item">
@@ -164,37 +179,37 @@
           </view>
         </view>
         <!-- Inline 回复 Banner -->
-        <view class="cp-reply-banner" wx:if="{{replyTarget.nickName}}">
+        <view wx:if="{{writeFeedback && (postType !== 'MENTOR_QA' || replyTarget.commentId)}}" class="cp-write-feedback">{{writeFeedback}}</view>
+        <view class="cp-reply-banner" wx:if="{{replyTarget.commentId}}">
           <text class="cp-reply-banner__text">
             <text class="cp-reply-banner_to_title">回复</text>
             <text class="cp-reply-banner__name">@{{replyTarget.nickName}}</text>
           </text>
-          <view class="cp-reply-banner__cancel" bindtap="cancelReply" aria-role="button" aria-label="取消回复"><ui-icon name="close" size="sm" /></view>
+          <view wx:if="{{!sending}}" class="cp-reply-banner__cancel" bindtap="cancelReply" aria-role="button" aria-label="取消回复"><ui-icon name="close" size="sm" /></view>
         </view>
         <!-- Inline 输入栏（固定底部） -->
         <view class="cp-inputbar {{keyboardOpen ? 'cp-inputbar--keyboard' : ''}}">
-          <view class="cp-inputbar__avatar cp-avatar cp-avatar--sm" style="background:{{selfAvatarBg}}">
-            <image wx:if="{{selfAvatarUrl}}" class="cp-avatar__img" src="{{selfAvatarUrl}}" mode="aspectFill" />
-            <text wx:else class="cp-avatar__char">{{selfAvatarChar}}</text>
+          <view class="cp-inputbar__avatar cp-avatar cp-avatar--sm" style="background:{{replyAuthor ? replyAuthor.avatarBg : postType === 'MENTOR_QA' && !replyTarget.commentId ? mentorAvatarBg : selfAvatarBg}}">
+            <image wx:if="{{(replyAuthor ? replyAuthor.avatarUrl : selfAvatarUrl) && !failedAvatars[replyAuthor ? replyAuthor.avatarUrl : selfAvatarUrl]}}" class="cp-avatar__img" src="{{replyAuthor ? replyAuthor.avatarUrl : selfAvatarUrl}}" binderror="onAvatarError" data-url="{{replyAuthor ? replyAuthor.avatarUrl : selfAvatarUrl}}" mode="aspectFill" />
+            <text wx:else class="cp-avatar__char">{{replyAuthor ? replyAuthor.avatarChar : postType === 'MENTOR_QA' && !replyTarget.commentId ? mentorAvatarChar : selfAvatarChar}}</text>
           </view>
           <view class="cp-inputbar__wrap {{inputFocused ? 'cp-inputbar__wrap--focus' : ''}}">
-            <textarea class="cp-inputbar__input" value="{{inputValue}}"
-              placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : '说点什么…'}}"
+            <textarea disabled="{{!!writeFeedback || sending}}" class="cp-inputbar__input" value="{{inputValue}}"
+              placeholder="{{replyTarget.nickName ? '回复 @' + replyTarget.nickName + '…' : (postType === 'MENTOR_QA' ? '写下正式回答…' : '写下你的评论…')}}"
               placeholder-class="cp-inputbar__placeholder" maxlength="500" auto-height="{{false}}" cursor-spacing="0"
               style="height:{{inputHeightRpx}}rpx;" fixed disable-default-padding
               focus="{{inputAutoFocus}}" show-confirm-bar="{{false}}" adjust-position="{{false}}"
               bindinput="onInputChange" bindfocus="onInputFocus" bindblur="onInputBlur"
               bindlinechange="onInputLineChange" bindkeyboardheightchange="onInputKeyboardHeightChange" />
             <!-- 配图按钮（一级评论可用，回复时禁用） -->
-            <view class="cp-inputbar__imgbtn {{replyTarget.nickName ? 'cp-inputbar__imgbtn--disabled' : ''}}"
+            <view wx:if="{{!writeFeedback && !replyTarget.commentId}}" class="cp-inputbar__imgbtn {{replyTarget.nickName ? 'cp-inputbar__imgbtn--disabled' : ''}}"
               bindtap="onChooseImage" aria-role="button" aria-label="添加图片">
               <ui-icon name="image-add" size="lg" />
             </view>
           </view>
-          <view class="cp-inputbar__send {{canSend || previewImage ? '' : 'cp-inputbar__send--disabled'}}"
-            bindtap="onSend" aria-role="button" aria-label="发送评论" aria-disabled="{{!canSend && !previewImage}}">
-            <ui-icon name="send" size="lg" />
-          </view>
+          <button class="cp-submit" bindtap="onSend" disabled="{{sending || !!writeFeedback || (!canSend && (!previewImage || postType === 'MENTOR_QA'))}}">
+            {{sending ? '提交中…' : replyTarget.commentId ? '回复' : postType === 'MENTOR_QA' ? '提交回答' : '发送'}}
+          </button>
         </view>
       </view>
     </view>
@@ -203,29 +218,36 @@
 </view>
 <!-- =================== 一级评论模板 =================== -->
 <template name="commentItem">
+  <view wx:if="{{comment.placeholder}}" class="cp-placeholder">{{comment.threadState === 'AUTHOR_DELETED' ? '原评论已删除' : '原评论已隐藏'}}</view>
   <view class="cp-comment__body">
     <!-- 头像 -->
-    <view class="cp-avatar cp-avatar--sm" bind:tap="goToUser" data-user-id="{{comment.userId}}"
+    <view wx:if="{{!comment.placeholder}}" class="cp-avatar cp-avatar--sm discussion-avatar" bind:tap="goToUser" data-user-id="{{comment.userId}}" data-kind="{{comment.kind}}"
       style="background:{{comment._avatarBg}}">
-      <image wx:if="{{comment.avatarUrl}}" class="cp-avatar__img" src="{{comment.avatarUrl}}" mode="aspectFill" />
+      <image wx:if="{{comment.avatarUrl && !failedAvatars[comment.avatarUrl]}}" class="cp-avatar__img" src="{{comment.avatarUrl}}" binderror="onAvatarError" data-url="{{comment.avatarUrl}}" mode="aspectFill" />
       <text wx:else class="cp-avatar__char">{{comment._avatarChar}}</text>
     </view>
     <!-- 主体 -->
     <view class="cp-comment__main">
-      <view class="cp-comment__header cp-author">
-        <text class="cp-comment__name">{{comment.nickName}}</text>
-        <view class="cp-author__badge" wx:if="{{comment.isPlatformOperator === true}}">
+      <view wx:if="{{!comment.placeholder}}" class="cp-comment__header cp-author">
+        <text class="cp-comment__name">{{comment.mentorAnswer.profileAtAnswer.realName || comment.nickName}}</text>
+        <view wx:if="{{comment.mentorAnswer.currentCertification.state === 'VALID'}}" class="cp-author__badge">
+          <operator-badge kind="mentor" historical mentor="{{comment.mentorAnswer.profileAtAnswer}}" />
+        </view>
+        <view class="cp-author__badge" wx:if="{{postType !== 'MENTOR_QA' && comment.isPlatformOperator === true}}">
           <operator-badge />
         </view>
       </view>
-      <text class="cp-comment__text" user-select="true">{{comment.content}}</text>
+      <view wx:if="{{!comment.placeholder && comment.kind === 'MENTOR_ANSWER'}}" class="cp-mentor">
+        <text class="cp-mentor__label">导师正式回答</text>
+      </view>
+      <text wx:if="{{!comment.placeholder}}" class="cp-comment__text" user-select="true">{{comment.content}}</text>
       <!-- 配图 -->
       <view class="cp-comment__img-wrap" wx:if="{{comment.imageUrl}}">
         <image class="cp-comment__img" src="{{comment.imageUrl}}" mode="widthFix" bindtap="onPreviewImage"
           data-url="{{comment.imageUrl}}" />
       </view>
       <!-- 操作栏 -->
-      <view class="cp-comment__footer">
+      <view wx:if="{{!comment.placeholder && !comment.localPreview}}" class="cp-comment__footer">
         <text class="cp-comment__time">{{comment.createTime}}</text>
         <view class="cp-action {{comment.isLiked ? 'cp-action--liked' : ''}}" bindtap="onCommentLike"
           data-comment-id="{{comment.commentId}}" data-is-liked="{{comment.isLiked}}" aria-role="button" aria-label="{{comment.isLiked ? '取消点赞' : '点赞'}}">
@@ -233,7 +255,7 @@
           <text class="cp-action__count" wx:if="{{comment.likeCount > 0}}">{{comment.likeCount}}</text>
         </view>
         <view class="cp-action" bindtap="onReplyTap" data-comment-id="{{comment.commentId}}"
-          data-nick-name="{{comment.nickName}}" data-user-id="{{comment.userId}}">
+          data-reply-to-comment-id="{{comment.commentId}}" data-nick-name="{{comment.nickName}}" data-user-id="{{comment.userId}}">
           <view class="cp-action-icon icon-slot"><ui-icon name="reply" size="md" /></view>
           <text class="cp-action__text">回复</text>
         </view>
@@ -249,7 +271,7 @@
         <!-- 收起状态：显示预览 + 展开按钮 -->
         <block wx:if="{{!comment.repliesExpanded}}">
           <view wx:for="{{comment.replyPreview}}" wx:key="replyId" wx:for-item="reply" class="cp-reply">
-            <template is="replyItem" data="{{reply, parentId: comment.commentId}}" />
+            <template is="replyItem" data="{{reply, parentId: comment.commentId, postType, focusCommentId, questionAuthorId, failedAvatars, answer: comment.mentorAnswer ? comment : null}}" />
           </view>
           <!-- 还有未展开的回复 -->
           <view class="cp-replies__expand" wx:if="{{comment.replyCount > comment.replyPreview.length}}"
@@ -261,7 +283,7 @@
         <!-- 展开状态：显示已加载回复 + 加载更多 -->
         <block wx:if="{{comment.repliesExpanded}}">
           <view wx:for="{{comment.replyList}}" wx:key="replyId" wx:for-item="reply" class="cp-reply">
-            <template is="replyItem" data="{{reply, parentId: comment.commentId}}" />
+            <template is="replyItem" data="{{reply, parentId: comment.commentId, postType, focusCommentId, questionAuthorId, failedAvatars, answer: comment.mentorAnswer ? comment : null}}" />
           </view>
           <!-- 还有更多 -->
           <view class="cp-replies__more" wx:if="{{comment.hasMoreReplies}}">
@@ -281,26 +303,34 @@
 </template>
 <!-- =================== 二级回复模板 =================== -->
 <template name="replyItem">
-  <view class="cp-reply__body">
-    <view class="cp-avatar cp-avatar--xs" bindtap="goToUser" data-user-id="{{reply.userId}}" style="background:{{reply._avatarBg}}">
-      <image wx:if="{{reply.avatarUrl}}" class="cp-avatar__img" src="{{reply.avatarUrl}}" mode="aspectFill" />
-      <text wx:else class="cp-avatar__char">{{reply._avatarChar}}</text>
+  <view class="cp-reply__body {{focusCommentId === reply.replyId ? 'cp-highlight' : ''}}">
+    <view class="cp-avatar cp-avatar--xs" bindtap="goToUser" data-user-id="{{reply.userId}}" style="background:{{answer && reply.userId === answer.userId ? answer._avatarBg : reply._avatarBg}}">
+      <block wx:if="{{answer && reply.userId === answer.userId}}">
+        <image wx:if="{{answer.avatarUrl && !failedAvatars[answer.avatarUrl]}}" class="cp-avatar__img" src="{{answer.avatarUrl}}" binderror="onAvatarError" data-url="{{answer.avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="cp-avatar__char">{{answer._avatarChar}}</text>
+      </block>
+      <block wx:else>
+        <image wx:if="{{reply.avatarUrl && !failedAvatars[reply.avatarUrl]}}" class="cp-avatar__img" src="{{reply.avatarUrl}}" binderror="onAvatarError" data-url="{{reply.avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="cp-avatar__char">{{reply._avatarChar}}</text>
+      </block>
     </view>
     <view class="cp-reply__main">
       <view class="cp-reply__header">
         <view class="cp-author">
-          <text class="cp-reply__name">{{reply.nickName}}</text>
-          <view class="cp-author__badge" wx:if="{{reply.isPlatformOperator === true}}">
+          <text class="cp-reply__name">{{answer && reply.userId === answer.userId ? answer.nickName : reply.nickName}}</text>
+          <text wx:if="{{answer && reply.userId === answer.userId}}" class="cp-role">答主</text>
+          <text wx:if="{{postType === 'MENTOR_QA' && questionAuthorId && reply.userId === questionAuthorId}}" class="cp-role cp-role--asker">提问人</text>
+          <view class="cp-author__badge" wx:if="{{postType !== 'MENTOR_QA' && reply.isPlatformOperator === true}}">
             <operator-badge />
           </view>
         </view>
-        <text class="cp-reply__to" wx:if="{{reply.replyToName}}">
+        <text class="cp-reply__to" wx:if="{{reply.replyToName || (answer && reply.replyToUserId === answer.userId)}}">
           <text class="cp-reply_to_title">回复</text>
-          <text class="cp-reply__to-name">@{{reply.replyToName}}</text>
+          <text class="cp-reply__to-name">@{{answer && reply.replyToUserId === answer.userId ? answer.nickName : reply.replyToName}}</text>
         </text>
       </view>
       <text class="cp-reply__text" user-select="true">{{reply.content}}</text>
-      <view class="cp-reply__footer">
+      <view wx:if="{{!reply.localPreview}}" class="cp-reply__footer">
         <text class="cp-reply__time">{{reply.createTime}}</text>
         <view class="cp-action cp-action--sm {{reply.isLiked ? 'cp-action--liked' : ''}}" bindtap="onReplyLike"
           data-comment-id="{{parentId}}" data-reply-id="{{reply.replyId}}" data-is-liked="{{reply.isLiked}}" aria-role="button" aria-label="{{reply.isLiked ? '取消点赞' : '点赞'}}">
@@ -308,7 +338,7 @@
           <text class="cp-action__count" wx:if="{{reply.likeCount > 0}}">{{reply.likeCount}}</text>
         </view>
         <view class="cp-action cp-action--sm" bindtap="onReplyTap" data-comment-id="{{parentId}}"
-          data-nick-name="{{reply.nickName}}" data-user-id="{{reply.userId}}">
+          data-reply-to-comment-id="{{reply.replyId}}" data-nick-name="{{answer && reply.userId === answer.userId ? answer.nickName : reply.nickName}}" data-user-id="{{reply.userId}}">
           <view class="cp-action-icon icon-slot"><ui-icon name="reply" size="md" /></view>
           <text class="cp-action__text">回复</text>
         </view>
@@ -318,6 +348,22 @@
           <view class="cp-more-icon icon-slot"><ui-icon name="more" size="md" /></view>
         </view>
       </view>
+    </view>
+  </view>
+</template>
+
+<template name="composerStatus">
+  <view wx:if="{{submissionNotice || questionConflict}}" class="cp-status cp-status--composer">
+    <view wx:if="{{submissionNotice}}" class="cp-status__row">
+      <text class="cp-status__message">{{submissionNotice}}</text>
+      <button class="cp-status__close" bindtap="dismissSubmission" aria-label="关闭提交提示"><ui-icon name="close" size="sm" /></button>
+    </view>
+    <view class="cp-status__links">
+      <button wx:if="{{questionConflict && questionNeedsReload}}" class="cp-status__action" bindtap="retryQuestion">重读最新问题</button>
+      <block wx:if="{{questionConflict && !questionNeedsReload}}">
+        <button class="cp-status__action" bindtap="readQuestion">查看最新问题</button>
+        <button class="cp-status__action" bindtap="acknowledgeQuestion" disabled="{{sending || !questionVersion}}">已核对，继续编辑</button>
+      </block>
     </view>
   </view>
 </template>

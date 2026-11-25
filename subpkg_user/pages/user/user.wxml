@@ -27,13 +27,12 @@
     <user-profile
       is-self="{{false}}"
       user-info="{{userInfo}}"
-      is-following="{{isFollowing}}"
-      active-tab="{{activeTab}}"
       status-bar-height="{{statusBarHeight}}"
       bind:back="onBack"
       bind:more="onMore"
-      bind:switchtab="onSwitchTab"
-    />
+    >
+      <mentor-certification slot="profile-badges" wx:if="{{userInfo.userId}}" user-id="{{userInfo.userId}}" compact />
+    </user-profile>
 
     <load-state wx:if="{{activeTab === 'posts' && postsError}}" mode="error" variant="section"
       title="动态暂时无法加载" description="{{postsError}}" action-text="重新加载" bind:action="retryInitial" />
@@ -56,7 +55,7 @@
       wx:else
       mode="empty"
       variant="section"
-      title="TA 还没有发布动态"
+      title="还没有发布动态"
     />
 
     <!-- 分页加载 -->
@@ -75,12 +74,19 @@
     <!-- 没有更多 -->
     <view
       wx:if="{{!listLoad.loadingMore && !listLoad.loadMoreError && !listLoad.hasMore && posts.length > 0}}"
-      class="list-footer"
+      class="g-list-footer"
     >
-      <text class="footer-text">— 已经到底啦 —</text>
+      <text class="g-list-footer__text">没有更多了</text>
     </view>
   </block>
 </view>
+
+<back-button
+  wx:if="{{(listLoad.phase === 'initial' && !listLoad.skeletonVisible) || (listLoad.phase !== 'initial' && (listLoad.initialError || showFloatingBack))}}"
+  variant="floating"
+  auto-back="{{false}}"
+  bind:back="onBack"
+/>
 
 <page-container
   show="{{showPopup}}"
@@ -109,6 +115,7 @@
     status="{{shareStatus}}"
     bind:retry="onRetryShare"
     bind:previewerror="onSharePreviewError"
+    bind:saved="onPosterSaved"
     bind:close="onShareClose"
   />
 

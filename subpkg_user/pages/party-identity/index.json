@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index",
+    "mentor-certification": "/components/mentor-certification/index"
+  }
+}

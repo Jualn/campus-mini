@@ -1,6 +1,6 @@
 # 管理后台扫码登录（小程序端）
 
-协议权威是 [Admin QR Login v2 协调文档](../../../contracts/docs/coordination/admin-qr-login.md)及其引用的 OpenAPI，本文只记录客户端责任和实施证据。
+协议权威是 [Admin QR Login v2 协调文档](../../../contracts/docs/coordination/admin-qr-login.md)及其引用的 OpenAPI，本文维护客户端责任与恢复边界。
 
 ## 入口与责任
 
@@ -14,18 +14,16 @@ scan 不自动 confirm。只有最新 scan 返回 SCANNED 且客户端期限尚�
 
 普通身份稳定后才 scan；订阅现有 Store 的 userInfo 身份变化，清除旧绑定及展示并重新 scan。Page unload 释放订阅和计时器、清空 scene；hide 只暂停展示计时，重新 show 用 scan 核对当前状态。迟到请求用代次与 subject 检查丢弃。scene 仅存在当前 Page 内存和 HTTP 请求体，不落 Storage、不进入请求日志。
 
+2026-10-17：同时订阅 Token 更换；同账号新会话也清除旧确认状态并重新 scan。绑定结果还记录会话快照，旧会话的迟到成功不能触发自动返回。RBAC 的客户端缺口和迁移验收见 [RBAC V1](rbac-v1.md)；不从旧 role 推导后台准入。按 [unified-v1-r6 交接](../../../contracts/.validation/unified-v1-final-handoff.md)，正式后台准入仅 ASSIGNMENT，由 confirm/consume 重验；手机端请求仍仅携带 sceneCode，普通用户会话独立。
+
 ## 认证与失败恢复
 
 共享 request 新增可选 `retryAuth: false`，默认行为保持既有认证恢复。该模式要求等待身份稳定期间凭证不变，并且 401 不自动恢复或重放请求；v2 使用此模式，Page 恢复普通认证后只重新 scan，要求用户再次确认。连续 401 只自动恢复一次，随后提供用户重试，避免循环认证。避免确认动作在新身份下自动继续执行。
 
 HttpError 保留解析后的 `retryAfterMs`（支持 Retry-After 秒数或 HTTP 日期），429 在冷却期限前禁止重新发起操作，冷却结束后允许用户重新 scan。无自动轮询或密集重试。网络中断/500 等不证明确认失败，页面禁用原操作并提供重新 scan，读取服务器最新状态后再决定是否可以确认。错误根据 `problem.type` 展示无权限、他人占用、非法 scene 和终态；invalid-state 等顺序冲突重新 scan，不直接重试原 mutation。
 
-## 验证与交付边界
+## 验证入口与待验
 
-2026-10-07 实施；本地验证命令：`pnpm typecheck`、修改文件的 ESLint、`node scripts/test-admin-qr-login.mjs`、`pnpm audit:packages`、`node docs/engineering/mini-program/scripts/check-docs.mjs`。
+[扫码回归](../../scripts/test-admin-qr-login.mjs)覆盖真实 Page → 分包 API → request，网络和微信为 Mock；检查一次 scene 解码、身份稳定、不自动确认、401 后重新 scan、429 冷却、未知结果恢复和账号/Token/生命周期隔离。它不证明实际微信码可达或服务端原子绑定。
 
-Node/VM 回归覆盖真实 Page → 分包 API → request，网络和微信平台为 Mock；覆盖合法/非法及一次 decode 的 scene、认证等待、不自动确认、重复点击、确认/拒绝、终态/期限、Problem Details、401 重新 scan、429 冷却、Unknown Outcome、身份变化和卸载后的迟到响应、日志隐藏、默认 legacy 401 恢复。它不证明微信编译、扫码跳转或真实服务端原子绑定。
-
-使用本机开发者工具附带的 wcc/wcsc 对新增页 WXML、页面 WXSS 及 app.wxss 做本地编译，均退出 0；这是文件编译证据，不是开发者工具完整项目编译或运行证据。
-
-微信开发者工具完整项目编译、冷启动/前后台切换、真实微信小程序码进入分包、同 AppID/环境的三端联调和真机验证仍待执行。发布顺序遵守 Contracts：先发布确认页，再由 Backend 验证目标环境可达性并启用 v2 小程序码。本次不执行远程预览、上传或发布。
+完整微信编译、冷启动/前后台、真实小程序码进入分包、同 AppID/环境三端联调和设备仍需验证。发布顺序遵守 Contract：先发布确认页，再由 Backend 验证目标可达性并启用 v2 小程序码。单文件模板编译不是整包运行证据；远程预览、上传和发布按授权流程执行。

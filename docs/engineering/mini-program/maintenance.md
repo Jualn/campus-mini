@@ -2,9 +2,9 @@
 
 ## Ownership
 
-The installed root AGENTS.md and this engineering directory are the maintained project baseline. The mini-program-engineering-final directory is the finalized distribution snapshot, not a second live authority. Change the installed documents for future project work; refresh the distribution deliberately when a new reusable package is needed. Do not resolve project facts by reading the old snapshot.
+The installed repository root AGENTS.md and this engineering directory are the maintained project baseline. A downloaded archive or copied distribution snapshot is an installation artifact, not a second live authority. Edit the installed documents; publish a new snapshot only when needed. Do not resolve current project facts from an old archive.
 
-[AGENTS entry](../../../AGENTS.md) routes to the [Profile](project-profile.md), then the [module index](README.md). Policies belong to modules; facts/decisions belong to Profile; enforcement responsibilities belong to the [matrix](enforcement-matrix.md). No business source tree, npm installation, global skill installation, or new architecture layer is required to install these documents.
+[AGENTS entry](../../../AGENTS.md) routes through the [module index](README.md) to relevant [Profile](project-profile.md) facts and modules. Policies belong to modules; facts/decisions belong to Profile; enforcement responsibilities belong to the [matrix](enforcement-matrix.md). No business source tree, npm installation, global skill installation, or new architecture layer is required to install these documents.
 
 ## Check
 
@@ -13,11 +13,12 @@ From the repository root, run:
 ```text
 node docs/engineering/mini-program/scripts/check-docs.mjs
 node docs/engineering/mini-program/scripts/check-docs.mjs --require-active
+node docs/engineering/mini-program/scripts/check-docs.mjs --allow-external-unchecked
 ```
 
 The ordinary check permits a TEMPLATE Profile and reports unresolved fact count. The second command fails unless Profile status is ACTIVE. It is intended for readiness verification after the required facts have been established, not as a release permission. No CI integration is claimed by this installation; an authorized future workflow can invoke the same standalone command.
 
-The checker validates required files, index coverage, local inline Markdown links/heading anchors, duplicate Profile IDs, allowed fact states, evidence references and dates, and ACTIVE critical rows. It follows linked repository Markdown from the engineering/AGENTS/root README entries, including project notes and local component/resource documentation. Use inline Markdown links for owned paths; code-formatted example paths are not declarations. Remote links and evidence content are not automatically verified. The check never reads business source, executes Profile commands or validates the application.
+The checker validates required files, index coverage, local inline Markdown links/heading anchors, duplicate Profile IDs, allowed fact states, evidence references and dates, and ACTIVE critical rows. It follows linked repository Markdown from the docs/engineering/AGENTS/root README entries, including project notes and local component/resource documentation. Every Markdown file under `docs/` must be reachable from these entries; unindexed files fail instead of silently escaping validation. Use inline Markdown links for owned paths; code-formatted example paths are not declarations. Repository-internal links are checked normally. Out-of-repository links remain strict by default; an independently installed workspace may explicitly use `--allow-external-unchecked` to report them as unresolved instead of failing. This option is **not** suitable for claiming sibling Contracts/evidence integrity. Remote URLs and evidence content are never automatically verified. The check never reads business source, executes Profile commands or validates the application.
 
 ## Profile activation
 
@@ -25,9 +26,28 @@ Keep table columns ID / Status / Value / Evidence. Keep stable row IDs. VERIFIED
 
 Verify critical runtime/source-root/base-library/contracts/validation/release facts against their designated authorities, then change the Profile status to ACTIVE and run the strict check. Optional facts can remain UNKNOWN until relevant; an unused capability can be VERIFIED as absent with evidence. Never invent versions, paths, commands, endpoint contracts or implemented CI gates to make the checker pass.
 
-## Review outcome
+## Durable documents and temporary artifacts
 
-The 2026-09-13 consolidation applied the five findings from the supplied review: facts-only Profile with explicit states; mechanical document integrity; declarative communication defaults with bounded native imperative/relations use; explicit typings/DevTools/CI tool version fields; authority by fact type. It also aligned the platform module's authority section, removed project-specific streaming assumptions, and clarified proportional validation and remote preview authorization. Existing 11-module structure and native runtime boundaries are retained.
+Maintain **one owning authority per fact**; do not keep a mirror that must be manually synchronized after every change:
+
+The [docs entry](../../README.md) routes to reusable Engineering, project-specific decisions and [retained inputs/evidence](../../operations/README.md). The [project index](../../project/README.md) groups topics by user task. Preserve stable document paths when only navigation needs improvement; do not create a new hierarchy for each task. Component usage and asset provenance stay beside their owners. Retained historical evidence must state its revision/environment and cannot serve as a current implementation checklist. An old implementation Prompt is not a permanent rule.
+
+| Change | Authoritative owner | Durable document trigger |
+|---|---|---|
+| Local Page layout/style/implementation | Page/Component WXML, WXSS and source | None by default; accepted product flow/decision only if it changed |
+| Shared Component capabilities | Component source, public properties/events/slots/methods and maintained examples/tests | Only changed public semantics, constraints or intentionally documented usages |
+| Global UI tokens/theme | Current design-token/theme implementation and project UI policy | When a cross-Page design rule or verified project foundation changes |
+| Protocol/DTO/error semantics | Contracts authoritative source/generator | Contract change and consumer handoff; do not mirror schemas in project docs |
+| Executable project config/tool commands | Source config/scripts/lockfile | Update related Profile facts after verification, not feature-by-feature |
+| Reusable engineering policy | Owning Engineering module | Only when general rules change |
+
+**Task-scoped artifacts** such as exploratory notes, intermediate analysis, discarded design sketches, screenshots, debug output and test reports stay in task-specific scratch/artifact storage, outside authoritative source/docs where practical. Promote only deliberately accepted, durable decisions or retained deliverables. Clean up files created and owned by the task when appropriate; never delete user files, existing source or shared infrastructure as generic housekeeping. Generated code/build outputs follow the existing source/generator and commit policy, not a manually maintained duplicate.
+
+Permanent Page design files are not mandatory for routine edits. Record enduring user goals, exceptional interaction/state decisions and rationale only where future work needs them; do not duplicate every pixel of live WXML/WXSS. If implementation and accepted design disagree, verify whether code is defective or a decision changed before updating either. Do not write a new audit, summary, history or version file after every task. Git records history; a released baseline can be identified by a tag/commit or existing project version convention rather than per-module version numbers.
+
+## Workspace and evidence dependencies
+
+Paths within the repository are owned links and must resolve in all modes. Relative links into sibling Contracts or other repositories depend on workspace layout; normal checking fails a missing link rather than silently weakening VERIFIED evidence. Use `--allow-external-unchecked` **only** when installing/checking a standalone workspace lacking optional sibling repositories; record the resulting evidence gap. When consumers need Contracts, actually resolve a known accepted revision and perform the appropriate protocol/generation check. Link existence alone is neither Contract drift validation nor evidence-content verification.
 
 ## Agent discovery
 

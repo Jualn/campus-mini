@@ -1,7 +1,7 @@
 <!-- components/profile-feed-skeleton/index.wxml -->
 <view class="profile-feed-skeleton profile-feed-skeleton--{{type}}">
 
-  <!-- Banner：对齐 user-profile 的 420rpx 横幅 -->
+  <!-- Banner：对齐 user-profile -->
   <view class="banner-wrap">
     <view class="banner-img skeleton-block"></view>
 
@@ -11,9 +11,7 @@
       class="top-bar"
       style="padding-top: {{statusBarHeight}}px;"
     >
-      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" state="inverse" size="lg" />
-      </view>
+      <back-button variant="nav" inverse auto-back="{{false}}" bind:back="onBack" />
     </view>
   </view>
 
@@ -49,6 +47,15 @@
     <view class="profile-bio-skeleton profile-bio-skeleton--long skeleton-block skeleton-radius-sm"></view>
     <view class="profile-bio-skeleton profile-bio-skeleton--short skeleton-block skeleton-radius-sm"></view>
 
+  </view>
+
+  <view wx:if="{{type === 'me'}}" class="me-function-skeleton">
+    <view class="me-function-skeleton__grid">
+      <view wx:for="{{[0, 1, 2, 3, 4, 5]}}" wx:key="*this" class="me-function-skeleton__item">
+        <view class="me-function-skeleton__icon skeleton-block skeleton-radius-sm"></view>
+        <view class="me-function-skeleton__label skeleton-block skeleton-radius-sm"></view>
+      </view>
+    </view>
   </view>
 
   <!-- Tab：对齐 user-profile，目前只有动态 / 点赞两个 -->

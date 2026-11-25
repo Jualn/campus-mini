@@ -1,0 +1,244 @@
+@import "../../../styles/skeleton.wxss";
+
+page {
+  background: var(--color-bg-card);
+}
+
+.page {
+  box-sizing: border-box;
+  padding: 0 var(--page-padding);
+  padding-bottom: calc(var(--space-xl) + constant(safe-area-inset-bottom));
+  padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom));
+  color: var(--color-text-primary);
+}
+
+.toolbar,
+.search-box,
+.favorite-link,
+.section-bar,
+.section-picker,
+.archive-link,
+.inline-state {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar {
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.search-box {
+  flex: 1;
+  gap: 10rpx;
+  min-width: 0;
+  padding: 0 8rpx 0 20rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
+  color: var(--color-text-tertiary);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 80rpx;
+  color: var(--color-text-primary);
+  font-size: var(--font-base);
+}
+
+.search-placeholder {
+  color: var(--color-text-tertiary);
+}
+
+button::after {
+  border: 0;
+}
+
+.search-button,
+.clear-button,
+.text-button,
+.section-tab,
+.more-button {
+  margin: 0;
+  background: transparent;
+  font-size: var(--font-sm);
+}
+
+.search-button,
+.clear-button,
+.text-button {
+  flex: none;
+  padding: 0 9rpx;
+  line-height: 80rpx;
+}
+
+.search-button,
+.text-button,
+.favorite-link,
+.archive-link {
+  color: var(--article-accent);
+}
+
+.clear-button {
+  color: var(--color-text-secondary);
+}
+
+.favorite-link {
+  flex: none;
+  justify-content: center;
+  gap: 6rpx;
+  min-height: 80rpx;
+  padding: 0 12rpx;
+  border-radius: var(--radius-md);
+  background: var(--article-tint);
+  font-size: var(--font-sm);
+}
+
+.section-bar {
+  gap: 12rpx;
+  margin-top: var(--space-sm);
+}
+
+.section-bar picker,
+.section-scroll {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-tabs {
+  display: inline-flex;
+  gap: 18rpx;
+  white-space: nowrap;
+}
+
+.section-tab {
+  min-height: 80rpx;
+  max-width: 280rpx;
+  padding: 0 8rpx;
+  overflow: hidden;
+  border-bottom: 4rpx solid transparent;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  line-height: 76rpx;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-tab--active {
+  border-color: var(--article-accent);
+  color: var(--article-accent);
+  font-weight: var(--weight-semibold);
+}
+
+.section-picker {
+  box-sizing: border-box;
+  justify-content: space-between;
+  gap: 12rpx;
+  min-height: 80rpx;
+  padding: 0 18rpx;
+  border-radius: var(--radius-sm);
+  background: var(--article-tint);
+  color: var(--article-accent);
+  font-size: var(--font-base);
+}
+
+.section-picker__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-chevron {
+  flex: none;
+  width: 12rpx;
+  height: 12rpx;
+  border-right: 2rpx solid currentColor;
+  border-bottom: 2rpx solid currentColor;
+  transform: translateY(-3rpx) rotate(45deg);
+}
+
+.archive-link {
+  justify-content: flex-end;
+  gap: 6rpx;
+  min-height: 80rpx;
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: var(--font-sm);
+}
+
+.control--pressed {
+  opacity: 0.72;
+}
+
+.article-list {
+  margin-top: var(--space-sm);
+}
+
+.layout--news .article-list {
+  border-top: 1rpx solid var(--color-border-light);
+}
+
+.result-keyword,
+.list-status {
+  padding: var(--space-md) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  overflow-wrap: anywhere;
+}
+
+.list-status,
+.more-button {
+  text-align: center;
+}
+
+.inline-state {
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-top: var(--space-sm);
+  color: var(--color-danger);
+  font-size: var(--font-sm);
+}
+
+.inline-state-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.more-button {
+  width: 100%;
+  min-height: 80rpx;
+  color: var(--article-accent);
+}
+
+.article-skeleton {
+  display: flex;
+  gap: var(--space-md);
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.skeleton-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.skeleton-title {
+  width: 88%;
+  height: 36rpx;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 24rpx;
+  margin-top: 16rpx;
+}
+
+.skeleton-line--short {
+  width: 58%;
+}
+
+.skeleton-cover {
+  flex: none;
+  width: 164rpx;
+  height: 120rpx;
+}
