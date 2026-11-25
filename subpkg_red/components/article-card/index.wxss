@@ -1,0 +1,142 @@
+.card {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: row-reverse;
+  gap: 22rpx;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.card--pressed {
+  opacity: 0.76;
+}
+
+.card--favorite {
+  margin-bottom: var(--space-xs);
+  padding: 24rpx;
+  border: 1rpx solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+}
+
+.copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.category {
+  display: block;
+  margin-bottom: 8rpx;
+  color: var(--article-accent, var(--color-primary));
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.title,
+.summary {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 1.42;
+}
+
+.summary {
+  margin-top: 8rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-base);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.cover {
+  flex: none;
+  width: 174rpx;
+  height: 130rpx;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-page);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4rpx 14rpx;
+  margin-top: 14rpx;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  line-height: 1.45;
+}
+
+.publisher {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date {
+  flex: none;
+}
+
+.card--feature {
+  flex-direction: row;
+  align-items: center;
+}
+
+.card--lead {
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--article-tint, var(--color-bg-page));
+}
+
+.card--lead .cover {
+  display: block;
+  width: 100%;
+  height: 320rpx;
+  border-radius: 0;
+}
+
+.card--lead .copy {
+  padding: 24rpx;
+}
+
+.card--lead .title {
+  font-size: var(--font-xl);
+}
+
+.card--lead-text {
+  border-top: 4rpx solid var(--article-accent, var(--color-primary));
+}
+
+.card--resource {
+  align-items: center;
+  flex-direction: row;
+  margin-bottom: var(--space-sm);
+  padding: 22rpx 24rpx;
+  border: 1rpx solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.resource-arrow {
+  flex: none;
+  color: var(--article-accent, var(--color-primary));
+}
+
+@media (max-width: 340px) {
+  .cover {
+    width: 144rpx;
+    height: 112rpx;
+  }
+}

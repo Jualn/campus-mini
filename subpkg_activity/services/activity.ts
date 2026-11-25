@@ -115,9 +115,9 @@ function toDetail(raw: ActivityDetailDTO, subscribed: boolean): ActivityDetail {
     actions,
     hasParticipation: registrationMode !== 1 || actions.length > 0,
     deadlineSummary: card.statusLabel,
-    registrationLabel: card.statusLabel,
+    registrationLabel: raw.category === 'VOLUNTEERING' ? '活动预约' : '活动报名',
     platformRegistrationText: raw.platformRegistrationCount
-      ? `平台已提交 ${String(raw.platformRegistrationCount.submittedCount)} 份`
+      ? `平台有效报名 ${String(raw.platformRegistrationCount.submittedCount)} 份`
       : '',
     timeDescription: card.cardTimelineText ?? '',
     audienceSummary: raw.audienceSummary,

@@ -31,12 +31,12 @@ const requireItem = (raw: unknown): NotificationItem => {
 };
 
 export const listNotifications = async (query: NotificationListQuery = {}) => {
-  const page = (await api.notify.getStructuredList({
+  const page = (await api.notify.listNotifications({
     pageSize: 20,
     ...query,
   })) as Partial<NotificationListResponse> | null;
   if (
-    page?.representation !== 'structured' ||
+    !page ||
     !Array.isArray(page.items) ||
     typeof page.hasMore !== 'boolean' ||
     typeof page.headCursor !== 'string' ||
@@ -55,6 +55,11 @@ export const getNotification = async (id: string) => {
   if (item.id !== id) throw new Error('通知身份不匹配');
   return item;
 };
+
+export const deleteNotification = (id: string) => api.notify.deleteNotification(id);
+
+export const isNotificationUnavailable = (err: unknown) =>
+  isHttpError(err) && err.statusCode === 404;
 
 export const getSummary = async (afterCursor?: string) => {
   const result = (await api.notify.getSummary(afterCursor)) as Partial<NotificationSummary> | null;

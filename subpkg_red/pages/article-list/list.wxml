@@ -1,0 +1,70 @@
+<page-navigation title="{{scene.title}}" fixed surface="{{scene.brandNavigation ? 'brand' : 'page'}}" background-color="{{scene.brandNavigation ? '' : scene.surface}}" />
+<view class="page layout--{{scene.layout}}" style="--article-accent: {{scene.accent}}; --article-tint: {{scene.surface}};">
+  <block wx:if="{{scenePending}}">
+    <view wx:if="{{sceneCode === 'E_SAFETY'}}" class="section-bar">
+      <navigator class="archive-link" url="/subpkg_red/pages/content-list/list?category=E_SAFETY" hover-class="control--pressed">历史官方内容<ui-icon name="chevron-right" size="sm" /></navigator>
+    </view>
+    <load-state mode="empty" title="{{error || '栏目暂未开放'}}" />
+  </block>
+
+  <block wx:else>
+    <view class="toolbar">
+      <view class="search-box">
+        <ui-icon name="search" size="sm" />
+        <input class="search-input" value="{{draftQuery}}" maxlength="120" placeholder="搜索本栏目" placeholder-class="search-placeholder" aria-label="搜索本栏目" bindinput="queryInput" bindconfirm="search" confirm-type="search" />
+        <button wx:if="{{draftQuery || q}}" class="clear-button" bindtap="clearSearch" aria-label="清空搜索">清空</button>
+        <button class="search-button" bindtap="search">搜索</button>
+      </view>
+      <navigator class="favorite-link" url="/subpkg_red/pages/article-favorites/list" hover-class="control--pressed" aria-label="我的文章收藏">
+        <ui-icon name="bookmark" size="sm" /><text>收藏</text>
+      </navigator>
+    </view>
+
+    <view wx:if="{{sectionOptions.length > 1 || sceneCode === 'E_SAFETY'}}" class="section-bar">
+      <scroll-view wx:if="{{sectionOptions.length > 1 && sectionOptions.length <= 5}}" scroll-x show-scrollbar="{{false}}" class="section-scroll">
+        <view class="section-tabs">
+          <button wx:for="{{sectionOptions}}" wx:key="id" class="section-tab {{sectionIndex === index ? 'section-tab--active' : ''}}" data-id="{{item.id}}" bindtap="changeCategory" aria-label="{{item.name}}{{sectionIndex === index ? '，已选中' : ''}}">{{item.name}}</button>
+        </view>
+      </scroll-view>
+      <picker wx:if="{{sectionOptions.length > 5}}" range="{{sectionOptions}}" range-key="name" value="{{sectionIndex}}" bindchange="pickCategory">
+        <view class="section-picker" aria-role="button" aria-label="子栏目，当前{{sectionOptions[sectionIndex].name}}">
+          <text class="section-picker__label">{{sectionIndex ? sectionOptions[sectionIndex].name : '全部内容'}}</text>
+          <view class="picker-chevron" />
+        </view>
+      </picker>
+      <navigator wx:if="{{sceneCode === 'E_SAFETY'}}" class="archive-link" url="/subpkg_red/pages/content-list/list?category=E_SAFETY" hover-class="control--pressed">历史官方内容<ui-icon name="chevron-right" size="sm" /></navigator>
+    </view>
+
+    <view wx:if="{{categoryError}}" class="inline-state">
+      <text class="inline-state-text">子栏目加载失败</text>
+      <button class="text-button" bindtap="retryCategories">重试</button>
+    </view>
+
+    <view wx:if="{{q && items.length}}" class="result-keyword">“{{q}}”的搜索结果</view>
+    <view wx:if="{{items.length}}" class="article-list">
+      <article-card wx:for="{{items}}" wx:key="id" article="{{item}}"
+        layout="{{scene.layout === 'feature' && index === 0 && !q && !sectionIndex ? 'lead' : scene.layout}}"
+        show-category="{{!sectionIndex && !!item.category.parentId}}"
+        bind:open="open" />
+    </view>
+    <block wx:if="{{loading && !items.length}}">
+      <view class="article-skeleton" wx:for="{{[1, 2, 3]}}" wx:key="*this">
+        <view class="skeleton-copy">
+          <view class="skeleton-block skeleton-title"></view>
+          <view class="skeleton-block skeleton-line"></view>
+          <view class="skeleton-block skeleton-line skeleton-line--short"></view>
+        </view>
+        <view wx:if="{{scene.layout !== 'resource'}}" class="skeleton-block skeleton-radius-md skeleton-cover"></view>
+      </view>
+    </block>
+    <load-state wx:elif="{{error && !items.length}}" mode="error" title="文章加载失败" description="{{error}}" action-text="重新加载" bind:action="retry" />
+    <load-state wx:elif="{{!items.length}}" mode="empty" title="{{q ? '没有找到相关文章' : (sceneEmpty ? '栏目暂未配置' : '暂无文章')}}" description="{{q ? '试试更换关键词。' : ''}}" />
+
+    <view wx:if="{{error && items.length}}" class="inline-state">
+      <text class="inline-state-text">{{error}}</text>
+      <button class="text-button" bindtap="retry">重试</button>
+    </view>
+    <view wx:if="{{loading && items.length}}" class="list-status">正在加载…</view>
+    <button wx:if="{{hasMore && !loading && !error}}" class="more-button" bindtap="more">加载更多</button>
+  </block>
+</view>

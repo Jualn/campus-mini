@@ -1,3 +1,4 @@
+import { resolvePostType } from '../../utils/post-policy';
 import type { ActivityCard, PostCardItem, ServiceCursorPage } from '../../types/business';
 import { api } from '../../services/api';
 import { mapPostListItem } from '../../services/post';
@@ -12,8 +13,10 @@ export const searchPosts = async (query: {
   const res = await api.search.searchPosts(query);
   return {
     hasMore: res.hasMore,
-    list: res.list.map(mapPostListItem),
-    nextCursor: res.nextCursor,
+    list: res.list
+      .filter((item) => resolvePostType(item.postType) === 'NORMAL')
+      .map(mapPostListItem),
+    nextCursor: res.nextCursor ?? undefined,
   };
 };
 
@@ -33,6 +36,6 @@ export const searchActivities = async (query: {
   return {
     hasMore: Boolean(res.nextCursor),
     list: res.items.map(toCard),
-    nextCursor: res.nextCursor,
+    nextCursor: res.nextCursor ?? undefined,
   };
 };

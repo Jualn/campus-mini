@@ -12,6 +12,13 @@ let request;
 let failSend = true;
 const ticks = [];
 const mocks = {
+  '../../services/business-subscriptions': { createBusinessSubscription: () => ({ prepare: async () => {}, request: async () => true, dispose() {}, pending: false }) },
+  '../../services/api': { api: {} },
+  '../../services/post-community': { community: {} },
+  '../../services/comment': {},
+  '../../actions/post-creation': {},
+  '../../utils/storage': { storage: { get: () => '' }, STORAGE_KEYS: {} },
+  '../../services/person-binding': { watchPersonBinding: () => () => {}, personBindingEpoch: () => 0 },
   '../../utils/defineComponent': { default: () => (options) => (definition = options) },
   '../../behaviors/sheet-mixin': { useSheet: () => ({}) },
   '../../stores/helper': { getUserInfo: () => '' },
@@ -24,8 +31,10 @@ const mocks = {
   },
   '../../utils/logger': { createLogger: () => ({ error: () => undefined }) },
   '../../utils/wx-promise': {},
+  '../../utils/user-profile-navigation': { openUserProfile: async () => {} },
+  '../../services/mentor-certification': { getCertifiedMentorProfile: async () => ({ realName: '导师' }) },
   '../../utils/notify': { notifyToast: () => undefined },
-  '../../utils/constants': {},
+  '../../utils/constants': { TARGET_TYPES: { POST: { value: 'POST' }, COMMENT: { value: 'COMMENT' } } },
   '../../actions/media': {},
   '../../actions/comment': {
     syncCommentAuthor: (item) => item,
@@ -65,7 +74,7 @@ let measuredHeight = 54;
 let measurements = 0;
 const panel = {
   data: JSON.parse(JSON.stringify(definition.data)),
-  properties: { mode: 'inline', targetId: 'test-post', targetType: '1', totalCount: 0 },
+  properties: { postType: 'NORMAL', commentPermission: null, mode: 'inline', targetId: 'test-post', targetType: 'ACTIVITY', totalCount: 0 },
   ...definition.methods,
   setData(patch) {
     patches.push(patch);

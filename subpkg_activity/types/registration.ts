@@ -18,6 +18,8 @@ export type RegistrationAnswers = Record<string, string | string[] | null>;
 
 export interface RegistrationForm {
   activityId: string;
+  successLabel?: string;
+  hasExternalSteps?: boolean;
   formVersion: string;
   fields: RegistrationField[];
   allowModification: boolean;
@@ -34,6 +36,8 @@ export interface MyRegistration {
   submittedAt: string;
   updatedAt: string;
   cancelledAt?: string;
+  cancellationOrigin?: 'SELF' | 'ADMIN' | 'UNKNOWN';
+  cancellationReason?: string;
   canModify: boolean;
   canCancel: boolean;
   etag: string;

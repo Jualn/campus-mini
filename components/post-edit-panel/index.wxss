@@ -1,266 +1,397 @@
 /* components/post-edit-panel/index.wxss */
-
-/* ── 根容器：全屏覆盖，隔离事件 ────────── */
 .root {
   position: fixed;
   inset: 0;
   z-index: 999;
-  /* 不设背景色，让 .mask 单独控制遮罩 */
-  /* 根容器本身不拦截，子元素各自处理 */
 }
 
-/* ── 遮罩 ───────────────────────────────── */
 .mask {
   position: fixed;
-  /* absolute 改 fixed 更保险 */
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(20, 30, 46, 0.48);
 }
 
 .panel {
   position: absolute;
+  right: 0;
   bottom: 0;
   left: 0;
-  right: 0;
-  height: 90vh;
   display: flex;
+  height: 90vh;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.94);
-  /* 磨砂玻璃 */
-  backdrop-filter: blur(40rpx) saturate(1.8);
-  -webkit-backdrop-filter: blur(40rpx) saturate(1.8);
-  padding: 0 0 0;
-  /* 顶部柔光描边 */
-  box-shadow: 0 -1rpx 0 rgba(255, 255, 255, 0.9),
-    0 -24rpx 80rpx rgba(0, 0, 0, 0.12);
-  border-radius: 24rpx 24rpx 0 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-bg-card);
+  box-shadow: 0 -12rpx 40rpx rgba(31, 45, 69, 0.12);
   will-change: transform;
   pointer-events: auto;
 }
 
-/* ── 拖拽条 ────────────────────────────── */
 .panel__handle-area {
+  display: flex;
   width: 100%;
   min-height: 48rpx;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
 }
 
 .panel__handle {
-  width: 72rpx;
+  width: 64rpx;
   height: 8rpx;
-  border-radius: 4rpx;
-  background: #e4e6eb;
+  border-radius: var(--radius-full);
+  background: #d9dfe8;
 }
 
-/* ── 顶部栏 ────────────────────────────── */
 .panel__nav {
+  position: relative;
   display: flex;
+  min-height: 96rpx;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 24rpx;
+  padding: 8rpx var(--space-md);
   border-bottom: 1rpx solid var(--color-border-light);
-  flex-shrink: 0;
 }
 
 .panel__cancel {
-  padding: 8rpx;
-}
-
-.panel__cancel-text {
-  font-size: 30rpx;
-  color: #999;
+  display: flex;
+  min-width: 104rpx;
+  min-height: 72rpx;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--color-text-secondary);
+  font-size: var(--font-md);
 }
 
 .panel__title {
-  font-size: 32rpx;
-  font-weight: 700;
+  position: absolute;
+  right: 176rpx;
+  left: 176rpx;
   color: var(--color-text-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+  text-align: center;
 }
 
 .panel__submit {
-  padding: 12rpx 32rpx;
-  border-radius: 30rpx;
-  background: #d0d0d0;
-  transition: background 0.2s;
+  display: flex;
+  min-width: 120rpx;
+  min-height: 72rpx;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28rpx;
+  border-radius: var(--radius-full);
+  background: #e2e7ee;
+  color: var(--color-text-tertiary);
 }
 
 .panel__submit--on {
   background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .panel__submit-text {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #fff;
+  font-size: var(--font-base);
+  font-weight: var(--weight-semibold);
 }
 
-/* ── 内容区 ────────────────────────────── */
+.panel__submit[disabled] {
+  opacity: 1;
+}
+
 .panel__body {
   flex: 1;
-  overflow: hidden;
   min-height: 0;
-  /* 修复某些机型 flex 子项不收缩导致 scroll-view 撑不开的问题 */
+  overflow: hidden;
 }
 
-/* content-area 不再负责 padding */
+.composer-status {
+  margin: var(--space-md) 32rpx 0;
+  padding: 16rpx var(--space-md);
+  border-left: 4rpx solid var(--color-primary);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-deep);
+  font-size: var(--font-base);
+}
+
 .content-area {
   position: relative;
-  min-height: 144rpx;
   width: 100%;
+  min-height: 300rpx;
 }
 
-/* 镜像层：padding / font / line-height 与 textarea 完全镜像 */
 .mirror-text {
-  visibility: hidden;
-  white-space: pre-wrap;
-  word-break: break-all;
-
-  padding: 28rpx 28rpx 45rpx; /* ← 与 textarea 完全一致 */
-  font-size: 32rpx; /* ← 统一用 rpx */
-  line-height: 48rpx; /* ← 统一用 rpx */
-
   width: 100%;
+  min-height: 300rpx;
+  padding: 28rpx 32rpx 56rpx;
+  visibility: hidden;
+  font-size: 32rpx;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
   box-sizing: border-box;
   pointer-events: none;
 }
 
-/* textarea：padding / font / line-height 与镜像层完全一致 */
 .content-input {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-
-  padding: 28rpx 28rpx 45rpx; /* ← 与镜像层完全一致 */
-  font-size: 32rpx; /* ← 统一用 rpx */
-  line-height: 48rpx; /* ← 统一用 rpx */
-
-  box-sizing: border-box;
-  color: var(--color-text-primary);
   margin: 0;
+  padding: 28rpx 32rpx 56rpx;
+  color: var(--color-text-primary);
+  font-size: 32rpx;
+  line-height: 1.8;
+  box-sizing: border-box;
 }
 
-/* placeholder 样式必须与 .content-input 的 font-size / line-height 完全一致，
-   否则光标与 placeholder 文字会错位 */
 .content-ph {
-  color: #bbb;
+  color: var(--color-text-placeholder);
   font-size: 32rpx;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .content-count-wrapper {
+  position: absolute;
+  right: 32rpx;
+  bottom: 16rpx;
   display: flex;
   justify-content: flex-end;
 }
 
 .content-count {
-  font-size: 24rpx;
-  color: #999;
-  /* 如果想悬浮在输入框右下角且不随滚动条走，可以用以下绝对定位： */
-  position: absolute;
-  bottom: 50rpx;
-  right: 35rpx;
-  z-index: 9;
-  background: rgba(255, 255, 255, 0.9); /* 微弱遮罩，增加可读性 */
+  color: var(--color-text-tertiary);
+  font-size: var(--font-xs);
 }
 
-/* ── 图片区 ────────────────────────────── */
+.context-area {
+  margin: 0 32rpx;
+  padding: var(--space-sm) 0 var(--space-md);
+  border-top: 1rpx solid var(--color-border-light);
+}
+
+.category-picker {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 72rpx;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-xs);
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
+  font-size: var(--font-base);
+}
+
+.category-picker--selected {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-deep);
+}
+
+.category-picker ui-icon {
+  transform: rotate(90deg);
+}
+
+.category-support {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-md);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-xs);
+}
+
+.category-support button {
+  display: inline-flex;
+  min-height: 64rpx;
+  align-items: center;
+  color: var(--color-primary);
+  font-size: var(--font-xs);
+}
+
+.topic-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.topic-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.topic-chip {
+  display: flex;
+  min-height: 64rpx;
+  align-items: center;
+  padding-left: var(--space-sm);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-light);
+  color: var(--color-primary-deep);
+  font-size: var(--font-base);
+}
+
+.topic-chip button {
+  display: flex;
+  width: 64rpx;
+  height: 64rpx;
+  align-items: center;
+  justify-content: center;
+}
+
+.topic-add {
+  display: flex;
+  min-height: 72rpx;
+  align-items: center;
+  color: var(--color-primary);
+  font-size: var(--font-base);
+}
+
 .image-area {
-  padding: 20rpx 28rpx 0;
+  padding: var(--space-sm) 32rpx 0;
 }
 
-/*
- * 用 display:grid 三列等宽，彻底避免 flex+margin 的子像素换行问题。
- * grid 会把每个子元素严格限制在列宽内，不会因为浮点误差挤到下一行。
- */
 .image-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10rpx;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16rpx;
 }
 
 .image-item {
   position: relative;
   width: 100%;
-  /* padding-top: 100% 让格子变正方形（相对于自身宽度） */
-  padding-top: 100%;
   height: 0;
-  border-radius: 12rpx;
+  padding-top: 100%;
   overflow: visible;
-  /* del 角标需要溢出 */
 }
 
-/* 图片本体：绝对定位铺满 padding-top 撑出的空间 */
 .image-item__img {
   position: absolute;
   top: 0;
   left: 0;
+  display: block;
   width: 100%;
   height: 100%;
-  border-radius: 12rpx;
-  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-page-deep);
 }
 
 .image-item__del {
   position: absolute;
-  top: -12rpx;
-  right: -12rpx;
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
+  top: -10rpx;
+  right: -10rpx;
+  z-index: 2;
   display: flex;
+  width: 56rpx;
+  height: 56rpx;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  border: 4rpx solid var(--color-bg-card);
+  border-radius: 50%;
+  background: rgba(31, 45, 69, 0.76);
 }
 
-
-/* 添加按钮：复用 .image-item 尺寸，内容居中 */
 .image-add {
-  border-radius: 12rpx;
-  border: 2rpx dashed #d0d0d0;
-  background: #f8f9fa;
-  /* 内容居中：绝对定位一个 flex 容器铺满 */
   overflow: hidden;
+  border: 2rpx dashed #cbd5e2;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
 }
 
-/* 添加按钮内部用绝对定位居中 */
-.image-add::after {
-  content: "";
-  /* 不能用伪元素放文字，用 wxml 里的两个 text 即可，
-     这里只做背景装饰无内容 */
-}
-
-/* 添加按钮的图标和提示文字：
-   因为 .image-item 本身是 padding-top hack，内容需绝对定位居中 */
-.image-add .image-add__icon {
+.image-add__icon {
   position: absolute;
+  top: 28%;
   left: 50%;
   transform: translateX(-50%);
-  top: 30%;
-}
-
-.image-add .image-add__hint {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
 }
 
 .image-add__hint {
+  position: absolute;
   bottom: 22%;
-  font-size: 22rpx;
-  color: #bbb;
+  left: 50%;
+  font-size: var(--font-xs);
   white-space: nowrap;
+  transform: translateX(-50%);
 }
 
-/* ── 底部间距 ───────────────────────────── */
 .body-pad {
-  height: 32rpx;
+  height: calc(32rpx + constant(safe-area-inset-bottom));
+  height: calc(32rpx + env(safe-area-inset-bottom));
   flex-shrink: 0;
+}
+
+.topic-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+}
+
+.topic-modal__mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 30, 46, 0.42);
+}
+
+.topic-modal__box {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: 76vh;
+  overflow-y: auto;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-bg-card);
+}
+
+.topic-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 28rpx 32rpx var(--space-sm);
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.topic-modal__header > view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.topic-modal__title {
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.topic-modal__description {
+  color: var(--color-text-secondary);
+  font-size: var(--font-sm);
+}
+
+.topic-modal__done {
+  display: flex;
+  min-width: 96rpx;
+  min-height: 72rpx;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--color-primary);
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
+}
+
+button[disabled] {
+  opacity: 0.45;
+}
+
+.panel__submit[disabled] {
+  opacity: 1;
 }

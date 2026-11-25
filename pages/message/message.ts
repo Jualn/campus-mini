@@ -1,11 +1,11 @@
 import * as notificationCenter from '../../actions/notification-center';
 import { authReady, ensureLogin } from '../../actions/auth';
-import { listNotifications, isInvalidNotificationCursor } from '../../services/notification';
+import { isInvalidNotificationCursor } from '../../services/notification';
 import type { NotificationBoxCategory } from '../../types/notification-contract';
 import { getUserId } from '../../stores/helper';
 import { eventBus, EVENTS } from '../../utils/event-bus';
 import { getCustomTabBar } from '../../utils/tabbar';
-import { showErrorToast, showInfoToast } from '../../utils/notify';
+import { getErrorMessage, showErrorToast, showInfoToast } from '../../utils/notify';
 import { useListLoad } from '../../behaviors/useListLoad';
 import definePage from '../../utils/definePage';
 import {
@@ -32,6 +32,7 @@ definePage({
   _onUnread: null as ((count: number) => void) | null,
   _onRefresh: null as ((ids?: string[]) => void) | null,
   _onIdentity: null as (() => void) | null,
+  _onVisibility: null as (() => void) | null,
 
   data: {
     statusBarHeight: 20,
@@ -47,6 +48,10 @@ definePage({
     headCursor: '',
     markingAll: false,
     readError: false,
+    deletingId: '',
+    loginRequired: false,
+    loginPending: false,
+    loadError: '',
   },
 
   onLoad() {
@@ -90,14 +95,27 @@ definePage({
         headCursor: '',
         readError: false,
         markingAll: false,
+        deletingId: '',
+        loginRequired: false,
+        loginPending: false,
+        loadError: '',
       });
       this._dirty = true;
       if (this._visible && getUserId()) void this._loadMessages();
+    };
+    this._onVisibility = () => {
+      this._dirty = true;
+      this.setData({
+        messages: this.data.messages.filter((item) => !notificationCenter.isUnavailable(item.id)),
+        readError: notificationCenter.hasFailedReads(),
+      });
+      if (this._visible) void this._loadMessages(false, true);
     };
     eventBus.on(EVENTS.NOTIFY_UNREAD_CHANGE, this._onUnread);
     eventBus.on(EVENTS.NOTIFY_LIST_REFRESH, this._onRefresh);
     eventBus.on(EVENTS.LOGIN_SUCCESS, this._onIdentity);
     eventBus.on(EVENTS.LOGOUT, this._onIdentity);
+    eventBus.on(EVENTS.NOTIFY_VISIBILITY_CHANGE, this._onVisibility);
   },
 
   onShow() {
@@ -119,18 +137,26 @@ definePage({
   onHide() {
     this._visible = false;
     this._generation += 1;
-    if (this._loading || this.data.listLoad.phase === 'initial') this._dirty = true;
+    this._dirty = true;
     this._loading = false;
     this._reading = false;
     this._attemptedIds.clear();
     this._disconnectObserver();
     this._listLoadClearTimers();
-    this.setData({ markingAll: false });
+    // A hidden inbox is a stale backend snapshot, never a restoration source.
+    this.setData({
+      markingAll: false,
+      loginPending: false,
+      messages: [],
+      nextCursor: '',
+      headCursor: '',
+    });
   },
   onUnload() {
     void this.onHide();
     if (this._onUnread) eventBus.off(EVENTS.NOTIFY_UNREAD_CHANGE, this._onUnread);
     if (this._onRefresh) eventBus.off(EVENTS.NOTIFY_LIST_REFRESH, this._onRefresh);
+    if (this._onVisibility) eventBus.off(EVENTS.NOTIFY_VISIBILITY_CHANGE, this._onVisibility);
     if (this._onIdentity) {
       eventBus.off(EVENTS.LOGIN_SUCCESS, this._onIdentity);
       eventBus.off(EVENTS.LOGOUT, this._onIdentity);
@@ -151,7 +177,19 @@ definePage({
     void this._loadMessages();
   },
 
-  async _loadMessages(append = false) {
+  async onLogin() {
+    if (this.data.loginPending) return;
+    this.setData({ loginPending: true });
+    try {
+      await ensureLogin({ interactive: true });
+      if (this._visible && !this._loading) await this._loadMessages();
+    } catch (error) {
+      if (this._visible) this.setData({ loadError: getErrorMessage(error, '登录未完成，请重试') });
+    } finally {
+      if (this._visible) this.setData({ loginPending: false });
+    }
+  },
+  async _loadMessages(append = false, reconcile = false) {
     if (append && (this._loading || !this.data.nextCursor)) return;
     const generation = ++this._generation;
     const filter = this.data.activeFilter;
@@ -167,18 +205,24 @@ definePage({
       await ensureLogin();
       if (!this._visible || generation !== this._generation) return;
       const owner = getUserId();
+      this.setData({ loginRequired: false, loadError: '' });
       this._owner = owner;
-      const page = await listNotifications({
+      const page = await notificationCenter.loadNotifications({
         boxCategory: filter ? (filter as NotificationBoxCategory) : undefined,
         cursor: append ? this.data.nextCursor : undefined,
       });
       if (!this._isCurrent(generation) || owner !== getUserId()) return;
-      const messages = mergeNotificationCards(append ? this.data.messages : [], page.items).map(
-        (item) => (this._confirmedReadIds.has(item.id) ? { ...item, isRead: true } : item),
-      );
+      const messages = mergeNotificationCards(
+        append ? this.data.messages : [],
+        page.items.filter((item) => !notificationCenter.isUnavailable(item.id)),
+      ).map((item) => (this._confirmedReadIds.has(item.id) ? { ...item, isRead: true } : item));
       this._dirty = false;
       if (!append) this._attemptedIds.clear();
-      this.setData({ messages, nextCursor: page.nextCursor ?? '', headCursor: page.headCursor });
+      this.setData({
+        messages,
+        nextCursor: page.nextCursor ?? '',
+        headCursor: append ? this.data.headCursor : page.headCursor,
+      });
       const observe = () => {
         if (this._isCurrent(generation)) this._observeCards();
       };
@@ -203,10 +247,14 @@ definePage({
         );
     } catch (err) {
       if (!this._visible || generation !== this._generation) return;
+      this.setData({
+        loginRequired: !getUserId(),
+        loadError: getErrorMessage(err, '消息加载失败，请重试'),
+      });
+      if (reconcile) this.setData({ messages: [], nextCursor: '', headCursor: '' });
       if (initial) this._listLoadEndInitial({ success: false, hasContent: false });
       else if (append) this._listLoadEndMore({ success: false });
       else this._listLoadEndRefresh({ success: false, hasContent: !!this.data.messages.length });
-      if (!initial) showErrorToast(err, { fallback: '消息加载失败，请重试' });
     } finally {
       if (generation === this._generation) this._loading = false;
     }
@@ -342,6 +390,21 @@ definePage({
     const id = String(e.currentTarget.dataset.id ?? '');
     const item = this.data.messages.find((message) => message.id === id);
     if (item) void notificationCenter.openNotification(item);
+  },
+
+  async onDeleteMessage(e: WechatMiniprogram.TouchEvent) {
+    const id = String(e.currentTarget.dataset.id ?? '');
+    if (this.data.deletingId || !this.data.messages.some((item) => item.id === id)) return;
+    const owner = getUserId();
+    this.setData({ deletingId: id });
+    try {
+      await notificationCenter.deleteNotification(id);
+    } catch (err) {
+      if (this._visible && owner === getUserId())
+        showErrorToast(err, { fallback: '删除结果未确认，请刷新消息后重试' });
+    } finally {
+      if (owner === getUserId()) this.setData({ deletingId: '' });
+    }
   },
 
   async onMarkAllRead() {

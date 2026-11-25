@@ -1,0 +1,131 @@
+<page-navigation title="{{applicationId ? '申请积分明细' : '我的积分'}}" surface="page" />
+<view class="points-page">
+  <view class="balance-sheet {{applicationId ? 'balance-sheet--scoped' : ''}}">
+    <view class="balance-sheet__binding" aria-hidden="true" />
+    <block wx:if="{{summary}}">
+      <text class="balance-sheet__label">当前积分</text>
+      <view class="balance-sheet__balance">
+        <text class="balance-sheet__number">{{summary.balance}}</text>
+        <text class="balance-sheet__unit">分</text>
+      </view>
+      <text class="balance-sheet__caption">审核入账并扣除冲正后的当前余额</text>
+
+      <view class="balance-sheet__stats">
+        <view class="balance-sheet__stat">
+          <text class="balance-sheet__stat-label">累计获得</text>
+          <text class="balance-sheet__stat-value balance-sheet__stat-value--credit">+{{summary.totalGranted}}</text>
+        </view>
+        <view class="balance-sheet__stat">
+          <text class="balance-sheet__stat-label">累计扣回</text>
+          <text class="balance-sheet__stat-value">−{{summary.totalReversed}}</text>
+        </view>
+        <text class="balance-sheet__updated">更新于 {{summary.evaluatedAtText}}</text>
+      </view>
+    </block>
+    <block wx:else>
+      <text class="balance-sheet__label">{{applicationId ? '申请账务链' : '人员积分账簿'}}</text>
+      <text class="balance-sheet__scoped-title">{{applicationId ? '核发、纠错与冲正，都记在这里' : '每一分，都有清楚的来路'}}</text>
+      <text class="balance-sheet__scoped-description">{{applicationId ? '这里只显示当前申请产生的完整积分变动。' : '查看当前积分、完整流水，以及每一份申请的审核进度。'}}</text>
+    </block>
+  </view>
+
+  <view wx:if="{{!applicationId}}" class="overview-actions">
+    <navigator class="points-button points-button--primary overview-action overview-action--apply" hover-class="points-button--hover" url="/subpkg_user/pages/points-apply/index">
+      <view class="overview-action__copy">
+        <text class="overview-action__title">新建申请</text>
+        <text class="overview-action__description">提交事项与证明材料</text>
+      </view>
+      <text class="overview-action__mark" aria-hidden="true">＋</text>
+    </navigator>
+    <navigator class="points-button points-button--plain overview-action" hover-class="points-button--hover" url="/subpkg_user/pages/points-applications/index">
+      <view class="overview-action__copy">
+        <text class="overview-action__title">申请记录</text>
+        <text class="overview-action__description">查看审核进度</text>
+      </view>
+      <ui-icon name="chevron-right" size="sm" />
+    </navigator>
+  </view>
+
+  <load-state
+    wx:if="{{loading && state === 'loading'}}"
+    mode="loading"
+    title="正在翻开积分账簿"
+    description="正在同步余额与账务流水"
+    fill-viewport
+    viewport-offset="480"
+  />
+  <load-state
+    wx:elif="{{state === 'error'}}"
+    mode="error"
+    title="积分暂时无法确认"
+    description="{{error}}"
+    action-text="重新查询"
+    bind:action="refresh"
+    fill-viewport
+    viewport-offset="480"
+  />
+
+  <view wx:elif="{{state === 'unbound' || state === 'unavailable'}}" class="points-surface identity-state">
+    <view class="identity-state__icon"><ui-icon name="user" size="xl" /></view>
+    <text class="identity-state__title">{{state === 'unbound' ? '先关联人员档案' : '人员档案当前不可用'}}</text>
+    <text class="identity-state__description">{{state === 'unbound' ? '关联有效人员档案后，才能查看本人积分与完整流水。' : '暂时不能读取人员账簿，请联系管理员核实档案状态。'}}</text>
+    <navigator wx:if="{{state === 'unbound'}}" class="points-button points-button--primary identity-state__button" url="/subpkg_user/pages/party-identity/index">关联人员档案</navigator>
+    <button wx:else class="points-button points-button--plain identity-state__button" bindtap="refresh" disabled="{{loading}}">重新查询</button>
+  </view>
+
+  <block wx:elif="{{state === 'bound'}}">
+    <view class="points-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">{{applicationId ? '本申请积分流水' : '积分流水'}}</text>
+          <text class="points-section__description">原审核、纠错与冲正分别记录</text>
+        </view>
+        <button class="points-text-button" bindtap="refresh" disabled="{{loading}}">{{loading ? '同步中' : '刷新'}}</button>
+      </view>
+
+      <load-state wx:if="{{error}}" mode="error" variant="inline" description="{{error}}" action-text="重新查询" bind:action="refresh" />
+      <view wx:if="{{loading && ledger.length}}" class="points-refresh-hint">
+        <view class="points-refresh-hint__dot" />
+        <text>正在同步最新流水，已显示内容仍可查看</text>
+      </view>
+
+      <load-state
+        wx:if="{{!loading && !error && !ledger.length}}"
+        mode="empty"
+        variant="section"
+        title="{{applicationId ? '这笔申请暂无积分变动' : '账簿里还没有积分记录'}}"
+        description="{{applicationId ? '审核或账务调整发生后，记录会显示在这里。' : '积分审核入账后，会在这里留下完整记录。'}}"
+      />
+
+      <view wx:if="{{ledger.length}}" class="points-surface ledger-book">
+        <view wx:for="{{ledger}}" wx:key="ledgerId" class="ledger-row">
+          <view class="ledger-row__top">
+            <view class="ledger-row__kind">
+              <text class="ledger-row__direction ledger-row__direction--{{item.direction}}" aria-hidden="true">{{item.direction === 'credit' ? '+' : '−'}}</text>
+              <text class="ledger-row__kind-label">{{item.kindLabel}}</text>
+            </view>
+            <view class="ledger-row__delta ledger-row__delta--{{item.direction}}">
+              <text class="ledger-row__delta-value">{{item.deltaText}}</text>
+              <text class="ledger-row__delta-unit">分</text>
+            </view>
+          </view>
+          <view wx:if="{{item.reason}}" class="ledger-row__detail">
+            <text class="ledger-row__label">变动原因</text>
+            <text class="ledger-row__detail-text points-text" selectable>{{item.reason}}</text>
+          </view>
+          <view wx:if="{{item.basis}}" class="ledger-row__detail">
+            <text class="ledger-row__label">变动依据</text>
+            <text class="ledger-row__detail-text points-text" selectable>{{item.basis}}</text>
+          </view>
+          <text wx:if="{{item.createdAtText}}" class="ledger-row__time">{{item.createdAtText}}</text>
+        </view>
+      </view>
+
+      <view class="points-list-footer">
+        <load-state wx:if="{{moreError}}" mode="error" variant="inline" description="{{moreError}}" action-text="重试加载" bind:action="more" />
+        <button wx:elif="{{hasMore}}" class="points-button points-button--plain points-button--compact" loading="{{loading}}" disabled="{{loading}}" bindtap="more">加载更多流水</button>
+        <text wx:elif="{{ledger.length && !loading}}" class="points-list-footer__text">已显示全部 {{ledger.length}} 笔记录</text>
+      </view>
+    </view>
+  </block>
+</view>

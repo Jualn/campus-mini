@@ -1,0 +1,7 @@
+{
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index"
+  }
+}

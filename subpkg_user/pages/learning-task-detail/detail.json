@@ -1,0 +1,13 @@
+{
+  "navigationStyle": "default",
+  "navigationBarTitleText": "学习任务详情",
+  "navigationBarBackgroundColor": "#C43B4A",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#F6F8FC",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "load-state": "/components/load-state/index",
+    "ui-icon": "/components/ui-icon/index"
+  }
+}

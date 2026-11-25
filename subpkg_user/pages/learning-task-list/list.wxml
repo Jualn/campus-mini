@@ -1,0 +1,151 @@
+<page-navigation title="学习任务" />
+<view class="page">
+  <view class="overview">
+    <view class="overview__main">
+      <view class="overview__icon"><ui-icon name="home-tasks" size="xl" /></view>
+      <view class="overview__copy">
+        <text class="overview__eyebrow">LEARNING TASKS</text>
+        <text class="overview__title">学习与成长</text>
+        <text class="overview__description">跟进分配任务，及时完成学习与成果提交</text>
+      </view>
+    </view>
+    <view class="overview__footer">
+      <text>{{items.length ? '当前已加载 ' + items.length + ' 项任务' : '专注学习，记录每一次成长'}}</text>
+      <text>下拉刷新</text>
+    </view>
+  </view>
+
+  <view class="filter-panel">
+    <view class="filter-panel__heading">
+      <text class="filter-panel__title">任务进度</text>
+      <text class="filter-panel__result">{{progressLabels[progressIndex]}} · {{items.length}} 项</text>
+    </view>
+    <scroll-view class="filter-scroll" scroll-x show-scrollbar="{{false}}">
+      <view class="filter-scroll__inner">
+        <button
+          wx:for="{{progressLabels}}"
+          wx:key="*this"
+          class="filter-chip {{progressIndex === index ? 'filter-chip--active' : ''}}"
+          data-index="{{index}}"
+          bindtap="selectProgress"
+          hover-class="filter-chip--hover"
+          aria-label="筛选{{item}}任务{{progressIndex === index ? '，当前已选' : ''}}"
+        >{{item}}</button>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view wx:if="{{personUnavailable}}" class="notice notice--warning">
+    <text class="notice__mark">!</text>
+    <view class="notice__body">
+      <text class="notice__title">人员任务暂时无法确认</text>
+      <text class="notice__text">账号任务仍可正常查看，请稍后下拉刷新人员任务。</text>
+    </view>
+  </view>
+
+  <load-state
+    wx:if="{{loading && !items.length}}"
+    mode="loading"
+    title="正在读取学习任务"
+    description="正在同步你的分配与最新进度"
+    fill-viewport
+    viewport-offset="420"
+  />
+  <load-state
+    wx:elif="{{error && !items.length}}"
+    mode="error"
+    title="暂时无法读取任务"
+    description="{{error}}"
+    action-text="重新加载"
+    bind:action="retry"
+    fill-viewport
+    viewport-offset="420"
+  />
+  <load-state
+    wx:elif="{{!loading && !error && !items.length && !personUnavailable}}"
+    mode="empty"
+    title="{{progressIndex === 0 ? '暂无分配给你的学习任务' : '当前筛选下暂无学习任务'}}"
+    description="可切换其他进度查看，或下拉刷新最新分配"
+    fill-viewport
+    viewport-offset="420"
+  />
+  <load-state
+    wx:elif="{{!loading && !error && !items.length && personUnavailable}}"
+    mode="empty"
+    title="暂无可显示的账号任务"
+    description="人员任务尚未确认，这不代表没有人员任务"
+    fill-viewport
+    viewport-offset="420"
+  />
+
+  <block wx:else>
+    <load-state
+      wx:if="{{error && !failedMore}}"
+      mode="error"
+      variant="inline"
+      description="{{error}}"
+      action-text="重新刷新"
+      bind:action="retry"
+    />
+    <view wx:if="{{loading && items.length && !loadingMore}}" class="refresh-hint">
+      <view class="refresh-hint__dot" />
+      <text>正在同步最新任务进度…</text>
+    </view>
+
+    <view class="task-list">
+      <button
+        wx:for="{{items}}"
+        wx:key="assignmentId"
+        class="task-card"
+        data-id="{{item.assignment.assignmentId}}"
+        bindtap="open"
+        hover-class="task-card--hover"
+        aria-label="{{item.task.title}}，{{item.statusLabel}}，查看详情"
+      >
+        <view class="task-card__top">
+          <view class="subject-badge">
+            <view class="subject-badge__dot" />
+            <text>{{item.assignment.subject.type === 'PERSON' ? '人员任务' : '账号任务'}}</text>
+          </view>
+          <text class="g-status g-status--{{item.statusTone}}">{{item.statusLabel}}</text>
+        </view>
+
+        <text class="task-card__title">{{item.task.title}}</text>
+        <view wx:if="{{item.assignment.progress === 'REJECTED'}}" class="task-card__rejected">
+          <text class="task-card__rejected-mark">!</text>
+          <text>成果已驳回，进入详情查看原因及补交窗口</text>
+        </view>
+
+        <view class="deadline-box">
+          <view class="deadline-box__icon"><ui-icon name="calendar-event" size="md" /></view>
+          <view class="deadline-box__copy">
+            <text class="deadline-box__label">{{item.assignment.supplementDeadline && item.assignment.progress === 'REJECTED' ? '补交截止' : '首次截止'}}</text>
+            <text class="deadline-box__value">{{item.deadlineText}}</text>
+          </view>
+        </view>
+
+        <view class="task-card__footer">
+          <text class="task-card__lifecycle">{{item.lifecycle}}</text>
+          <view class="task-card__link">
+            <text>查看详情</text>
+            <ui-icon name="chevron-right" size="sm" />
+          </view>
+        </view>
+      </button>
+    </view>
+
+    <view class="list-footer">
+      <load-state wx:if="{{loadingMore}}" mode="loading" variant="inline" compact title="正在加载更多" />
+      <load-state
+        wx:elif="{{error && failedMore}}"
+        mode="error"
+        variant="inline"
+        description="{{error}}"
+        action-text="重试加载"
+        bind:action="retry"
+      />
+      <button wx:elif="{{hasMore && !loading && !error}}" class="load-more" bindtap="more" hover-class="load-more--hover">加载更多任务</button>
+      <text wx:elif="{{items.length && !loading && !error}}" class="list-footer__text">— 已显示全部任务 —</text>
+    </view>
+  </block>
+</view>

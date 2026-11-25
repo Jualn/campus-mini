@@ -1,0 +1,17 @@
+<block wx:if="{{compact}}">
+  <operator-badge wx:if="{{state === 'valid' && profile}}" kind="mentor" mentor="{{profile}}" />
+</block>
+<view wx:else class="card">
+  <view class="title">导师认证</view>
+  <view wx:if="{{state === 'valid' && profile}}">
+    <view class="badge">平台认证导师</view>
+    <view class="name">{{profile.realName}}</view>
+    <view>职务：{{profile.position}}</view>
+    <view>所属单位：{{profile.affiliation}}</view>
+  </view>
+  <view wx:elif="{{state === 'loading'}}">正在查询导师认证…</view>
+  <view wx:elif="{{state === 'inactive'}}">当前无有效导师认证。如有疑问，请联系管理员。</view>
+  <view wx:elif="{{state === 'expired'}}">导师认证已到期，正在等待最新结果</view>
+  <view wx:else>暂时无法查询导师认证</view>
+  <button wx:if="{{state !== 'loading'}}" class="refresh" bindtap="refresh">重新查询</button>
+</view>

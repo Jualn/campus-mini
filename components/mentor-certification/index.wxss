@@ -1,0 +1,35 @@
+.card {
+  margin: var(--space-md) var(--page-padding);
+  padding: var(--space-md);
+  border: 1rpx solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-card);
+  font-size: var(--font-sm);
+  line-height: 1.65;
+  overflow-wrap: break-word;
+}
+
+.title,
+.name {
+  color: var(--color-text-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.title {
+  margin-bottom: var(--space-sm);
+}
+
+.badge {
+  color: var(--color-primary);
+  font-weight: var(--weight-medium);
+}
+
+.refresh {
+  min-height: 72rpx;
+  margin-top: var(--space-xs);
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+}

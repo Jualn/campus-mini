@@ -30,9 +30,10 @@
 
   <block wx:elif="{{asyncLoad.phase === 'error'}}">
     <view class="detail-error" style="padding-top:{{statusBarHeight}}px;">
-      <view class="detail-error__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" size="lg" />
+      <view class="detail-error__back">
+        <back-button variant="nav" auto-back="{{false}}" bind:back="onBack" />
       </view>
+      <navigator wx:if="{{publicUnavailable}}" url="/subpkg_activity/pages/my-registrations/list">查看我的报名与预约</navigator>
       <load-state
         mode="{{asyncLoad.loading ? 'loading' : 'error'}}"
         title="{{asyncLoad.loading ? '正在重新加载' : '暂时无法加载'}}"
@@ -56,8 +57,8 @@
       </view>
       <!-- 顶部渐变遮罩（让返回按钮更清晰） -->
       <view class="cover-top-mask" style="padding-top:{{statusBarHeight}}px;">
-        <view class="cover-back" bindtap="onBack" aria-role="button" aria-label="返回上一页">
-          <ui-icon name="chevron-left" state="inverse" size="lg" />
+        <view class="cover-back">
+          <back-button variant="nav" inverse auto-back="{{false}}" bind:back="onBack" />
         </view>
       </view>
       <!-- 底部渐变遮罩 -->
@@ -201,7 +202,7 @@
           <text wx:else class="participation-status">未提交</text>
         </view>
         <text wx:if="{{registrationStatus === 'SUBMITTED'}}" class="participation-block__desc">
-          本人已完成平台表单提交，可进入报名页查看记录。
+          {{activity.type === '志愿公益' ? '预约成功' : '报名成功'}}，已拥有有效平台名额，可进入报名页查看记录。
         </text>
         <text wx:elif="{{registrationStatus === 'CANCELLED'}}" class="participation-block__desc">
           本人已取消提交；能否重新报名以当前报名状态和名额为准。
@@ -247,7 +248,7 @@
           <text wx:if="{{activity.registrationMode === 4}}" class="external-participation__title">后续参与步骤</text>
           <text wx:else class="external-participation__title">外部参与方式</text>
           <text wx:if="{{activity.registrationMode === 4}}" class="external-participation__hint">
-            平台表单提交后仍需按下列说明完成外部步骤
+            平台报名成功后仍需按下列说明完成外部步骤
           </text>
         </view>
         <view class="event-action" wx:for="{{activity.actions}}" wx:key="key">

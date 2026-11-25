@@ -2,7 +2,13 @@
 <view class="post-card" catchtap="onTapCard">
   <view class="post-left">
     <view class="post-avatar" style="background:{{_avatarBg}}" catch:tap="onTapAvatar">
-      <image wx:if="{{_avatarUrl}}" class="post-avatar__img" src="{{_avatarUrl}}" mode="aspectFill" />
+      <image
+        wx:if="{{_avatarUrl}}"
+        class="post-avatar__img"
+        src="{{_avatarUrl}}"
+        mode="aspectFill"
+        binderror="onAvatarError"
+      />
       <text wx:else class="post-avatar__char">{{_avatarChar}}</text>
     </view>
   </view>
@@ -18,39 +24,43 @@
       </view>
     </view>
 
+    <view wx:if="{{post.postType === 'MENTOR_QA'}}" class="post-context">
+      <text>{{post.category.name || '导师答疑'}}</text>
+      <text>{{post.qaStateLabel}}</text>
+    </view>
+    <view wx:if="{{post.postType === 'MENTOR_QA' && post.displayTitle}}" class="post-question-title">{{post.displayTitle}}</view>
     <view class="post-body">
       <text class="post-text {{isExpanded ? 'post-text--expanded' : ''}}">{{post.content}}</text>
-      <view class="post-expand" wx:if="{{canExpand}}" catchtap="onToggleExpand">
+      <text class="post-text post-text--measure" aria-hidden="true">{{post.content}}</text>
+      <button class="post-expand" wx:if="{{canExpand}}" catchtap="onToggleExpand" aria-expanded="{{isExpanded}}">
         <text class="post-expand__text">{{isExpanded ? '收起' : '展开全文'}}</text>
-      </view>
+      </button>
     </view>
 
     <grid-image images="{{post.images || []}}" bind:preview="onPreviewImage" />
 
-    <!-- 操作栏 -->
+    <view wx:if="{{post.topics.length}}" class="post-topics" aria-label="相关话题">
+      <text wx:for="{{post.topics}}" wx:key="id" class="post-topic">#{{item.name}}</text>
+    </view>
+
     <view class="post-actions">
-      <!-- 评论 -->
-      <view class="action-item" catchtap="onComment" aria-role="button" aria-label="评论">
+      <view class="action-item" catchtap="onComment" aria-role="button" aria-label="{{post.postType === 'MENTOR_QA' ? '讨论' : '评论'}}">
         <view class="action-icon icon-slot"><ui-icon name="comment" size="lg" /></view>
         <text class="action-count">{{post.commentCount > 0 ? post.commentCount : ''}}</text>
       </view>
-      <!-- 点赞 -->
       <view class="action-item" catchtap="onLike" aria-role="button" aria-label="{{liked ? '取消点赞' : '点赞'}}">
         <view class="action-icon icon-slot {{ liked ? 'liked' : '' }}">
           <ui-icon name="like" state="{{ liked ? 'active' : 'default' }}" size="lg" />
         </view>
         <text class="action-count {{liked ? 'action-count--liked' : ''}}">{{likeCount > 0 ? likeCount : ''}}</text>
       </view>
-      <!-- 浏览量 -->
-      <view class="action-item action-item--view">
+      <view class="action-item action-item--view" aria-label="浏览量 {{viewCountText}}">
         <view class="action-icon icon-slot"><ui-icon name="views" size="lg" /></view>
         <text class="action-count action-count--view">{{viewCountText}}</text>
       </view>
-      <!-- 分享 -->
       <view class="action-item action-item--share" catchtap="onShare" aria-role="button" aria-label="分享">
         <view class="action-icon icon-slot"><ui-icon name="share" size="lg" /></view>
       </view>
     </view>
-
   </view>
 </view>

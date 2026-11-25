@@ -1,7 +1,6 @@
 // subpkg_user/pages/edit-profile/edit-profile.ts
 
 import {
-  wxGetWindowInfo,
   wxHideLoading,
   wxNavigateBack,
   wxShowLoading,
@@ -17,6 +16,9 @@ import { getErrorMessage, notifyToast } from '../../../utils/notify';
 import { useAsyncLoad } from '../../behaviors/useAsyncLoad';
 import { getProfileErrorMessage } from '../../../services/user';
 import definePage from '../../../utils/definePage';
+import { getCurrentIdentity, watchCurrentAccount } from '../../../actions/current-user';
+import { createLeaveGuard } from '../../../utils/leave-guard';
+import { getAvatarInfo } from '../../../utils/avatar';
 
 const log = createLogger('EditProfilePage');
 
@@ -27,14 +29,19 @@ definePage({
   _selectedBackgroundFile: [] as SelectedMediaFile[],
   _saving: false,
   _loadGeneration: 0,
+  _alive: true,
+  _owner: '',
+  _sessionRevision: 0,
+  _offAccount: null as (() => void) | null,
+  _leaveGuard: null as ReturnType<typeof createLeaveGuard> | null,
 
   data: {
-    statusBarHeight: 20,
-    navBarHeight: 88, // rpx → 将在 onLoad 中转为 px
-
+    avatarPreview: getAvatarInfo(''),
     hasChanged: false,
     saving: false,
     saveError: '',
+    fieldErrors: { nickname: '', bio: '' },
+    selecting: false,
     nicknameLength: 0,
     bioLength: 0,
 
@@ -48,12 +55,27 @@ definePage({
   },
 
   onLoad() {
-    const systemInfo = wxGetWindowInfo();
-    const statusBarHeight = systemInfo.statusBarHeight; // px
-    // 导航内容区固定 44px（与胶囊按钮高度对齐），总高 = 状态栏 + 44px
-    this.setData({
-      statusBarHeight,
-      navBarHeight: statusBarHeight + 44,
+    this._alive = true;
+    this._owner = getCurrentIdentity().id;
+    this._leaveGuard = createLeaveGuard();
+    this._offAccount = watchCurrentAccount(() => {
+      ++this._sessionRevision;
+      ++this._loadGeneration;
+      this._owner = getCurrentIdentity().id;
+      this._selectedAvatarFile = [];
+      this._selectedBackgroundFile = [];
+      this._saving = false;
+      this._leaveGuard?.(false);
+      this.setData({
+        form: { nickname: '', bio: '', avatarUrl: '', backgroundUrl: '' },
+        avatarPreview: getAvatarInfo(''),
+        _original: { nickname: '', bio: '', avatarUrl: '', backgroundUrl: '' },
+        hasChanged: false,
+        saving: false,
+        selecting: false,
+        saveError: '登录身份已变化，请重新读取资料后编辑',
+      });
+      this._asyncLoadFail('登录身份已变化，请重新读取资料后编辑');
     });
     void this._loadProfile();
   },
@@ -65,12 +87,19 @@ definePage({
       const form = await userAction.getEditProfileForm();
 
       if (generation !== this._loadGeneration) return;
+      const hasDraft = this.data.hasChanged;
       this.setData({
-        nicknameLength: Array.from(form.nickname).length,
-        bioLength: Array.from(form.bio).length,
-        form: { ...form },
+        ...(!hasDraft
+          ? {
+              nicknameLength: Array.from(form.nickname).length,
+              avatarPreview: getAvatarInfo(form.nickname),
+              bioLength: Array.from(form.bio).length,
+              form: { ...form },
+            }
+          : {}),
         _original: { ...form },
       });
+      this._checkChanged();
       this._asyncLoadSuccess();
     } catch (err: unknown) {
       if (generation !== this._loadGeneration) return;
@@ -87,14 +116,19 @@ definePage({
     this.setData({
       [`form.${field}`]: value,
       [`${field}Length`]: Array.from(value).length,
+      [`fieldErrors.${field}`]: '',
+      ...(field === 'nickname' ? { avatarPreview: getAvatarInfo(value) } : {}),
     });
     this._checkChanged();
   },
 
   async onChangeAvatar() {
-    if (this._saving) return;
+    const revision = this._sessionRevision;
+    if (this._saving || this.data.selecting) return;
+    this.setData({ selecting: true });
     try {
       const selectedFiles = await mediaAction.selectImages(1);
+      if (!this.isSessionCurrent(revision) || !selectedFiles.length) return;
       const newImgs = selectedFiles.map((f) => f.filePath);
 
       this.setData({
@@ -104,30 +138,53 @@ definePage({
 
       this._checkChanged();
     } catch (err) {
+      if (!this.isSessionCurrent(revision)) return;
       log.error('onChangeAvatar', '选择头像失败:', err);
       notifyToast({
         title: '选择头像失败,请稍后再试',
         icon: 'none',
       });
+    } finally {
+      if (this.isSessionCurrent(revision)) this.setData({ selecting: false });
     }
   },
 
   async onChangeBackground() {
-    if (this._saving) return;
+    const revision = this._sessionRevision;
+    if (this._saving || this.data.selecting) return;
+    this.setData({ selecting: true });
     try {
       const files = await mediaAction.selectImages(1);
-      if (!files.length) return;
+      if (!this.isSessionCurrent(revision) || !files.length) return;
       this._selectedBackgroundFile = files;
       this.setData({ 'form.backgroundUrl': files[0].filePath });
       this._checkChanged();
     } catch (err) {
+      if (!this.isSessionCurrent(revision)) return;
       log.error('onChangeBackground', '选择背景失败:', err);
       notifyToast({ title: '选择背景失败,请稍后再试', icon: 'none' });
+    } finally {
+      if (this.isSessionCurrent(revision)) this.setData({ selecting: false });
     }
   },
 
+  onShow() {
+    this._leaveGuard?.resume();
+  },
   onUnload() {
+    this._offAccount?.();
+    ++this._sessionRevision;
+    this._alive = false;
     this._loadGeneration++;
+  },
+
+  isSessionCurrent(revision: number) {
+    return (
+      this._alive && revision === this._sessionRevision && this._owner === getCurrentIdentity().id
+    );
+  },
+  isAlive() {
+    return this._alive;
   },
 
   onRetry() {
@@ -142,23 +199,23 @@ definePage({
         (k) => o[k as keyof EditProfileForm] !== f[k as keyof EditProfileForm],
       ),
     });
+    this._leaveGuard?.(this.data.hasChanged);
   },
 
   async onSave() {
-    if (this._saving) return;
+    const revision = this._sessionRevision;
+    if (this._saving || this.data.selecting) return;
     if (!this.data.hasChanged) return;
-    if (this.data.nicknameLength > 10 || this.data.bioLength > 200) {
-      this.setData({ saveError: '昵称最多 10 个字符，简介最多 200 个字符' });
-      return;
-    }
-
-    if (!this.data.form.nickname.trim()) {
-      notifyToast({
-        title: '昵称不能为空',
-        icon: 'none',
-      });
-      return;
-    }
+    const fieldErrors = {
+      nickname: !this.data.form.nickname.trim()
+        ? '请填写昵称'
+        : this.data.nicknameLength > 10
+          ? '昵称最多 10 个字符'
+          : '',
+      bio: this.data.bioLength > 200 ? '简介最多 200 个字符' : '',
+    };
+    this.setData({ fieldErrors, saveError: '' });
+    if (fieldErrors.nickname || fieldErrors.bio) return;
 
     const original = this.data._original;
     const current = this.data.form;
@@ -197,6 +254,7 @@ definePage({
         selectedProfileFiles.length > 0
           ? await mediaAction.uploadFilesToCos(TARGET_TYPES.USER.value, selectedProfileFiles)
           : [];
+      if (!this.isSessionCurrent(revision)) return;
 
       if (hasAvatarChanged) {
         const avatar = uploadedItems[0];
@@ -218,7 +276,9 @@ definePage({
       }
 
       await userAction.saveEditProfileAndSync(changedForm);
+      if (!this.isSessionCurrent(revision)) return;
 
+      this._leaveGuard?.(false);
       this._selectedAvatarFile = [];
       this._selectedBackgroundFile = [];
 
@@ -229,11 +289,14 @@ definePage({
 
       void wxNavigateBack();
     } catch (err) {
+      if (!this.isSessionCurrent(revision)) return;
       log.error('onSave', '保存失败:', err);
       this.setData({ saveError: getErrorMessage(err, '保存结果未确认，请重新加载资料后再试') });
     } finally {
-      this._saving = false;
-      this.setData({ saving: false });
+      if (this.isSessionCurrent(revision)) {
+        this._saving = false;
+        this.setData({ saving: false });
+      }
       void wxHideLoading();
     }
   },
@@ -253,6 +316,7 @@ definePage({
     })
       .then((res) => {
         if (res.confirm) {
+          this._leaveGuard?.(false);
           void wxNavigateBack();
 
           this._selectedAvatarFile = [];

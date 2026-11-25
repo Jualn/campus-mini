@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 const docs = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = path.resolve(docs, '../../..');
 const errors = [];
+const externalRefs = new Set();
 const fail = message => errors.push(message);
+const allowExternalUnchecked = process.argv.includes('--allow-external-unchecked');
 const modules = [
   '01-scope-platform-boundary.md', '02-architecture.md',
   '03-typescript-code-quality.md', '04-runtime-lifecycle-state.md',
@@ -39,6 +41,9 @@ const agentPath = path.join(root, 'AGENTS.md');
 texts.set(agentPath, read(agentPath));
 const rootReadme = path.join(root, 'README.md');
 if (fs.existsSync(rootReadme)) texts.set(rootReadme, read(rootReadme));
+const docsRoot = path.join(root, 'docs');
+const docsReadme = path.join(docsRoot, 'README.md');
+texts.set(docsReadme, read(docsReadme));
 for (const name of fs.readdirSync(docs).filter(name => name.endsWith('.md'))) {
   const file = path.join(docs, name);
   if (!texts.has(file)) texts.set(file, read(file));
@@ -61,10 +66,15 @@ for (const [file, text] of texts) {
     catch { fail(`${relative(file)}: malformed link ${href}`); continue; }
     const [filePart, anchor] = decoded.split('#');
     const target = filePart ? path.resolve(path.dirname(file), filePart) : file;
-    if (!fs.existsSync(target)) { fail(`${relative(file)}: broken link ${href}`); continue; }
     const withinRoot = path.relative(root, target);
-    if (target.endsWith('.md') && !withinRoot.startsWith('..') && !path.isAbsolute(withinRoot) && !texts.has(target)) {
-      // Map iteration also visits newly discovered docs; cycles are visited once.
+    const outsideRoot = withinRoot === '..' || withinRoot.startsWith(`..${path.sep}`) || path.isAbsolute(withinRoot);
+    if (outsideRoot && allowExternalUnchecked) {
+      externalRefs.add(`${relative(file)}: ${href}`);
+      continue;
+    }
+    if (!fs.existsSync(target)) { fail(`${relative(file)}: broken link ${href}`); continue; }
+    if (target.endsWith('.md') && !outsideRoot && !texts.has(target)) {
+      // Map iteration also visits newly discovered repository docs; cycles are visited once.
       texts.set(target, read(target));
     }
     if (anchor && target.endsWith('.md') && !headings(texts.get(target) ?? read(target)).has(anchor)) {
@@ -72,12 +82,24 @@ for (const [file, text] of texts) {
     }
   }
 }
+// Every owned Markdown document must be reachable from a maintained entry.
+// Otherwise an obsolete prompt or a new unindexed guide can evade link checks.
+const checkCoverage = directory => {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) checkCoverage(file);
+    else if (entry.isFile() && entry.name.endsWith('.md') && !texts.has(file)) {
+      fail(`Unindexed document: ${relative(file)}`);
+    }
+  }
+};
+checkCoverage(docsRoot);
 const profile = texts.get(path.join(docs, 'project-profile.md'));
 const statuses = [...profile.matchAll(/^Profile status: (\S+)\s*$/gm)];
 const status = statuses[0]?.[1];
 if (statuses.length !== 1 || !['TEMPLATE', 'ACTIVE'].includes(status)) fail('Profile must declare exactly one TEMPLATE or ACTIVE status.');
 if (process.argv.includes('--require-active') && status !== 'ACTIVE') fail('ACTIVE Profile required; repository facts are not yet established.');
-if (process.argv.slice(2).some(arg => arg !== '--require-active')) fail('Usage: node check-docs.mjs [--require-active]');
+if (process.argv.slice(2).some(arg => !['--require-active', '--allow-external-unchecked'].includes(arg))) fail('Usage: node check-docs.mjs [--require-active] [--allow-external-unchecked]');
 const rows = new Map();
 for (const line of profile.split(/\r?\n/).filter(line => line.startsWith('|'))) {
   const cells = line.split('|').slice(1, -1).map(value => value.trim());
@@ -109,6 +131,10 @@ if (status === 'ACTIVE') {
   if (/\bTBD\b|VERIFY_FROM/.test(profile)) fail('ACTIVE Profile contains legacy placeholders.');
 }
 if (fs.existsSync(path.join(root, 'AGENTS.override.md'))) fail('Root AGENTS.override.md shadows the installed entry; reconcile explicitly.');
+if (externalRefs.size) {
+  console.log(`NOTICE: ${externalRefs.size} out-of-repository link(s) UNVERIFIED (--allow-external-unchecked).`);
+  for (const href of [...externalRefs].sort()) console.log(`  UNVERIFIED: ${href}`);
+}
 if (errors.length) {
   console.error(errors.map(message => `ERROR: ${message}`).join('\n'));
   process.exitCode = 1;

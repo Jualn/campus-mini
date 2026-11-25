@@ -1,6 +1,7 @@
 import type { ActivityCategory } from '../../types/event-contract';
 import type { ActivityDepartmentId } from '../../utils/activity-audience';
 import type {
+  MyActivityRegistrationPage,
   ActivityCursorPageDTO,
   ActivityDetailDTO,
   ActivityRegistrationDTO,
@@ -71,6 +72,13 @@ export const eventApi = {
       }),
   },
   registrations: {
+    listMine: (
+      query: { cursor?: string; pageSize?: number; status?: 'SUBMITTED' | 'CANCELLED' } = {},
+    ) =>
+      http.get<MyActivityRegistrationPage>('/v1/users/me/activity-registrations', query, {
+        auth: 'required',
+        sensitive: true,
+      }),
     mine: (id: string) =>
       httpWithMeta.get<ActivityRegistrationDTO>(`${activityBase(id)}/registrations/me`, undefined, {
         auth: 'required',

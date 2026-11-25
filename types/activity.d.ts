@@ -1,7 +1,8 @@
 export type ActivityUiStatus =
-  | 'not_started' // 未开始（报名未开放）
+  | 'unknown'
+  | 'not_started' // 活动未开始
   | 'enrolling' // 报名中
-  | 'ongoing' // 进行中（报名已截止，活动进行中）
+  | 'ongoing' // 活动进行中
   | 'ended' // 已结束
   | 'cancelled';
 

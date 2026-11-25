@@ -1,111 +1,246 @@
-<!-- subpkg_community/pages/post-edit/index.wxml -->
+<view class="backdrop {{ready ? 'backdrop--show' : ''}}" catchtap="onClose" aria-hidden="true" />
 
-<!-- 背景遮罩（点击关闭） -->
-<view class="backdrop {{ready ? 'backdrop--show' : ''}}" catchtap="onClose" />
+<view
+  class="panel {{ready ? 'panel--show' : ''}} {{closing ? 'panel--hide' : ''}}"
+  style="top:{{panelTop}}px;"
+  aria-label="{{postId ? (postType === 'MENTOR_QA' ? '编辑问题' : '编辑动态') : (postType === 'MENTOR_QA' ? '向导师提问' : '分享动态')}}"
+>
+  <view class="panel__handle" aria-hidden="true" />
 
-<!-- 发布面板（从底部弹起） -->
-<view class="panel {{ready ? 'panel--show' : ''}} {{closing ? 'panel--hide' : ''}}">
-
-  <!-- 拖拽指示条 -->
-  <view class="panel__handle" />
-
-  <!-- 顶部栏 -->
   <view class="panel__nav">
-    <view class="panel__cancel" catchtap="onClose">
-      <text class="panel__cancel-text">取消</text>
-    </view>
-    <text class="panel__title">发帖子</text>
-    <view class="panel__submit {{canSubmit ? 'panel__submit--on' : ''}}" catchtap="onSubmit">
-      <text class="panel__submit-text">发布</text>
-    </view>
+    <button class="panel__cancel" catchtap="onClose" disabled="{{submitting || selecting}}">取消</button>
+    <text class="panel__title">{{postId ? '编辑内容' : (postType === 'MENTOR_QA' ? '向导师提问' : '分享动态')}}</text>
+    <button
+      class="panel__submit {{canSubmit && editReady && !conflict ? 'panel__submit--on' : ''}}"
+      catchtap="onSubmit"
+      disabled="{{!canSubmit || submitting || selecting || !editReady || conflict}}"
+      loading="{{submitting}}"
+    >
+      <text class="panel__submit-text">{{submitting ? '提交中' : (postId ? '保存' : (postType === 'MENTOR_QA' ? '提问' : '发布'))}}</text>
+    </button>
   </view>
 
-  <!-- 可滚动内容区 -->
-  <scroll-view class="panel__body" scroll-y enhanced bounces="{{false}}" show-scrollbar="{{false}}"
-    style="height:{{bodyHeight}}px;">
-
-    <!-- 正文输入 -->
-    <view class="content-area">
-      <textarea class="content-input" value="{{content}}" placeholder="分享你的想法..."
-        placeholder-class="content-placeholder" maxlength="1000" auto-height show-confirm-bar="{{false}}"
-        adjust-position="{{false}}" cursor-spacing="20" bindinput="onContentInput" focus="{{autoFocus}}" />
-      <!-- 字数 -->
-      <text class="content-count" wx:if="{{content.length > 0}}">
-        {{content.length}}/1000
-      </text>
+  <scroll-view
+    class="panel__body"
+    scroll-y
+    enhanced
+    bounces="{{false}}"
+    show-scrollbar="{{false}}"
+    style="height:{{bodyHeight}}px;"
+  >
+    <view wx:if="{{recoveryNotice}}" class="composer-notice composer-notice--warning">
+      <text class="composer-notice__title">提交与编辑提示</text>
+      <text class="composer-notice__description">{{recoveryNotice}}</text>
+      <navigator class="composer-notice__link" url="/subpkg_community/pages/my-community/list?kind=posts"
+        >核对本人帖子与提交结果<ui-icon name="chevron-right" size="sm"
+      /></navigator>
     </view>
 
-    <!-- 图片区 -->
-    <view class="image-area" wx:if="{{images.length || images.length < 9}}">
-      <view class="image-grid">
-        <!-- 已选图片 -->
-        <view wx:for="{{images}}" wx:key="*this" class="image-item">
-          <image class="image-item__img" src="{{item}}" mode="aspectFill" />
-          <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}" aria-role="button" aria-label="移除图片">
-            <ui-icon name="remove" state="inverse" size="sm" />
-          </view>
+    <view wx:if="{{submitting}}" class="composer-notice composer-notice--progress">
+      <text class="composer-notice__title">{{selectedFiles.length ? '正在上传图片' : '正在提交内容'}}</text>
+      <text class="composer-notice__description"
+        >{{selectedFiles.length ? '已完成 ' + uploadProgress + '%，上传后将自动提交，请勿关闭页面。' :
+        '请稍候，完成后会显示受理结果。'}}</text
+      >
+      <progress
+        wx:if="{{selectedFiles.length}}"
+        percent="{{uploadProgress}}"
+        stroke-width="4"
+        activeColor="#2469bd"
+        backgroundColor="#e7edf5"
+      />
+    </view>
+
+    <view wx:if="{{conflict}}" class="composer-notice composer-notice--warning">
+      <text class="composer-notice__title">服务器内容已更新</text>
+      <text class="composer-notice__description"
+        >你的草稿已保留。请核对服务器版本并在表单中合并，确认后再继续编辑。</text
+      >
+      <text class="conflict-content" selectable>{{conflictContent}}</text>
+      <view class="notice-actions">
+        <button class="notice-action notice-action--primary" bindtap="acceptMerge">已核对并合并</button>
+        <button class="notice-action" bindtap="retryConflict">重新读取</button>
+      </view>
+    </view>
+
+    <view wx:if="{{fieldErrors.length}}" class="composer-notice composer-notice--error" aria-role="alert">
+      <text class="composer-notice__title">请检查以下内容</text>
+      <text wx:for="{{fieldErrors}}" wx:key="*this" class="field-error">{{item}}</text>
+    </view>
+
+    <view wx:if="{{postId && contentLocked}}" class="composer-notice">
+      <text class="composer-notice__title">原题内容已保护</text>
+      <text class="composer-notice__description"
+        >{{lockReady ? '分类和话题仍可维护；需要补充时，请使用普通讨论。' :
+        '保护状态尚未确认，暂时只能维护分类和话题。'}}</text
+      >
+      <button wx:if="{{recoveryNotice}}" class="notice-action" bindtap="restoreProtectedContent">
+        核对并恢复原题字段
+      </button>
+    </view>
+
+    <view wx:if="{{organizationEnabled && postType === 'MENTOR_QA'}}" class="title-area">
+      <view class="title-area__label">
+        <label for="post-title">问题标题</label>
+        <text>选填</text>
+      </view>
+      <input
+        id="post-title"
+        class="title-input"
+        disabled="{{!editReady || submitting || contentLocked}}"
+        value="{{title}}"
+        maxlength="128"
+        placeholder="用一句话概括问题"
+        placeholder-class="field-placeholder"
+        bindinput="onTitleInput"
+      />
+      <text wx:if="{{title.length}}" class="field-count">{{title.length}}/128</text>
+    </view>
+
+    <view class="content-area">
+      <textarea
+        id="post-content"
+        disabled="{{!editReady || submitting || contentLocked}}"
+        class="content-input"
+        value="{{content}}"
+        placeholder="{{postType === 'MENTOR_QA' ? '描述问题、相关背景，以及希望导师提供哪些帮助…' : '分享校园见闻、经验或此刻的想法…'}}"
+        placeholder-class="content-placeholder"
+        maxlength="1000"
+        auto-height
+        show-confirm-bar="{{false}}"
+        adjust-position="{{false}}"
+        cursor-spacing="20"
+        bindinput="onContentInput"
+        focus="{{autoFocus}}"
+        aria-label="{{postType === 'MENTOR_QA' ? '问题描述，必填' : '动态正文，正文或图片至少填写一项'}}"
+      />
+      <text wx:if="{{content.length}}" class="content-count">{{content.length}}/1000</text>
+    </view>
+
+    <view wx:if="{{organizationEnabled && (postType === 'MENTOR_QA' || categories.length || categoryId || categoryLoading || categoryError || categoryCursor || topics.length)}}" class="context-area">
+      <picker
+        wx:if="{{postType === 'MENTOR_QA' || categories.length || categoryId}}"
+        disabled="{{!editReady || submitting}}"
+        range="{{categories}}"
+        range-key="name"
+        bindchange="onCategoryChange"
+        aria-label="{{postType === 'MENTOR_QA' ? '选择问题分类，必选' : '选择动态分类，选填'}}"
+      >
+        <view class="category-picker {{categoryId ? 'category-picker--selected' : ''}} {{postType === 'MENTOR_QA' && !categoryId ? 'category-picker--required' : ''}}">
+          <text class="category-picker__value {{!categoryName ? 'category-picker__value--placeholder' : ''}}"
+            >{{categoryName || (postType === 'MENTOR_QA' ? '选择问题分类 · 必选' : '添加分类 · 选填')}}</text
+          >
+          <ui-icon name="chevron-right" size="sm" />
         </view>
-        <!-- 添加按钮 -->
-        <view class="image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}" aria-role="button" aria-label="添加图片">
-          <ui-icon name="image-add" size="lg" />
-          <text class="image-add__text" wx:if="{{images.length === 0}}">添加图片</text>
-          <text class="image-add__count" wx:else>{{images.length}}/9</text>
+      </picker>
+      <view
+        wx:if="{{categoryLoading || categoryError || categoryCursor || (postType === 'NORMAL' && categoryId) || (postType === 'MENTOR_QA' && !categoryLoading && !categoryError && !categories.length)}}"
+        class="category-support"
+      >
+        <text wx:if="{{categoryLoading}}" class="category-support__text">分类加载中…</text>
+        <text wx:if="{{!categoryLoading && !categoryError && !categories.length}}" class="category-support__text"
+          >暂无可用分类，请稍后再试</text
+        >
+        <button
+          wx:if="{{categoryError || categoryCursor}}"
+          class="category-support__action"
+          bindtap="loadCategories"
+          disabled="{{categoryLoading}}"
+        >
+          {{categoryError || '加载更多分类'}}
+        </button>
+        <button
+          wx:if="{{postType === 'NORMAL' && categoryId}}"
+          class="category-support__action"
+          bindtap="clearCategory"
+          disabled="{{submitting}}"
+        >
+          清除分类
+        </button>
+      </view>
+
+      <view wx:if="{{topics.length}}" class="topic-list" aria-label="已选话题">
+        <view wx:for="{{topics}}" wx:key="id" class="topic-chip">
+          <text class="topic-chip__text"># {{item.name}}</text>
+          <button
+            class="topic-chip__del"
+            catchtap="onRemoveTopic"
+            data-index="{{index}}"
+            disabled="{{submitting}}"
+            aria-label="移除话题 {{item.name}}"
+          >
+            <ui-icon name="remove" size="sm" />
+          </button>
         </view>
       </view>
     </view>
 
-    <!-- 话题标签 -->
-    <view class="topics-area" wx:if="{{topics.length}}">
-      <view wx:for="{{topics}}" wx:key="*this" class="topic-chip">
-        <text class="topic-chip__text"># {{item}}</text>
-        <view class="topic-chip__del" catchtap="onRemoveTopic" data-index="{{index}}" aria-role="button" aria-label="移除话题">
-          <ui-icon name="remove" state="inverse" size="sm" />
+    <view wx:if="{{images.length}}" class="image-area" aria-label="已选图片">
+      <view class="image-grid">
+        <view wx:for="{{images}}" wx:key="*this" class="image-item">
+          <button
+            class="image-item__preview"
+            bindtap="onPreviewImage"
+            data-index="{{index}}"
+            disabled="{{submitting}}"
+            aria-label="预览第 {{index + 1}} 张图片"
+          >
+            <image class="image-item__img" src="{{item}}" mode="aspectFill" />
+          </button>
+          <button
+            wx:if="{{!contentLocked}}"
+            class="image-item__del"
+            catchtap="onRemoveImage"
+            data-index="{{index}}"
+            disabled="{{submitting}}"
+            aria-label="移除第 {{index + 1}} 张图片"
+          >
+            <ui-icon name="remove" state="inverse" size="sm" />
+          </button>
         </view>
       </view>
     </view>
 
     <view class="bottom-pad" />
-
   </scroll-view>
 
-  <!-- 底部工具栏 -->
   <view class="panel__toolbar" style="padding-bottom:{{keyboardHeight > 0 ? 0 : safeBottom}}px;">
-    <!-- 左侧工具 -->
     <view class="toolbar-left">
-      <!-- 图片 -->
-      <view class="toolbar-btn" catchtap="onAddImage" aria-role="button" aria-label="添加图片">
+      <button
+        class="toolbar-btn"
+        catchtap="onAddImage"
+        disabled="{{images.length >= 9 || contentLocked || submitting || selecting || !editReady}}"
+        aria-label="{{images.length ? '继续添加图片' : '添加图片'}}"
+      >
         <ui-icon name="image-add" size="lg" />
-      </view>
-      <!-- 话题 -->
-      <view class="toolbar-btn" catchtap="onAddTopic">
-        <text class="toolbar-btn__icon">#</text>
-      </view>
-      <!-- 可见范围 -->
-      <view class="toolbar-btn toolbar-btn--text" catchtap="onPickVisibility">
-        <ui-icon name="visibility" size="md" />
-        <text class="toolbar-btn__label">{{visibilityLabel}}</text>
-      </view>
+        <text class="toolbar-btn__label">图片</text>
+      </button>
+      <button
+        class="toolbar-btn"
+        catchtap="onAddTopic"
+        disabled="{{!organizationEnabled || submitting || selecting || !editReady}}"
+        aria-label="选择话题"
+      >
+        <text class="toolbar-btn__hash">#</text>
+        <text class="toolbar-btn__label">话题</text>
+      </button>
     </view>
-    <!-- 右侧：收起键盘 -->
-    <view class="toolbar-btn" wx:if="{{keyboardHeight > 0}}" catchtap="onHideKeyboard">
-      <text class="toolbar-btn__icon">⌨️</text>
-    </view>
+    <button class="toolbar-keyboard" wx:if="{{keyboardHeight > 0}}" catchtap="onHideKeyboard">收起键盘</button>
+    <text wx:elif="{{selecting}}" class="toolbar-caption">正在读取图片…</text>
+    <text wx:elif="{{images.length}}" class="toolbar-caption">{{images.length}}/9 张图片</text>
   </view>
-
 </view>
 
-<!-- 话题输入弹窗 -->
-<view class="topic-modal" wx:if="{{showTopicInput}}">
+<view wx:if="{{showTopicInput && organizationEnabled}}" class="topic-modal">
   <view class="topic-modal__mask" catchtap="onCloseTopicInput" />
-  <view class="topic-modal__box" style="bottom:{{keyboardHeight > 0 ? keyboardHeight : safeBottom}}px;">
-    <view class="topic-modal__input-wrap">
-      <text class="topic-modal__hash">#</text>
-      <input class="topic-modal__input" value="{{topicInput}}" placeholder="输入话题" placeholder-class="topic-modal__ph"
-        maxlength="20" focus="{{true}}" confirm-type="done" adjust-position="{{false}}" bindinput="onTopicInput"
-        bindconfirm="onConfirmTopic" />
+  <view class="topic-modal__box">
+    <view class="topic-modal__header">
+      <view>
+        <text class="topic-modal__title">选择话题</text>
+        <text class="topic-modal__description">最多选择 3 个与内容相关的话题</text>
+      </view>
+      <button class="topic-modal__done" bindtap="onCloseTopicInput">完成</button>
     </view>
-    <view class="topic-modal__confirm" catchtap="onConfirmTopic">
-      <text class="topic-modal__confirm-text">添加</text>
-    </view>
+    <post-topic-picker selected="{{topics}}" bind:change="onTopicsChange" />
   </view>
 </view>

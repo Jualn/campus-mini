@@ -1,0 +1,150 @@
+<page-navigation title="成长记录" fixed surface="card" />
+<view class="growth-detail-page">
+  <load-state wx:if="{{loading && !record}}" mode="loading" title="正在读取成长记录" />
+  <load-state wx:if="{{error}}" mode="error" description="{{error}}" action-text="重新读取" bind:action="refresh" />
+  <load-state
+    wx:if="{{!loading && !error && !record}}"
+    mode="empty"
+    title="记录当前不可阅读"
+    description="{{feedback || '这条记录可能已删除，或当前没有阅读权限。'}}"
+    action-text="重新读取"
+    bind:action="refresh"
+  />
+  <view wx:if="{{feedback && record}}" class="detail-notice">{{feedback}}</view>
+
+  <block wx:if="{{record}}">
+    <view class="record-sheet">
+      <view class="record-heading">
+        <view class="record-type-row">
+          <text class="record-type {{record.link.recordType === 'POLITICAL_BIRTHDAY' ? 'record-type--birthday' : ''}}">{{view.typeLabel}}</text>
+          <text class="record-date">{{publishedAtText}}</text>
+        </view>
+        <text wx:if="{{view.displayTitle}}" class="record-title">{{view.displayTitle}}</text>
+        <view class="record-author">
+          <view class="record-author__icon"><ui-icon name="user" size="md" /></view>
+          <view class="record-author__copy">
+            <text class="record-author__name">{{record.author.nickname || '成长档案作者'}}</text>
+          </view>
+        </view>
+        <view class="record-statuses" aria-label="记录状态">
+          <text class="record-status">{{view.statusLabel}}</text>
+          <text class="record-status record-status--safety">{{view.safetyLabel}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{record.content}}" class="record-content" selectable>{{record.content}}</view>
+
+      <view wx:if="{{record.media.length}}" class="record-media">
+        <view class="record-media__heading">
+          <text class="record-media__title">图片与视频</text>
+          <text class="record-media__count">{{record.media.length}} 项</text>
+        </view>
+        <button
+          wx:for="{{record.media}}"
+          wx:key="mediaId"
+          class="media-card"
+          data-id="{{item.mediaId}}"
+          bindtap="openMedia"
+          disabled="{{opening}}"
+          aria-label="{{item.kind === 'VIDEO' ? '播放视频' : '查看图片'}} {{item.originalName}}"
+        >
+          <view class="media-card__icon"
+            ><ui-icon name="{{item.kind === 'VIDEO' ? 'file' : 'preview'}}" size="lg"
+          /></view>
+          <view class="media-card__copy">
+            <text class="media-card__name">{{item.originalName}}</text>
+            <text class="media-card__hint">{{item.kind === 'VIDEO' ? '安全读取后播放' : '安全读取后预览'}}</text>
+          </view>
+          <view class="media-card__action">
+            <text>{{item.kind === 'VIDEO' ? '播放' : '查看'}}</text>
+            <ui-icon name="chevron-right" size="sm" />
+          </view>
+        </button>
+        <view wx:if="{{opening}}" class="media-reading">
+          <text>正在验证权限并读取媒体，请稍候…</text>
+        </view>
+        <video
+          wx:if="{{videoPath}}"
+          class="record-video"
+          src="{{videoPath}}"
+          controls
+          show-center-play-btn
+          show-fullscreen-btn
+          enable-play-gesture
+        />
+      </view>
+    </view>
+
+    <view class="reading-links">
+      <button class="reading-link" bindtap="browsePerson">
+        <view class="reading-link__icon"><ui-icon name="user" size="md" /></view>
+        <view class="reading-link__copy">
+          <text class="reading-link__title">作者的成长记录</text>
+          <text class="reading-link__description">继续阅读这位作者的成长足迹</text>
+        </view>
+        <ui-icon name="chevron-right" size="sm" />
+      </button>
+    </view>
+
+    <view class="record-actions" aria-label="记录操作">
+      <button
+        wx:if="{{canLike}}"
+        class="record-action {{liked ? 'record-action--selected' : ''}}"
+        bindtap="like"
+        disabled="{{busy || loading || !likeReady}}"
+        aria-label="{{liked ? '取消点赞' : '点赞'}}"
+      >
+        <ui-icon name="like" state="{{liked ? 'active' : 'default'}}" size="lg" />
+        <text class="record-action__label">{{liked ? '已赞' : '点赞'}}</text>
+        <text class="record-action__count">{{record.likeCount}}</text>
+      </button>
+      <button
+        wx:if="{{canFavorite}}"
+        class="record-action {{favorited ? 'record-action--selected' : ''}}"
+        bindtap="favorite"
+        disabled="{{busy || loading || !favoriteReady}}"
+      >
+        <ui-icon name="bookmark" state="{{favorited ? 'active' : 'default'}}" size="lg" />
+        <text class="record-action__label">{{favorited ? '已收藏' : '收藏'}}</text>
+      </button>
+      <button wx:if="{{canShare}}" class="record-action" open-type="share">
+        <ui-icon name="share" size="lg" />
+        <text class="record-action__label">分享</text>
+      </button>
+      <button
+        wx:if="{{canEdit || canReport || canDelete}}"
+        class="record-action"
+        bindtap="moreActions"
+        disabled="{{busy || loading}}"
+        aria-label="更多记录操作"
+      >
+        <ui-icon name="more" size="lg" />
+        <text class="record-action__label">更多</text>
+      </button>
+    </view>
+
+    <view class="discussion-section">
+      <comment-panel
+        wx:if="{{canComment}}"
+        mode="inline"
+        target-id="{{record.link.postId}}"
+        target-type="POST"
+        post-type="NORMAL"
+        total-count="{{record.commentCount}}"
+        comment-permission="{{commentPermission}}"
+        focus-comment-id="{{commentId}}"
+        bind:report="reportComment"
+        bind:refreshquestion="refresh"
+      />
+    </view>
+  </block>
+
+  <page-container show="{{reportVisible}}" position="bottom" round bind:leave="closeReport">
+    <report-panel
+      wx:if="{{reportVisible}}"
+      target-type="{{reportTargetType}}"
+      target-id="{{reportTargetId}}"
+      bind:close="closeReport"
+    />
+  </page-container>
+</view>

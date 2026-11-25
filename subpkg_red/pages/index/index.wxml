@@ -1,1 +1,1 @@
-<view class="redirect-hint">正在打开 E 网同心…</view>
+<view class="redirect-hint" aria-role="status">正在打开 e 网同心…</view>

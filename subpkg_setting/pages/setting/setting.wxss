@@ -8,50 +8,6 @@ page { background: var(--color-bg-page); }
 }
 
 /* =====================================================
-   顶部导航
-   ===================================================== */
-.top-bar {
-  background: var(--color-bg-card);
-  padding: 0 24rpx 0;
-  box-shadow: 0 1rpx 0 var(--color-border-light);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.top-bar__nav {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
-}
-
-.top-bar__back {
-  width: 72rpx;
-  height: 72rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #f3f6fa;
-  border: none;
-  box-shadow: none;
-}
-
-
-.top-bar__title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.top-bar__placeholder { width: 72rpx; }
-
-/* =====================================================
    Setting Body
    ===================================================== */
 .setting-body {
@@ -121,6 +77,29 @@ page { background: var(--color-bg-page); }
 
 .setting-item__source {
   color: var(--color-warning, #9a6500);
+}
+
+.notification-subscription {
+  padding: 8rpx 28rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.notification-subscription__action {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.notification-action {
+  margin: 0;
+  flex-shrink: 0;
+}
+.notification-subscription__result {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  overflow-wrap: break-word;
 }
 
 /* =====================================================

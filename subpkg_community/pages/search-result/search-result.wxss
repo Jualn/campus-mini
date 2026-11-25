@@ -28,25 +28,6 @@ page {
   align-items: center;
 }
 
-.search-nav__back {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: #f3f6fa;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none;
-  flex-shrink: 0;
-}
-
-.search-nav__back:active {
-  opacity: 0.86;
-  transform: scale(0.98);
-}
-
-
 .search-nav__title {
   position: absolute;
   left: 50%;

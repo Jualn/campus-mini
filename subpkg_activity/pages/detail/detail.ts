@@ -1,3 +1,5 @@
+import { createBusinessSubscription } from '../../../services/business-subscriptions';
+import { isHttpError } from '../../../utils/error';
 import { useSharePoster } from '../../../behaviors/useSharePoster';
 // subpkg_activity/pages/detail/detail.ts
 
@@ -36,8 +38,10 @@ definePage({
   _loadVersion: 0,
   _registrationPageOpened: false,
 
+  _businessSubscription: null as ReturnType<typeof createBusinessSubscription> | null,
   data: {
     statusBarHeight: 20,
+    publicUnavailable: false,
     activity: {} as ActivityDetail,
     showPopup: false,
     popupType: '',
@@ -107,6 +111,8 @@ definePage({
     this._openingAttachment = false;
     this._unloaded = false;
 
+    this._businessSubscription = createBusinessSubscription(() => !this._unloaded);
+    void this._businessSubscription.prepare('ACTIVITY_FOLLOW', options.activityId);
     const { statusBarHeight } = wx.getWindowInfo();
     this.setData({
       statusBarHeight,
@@ -123,6 +129,7 @@ definePage({
   },
 
   onUnload() {
+    this._businessSubscription?.dispose();
     this._unloaded = true;
     this._loadVersion += 1;
     if (this._openingAttachment) void wx.hideLoading();
@@ -153,6 +160,7 @@ definePage({
     }
 
     const version = ++this._loadVersion;
+    this.setData({ publicUnavailable: false });
     this._asyncLoadBegin(options);
 
     activityAction
@@ -180,7 +188,13 @@ definePage({
       })
       .catch((err: unknown) => {
         if (this._unloaded || version !== this._loadVersion) return;
-        this._asyncLoadFail('活动暂时无法查看，可能已下架或请求失败，请稍后重试');
+        const publicUnavailable = isHttpError(err) && err.statusCode === 404;
+        this.setData({ publicUnavailable });
+        this._asyncLoadFail(
+          publicUnavailable
+            ? '活动已撤下或暂不可公开访问。通知只保留原消息，不代表本人已报名。可前往我的报名查看本人记录。'
+            : '活动暂时无法查看，请稍后重试',
+        );
         log.error('_loadActivity', '加载活动失败', err);
       });
   },
@@ -212,9 +226,11 @@ definePage({
     const desired = !this.data.activity.subscribed;
     this.setData({ subscriptionBusy: true });
     try {
+      if (desired && this._businessSubscription && !await this._businessSubscription.request('ACTIVITY_FOLLOW', id)) return;
       const subscribed = await activityAction.setActivitySubscription(id, desired);
       if (this._unloaded || this.data.activity.id !== id) return;
       this.setData({ 'activity.subscribed': subscribed });
+      void this._businessSubscription?.prepare('ACTIVITY_FOLLOW', id);
       showSuccessToast(subscribed ? '已订阅活动' : '已取消订阅');
     } catch (err) {
       if (!this._unloaded) showErrorToast(err, { fallback: '订阅操作未完成，请重试' });

@@ -1,0 +1,21 @@
+<view class="topics" aria-label="可选话题">
+  <view wx:if="{{items.length}}" class="options">
+    <button
+      wx:for="{{items}}"
+      wx:key="id"
+      class="topic-option {{selectedIds[item.id] ? 'topic-option--selected' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="toggle"
+      aria-pressed="{{selectedIds[item.id] ? true : false}}"
+    >
+      <text class="topic-option__hash">#</text>
+      <text>{{item.name}}</text>
+      <text wx:if="{{selectedIds[item.id]}}" class="topic-option__selected" aria-label="已选择">✓</text>
+    </button>
+  </view>
+  <view wx:if="{{loading}}" class="topic-status" aria-role="status">正在加载话题…</view>
+  <button wx:if="{{error || cursor}}" class="topic-more" bindtap="load" disabled="{{loading}}">
+    {{error || '更多话题'}}<ui-icon wx:if="{{!error}}" name="chevron-right" size="sm" />
+  </button>
+  <view wx:if="{{!loading && !error && !items.length}}" class="topic-status">暂无可选话题</view>
+</view>

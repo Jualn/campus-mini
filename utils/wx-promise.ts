@@ -245,13 +245,19 @@ export const chooseMessageFile = async (
   options: ChooseMessageFileOptions = {},
 ): Promise<ChosenMessageFile[]> => {
   const { count = 1, type = 'all', extension } = options;
-  const res = await wxChooseMessageFile({ count, type, extension });
-  return res.tempFiles.map((f) => ({
-    name: f.name,
-    path: f.path,
-    size: f.size,
-    time: f.time,
-  }));
+  try {
+    const res = await wxChooseMessageFile({ count, type, extension });
+    return res.tempFiles.map((f) => ({
+      name: f.name,
+      path: f.path,
+      size: f.size,
+      time: f.time,
+    }));
+  } catch (error) {
+    const errMsg = error && typeof error === 'object' ? (error as { errMsg?: unknown }).errMsg : '';
+    if (typeof errMsg === 'string' && errMsg.includes('cancel')) return [];
+    throw error;
+  }
 };
 
 // 检查并申请权限（被拒后引导去设置页）

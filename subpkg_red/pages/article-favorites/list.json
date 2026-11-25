@@ -1,0 +1,10 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "我的文章收藏",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "article-card": "../../components/article-card/index",
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index"
+  }
+}

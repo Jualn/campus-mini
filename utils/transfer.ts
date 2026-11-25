@@ -69,7 +69,9 @@ function getResponseMessage(body: Partial<ResponseBody> | undefined): string {
   return '操作失败';
 }
 
-function getServerMessage(body: Partial<ResponseBody> | ProblemDetails | undefined): string | undefined {
+function getServerMessage(
+  body: Partial<ResponseBody> | ProblemDetails | undefined,
+): string | undefined {
   if (!body) return undefined;
   if ('detail' in body && body.detail?.trim()) return body.detail;
   if ('message' in body && body.message?.trim()) return body.message;

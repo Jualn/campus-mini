@@ -49,9 +49,11 @@ definePage({
     activeStatus: 'ACTIVE',
     categoryIndex: 0,
     scopeIndex: 0,
-    statusTabs: STATUS_TABS,
-    categories: CATEGORIES,
-    scopes: SCOPES,
+    filters: [
+      { key: 'status', label: '状态', title: '活动状态', options: STATUS_TABS, selectedIndex: 1 },
+      { key: 'category', label: '分类', title: '活动分类', options: CATEGORIES, selectedIndex: 0 },
+      { key: 'scope', label: '学科部', title: '参与学科部', options: SCOPES, selectedIndex: 0 },
+    ],
     list: [] as ActivityCard[],
     nextCursor: '',
     initialLoading: false,
@@ -222,10 +224,16 @@ definePage({
     this.setData({ keyword: '' });
     this._resetQuery();
   },
-  onSwitchStatus(e: WechatMiniprogram.CustomEvent<{ value: string }>) {
-    const id = e.detail.value;
-    if (!STATUS_TABS.some((item) => item.id === id) || id === this.data.activeStatus) return;
-    this.setData({ activeStatus: id });
+  onSwitchStatus(e: WechatMiniprogram.CustomEvent<{ value: number }>) {
+    const index = e.detail.value;
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= STATUS_TABS.length ||
+      STATUS_TABS[index].id === this.data.activeStatus
+    )
+      return;
+    this.setData({ activeStatus: STATUS_TABS[index].id, 'filters[0].selectedIndex': index });
     this._resetQuery();
   },
   onCategoryChange(e: WechatMiniprogram.CustomEvent<{ value: number }>) {
@@ -237,7 +245,7 @@ definePage({
       index === this.data.categoryIndex
     )
       return;
-    this.setData({ categoryIndex: index });
+    this.setData({ categoryIndex: index, 'filters[1].selectedIndex': index });
     this._resetQuery();
   },
   onScopeChange(e: WechatMiniprogram.CustomEvent<{ value: number }>) {
@@ -249,11 +257,19 @@ definePage({
       index === this.data.scopeIndex
     )
       return;
-    this.setData({ scopeIndex: index });
+    this.setData({ scopeIndex: index, 'filters[2].selectedIndex': index });
     this._resetQuery();
   },
   onClearFilters() {
-    this.setData({ keyword: '', activeStatus: 'ACTIVE', categoryIndex: 0, scopeIndex: 0 });
+    this.setData({
+      keyword: '',
+      activeStatus: 'ACTIVE',
+      categoryIndex: 0,
+      scopeIndex: 0,
+      'filters[0].selectedIndex': 1,
+      'filters[1].selectedIndex': 0,
+      'filters[2].selectedIndex': 0,
+    });
     this._resetQuery();
   },
   onRetryInitial() {

@@ -1,5 +1,8 @@
 {
   "usingComponents": {
-    "ui-icon": "/components/ui-icon/index"
-  }
+    "ui-icon": "/components/ui-icon/index",
+    "load-state": "/components/load-state/index"
+  },
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
 }

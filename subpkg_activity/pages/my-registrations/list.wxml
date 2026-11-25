@@ -1,0 +1,33 @@
+<page-navigation title="我的报名" />
+<view class="records-page">
+  <load-state wx:if="{{loading && !items.length}}" mode="loading" title="正在加载报名记录" />
+  <load-state wx:elif="{{error}}" mode="error" variant="{{items.length ? 'inline' : 'section'}}"
+    title="报名记录暂时无法加载" description="{{error}}" action-text="重试" bind:action="refresh" />
+  <load-state wx:elif="{{!items.length}}" mode="empty" title="还没有报名记录"
+    description="活动报名和志愿服务预约都会显示在这里。" action-text="去看活动" bind:action="browse" />
+
+  <view wx:for="{{items}}" wx:key="id" class="record-card g-glass-strong">
+    <view class="record-heading">
+      <text class="record-title">{{item.activity.title}}</text>
+      <text class="record-tag {{item.cancelled ? 'record-tag--muted' : ''}}">{{item.statusLabel}}</text>
+    </view>
+    <view class="record-info">
+      <view>{{item.stageLabel}}</view>
+      <view wx:if="{{item.scheduleText}}">活动时间 {{item.scheduleText}}</view>
+      <view wx:if="{{item.activity.primaryLocation}}">地点 {{item.activity.primaryLocation}}</view>
+      <view wx:if="{{item.activity.organizer}}">主办方 {{item.activity.organizer}}</view>
+      <view wx:if="{{item.submittedAtText}}">提交于 {{item.submittedAtText}}</view>
+    </view>
+    <view wx:if="{{item.cancellationReason || item.activity.publicAccess !== 'AVAILABLE'}}" class="record-notice">
+      <view wx:if="{{item.cancellationReason}}">取消原因：{{item.cancellationReason}}</view>
+      <view wx:if="{{item.activity.publicAccess !== 'AVAILABLE'}}">活动详情暂不可查看，报名记录仍可查看。</view>
+    </view>
+    <view class="record-actions">
+      <button class="btn btn-ghost record-action" data-id="{{item.id}}" bindtap="openRegistration">查看报名记录</button>
+      <button class="record-link" wx:if="{{item.activity.publicAccess === 'AVAILABLE'}}" data-id="{{item.id}}" bindtap="openActivity">活动详情</button>
+    </view>
+  </view>
+  <load-state wx:if="{{moreError}}" mode="error" variant="inline" title="{{moreError}}"
+    action-text="{{invalidCursor ? '重新加载列表' : '重试'}}" bind:action="more" />
+  <button wx:elif="{{hasMore && !error}}" class="btn btn-ghost record-action" loading="{{loading}}" disabled="{{loading}}" bindtap="more">加载更多</button>
+</view>

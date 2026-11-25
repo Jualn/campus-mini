@@ -3,9 +3,7 @@
   <!-- 顶部 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
-      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" size="lg" />
-      </view>
+      <back-button variant="nav" auto-back="{{false}}" bind:back="onBack" />
       <text class="top-bar__title">公共事项</text>
     </view>
     <view class="search-bar-wrap">

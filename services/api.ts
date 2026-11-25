@@ -1,12 +1,26 @@
+import { rejectMiniProgramActivityPublishing } from '../utils/activity-publishing';
+import type {
+  PostEditableRepresentation,
+  PostEdit,
+  PostListBO,
+  PostDetailVO,
+  PostCreateRequest,
+  PostPageQuery,
+  PostPage,
+  CommentCreateRequest,
+  CommentVO,
+  ReplyVO,
+} from '../types/post-contract';
 import type * as ApiTypes from '../types/api';
 import type * as NotificationTypes from '../types/notification-contract';
 import type { UserProfile, UpdateMyProfileRequest } from '../types/profile-contract';
-import { http } from '../utils/request';
+import { http, httpWithMeta } from '../utils/request';
 
 export const api = {
   auth: {
+    logout: (token: string) => http.post<void>('/v1/auth/logout', undefined, { auth: 'none', retryAuth: false, sensitive: true, headers: { Authorization: `Bearer ${token}` } }),
     login: (payload: ApiTypes.LoginRequest) =>
-      http.post<ApiTypes.LoginVO>('/v1/auth/login', payload, { auth: 'none' }),
+      http.post<ApiTypes.LoginVO>('/v1/auth/login', payload, { auth: 'none', sensitive: true }),
   },
 
   user: {
@@ -53,36 +67,56 @@ export const api = {
   },
 
   post: {
-    getList: (query: ApiTypes.PostPageQuery) =>
-      http.get<ApiTypes.PageResultPostListBO>('/v1/post', query),
+    getList: (query: PostPageQuery) =>
+      http.get<PostPage>('/v1/post', { postType: 'NORMAL', ...query }, { sensitive: true }),
 
     getUserLikePost: (userId: string, lastId?: string, pageSize?: number) =>
-      http.get<ApiTypes.PageResultPostListBO>(
-        '/v1/post/liked?userId=' +
+      http.get<PostPage>(
+        '/v1/post/liked?postType=NORMAL&userId=' +
           userId +
           (lastId ? `&lastLikeId=${lastId}` : '') +
           (pageSize ? `&pageSize=${String(pageSize)}` : ''),
       ),
 
-    getDetail: (postId: string) => http.get<ApiTypes.PostDetailVO>(`/v1/post/${postId}`),
+    getDetail: (postId: string) =>
+      http.get<PostDetailVO>(`/v1/post/${postId}`, undefined, { sensitive: true }),
 
-    create: (payload: ApiTypes.PostCreateRequest) =>
-      http.post<ApiTypes.PostListBO>('/v1/post', payload),
+    create: (payload: PostCreateRequest) =>
+      http.post<PostListBO>('/v1/post', payload, { sensitive: true, retryAuth: false }),
 
-    edit: (postId: string, payload: Partial<ApiTypes.PostCreateRequest>) =>
-      http.post<string>(`/v1/post/${postId}`, payload),
+    getEditable: (postId: string) =>
+      httpWithMeta.get<PostEditableRepresentation>(
+        `/v1/post/${encodeURIComponent(postId)}`,
+        { view: 'edit' },
+        { sensitive: true },
+      ),
+    edit: (postId: string, payload: PostEdit, etag: string) =>
+      httpWithMeta.post<PostEditableRepresentation>(
+        `/v1/post/${encodeURIComponent(postId)}:edit`,
+        payload,
+        { headers: { 'If-Match': etag }, retryAuth: false, sensitive: true },
+      ),
 
     remove: (postId: string) => http.del<null>(`/v1/post/${postId}`),
   },
 
   comment: {
     getList: (query: ApiTypes.CommentPageQuery) =>
-      http.get<ApiTypes.PageResultCommentVO>('/v1/comment', query),
+      http.get<{ list: CommentVO[]; hasMore: boolean; nextCursor: string | null }>(
+        '/v1/comment',
+        query,
+        { sensitive: true },
+      ),
 
     getReplyList: (query: ApiTypes.CommentPageQuery) =>
-      http.get<ApiTypes.PageResultReplyVO>('/v1/comment/replies', query),
+      http.get<{ list: ReplyVO[]; hasMore: boolean; nextCursor: string | null }>(
+        '/v1/comment/replies',
+        query,
+        { sensitive: true },
+      ),
 
-    create: (payload: ApiTypes.CommentCreateRequest) => http.post<string>('/v1/comment', payload),
+    create: (payload: CommentCreateRequest) =>
+      http.post<string>('/v1/comment', payload, { sensitive: true, retryAuth: false }),
 
     remove: (commentId: string) => http.del<null>(`/v1/comment/${commentId}`),
   },
@@ -119,27 +153,23 @@ export const api = {
       http.del<null>(`/v1/activity/${encodeURIComponent(id)}/subscribe`, undefined, {
         auth: 'required',
       }),
-    create: (payload: ApiTypes.ActivityCreateRequest) => http.post<string>('/v1/activity', payload),
+    // Retired ordinary-token writes must not be redirected to admin APIs.
+    create: (_payload: ApiTypes.ActivityCreateRequest): Promise<string> =>
+      rejectMiniProgramActivityPublishing(),
 
     fetchActivityList: (query: ApiTypes.ActivityPageQuery) =>
       http.get<ApiTypes.PageResultActivityListBO>('/v1/activity', query),
 
     fetchActivityDetail: (id: string) => http.get<ApiTypes.ActivityDetailVO>(`/v1/activity/${id}`),
 
-    upload: (filePath: string) =>
-      http.upload<ApiTypes.ActivityUploadBO>('/v1/activity/ai-extract/upload', filePath),
+    upload: (_filePath: string): Promise<ApiTypes.ActivityUploadBO> =>
+      rejectMiniProgramActivityPublishing(),
 
     activtyPublishStream: <T>(
-      taskId: string,
-      skipped: string | undefined,
-      parser?: (line: string) => T,
-    ) =>
-      http.stream<T>(
-        `/v1/activity/ai-extract/stream?taskId=${taskId}&skipped=${String(skipped)}`,
-        undefined,
-        undefined,
-        parser,
-      ),
+      _taskId: string,
+      _skipped: string | undefined,
+      _parser?: (line: string) => T,
+    ): ReturnType<typeof http.stream<T>> => rejectMiniProgramActivityPublishing(),
   },
 
   exam: {
@@ -166,12 +196,10 @@ export const api = {
   },
 
   notify: {
-    getStructuredList: (query: NotificationTypes.NotificationListQuery) =>
-      http.get<NotificationTypes.NotificationListResponse>(
-        '/v1/users/me/notifications',
-        { ...query, representation: 'structured' },
-        { sensitive: true },
-      ),
+    listNotifications: (query: NotificationTypes.NotificationListQuery) =>
+      http.get<NotificationTypes.NotificationListResponse>('/v1/users/me/notifications', query, {
+        sensitive: true,
+      }),
     getSummary: (afterCursor?: string) =>
       http.get<NotificationTypes.NotificationSummary>(
         '/v1/users/me/notifications/summary',
@@ -184,6 +212,10 @@ export const api = {
         undefined,
         { sensitive: true },
       ),
+    deleteNotification: (id: string) =>
+      http.del(`/v1/users/me/notifications/${encodeURIComponent(id)}`, undefined, {
+        sensitive: true,
+      }),
     batchRead: (notificationIds: string[]) =>
       http.post<NotificationTypes.NotificationReadResult>(
         '/v1/users/me/notifications:batch-read',
@@ -196,19 +228,6 @@ export const api = {
         { throughCursor },
         { sensitive: true },
       ),
-    getMyList: (query: ApiTypes.NotificationPageQuery) =>
-      http.get<ApiTypes.NotificationCursorPage>('/v1/users/me/notifications', query),
-
-    getUnreadCount: () =>
-      http.get<ApiTypes.NotificationUnreadCount>('/v1/users/me/notifications/unread-count'),
-
-    markRead: (id: string) =>
-      http.put<null>(`/v1/users/me/notifications/${encodeURIComponent(id)}/read-state`, {
-        isRead: true,
-      }),
-
-    markAllRead: () => http.post<null>('/v1/users/me/notifications:mark-all-read'),
-
     getPreferences: () =>
       http.get<ApiTypes.NotificationPreferences>('/v1/users/me/notification-preferences'),
 
@@ -222,14 +241,21 @@ export const api = {
       http.get<ApiTypes.NotificationChannelCapabilities>(
         '/v1/users/me/notification-channel-capabilities',
       ),
+
+    getSubscriptionOptions: (query?: { sceneCode: ApiTypes.NotificationSubscriptionSceneCode; resourceId?: string }) =>
+      http.get<ApiTypes.NotificationSubscriptionOptions>(
+        '/v1/users/me/notification-subscription-options',
+        query,
+        { sensitive: true },
+      ),
   },
 
   report: {
-    create: (payload: ApiTypes.ReportCreateRequest) => http.post<null>('/v1/reports', payload),
+    create: (payload: Omit<ApiTypes.ReportCreateRequest, 'mark'> & { mark?: string; remark?: string }) =>
+      http.post<null>('/v1/reports', payload, { sensitive: true, retryAuth: false }),
   },
 
   search: {
-    searchPosts: (query: ApiTypes.SearchQuery) =>
-      http.get<ApiTypes.PageResultPostListBO>('/v1/search/posts', query),
+    searchPosts: (query: ApiTypes.SearchQuery) => http.get<PostPage>('/v1/search/posts', query),
   },
 };

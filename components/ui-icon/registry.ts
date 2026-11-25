@@ -33,6 +33,23 @@ export const ICON_REGISTRY = {
   'home-materials': { default: '/assets/icons/core/home-materials.svg' },
   'home-tasks': { default: '/assets/icons/core/home-tasks.svg' },
   'home-events': { default: '/assets/icons/core/home-events.svg' },
+  // 专用于自定义 TabBar，避免改变业务页面中的通用图标。
+  'tab-home': {
+    default: '/assets/icons/tabbar/home-default.svg',
+    active: '/assets/icons/tabbar/home-active.svg',
+  },
+  'tab-campus': {
+    default: '/assets/icons/tabbar/campus-default.svg',
+    active: '/assets/icons/tabbar/campus-active.svg',
+  },
+  'tab-message': {
+    default: '/assets/icons/tabbar/message-default.svg',
+    active: '/assets/icons/tabbar/message-active.svg',
+  },
+  'tab-profile': {
+    default: '/assets/icons/tabbar/profile-default.svg',
+    active: '/assets/icons/tabbar/profile-active.svg',
+  },
   home: { default: '/assets/icons/core/home.svg', active: '/assets/icons/core/home-active.svg' },
   message: {
     default: '/assets/icons/core/message.svg',

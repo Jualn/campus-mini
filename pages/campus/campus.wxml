@@ -113,6 +113,7 @@
       </view>
       <!-- 快捷导航 -->
       <view class="quick-nav">
+        <view class="nav-item" bindtap="goToMentorQa"><view class="nav-icon act"><ui-icon name="comment" size="xl" /></view><text>导师答疑</text></view>
         <view class="nav-item" bindtap="goToActivityList">
           <view class="nav-icon act">
             <ui-icon name="calendar-event" size="xl" />
@@ -254,7 +255,7 @@
     bind:report="onCommentReport"
   />
   <!-- post发布弹窗 -->
-  <post-edit-panel wx:elif="{{popupType==='post-edit'}}" bind:submit="onPostSubmit" bind:close="onPostEditClose" />
+  <post-edit-panel wx:elif="{{popupType==='post-edit'}}" busy="{{postSubmitting}}" bind:submit="onPostSubmit" bind:close="onPostEditClose" />
   <!-- share弹窗 -->
   <share-panel
     wx:elif="{{popupType==='share'}}"
@@ -262,6 +263,7 @@
     status="{{shareStatus}}"
     bind:retry="onRetryShare"
     bind:previewerror="onSharePreviewError"
+    bind:saved="onPosterSaved"
     bind:close="onShareClose"
   />
   <!-- report弹窗 -->

@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "积分申请",
+  "backgroundColor": "#F6F8FC",
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "page-navigation": "/components/page-navigation/index",
+    "load-state": "/components/load-state/index",
+    "ui-icon": "/components/ui-icon/index"
+  }
+}

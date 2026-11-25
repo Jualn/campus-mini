@@ -1,1 +1,10 @@
-.redirect-hint { padding: 180rpx 30rpx; text-align: center; color: var(--color-text-secondary); }
+.redirect-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--space-lg);
+  color: var(--color-text-secondary);
+  font-size: var(--font-md);
+  text-align: center;
+}

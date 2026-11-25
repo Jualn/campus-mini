@@ -5,7 +5,11 @@ import { getUserId, isLoggedIn } from '../stores/helper';
 import { authReady, ensureLogin } from './auth';
 import { navigateNotificationTarget } from '../utils/notification-target';
 import { showErrorToast } from '../utils/notify';
-import type { NotificationPreview, NotificationTarget } from '../types/notification-contract';
+import type {
+  NotificationListQuery,
+  NotificationPreview,
+  NotificationTarget,
+} from '../types/notification-contract';
 import type { BannerMessage } from '../types/business';
 
 let foreground = false;
@@ -21,11 +25,20 @@ let intervalMs = config.notificationPollIntervalMs;
 let bound = false;
 const isForeground = () => foreground;
 const isForegroundSession = (generation: number) => foreground && generation === session;
-// Serialize summaries and read writes so older snapshots cannot overwrite newer Badge state.
+// Serialize inbox snapshots, summaries and writes so older results cannot restore removed items.
 let queue: Promise<unknown> = Promise.resolve();
 const suppressedNotificationIds = new Set<string>();
 let pendingEntry: { id: string; running: boolean } | undefined;
+let externalEntryRevision = 0;
 const failedReads = new Set<string>();
+// Confirmed removals survive Page recreation, but never cross login identities.
+const unavailableIds = new Set<string>();
+export const isUnavailable = (id: string) => unavailableIds.has(id);
+const forgetNotification = (id: string) => {
+  unavailableIds.add(id);
+  failedReads.delete(id);
+  suppressedNotificationIds.add(id);
+};
 
 export const getUnreadCount = () => unreadCount;
 export const isUnreadKnown = () => unreadKnown;
@@ -44,6 +57,7 @@ const syncAccount = () => {
   cursor = undefined;
   suppressedNotificationIds.clear();
   failedReads.clear();
+  unavailableIds.clear();
   // Only the unverified external entry may be associated with the newly authenticated user.
   if (pendingEntry) suppressedNotificationIds.add(pendingEntry.id);
   publishCount(0, false);
@@ -67,9 +81,58 @@ const ordered = <T>(work: (isCurrent: () => boolean) => Promise<T>): Promise<T> 
   return task;
 };
 
+const reconcileVisibility = async (isCurrent: () => boolean) => {
+  if (!isCurrent()) return;
+  eventBus.emit(EVENTS.NOTIFY_BANNER_CLEAR);
+  eventBus.emit(EVENTS.NOTIFY_VISIBILITY_CHANGE);
+  try {
+    const result = await notifications.getSummary();
+    if (isCurrent()) publishCount(result.unreadCount);
+  } catch {
+    if (isCurrent()) publishCount(unreadCount, false);
+  }
+};
+
+export const loadNotifications = (query: NotificationListQuery) => {
+  const generation = session;
+  return ordered(async (isCurrent) => {
+    const page = await notifications.listNotifications(query);
+    // Even a list-only refresh (including natural expiry) must refresh the Badge.
+    const summary = await notifications.getSummary();
+    if (isCurrent() && generation === session) publishCount(summary.unreadCount);
+    return { ...page, items: page.items.filter((item) => !isUnavailable(item.id)) };
+  });
+};
+
+export const deleteNotification = (id: string) =>
+  ordered(async (isCurrent) => {
+    try {
+      await notifications.deleteNotification(id);
+    } catch (err) {
+      // A lost mutation response has an unknown outcome; only reads may reconcile it.
+      await reconcileVisibility(isCurrent);
+      throw err;
+    }
+    if (!isCurrent()) return;
+    forgetNotification(id);
+    await reconcileVisibility(isCurrent);
+  });
+
 export const markRead = (ids: string[]) =>
   ordered(async (isCurrent) => {
-    const result = await notifications.batchRead(ids);
+    let result;
+    try {
+      if (ids.some(isUnavailable)) throw new Error('这条通知已不可用，请刷新消息');
+      result = await notifications.batchRead(ids);
+    } catch (err) {
+      if (isCurrent() && notifications.isNotificationUnavailable(err)) {
+        // An atomic batch 404 identifies no particular member; never mark any as read.
+        if (ids.length === 1) forgetNotification(ids[0]);
+        ids.forEach((id) => failedReads.delete(id));
+        await reconcileVisibility(isCurrent);
+      }
+      throw err;
+    }
     if (isCurrent()) {
       publishCount(result.unreadCount);
       ids.forEach((id) => failedReads.delete(id));
@@ -96,24 +159,48 @@ export const retryFailedReads = async () => {
   }
 };
 
-export const openNotification = async (item: { id: string; target?: NotificationTarget }) => {
+export const openNotification = async (
+  item: { id: string; target?: NotificationTarget },
+  entryRevision?: number,
+) => {
   syncAccount();
   const owner = getUserId();
   const revision = accountRevision;
   const generation = session;
   suppressedNotificationIds.add(item.id);
+  if (isUnavailable(item.id)) return;
   try {
     await markRead([item.id]);
   } catch (err) {
     if (owner !== getUserId() || revision !== accountRevision) return;
-    failedReads.add(item.id);
+    if (!notifications.isNotificationUnavailable(err) && !isUnavailable(item.id))
+      failedReads.add(item.id);
     eventBus.emit(EVENTS.NOTIFY_LIST_REFRESH);
-    showErrorToast(err, { fallback: '已读同步失败，可在消息中心重试' });
+    showErrorToast(err, {
+      fallback: notifications.isNotificationUnavailable(err)
+        ? '这条通知已删除、已到期或不可用，请刷新消息'
+        : '已读同步失败，可在消息中心重试',
+    });
+    if (notifications.isNotificationUnavailable(err) || isUnavailable(item.id)) return;
   }
-  if (owner !== getUserId() || revision !== accountRevision || !isForegroundSession(generation))
+  if (
+    owner !== getUserId() ||
+    revision !== accountRevision ||
+    !isForegroundSession(generation) ||
+    isUnavailable(item.id) ||
+    (entryRevision !== undefined && entryRevision !== externalEntryRevision)
+  )
     return;
   try {
-    await navigateNotificationTarget(item.target);
+    await navigateNotificationTarget(item.target, {
+      external: entryRevision !== undefined,
+      isCurrent: () =>
+        owner === getUserId() &&
+        revision === accountRevision &&
+        isForegroundSession(generation) &&
+        !isUnavailable(item.id) &&
+        (entryRevision === undefined || entryRevision === externalEntryRevision),
+    });
   } catch (err) {
     showErrorToast(err, { fallback: '暂时无法打开详情' });
   }
@@ -142,13 +229,15 @@ export const pollOnce = async () => {
       const result = await notifications.getSummary(afterCursor);
       if (!foreground || generation !== session || !isCurrent()) return;
       publishCount(result.unreadCount);
+      eventBus.emit(EVENTS.NOTIFY_VISIBILITY_CHANGE);
       cursor = result.headCursor;
       const preview = result.latestNewNotification;
       if (
         afterCursor &&
         result.newCount > 0 &&
         preview &&
-        !suppressedNotificationIds.has(preview.id)
+        !suppressedNotificationIds.has(preview.id) &&
+        !isUnavailable(preview.id)
       ) {
         suppressedNotificationIds.add(preview.id);
         eventBus.emit(EVENTS.NOTIFY_BANNER_SHOW, toBanner(preview));
@@ -192,6 +281,9 @@ const processExternalEntry = async () => {
   const entry = pendingEntry;
   if (!entry || entry.running || !foreground) return;
   entry.running = true;
+  const entryRevision = externalEntryRevision;
+  let recoveryOwner: string | null | undefined;
+  let recoveryRevision: number | undefined;
   try {
     await authReady;
     if (pendingEntry !== entry || !isForeground()) return;
@@ -199,19 +291,31 @@ const processExternalEntry = async () => {
     syncAccount();
     const owner = getUserId();
     const revision = accountRevision;
+    recoveryOwner = owner;
+    recoveryRevision = revision;
+    if (isUnavailable(entry.id)) throw new Error('这条通知已不可用');
     const item = await notifications.getNotification(entry.id);
     if (
       pendingEntry !== entry ||
       !isForeground() ||
       owner !== getUserId() ||
-      revision !== accountRevision
+      revision !== accountRevision ||
+      isUnavailable(entry.id)
     )
       return;
     pendingEntry = undefined;
-    await openNotification(item);
+    await openNotification(item, entryRevision);
   } catch (err) {
     if (pendingEntry === entry) {
       pendingEntry = undefined;
+      if (
+        notifications.isNotificationUnavailable(err) &&
+        recoveryOwner === getUserId() &&
+        recoveryRevision === accountRevision
+      ) {
+        forgetNotification(entry.id);
+        void ordered(reconcileVisibility).catch(() => undefined);
+      }
       showErrorToast(err, { fallback: '这条通知暂不可用' });
     }
   } finally {
@@ -224,6 +328,7 @@ export const receiveExternalEntry = (query?: Record<string, unknown>) => {
   const value = query?.notificationId;
   if (typeof value !== 'string' || !value || value.length > 128) return;
   suppressedNotificationIds.add(value);
+  externalEntryRevision += 1;
   pendingEntry = { id: value, running: false };
   if (foreground) void processExternalEntry();
 };
@@ -246,6 +351,7 @@ const bindEvents = () => {
     cursor = undefined;
     suppressedNotificationIds.clear();
     failedReads.clear();
+    unavailableIds.clear();
     publishCount(0, false);
     eventBus.emit(EVENTS.NOTIFY_BANNER_CLEAR);
   });

@@ -1,75 +1,183 @@
 <!-- components/post-edit-panel/index.wxml -->
-<!--
-  组件自己全权管理遮罩 + 面板动画，父页面只需控制 show prop。
-  page-container 设 overlay="{{false}}"，由组件内的 .mask 接管遮罩。
--->
+<!-- 留在首页 Page 内，由 WXS 提供跟手、回弹和关闭动画。 -->
 <wxs module="drag" src="../../utils/drag.wxs"></wxs>
 <view class="root" catch:touchmove="noop">
+  <view
+    class="mask J-mask"
+    data-panel-h="{{panelHeight}}"
+    data-close-guard="{{dirty || busy || selecting}}"
+    catch:touchstart="{{drag.noop}}"
+    catch:touchend="{{drag.handleClose}}"
+    catchtouchmove="noop"
+  />
 
-  <!-- 遮罩：opacity 跟手，点击关闭 -->
-  <view class="mask J-mask" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
-    catch:touchend="{{drag.handleClose}}" catchtouchmove="noop" />
-
-  <!-- 面板：translateY 跟手 -->
   <view class="panel J-sheet">
-
-    <!-- 拖拽指示条 -->
-    <view class="panel__handle-area" bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
-      catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}">
+    <view
+      class="panel__handle-area"
+      bindtouchstart="{{drag.handleStart}}"
+      bindtouchend="{{drag.handleEnd}}"
+      catchtouchmove="{{drag.handleMove}}"
+      data-panel-h="{{panelHeight}}"
+      data-close-guard="{{dirty || busy || selecting}}"
+    >
       <view class="panel__handle" />
     </view>
 
-    <!-- 顶部栏 -->
-    <view class="panel__nav" bindtouchstart="{{drag.handleStart}}" bindtouchend="{{drag.handleEnd}}"
-      catchtouchmove="{{drag.handleMove}}" data-panel-h="{{panelHeight}}">
-      <view class="panel__cancel" data-panel-h="{{panelHeight}}" catch:touchstart="{{drag.noop}}"
-        catch:touchend="{{drag.handleClose}}" catchtouchmove="noop">
-        <text class="panel__cancel-text">取消</text>
-      </view>
-      <text class="panel__title">发帖子</text>
-      <view class="panel__submit {{canSubmit ? 'panel__submit--on' : ''}}" catchtap="onSubmit">
-        <text class="panel__submit-text">发布</text>
-      </view>
+    <view
+      class="panel__nav"
+      bindtouchstart="{{drag.handleStart}}"
+      bindtouchend="{{drag.handleEnd}}"
+      catchtouchmove="{{drag.handleMove}}"
+      data-panel-h="{{panelHeight}}"
+      data-close-guard="{{dirty || busy || selecting}}"
+    >
+      <button
+        class="panel__cancel"
+        data-panel-h="{{panelHeight}}"
+        data-close-guard="{{dirty || busy || selecting}}"
+        catch:touchstart="{{drag.noop}}"
+        catch:touchend="{{drag.handleClose}}"
+        catchtouchmove="noop"
+        disabled="{{busy || selecting}}"
+      >取消</button>
+      <text class="panel__title">分享动态</text>
+      <button
+        class="panel__submit {{canSubmit && !busy && !selecting ? 'panel__submit--on' : ''}}"
+        catchtap="onSubmit"
+        disabled="{{!canSubmit || busy || selecting}}"
+        loading="{{busy}}"
+      >
+        <text class="panel__submit-text">{{busy ? '提交中' : '发布'}}</text>
+      </button>
     </view>
 
-    <!-- 内容区 -->
-    <scroll-view class="panel__body" scroll-y enhanced bounces="{{false}}" show-scrollbar="{{false}}"
-      upper-threshold="15" bindtouchstart="{{drag.scrollStart}}" bindtouchmove="{{drag.scrollMove}}"
-      bindtouchend="{{drag.scrollEnd}}" data-panel-h="{{panelHeight}}" data-at-top="{{atScrollTop}}"
-      style="padding-bottom: {{kbHeight}}px;">
+    <scroll-view
+      class="panel__body"
+      scroll-y
+      enhanced
+      bounces="{{false}}"
+      show-scrollbar="{{false}}"
+      upper-threshold="15"
+      bindtouchstart="{{drag.scrollStart}}"
+      bindtouchmove="{{drag.scrollMove}}"
+      bindtouchend="{{drag.scrollEnd}}"
+      data-panel-h="{{panelHeight}}"
+      data-at-top="{{atScrollTop}}"
+      data-close-guard="{{dirty || busy || selecting}}"
+      style="padding-bottom: {{kbHeight}}px;"
+    >
+      <view wx:if="{{busy}}" class="composer-status" aria-role="status">正在上传并提交，请勿关闭</view>
 
-      <!-- 正文输入 -->
       <view class="content-area">
-        <!-- 镜像层：不可见但占空间，驱动容器高度（纯渲染，无 JS） -->
         <view class="mirror-text">{{mirrorContent}}</view>
-        <textarea class="content-input" placeholder="分享你的想法..." placeholder-class="content-ph"
-          bindkeyboardheightchange="onKeyboardHeightChange" bindfocus="onTextareaFocus" bindblur="onTextareaBlur"
-          maxlength="700" show-confirm-bar="{{false}}" adjust-position="{{false}}" cursor-spacing="20"
-          bindinput="onContentInput" focus="{{focused}}" />
-        <!-- 计数器放在这里，确保它在 input 区域内但不会随文字滚动 -->
+        <textarea
+          class="content-input"
+          value="{{content}}"
+          placeholder="分享校园见闻、经验或此刻的想法…"
+          placeholder-class="content-ph"
+          bindkeyboardheightchange="onKeyboardHeightChange"
+          bindfocus="onTextareaFocus"
+          bindblur="onTextareaBlur"
+          maxlength="1000"
+          show-confirm-bar="{{false}}"
+          adjust-position="{{false}}"
+          cursor-spacing="20"
+          bindinput="onContentInput"
+          focus="{{focused}}"
+          disabled="{{busy}}"
+          aria-label="动态正文，正文或图片至少填写一项"
+        />
         <view class="content-count-wrapper">
-          <text class="content-count" wx:if="{{contentLength > 0}}">{{contentLength}}/700</text>
+          <text class="content-count" wx:if="{{contentLength > 0}}">{{contentLength}}/1000</text>
         </view>
       </view>
 
-      <!-- 图片区 -->
-      <view class="image-area" wx:if="{{images.length > 0 || images.length < 9}}">
-        <view class="image-grid">
-          <view wx:for="{{images}}" wx:key="*this" class="image-item">
-            <image class="image-item__img" src="{{item}}" mode="aspectFill" />
-            <view class="image-item__del" catchtap="onRemoveImage" data-index="{{index}}" aria-role="button" aria-label="移除图片">
-              <ui-icon name="remove" state="inverse" size="sm" />
+      <view wx:if="{{organizationEnabled}}" class="context-area">
+        <picker
+          wx:if="{{categories.length || categoryId}}"
+          range="{{categories}}"
+          range-key="name"
+          disabled="{{busy}}"
+          bindchange="onCategoryChange"
+          aria-label="选择动态分类，选填"
+        >
+          <view class="category-picker {{categoryId ? 'category-picker--selected' : ''}}">
+            <text>{{categoryName || '添加分类 · 选填'}}</text>
+            <ui-icon name="chevron-right" size="sm" />
+          </view>
+        </picker>
+        <view
+          wx:if="{{categoryLoading || categoryError || categoryCursor || categoryId}}"
+          class="category-support"
+        >
+          <text wx:if="{{categoryLoading}}">分类加载中…</text>
+          <text wx:if="{{!categoryLoading && !categoryError && !categories.length}}">暂无可用分类</text>
+          <button wx:if="{{categoryError || categoryCursor}}" bindtap="loadCategories" disabled="{{categoryLoading}}">
+            {{categoryError || '更多分类'}}
+          </button>
+          <button wx:if="{{categoryId}}" bindtap="clearCategory" disabled="{{busy}}">清除分类</button>
+        </view>
+        <view class="topic-row">
+          <view wx:if="{{topics.length}}" class="topic-list">
+            <view wx:for="{{topics}}" wx:key="id" class="topic-chip">
+              <text># {{item.name}}</text>
+              <button data-id="{{item.id}}" catchtap="removeTopic" disabled="{{busy}}" aria-label="移除话题 {{item.name}}">
+                <ui-icon name="remove" size="sm" />
+              </button>
             </view>
           </view>
-          <view class="image-item image-add" bindtap="onAddImage" wx:if="{{images.length < 9}}" aria-role="button" aria-label="添加图片">
-            <ui-icon class="image-add__icon" name="plus" size="lg" />
-            <text class="image-add__hint">{{images.length === 0 ? '添加图片' : images.length + '/9'}}</text>
-          </view>
+          <button class="topic-add" bindtap="onAddTopic" disabled="{{busy}}"># 选择话题</button>
         </view>
       </view>
 
+      <view class="image-area">
+        <view class="image-grid">
+          <view wx:for="{{images}}" wx:key="*this" class="image-item">
+            <image
+              class="image-item__img"
+              src="{{item}}"
+              mode="aspectFill"
+              data-index="{{index}}"
+              bindtap="onPreviewImage"
+              aria-label="预览第 {{index + 1}} 张图片"
+            />
+            <button
+              class="image-item__del"
+              catchtap="onRemoveImage"
+              data-index="{{index}}"
+              disabled="{{busy}}"
+              aria-label="移除第 {{index + 1}} 张图片"
+            >
+              <ui-icon name="remove" state="inverse" size="sm" />
+            </button>
+          </view>
+          <button
+            class="image-item image-add"
+            bindtap="onAddImage"
+            wx:if="{{images.length < 9}}"
+            disabled="{{busy || selecting}}"
+            aria-label="{{images.length ? '继续添加图片' : '添加图片'}}"
+          >
+            <ui-icon class="image-add__icon" name="image-add" size="lg" />
+            <text class="image-add__hint">{{selecting ? '读取中…' : (images.length === 0 ? '添加图片' : images.length + '/9')}}</text>
+          </button>
+        </view>
+      </view>
       <view class="body-pad" catch:touchmove="noop" />
     </scroll-view>
+  </view>
+</view>
 
+<view wx:if="{{showTopics}}" class="topic-modal">
+  <view class="topic-modal__mask" catchtap="onCloseTopics" />
+  <view class="topic-modal__box">
+    <view class="topic-modal__header">
+      <view>
+        <text class="topic-modal__title">选择话题</text>
+        <text class="topic-modal__description">最多选择 3 个与内容相关的话题</text>
+      </view>
+      <button class="topic-modal__done" bindtap="onCloseTopics">完成</button>
+    </view>
+    <post-topic-picker selected="{{topics}}" bind:change="onTopicsChange" />
   </view>
 </view>

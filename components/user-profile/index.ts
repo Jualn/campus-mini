@@ -21,6 +21,10 @@
  *   goFollower    → 粉丝列表
  *   goLiked / goCollect / goFiles / goHistory → 快捷入口
  *   switchtab     → { tab } 切换 tab
+ *
+ * Slots:
+ *   profile-badges → 昵称后方的附加标识
+ *   profile-footer → 个人资料之后、内容 Tab 之前的页面级内容
  */
 
 import defineComponent from '../../utils/defineComponent';
@@ -34,6 +38,10 @@ interface UserProfilePrivate {
 }
 
 defineComponent<UserProfilePrivate>()({
+  options: {
+    multipleSlots: true,
+  },
+
   properties: {
     isSelf: {
       type: Boolean,

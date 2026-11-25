@@ -1,3 +1,7 @@
+import { POST_CAPABILITIES } from '../config/post-capabilities';
+import { http } from '../utils/request';
+import { newPostEventId } from '../utils/post-community';
+import runtimeConfig from '../config/index';
 import defineBehavior from '../utils/defineBehavior';
 import type { WxScope } from '../utils/share_poster/posterCanvas';
 import { ShareTask, type ShareStatus } from '../utils/share_poster/shareTask';
@@ -8,6 +12,7 @@ const log = createLogger('useSharePoster');
 interface ShareRequest {
   /** 包含内容版本，避免同一条内容更新后继续使用旧图。 */
   key: string;
+  postId?: string;
   path: string;
   /** 不传时沿用微信默认标题，适合正文已经排在图片中的帖子。 */
   title?: string;
@@ -69,7 +74,15 @@ export function useSharePoster() {
         if (this.data.shareStatus === 'loading') return;
         this._generateSharePoster();
       },
+      _reportPostShare(action: 'WECHAT_SHARE_INVOKED' | 'POSTER_SAVED') {
+        const postId = this._shareRequest?.postId;
+        if (!POST_CAPABILITIES.communityV1 || !postId) return;
+        const eventId = newPostEventId();
+        void http.post('/v1/interact/share', { targetType: 'POST', targetId: postId, action, eventId }, { sensitive: true, retryAuth: false }).catch(() => { /* No blind mutation retry. */ });
+      },
+      onPosterSaved() { this._reportPostShare('POSTER_SAVED'); },
       _getShareContent(): WechatMiniprogram.Page.ICustomShareContent {
+        this._reportPostShare('WECHAT_SHARE_INVOKED');
         return {
           ...(this.data.currentShareTitle ? { title: this.data.currentShareTitle } : {}),
           path: this.data.currentSharePath || '/pages/index/index',
@@ -77,7 +90,7 @@ export function useSharePoster() {
           imageUrl:
             this.data.shareStatus === 'ready'
               ? this.data.currentShareImage
-              : 'https://cos.jualn.cn/share/index-share.jpg',
+              : runtimeConfig.defaultShareImageUrl,
         };
       },
     },

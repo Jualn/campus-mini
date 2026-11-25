@@ -1,0 +1,73 @@
+<template name="comment">
+  <view class="comment {{focusCommentId === c.id ? 'highlight' : ''}}">
+    <view class="author">
+      <image wx:if="{{c.author.avatarUrl}}" class="avatar" src="{{c.author.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="avatar discussion-avatar" style="background:{{c.avatarBg}};">{{c.avatarChar}}</view>
+      <view class="author-copy">
+        <view class="author-line">
+          <text class="author-name">{{c.author.nickname}}</text>
+          <text wx:if="{{c.parentId}}" class="reply-recipient">{{recipient ? '回复 @' + recipient : '回复一条评论'}}</text>
+        </view>
+      </view>
+    </view>
+    <text class="content" user-select>{{c.content}}</text>
+    <view class="tools">
+      <text class="date">{{c.date}}</text>
+      <button class="tool-button {{c.liked ? 'tool-button--active' : ''}}" data-id="{{c.id}}" bindtap="like" disabled="{{!writeReady}}" aria-label="{{c.liked ? '取消点赞' : '点赞评论'}}"><ui-icon name="like" state="{{c.liked ? 'active' : 'default'}}" size="sm" /> {{c.likeCount}}</button>
+      <button wx:if="{{enabled && !closed}}" class="tool-button" data-id="{{c.id}}" data-root="{{c.parentId || c.id}}" data-name="{{c.author.nickname}}" bindtap="reply" disabled="{{!writeReady || sending}}"><ui-icon name="reply" size="sm" />回复</button>
+      <button wx:if="{{c.own}}" class="tool-button tool-button--danger" data-id="{{c.id}}" bindtap="remove" disabled="{{!writeReady || sending}}">删除</button>
+      <button wx:if="{{!c.parentId && (c.replyCount || rootId === c.id)}}" class="tool-button tool-button--thread" data-id="{{c.id}}" bindtap="openThread">{{rootId === c.id ? '收起回复' : '查看 ' + c.replyCount + ' 条回复'}}<ui-icon name="chevron-right" size="sm" /></button>
+    </view>
+  </view>
+</template>
+
+<view class="comments">
+  <view class="heading-row">
+    <view class="discussion-heading">评论<text class="discussion-count">{{totalCount}} 条评论</text></view>
+    <button wx:if="{{enabled && !closed}}" class="article-comment-entry" bindtap="startWriting" disabled="{{!writeReady || sending}}">
+      <ui-icon name="comment" size="md" /><text>写下你的评论…</text>
+    </button>
+    <view wx:else class="article-comment-entry article-comment-entry--readonly">
+      <ui-icon name="comment" size="md" />
+      <text>{{totalCount ? '评论已关闭，仍可阅读已有评论' : '这篇文章暂未开放评论'}}</text>
+    </view>
+  </view>
+  <view wx:if="{{!writeReady}}" class="hint">正在确认文章状态，评论草稿已保留</view>
+
+  <block wx:for="{{comments}}" wx:key="id">
+    <template is="comment" data="{{c:item, enabled, closed, focusCommentId, writeReady, rootId, sending}}" />
+    <view wx:if="{{rootId === item.id}}" class="thread">
+      <view class="thread-top">回复</view>
+      <template wx:for="{{replies}}" wx:for-item="reply" wx:key="id" is="comment"
+        data="{{c:reply, recipient: !reply.replyToCommentId || reply.replyToCommentId === item.id ? item.author.nickname : reply.replyToName, enabled, closed, focusCommentId, writeReady, sending}}" />
+      <view wx:if="{{repliesLoading}}" class="hint">正在加载回复…</view>
+      <view wx:elif="{{repliesError}}" class="error-state"><text>{{repliesError}}</text><button class="text-button" bindtap="replyRetry">重试回复</button></view>
+      <view wx:elif="{{!replies.length}}" class="hint">暂无回复</view>
+      <button wx:if="{{repliesMore && !repliesLoading && !repliesError}}" class="more-button" bindtap="replyMore">查看更多回复</button>
+    </view>
+  </block>
+  <view wx:if="{{loading}}" class="hint">正在加载评论…</view>
+  <view wx:elif="{{error}}" class="error-state"><text>{{error}}</text><button class="text-button" bindtap="retry">重试评论</button></view>
+  <view wx:elif="{{!comments.length && enabled && !closed}}" class="empty-comments">暂无评论，来分享第一个看法</view>
+  <button wx:if="{{hasMore && !loading && !error}}" class="more-button" bindtap="more">查看更多评论</button>
+</view>
+
+<block wx:if="{{enabled && !closed && composing}}">
+  <view class="article-composer-mask" catchtap="closeComposer" catchtouchmove="noop" />
+  <view class="cp-bottom-bar cp-bottom-bar--inline article-composer" style="bottom: {{keyboardBottom}}px;">
+    <view class="cp-inputbar {{keyboardBottom ? 'cp-inputbar--keyboard' : ''}}">
+      <view class="discussion-avatar" style="background:{{selfAvatar.avatarBg}}">
+        <image wx:if="{{selfAvatar.avatarUrl}}" src="{{selfAvatar.avatarUrl}}" mode="aspectFill" />
+        <text wx:else>{{selfAvatar.avatarChar}}</text>
+      </view>
+      <view class="cp-inputbar__wrap cp-inputbar__wrap--focus">
+        <textarea class="cp-inputbar__input" value="{{draft}}" maxlength="1000" style="height:{{inputHeightRpx}}rpx;"
+          focus="{{inputFocus}}" fixed disable-default-padding show-confirm-bar="{{false}}" adjust-position="{{false}}"
+          placeholder="{{replyToId ? '回复 @' + replyName + '…' : '写下你的评论…'}}" placeholder-class="cp-inputbar__placeholder"
+          aria-label="{{replyToId ? '回复 @' + replyName : '评论内容'}}" bindinput="input" bindblur="blur"
+          bindlinechange="onLineChange" bindkeyboardheightchange="onKeyboardHeightChange" disabled="{{sending || !writeReady}}" />
+      </view>
+      <button class="cp-submit" bindtap="send" disabled="{{sending || !writeReady || draftEmpty}}">{{sending ? '发送中…' : '发送'}}</button>
+    </view>
+  </view>
+</block>

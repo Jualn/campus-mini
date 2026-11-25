@@ -5,6 +5,6 @@ Page({
     void wxSwitchTab({ url: '/pages/index/index' });
   },
   onShareAppMessage() {
-    return { title: 'E 网同心', path: '/pages/index/index' };
+    return { title: 'e 网同心', path: '/pages/index/index' };
   },
 });

@@ -3,7 +3,8 @@
     "activity-card": "/components/activity-card/index",
     "load-state": "/components/load-state/index",
     "ui-icon": "/components/ui-icon/index",
-    "activity-filter": "/subpkg_activity/components/activity-filter/index"
+    "filter-bar": "/components/filter-bar/index",
+    "back-button": "/components/back-button/index"
   },
   "enablePullDownRefresh": true
 }

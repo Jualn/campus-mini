@@ -1,0 +1,115 @@
+<view class="page page--{{postType}} page--{{kind}}">
+  <view class="privacy-note">
+    <view class="privacy-note__dot" aria-hidden="true" />
+    <text>社区记录仅自己可见</text>
+  </view>
+
+  <load-state
+    wx:if="{{loading && !loaded}}"
+    mode="loading"
+    title="正在查询本人结果"
+    description="请稍候，正在读取最新状态"
+  />
+  <load-state
+    wx:elif="{{deleted}}"
+    mode="empty"
+    title="内容已删除"
+    description="该记录已从本人内容中移除，可以返回记录列表继续查看。"
+  />
+  <load-state
+    wx:elif="{{error}}"
+    mode="error"
+    title="结果暂时无法读取"
+    description="{{error}}"
+    action-text="重新查询"
+    bind:action="load"
+  />
+
+  <block wx:if="{{loaded}}">
+    <view class="status-section status-section--{{statusTone}}">
+      <view class="status-section__header">
+        <text class="status-section__label">当前状态</text>
+        <button class="status-section__refresh" bindtap="load" disabled="{{loading || pending}}">
+          {{loading ? '刷新中' : '刷新'}}
+        </button>
+      </view>
+      <view class="status-section__value">{{status}}</view>
+      <view class="status-section__classification">
+        <text class="type-badge">{{typeLabel}}</text>
+        <text wx:if="{{category}}" class="status-section__category">{{category}}</text>
+      </view>
+      <view wx:if="{{timeLabel}}" class="status-section__time">{{timeLabel}}</view>
+    </view>
+
+    <view wx:if="{{answerIdentity}}" class="identity-card">
+      <view class="discussion-avatar" style="background:{{answerAvatar.bg}}">{{answerAvatar.char}}</view>
+      <view class="identity-card__copy">
+        <view class="identity-card__label">回答时的导师身份</view>
+        <view class="identity-card__content">{{answerIdentity}}</view>
+        <view class="identity-card__certification">{{certification}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice-card">
+      <view class="notice-card__title">{{kind === 'report' ? '处理说明' : '状态说明'}}</view>
+      <view class="notice-card__content">{{notice}}</view>
+    </view>
+
+    <view class="content-section">
+      <view class="content-section__label">{{contentLabel}}</view>
+      <view wx:if="{{contentTitle}}" class="content-section__title">{{contentTitle}}</view>
+      <text wx:if="{{text}}" class="content-section__text" user-select>{{text}}</text>
+      <view wx:else class="content-section__placeholder">未填写文字内容</view>
+      <view wx:if="{{images.length}}" class="detail-images {{images.length === 1 ? 'detail-images--single' : ''}}">
+        <image
+          wx:for="{{images}}"
+          wx:key="*this"
+          class="detail-image"
+          src="{{item}}"
+          mode="{{images.length === 1 ? 'widthFix' : 'aspectFill'}}"
+          lazy-load
+          data-url="{{item}}"
+          bindtap="preview"
+          aria-label="查看提交图片 {{index + 1}}"
+        />
+      </view>
+    </view>
+
+    <view
+      wx:if="{{publicPostId || canEdit || canDelete}}"
+      class="detail-actions {{!publicPostId && !canEdit ? 'detail-actions--danger-only' : ''}}"
+    >
+      <view wx:if="{{publicPostId || canEdit}}" class="detail-actions__row">
+        <button
+          wx:if="{{publicPostId}}"
+          class="detail-action detail-action--primary"
+          bindtap="openPublic"
+          disabled="{{loading || pending}}"
+        >
+          {{kind === 'comment' ? '查看公开位置' : '查看公开内容'}}
+        </button>
+        <button
+          wx:if="{{canEdit}}"
+          class="detail-action detail-action--secondary"
+          bindtap="edit"
+          disabled="{{loading || pending}}"
+        >
+          修改或核对
+        </button>
+      </view>
+      <button
+        wx:if="{{canDelete}}"
+        class="detail-action detail-action--danger"
+        bindtap="remove"
+        loading="{{pending}}"
+        disabled="{{loading || pending}}"
+      >
+        删除内容
+      </button>
+    </view>
+  </block>
+
+  <view class="page-footer">
+    <navigator class="footer-link" url="{{returnUrl}}" open-type="redirect">返回社区记录</navigator>
+  </view>
+</view>

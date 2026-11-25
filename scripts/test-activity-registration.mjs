@@ -20,7 +20,7 @@ const detail = {
   formVersion: 'form:v2',
   capacity: 8,
   availability: { state: 'OPEN' },
-  platformRegistrationCount: { submittedCount: 2 },
+  platformRegistrationCount: { submittedCount: '2' },
   registrationForm: {
     allowModification: true,
     fields: [
@@ -79,6 +79,10 @@ const eventApi = {
     ),
   },
 };
+const responseInteger = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('subpkg_activity/utils/response-integer.ts', 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS },
+}).outputText, { exports: responseInteger });
 const exports = {};
 const js = ts.transpileModule(fs.readFileSync('subpkg_activity/services/registration.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 },
@@ -87,6 +91,8 @@ vm.runInNewContext(js, {
   exports,
   Error,
   require(name) {
+    if (name.endsWith('/business-subscriptions')) return { createBusinessSubscription: () => ({ prepare: async () => {}, request: async () => true, dispose() {}, pending: false }) };
+    if (name.endsWith('/response-integer')) return responseInteger;
     if (name.endsWith('/event-api')) return { eventApi };
     if (name.endsWith('/registration-api')) return { registrationApi: eventApi.registrations };
     if (name.endsWith('/error')) return { isHttpError: () => false };
@@ -113,7 +119,7 @@ assert.throws(
 );
 assert.equal(
   exports.registrationTextError(form.fields[0], '6123456789'),
-  '学号应为 7 开头的 10 位数字',
+  '请输入正确的学号',
 );
 const phoneField = {
   key: 'phone',
@@ -125,7 +131,7 @@ const phoneField = {
 };
 assert.equal(
   exports.registrationTextError(phoneField, '12800138000'),
-  '请输入有效的 11 位大陆手机号',
+  '请输入有效的手机号',
 );
 assert.equal(exports.registrationTextError(phoneField, '13800138000'), '');
 let validationError;
@@ -138,6 +144,20 @@ assert.equal(validationError?.name, 'RegistrationValidationError');
 assert.equal(validationError?.fieldErrors.student, '此项为必填，请完成后再提交');
 assert.equal(validationError?.fieldErrors.slot, '请至少选择一个有效选项');
 const cancelled = await exports.readMyRegistration(detail.activityId);
+for (const origin of ['SELF', 'ADMIN', 'UNKNOWN', undefined]) {
+  eventApi.registrations.mine = async () => ({
+    ...response('CANCELLED', '"cancelled-v2"'),
+    data: { ...record('CANCELLED'), cancellationOrigin: origin, cancellationReason: '资格不符' },
+  });
+  const mine = await exports.readMyRegistration(detail.activityId);
+  assert.equal(mine.cancellationOrigin, origin);
+  assert.equal(mine.cancellationReason, '资格不符');
+  if (origin === 'ADMIN') {
+    const before = calls.length;
+    await assert.rejects(exports.submitRegistration(detail.activityId, form, mine.answers, mine), /管理员作废/);
+    assert.equal(calls.length, before, 'administrative invalidation cannot issue a restore request');
+  }
+}
 const restored = await exports.submitRegistration(
   detail.activityId,
   form,
@@ -173,6 +193,7 @@ vm.runInNewContext(actionJs, {
   Date,
   Promise,
   require(name) {
+    if (name.endsWith('/business-subscriptions')) return { createBusinessSubscription: () => ({ prepare: async () => {}, request: async () => true, dispose() {}, pending: false }) };
     if (name.endsWith('/actions/auth')) return { ensureLogin: async () => undefined };
     if (name.endsWith('/stores/helper')) return { getUserId: () => candidateUserId };
     if (name.endsWith('/utils/storage')) {
@@ -269,6 +290,7 @@ vm.runInNewContext(requestJs, {
     },
   },
   require(name) {
+    if (name.endsWith('/business-subscriptions')) return { createBusinessSubscription: () => ({ prepare: async () => {}, request: async () => true, dispose() {}, pending: false }) };
     if (name.includes('config'))
       return { __esModule: true, default: { baseURL: '', timeout: 1000 } };
     if (name.endsWith('/logger')) return { createLogger: () => ({ info: () => undefined }) };
@@ -292,6 +314,8 @@ assert.equal(outgoingHeader.Authorization, 'Bearer token');
 assert.equal(meta.headers.etag, '"response-v1"');
 
 let pageOptions;
+let registrationOwner = 'user:01';
+let registrationWatcher;
 const serverRecord = {
   id: 'registration:same',
   activityId: detail.activityId,
@@ -311,6 +335,7 @@ let navigatedBack;
 let redirectedTo;
 let modalConfirmed = true;
 const pageAction = {
+  cancelRegistration: async () => undefined,
   loadRegistration: async () => [
     { status: 'fulfilled', value: form },
     { status: 'fulfilled', value: serverRecord },
@@ -348,9 +373,13 @@ vm.runInNewContext(pageJs, {
     },
   },
   require(name) {
+    if (name.endsWith('/business-subscriptions')) return { createBusinessSubscription: () => ({ prepare: async () => {}, request: async () => true, dispose() {}, pending: false }) };
+    if (name.endsWith('/leave-guard')) return { createLeaveGuard: () => Object.assign(() => {}, { resume() {} }) };
+    if (name.endsWith('/current-user')) return { getCurrentIdentity: () => ({ id: registrationOwner }), watchCurrentIdentity: listener => { registrationWatcher = listener; return () => { registrationWatcher = null; }; } };
     if (name.endsWith('/definePage')) {
       return { __esModule: true, default: (value) => (pageOptions = value) };
     }
+    if (name === '../../services/registration') return { prepareAnswers: exports.prepareAnswers };
     if (name.endsWith('/registration')) return pageAction;
     if (name.endsWith('/error')) return { isHttpError: (error) => error?.statusCode != null };
     if (name.endsWith('/wx-promise')) {
@@ -423,3 +452,95 @@ assert.equal(redirectedTo, undefined, 'unsaved answers must stay on page when le
 console.log(
   'PASS: answer dirty state, inline validation, navigation reuse, ETag writes and 412 reconciliation',
 );
+
+// Activity V1: cancellation closure refreshes permissions without mutation replay.
+let cancellationCalls = 0;
+pageAction.cancelRegistration = async () => { cancellationCalls++; throw { statusCode: 409 }; };
+pageAction.loadRegistration = async () => [
+  { status: 'fulfilled', value: { ...form, availability: 'CLOSED' } },
+  { status: 'fulfilled', value: { ...serverRecord, canModify: false, canCancel: false } },
+];
+modalConfirmed = true;
+page.setData({ mine: serverRecord, loading: false, unknown: false, busy: false });
+await page.onCancel();
+assert.equal(cancellationCalls, 1);
+assert.equal(page.data.mine.canCancel, false);
+assert.equal(page.data.canSubmit, false);
+assert.match(page.data.message, /不可取消/);
+await page.onCancel();
+assert.equal(cancellationCalls, 1);
+
+// Platform and mixed registrations own valid capacity; volunteering uses booking copy.
+pageAction.submitRegistration = async () => undefined;
+for (const [successLabel, hasExternalSteps] of [['报名成功', false], ['报名成功', true], ['预约成功', true]]) {
+  page.setData({ info: { ...form, successLabel, hasExternalSteps }, answers: { student: '7123456789', slot: ['a', 'b'] }, mine: null, loading: false, unknown: false, canSubmit: true });
+  await page.onSubmit();
+  assert.ok(page.data.message.startsWith(successLabel));
+  assert.match(page.data.message, /有效平台名额/);
+  assert.equal(page.data.message.includes('外部步骤'), hasExternalSteps);
+}
+let publicReads = 0;
+eventApi.activities.detail = async () => { publicReads++; throw new Error('unavailable'); };
+const history = await actionExports.loadRegistration(detail.activityId, true);
+assert.equal(publicReads, 0, 'private history must never request public or admin detail');
+assert.equal(history[0].status, 'rejected');
+assert.equal(history[1].status, 'fulfilled');
+console.log('PASS: Activity V1 cancellation 409, success copy and private history isolation');
+
+// Final unified V1: preserve self cancellation recovery and never replay administrative rejection.
+for (const origin of ['SELF', 'ADMIN', 'UNKNOWN', undefined]) {
+  page.setData({ registrationInvalidated: false });
+  pageAction.loadRegistration = async () => [
+    { status: 'fulfilled', value: form },
+    { status: 'fulfilled', value: { ...serverRecord, status: 'CANCELLED', cancellationOrigin: origin } },
+  ];
+  await page.reload();
+  assert.equal(page.data.canSubmit, origin !== 'ADMIN');
+  assert.equal(page.data.statusLabel, origin === 'ADMIN' ? '管理员已作废' : '已取消');
+}
+let invalidatedWrites = 0;
+pageAction.submitRegistration = async () => {
+  invalidatedWrites++;
+  throw { statusCode: 409, problemType: '/problems/registration-invalidated' };
+};
+await page.onSubmit();
+assert.equal(invalidatedWrites, 1);
+assert.equal(page.data.canSubmit, false, 'missing optional origin after rejection must not re-enable restore');
+assert.equal(page.data.registrationInvalidated, true);
+await page.onSubmit();
+await page.reload();
+await page.onSubmit();
+assert.equal(invalidatedWrites, 1, 'read-back and reload never repeat or replace the rejected mutation');
+assert.match(page.data.message, /管理员作废/);
+console.log('PASS: unified V1 cancellation provenance, ADMIN guard and registration-invalidated read-back');
+
+let finishOldLoad;
+pageAction.loadRegistration = () => new Promise(resolve => { finishOldLoad = resolve; });
+const oldLoad = page.reload();
+registrationOwner = 'user:02';
+registrationWatcher();
+finishOldLoad([
+  { status: 'fulfilled', value: form },
+  { status: 'fulfilled', value: serverRecord },
+]);
+await oldLoad;
+assert.equal(page.data.mine, null);
+assert.equal(Object.keys(page.data.answers).length, 0);
+assert.equal(page.data.canSubmit, false);
+page.onUnload();
+assert.equal(registrationWatcher, null);
+console.log('PASS: registration account changes clear answers and discard pending reads');
+
+// Returning/re-showing must not replace a user's unsaved answers with the server baseline.
+page._unloaded = false;
+page.data.busy = false;
+page.data.isDirty = true;
+page.data.answers = { student: 'unsaved-return' };
+const originalReload = page._reloadRegistration;
+let preservedReturn;
+page._reloadRegistration = async answers => { preservedReturn = answers; };
+page.onShow();
+assert.equal(preservedReturn.student, 'unsaved-return');
+assert.notEqual(preservedReturn, page.data.answers);
+page._reloadRegistration = originalReload;
+console.log('PASS registration re-show preserves a cloned dirty draft');

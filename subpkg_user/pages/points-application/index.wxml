@@ -1,0 +1,225 @@
+<page-navigation title="申请详情" surface="page" />
+<view class="points-page">
+  <load-state
+    wx:if="{{loading}}"
+    mode="loading"
+    title="正在读取申请详情"
+    description="正在同步最新审核状态与材料权限"
+    fill-viewport
+    viewport-offset="180"
+  />
+  <load-state
+    wx:elif="{{error && !detail}}"
+    mode="error"
+    title="暂时无法读取申请"
+    description="{{error}}"
+    action-text="重新查询"
+    bind:action="refresh"
+    fill-viewport
+    viewport-offset="180"
+  />
+
+  <block wx:elif="{{detail}}">
+    <view class="status-sheet status-sheet--{{statusTone}}">
+      <view class="status-sheet__heading">
+        <text class="status-sheet__label">当前审核状态</text>
+        <text class="points-status points-status--{{statusTone}}">{{statusLabel}}</text>
+      </view>
+      <text class="status-sheet__title">{{detail.title}}</text>
+      <text class="status-sheet__hint">{{statusHint}}</text>
+
+      <view class="review-track" aria-label="申请进度">
+        <view class="review-track__step">
+          <text class="review-track__mark review-track__mark--done" aria-hidden="true">✓</text>
+          <view class="review-track__copy">
+            <text class="review-track__label">已提交</text>
+            <text class="review-track__time">{{detail.createdAtText}}</text>
+          </view>
+        </view>
+        <view class="review-track__line" aria-hidden="true" />
+        <view class="review-track__step review-track__step--result">
+          <text class="review-track__mark review-track__mark--{{statusTone}}" aria-hidden="true">{{statusMark}}</text>
+          <view class="review-track__copy">
+            <text class="review-track__label">{{statusLabel}}</text>
+            <text class="review-track__time">{{detail.status === 'PENDING' ? '等待组织审核' : detail.reviewedAtText || detail.closedAtText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <load-state wx:if="{{error}}" mode="error" variant="inline" description="{{error}}" action-text="重新查询" bind:action="refresh" />
+
+    <view class="points-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">申请信息</text>
+          <text class="points-section__description">提交时的内容与受理关系</text>
+        </view>
+      </view>
+      <view class="points-surface detail-sheet">
+        <view class="detail-meta">
+          <view class="detail-meta__row">
+            <text class="detail-meta__label">申请人</text>
+            <text class="detail-meta__value">{{detail.personName}}</text>
+          </view>
+          <view class="detail-meta__row">
+            <text class="detail-meta__label">原受理组织</text>
+            <text class="detail-meta__value">{{detail.acceptingOrganizationName}}</text>
+          </view>
+          <view class="detail-meta__row">
+            <text class="detail-meta__label">提交时间</text>
+            <text class="detail-meta__value">{{detail.createdAtText}}</text>
+          </view>
+        </view>
+
+        <view class="description-block">
+          <text class="description-block__label">申请说明</text>
+          <text class="description-block__content points-text" selectable>{{detail.description}}</text>
+        </view>
+        <view class="application-id">
+          <text class="application-id__label">申请编号</text>
+          <text class="application-id__value" selectable>{{detail.applicationId}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{detail.reviewedAt}}" class="points-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">审核结果</text>
+          <text class="points-section__description">原审核历史与当前有效核发分开呈现</text>
+        </view>
+      </view>
+      <view class="points-surface detail-sheet">
+        <view wx:if="{{detail.status === 'APPROVED'}}" class="awarded-panel">
+          <view class="awarded-panel__item">
+            <text class="awarded-panel__label">原审核积分</text>
+            <view class="awarded-panel__value">+{{detail.awardedPoints}} <text>分</text></view>
+          </view>
+          <view class="awarded-panel__divider" />
+          <view class="awarded-panel__item">
+            <text class="awarded-panel__label">当前有效核发</text>
+            <view class="awarded-panel__value">{{detail.accounting.effectivePoints}} <text>分</text></view>
+          </view>
+        </view>
+        <view wx:if="{{detail.status === 'APPROVED' && detail.accounting.status === 'REVOKED'}}" class="revoked-note">当前有效核发已撤销，完整变动原因请查看本申请账务流水。</view>
+        <view wx:if="{{detail.reviewNote}}" class="review-note">
+          <text class="review-note__label">审核说明</text>
+          <text class="review-note__text points-text" selectable>{{detail.reviewNote}}</text>
+        </view>
+        <text class="review-time">审核时间：{{detail.reviewedAtText}}</text>
+        <navigator wx:if="{{detail.status === 'APPROVED'}}" class="ledger-link" url="{{ledgerUrl}}" hover-class="ledger-link--hover">
+          <view class="ledger-link__copy">
+            <text class="ledger-link__title">查看本申请账务流水</text>
+            <text class="ledger-link__description">核发、纠错与每次冲正记录</text>
+          </view>
+          <ui-icon name="chevron-right" size="sm" />
+        </navigator>
+      </view>
+    </view>
+
+    <view wx:if="{{detail.status === 'CLOSED'}}" class="points-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">结束记录</text>
+        </view>
+      </view>
+      <view class="points-surface detail-sheet">
+        <text class="closed-record__label">结束理由</text>
+        <text class="closed-record__reason points-text" selectable>{{detail.closureReason}}</text>
+        <text class="closed-record__time">{{detail.closedAtText}}</text>
+      </view>
+    </view>
+
+    <view class="points-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">证明材料</text>
+          <text class="points-section__description">逐件核验归属与访问权限</text>
+        </view>
+        <text wx:if="{{materials.length}}" class="points-section__aside">{{materials.length}} 份</text>
+      </view>
+      <view class="points-surface detail-sheet">
+        <load-state wx:if="{{materialsLoading}}" mode="loading" variant="inline" compact title="正在确认材料访问权限" />
+        <view wx:if="{{materials.length}}" class="detail-materials">
+          <view wx:for="{{materials}}" wx:key="fileId" class="detail-material">
+            <view class="detail-material__type"><text>{{item.kindLabel}}</text></view>
+            <view class="detail-material__body">
+              <text class="detail-material__name">{{item.name}}</text>
+              <text wx:if="{{item.error}}" class="detail-material__error">{{item.error}}</text>
+              <text wx:else class="detail-material__hint">{{item.previewLabel}}，每次查看重新授权</text>
+            </view>
+            <button
+              wx:if="{{item.available}}"
+              class="points-button points-button--secondary points-button--compact detail-material__button"
+              data-id="{{item.fileId}}"
+              disabled="{{opening || closing}}"
+              loading="{{openingId === item.fileId}}"
+              bindtap="preview"
+              aria-label="查看材料 {{item.name}}"
+            >{{openingId === item.fileId ? '' : '查看'}}</button>
+          </view>
+        </view>
+        <view class="materials-privacy">
+          <text class="materials-privacy__mark" aria-hidden="true">i</text>
+          <text>材料仅供本人与审核流程使用。返回后清理临时下载，请勿转发或保存他人隐私。</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{feedback}}" class="points-notice points-notice--error" role="alert">
+      <text class="points-notice__mark">!</text>
+      <view class="points-notice__body"><text class="points-notice__text">{{feedback}}</text></view>
+    </view>
+
+    <view wx:if="{{canClose}}" class="points-section close-section">
+      <view class="points-section__heading">
+        <view class="points-section__heading-copy">
+          <text class="points-section__title">结束本次申请</text>
+          <text class="points-section__description">仅待审核申请可由本人结束</text>
+        </view>
+      </view>
+      <view class="points-surface close-sheet">
+        <text class="close-sheet__description">结束后旧申请不转交、不重开，历史及材料保留。若管理员先完成审核，以服务端审核结果为准。</text>
+        <view class="close-sheet__label-row">
+          <text class="close-sheet__label">结束理由 <text class="required-star">*</text></text>
+          <text class="close-sheet__limit">{{closeReasonLength}}/2000</text>
+        </view>
+        <textarea
+          class="close-sheet__textarea"
+          value="{{closeReason}}"
+          maxlength="2000"
+          auto-height
+          placeholder="请说明结束本次申请的原因"
+          placeholder-class="form-control__placeholder"
+          disabled="{{closing || closeUnknown}}"
+          aria-label="结束理由，必填"
+          bindinput="inputCloseReason"
+        />
+        <button class="points-button points-button--danger close-sheet__button" loading="{{closing}}" disabled="{{closing || loading || opening}}" bindtap="closeApplication" hover-class="points-button--hover">
+          {{closeUnknown ? '查询并恢复原结束操作' : closing ? '正在确认申请状态…' : '确认结束申请'}}
+        </button>
+      </view>
+    </view>
+
+    <view wx:if="{{closeFeedback}}" class="points-notice {{detail.status === 'CLOSED' ? 'points-notice--success' : 'points-notice--warning'}}" role="alert">
+      <text class="points-notice__mark">{{detail.status === 'CLOSED' ? '✓' : '!'}}</text>
+      <view class="points-notice__body"><text class="points-notice__text">{{closeFeedback}}</text></view>
+    </view>
+
+    <navigator wx:if="{{detail.status === 'REJECTED' || detail.status === 'CLOSED'}}" class="reapply-link" url="/subpkg_user/pages/points-apply/index" hover-class="reapply-link--hover">
+      <view class="reapply-link__mark" aria-hidden="true">＋</view>
+      <view class="reapply-link__body">
+        <text class="reapply-link__title">新建一份积分申请</text>
+        <text class="reapply-link__description">需重新核实资格并提交证明材料</text>
+      </view>
+      <ui-icon name="chevron-right" size="sm" />
+    </navigator>
+
+    <view class="detail-utilities">
+      <navigator class="points-button points-button--plain points-button--compact" hover-class="points-button--hover" url="/subpkg_user/pages/points-applications/index">全部申请</navigator>
+      <navigator class="points-button points-button--plain points-button--compact" hover-class="points-button--hover" url="/subpkg_user/pages/person-points/index">积分账簿</navigator>
+    </view>
+    <button class="points-text-button detail-refresh" bindtap="refresh" disabled="{{loading || opening || closing}}">刷新申请状态</button>
+  </block>
+</view>

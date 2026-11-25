@@ -2,7 +2,8 @@
   "usingComponents": {
     "share-panel": "/components/share-panel/index",
     "load-state": "/components/load-state/index",
-    "ui-icon": "/components/ui-icon/index"
+    "ui-icon": "/components/ui-icon/index",
+    "back-button": "/components/back-button/index"
   },
   "navigationBarTitleText": "公共事项"
 }

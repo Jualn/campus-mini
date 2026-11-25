@@ -1,101 +1,83 @@
-<!-- subpkg_user/pages/edit-profile/index.wxml -->
+<page-navigation title="编辑资料" fixed auto-back="{{false}}" bind:back="onCancel" />
 
-<view class="edit-page">
-  <!-- 加载阶段始终遮住未准备好的表单，慢请求才显示骨架。 -->
-  <view wx:if="{{asyncLoad.phase === 'idle' || asyncLoad.phase === 'loading'}}" class="page-mask">
-    <view wx:if="{{asyncLoad.skeletonVisible}}" class="loading-card" aria-role="status" aria-label="个人资料加载中">
-      <view class="skeleton-block skeleton-radius-lg skeleton-avatar"></view>
-      <view class="skeleton-block skeleton-radius-md skeleton-title"></view>
-      <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
-      <view class="skeleton-block skeleton-radius-sm skeleton-line"></view>
+<block wx:if="{{asyncLoad.phase === 'idle' || asyncLoad.phase === 'loading'}}">
+  <view wx:if="{{asyncLoad.skeletonVisible}}" aria-role="status" aria-label="正在加载个人资料">
+    <view class="banner-wrap skeleton-block" />
+    <view class="profile-body">
+      <view class="avatar-action-row">
+        <view class="profile-avatar skeleton-block skeleton-circle" />
+      </view>
+    </view>
+    <view class="editor-body">
+      <view class="editor-card">
+        <view class="skeleton-control skeleton-block skeleton-radius-sm" />
+        <view class="skeleton-input skeleton-block skeleton-radius-md" />
+        <view class="skeleton-control skeleton-block skeleton-radius-sm" />
+        <view class="skeleton-input skeleton-input--bio skeleton-block skeleton-radius-md" />
+      </view>
     </view>
   </view>
+</block>
 
-  <view wx:elif="{{asyncLoad.phase === 'error'}}" class="page-mask">
-    <load-state
-      mode="{{asyncLoad.loading ? 'loading' : 'error'}}"
-      title="{{asyncLoad.loading ? '正在重新加载' : '暂时无法加载'}}"
-      description="{{asyncLoad.loading ? '' : (asyncLoad.errorMessage || '网络可能暂时不可用，请稍后再试')}}"
-      action-text="{{asyncLoad.loading ? '' : '重新加载'}}"
-      bind:action="onRetry"
-    />
-  </view>
+<load-state
+  wx:elif="{{asyncLoad.phase === 'error'}}"
+  mode="{{asyncLoad.loading ? 'loading' : 'error'}}"
+  title="{{asyncLoad.loading ? '正在重新加载' : '暂时无法加载资料'}}"
+  description="{{asyncLoad.loading ? '' : asyncLoad.errorMessage}}"
+  action-text="{{asyncLoad.loading ? '' : '重试'}}"
+  bind:action="onRetry"
+/>
 
-  <!-- 导航栏 -->
-  <view class="nav-bar" style="padding-top:{{statusBarHeight}}px;">
-    <view class="nav-back" bindtap="onCancel" aria-role="button" aria-label="返回">
-      <view class="nav-back__surface"><ui-icon name="chevron-left" size="lg" /></view>
-    </view>
-    <text class="nav-title">编辑资料</text>
-    <view class="nav-placeholder" />
-  </view>
-
-  <view class="banner-wrap" bindtap="onChangeBackground" aria-role="button" aria-label="更换主页背景">
+<block wx:else>
+  <button class="banner-wrap cover-picker" disabled="{{saving || selecting}}"
+    bindtap="onChangeBackground" hover-class="photo-picker--pressed" aria-label="更换封面">
     <image wx:if="{{form.backgroundUrl}}" class="banner-img" src="{{form.backgroundUrl}}" mode="aspectFill" />
-    <view class="banner-mask"><text class="banner-mask__text">更换背景</text></view>
-  </view>
+    <view class="cover-action" aria-hidden="true">
+      <ui-icon name="image-add" size="sm" />
+      <text>更换封面</text>
+    </view>
+  </button>
 
-  <!-- 头像行 -->
-  <view class="avatar-row">
-    <view class="avatar-wrap" bindtap="onChangeAvatar">
-      <image class="avatar-img" wx:if="{{form.avatarUrl}}" src="{{form.avatarUrl}}" mode="aspectFill" />
-      <view class="avatar-mask">
-        <image class="avatar-mask__icon" src="../../assets/icons/profile/change_avatar_line.svg" mode="aspectFit" />
-      </view>
+  <view class="profile-body">
+    <view class="avatar-action-row">
+      <button class="profile-avatar avatar-preview" style="background: {{avatarPreview.bg}};"
+        disabled="{{saving || selecting}}" bindtap="onChangeAvatar" hover-class="photo-picker--pressed" aria-label="更换头像">
+        <image wx:if="{{form.avatarUrl}}" class="avatar-image" src="{{form.avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="avatar-initial">{{avatarPreview.char}}</text>
+        <view class="avatar-action" aria-hidden="true">换头像</view>
+      </button>
     </view>
   </view>
 
-  <!-- 表单卡片 -->
-  <view class="form-card">
-    <view class="form-item">
-      <text class="form-label">昵称</text>
-      <view class="form-right">
-        <input
-          class="form-input"
-          value="{{form.nickname}}"
-          placeholder="填写你的昵称"
-          placeholder-class="form-placeholder"
-          maxlength="-1"
-          disabled="{{saving}}"
-          bindinput="onInput"
-          data-field="nickname"
-        />
-        <text class="form-count">{{nicknameLength}}/10</text>
-      </view>
-    </view>
-    <view class="form-divider" />
+  <view class="editor-body editor-body--ready {{saveError ? 'editor-body--save-error' : ''}}">
+    <view class="editor-card">
+      <label class="field">
+        <view class="field-heading">
+          <text class="field-label">昵称</text>
+          <text class="field-count {{nicknameLength > 10 ? 'field-count--invalid' : ''}}">{{nicknameLength}}/10</text>
+        </view>
+        <input class="input-base editor-input" aria-label="昵称（必填）" value="{{form.nickname}}"
+          placeholder="填写昵称" maxlength="-1" cursor-spacing="20" disabled="{{saving}}" bindinput="onInput" data-field="nickname" />
+        <text wx:if="{{fieldErrors.nickname}}" class="field-error" role="alert">{{fieldErrors.nickname}}</text>
+      </label>
 
-    <view class="form-item form-item--top">
-      <text class="form-label">简介</text>
-      <view class="form-right form-right--col">
-        <textarea
-          class="form-textarea"
-          value="{{form.bio}}"
-          placeholder="介绍一下自己吧"
-          placeholder-class="form-placeholder"
-          maxlength="-1"
-          auto-height
-          show-confirm-bar="{{false}}"
-          adjust-position="{{false}}"
-          cursor-spacing="20"
-          disabled="{{saving}}"
-          bindinput="onInput"
-          data-field="bio"
-        />
-        <text class="form-count">{{bioLength}}/200</text>
-      </view>
+      <label class="field">
+        <view class="field-heading">
+          <view><text class="field-label">简介</text><text class="field-optional">选填</text></view>
+          <text class="field-count {{bioLength > 200 ? 'field-count--invalid' : ''}}">{{bioLength}}/200</text>
+        </view>
+        <textarea class="input-base editor-input editor-input--bio" aria-label="简介（选填）" value="{{form.bio}}"
+          placeholder="介绍一下自己" maxlength="-1" auto-height show-confirm-bar="{{false}}"
+          adjust-position="{{true}}" cursor-spacing="20" disabled="{{saving}}" bindinput="onInput" data-field="bio" />
+        <text wx:if="{{fieldErrors.bio}}" class="field-error" role="alert">{{fieldErrors.bio}}</text>
+      </label>
     </view>
-    <view class="form-divider" />
-
   </view>
 
-  <view wx:if="{{saveError}}" class="save-error" aria-role="status">{{saveError}}</view>
-  <view class="bottom-safe" />
-</view>
-
-<!-- 底部固定保存栏 -->
-<view class="save-bar">
-  <view class="save-btn {{hasChanged && !saving ? 'save-btn--active' : ''}}" bindtap="onSave" aria-role="button" aria-disabled="{{!hasChanged || saving}}">
-    <text class="save-btn__text">{{saving ? '保存中…' : '保存'}}</text>
+  <view class="save-bar">
+    <text wx:if="{{saveError}}" class="save-error" role="alert">{{saveError}}</text>
+    <button class="btn btn-primary save-button" loading="{{saving}}" disabled="{{!hasChanged || saving || selecting}}" bindtap="onSave">
+      {{saving ? '正在保存' : '保存'}}
+    </button>
   </view>
-</view>
+</block>

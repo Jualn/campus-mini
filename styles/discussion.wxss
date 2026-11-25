@@ -1,0 +1,30 @@
+/* Shared rhythm for the two discussion renderers; no shared write state. */
+.discussion-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.discussion-count {
+  font-size: 24rpx;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.discussion-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  color: var(--color-text-inverse);
+  font-size: 24rpx;
+  font-weight: 600;
+  overflow: hidden;
+}

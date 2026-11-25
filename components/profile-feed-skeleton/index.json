@@ -2,6 +2,6 @@
   "component": true,
   "usingComponents": {
     "post-card-skeleton": "/components/post-card-skeleton/index",
-    "ui-icon": "/components/ui-icon/index"
+    "back-button": "/components/back-button/index"
   }
 }

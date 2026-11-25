@@ -3,9 +3,7 @@
 <view class="search-page">
   <view class="search-top" style="padding-top: {{statusBarHeight}}px;">
     <view class="search-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
-      <view class="search-nav__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" size="lg" />
-      </view>
+      <back-button variant="nav" auto-back="{{false}}" bind:back="onBack" />
 
       <text class="search-nav__title">校园搜索</text>
     </view>

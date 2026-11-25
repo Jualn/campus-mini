@@ -2,14 +2,13 @@
  * COS 上传工具（utils/cos.ts）
  *
  * 支持两种上传模式：
- * - 单文件：uploadCosFile()，自动选择 STS SDK 或预签名 URL 直传
- * - 批量：uploadCosFilesBatch()，一个共享 STS 凭证 + N 个文件描述
+ * - 单文件：uploadCosFile()，STS SDK PUT 或预签名 URL PUT 直传
+ * - 批量：uploadCosFilesBatch()，一个共享 STS 凭证，逐文件 PUT
  *
  * 上层使用：见 services/media.ts
  */
 
 import type { CosUploadCredentialDTO } from '../types/api';
-import { createLogger } from './logger';
 
 declare const require: (id: string) => unknown;
 
@@ -20,17 +19,9 @@ const COS_MODULE = require('../miniprogram_npm/cos-wx-sdk-v5/index.js') as new (
 // ── SDK 内部类型 ───────────────────────────────────────────────────────────
 
 interface CosClient {
-  uploadFile: (
+  putObject: (
     options: Record<string, unknown>,
     callback: (err: unknown, data?: unknown) => void,
-  ) => void;
-  uploadFiles?: (
-    options: {
-      files: Record<string, unknown>[];
-      SliceSize?: number;
-      onProgress?: (info: CosProgressInfo) => void;
-    },
-    callback: (err: unknown, data?: CosBatchResult) => void,
   ) => void;
 }
 
@@ -40,6 +31,7 @@ interface CosClientInitOptions {
     callback: (authorization: CosAuthorizationResult) => void,
   ) => void;
   CorrectClockSkew?: boolean;
+  Timeout?: number;
 }
 
 interface CosAuthRequestOptions {
@@ -70,14 +62,6 @@ interface CosProgressInfo {
   fileIndex?: number;
 }
 
-interface CosBatchResult {
-  files?: {
-    data?: SdkUploadResult;
-    /** SDK uploadFiles 单文件失败时，error 有值，顶层 err 仍为 null */
-    error?: unknown;
-  }[];
-}
-
 interface SdkUploadResult {
   ETag?: string;
   RequestId?: string;
@@ -98,6 +82,8 @@ export interface CosUploadOptions {
   contentType?: string;
   headers?: Record<string, string>;
   timeout?: number;
+  /** @deprecated 所有上传均使用单次 PUT，保留此字段兼容专用材料调用。 */
+  singlePut?: boolean;
   onProgress?: (progress: CosUploadProgress) => void;
 }
 
@@ -122,6 +108,7 @@ export interface CosBatchFileItem {
   objectKey: string;
   contentType?: string;
   headers?: Record<string, string>;
+  timeout?: number;
   onProgress?: (progress: CosUploadProgress) => void;
 }
 
@@ -136,7 +123,34 @@ export interface CosUploadResult {
 // ── 内部工具函数 ───────────────────────────────────────────────────────────
 
 const TAG = 'CosUtil';
-const log = createLogger('CosUtil');
+// file-foundation-v1-r2: callers cannot remove or override this signed header.
+const uploadHeaders = (
+  contentType?: string,
+  headers: Record<string, string> = {},
+): Record<string, string> => {
+  const result: Record<string, string> = {};
+  for (const name of Object.keys(headers)) {
+    if (name.toLowerCase() !== 'x-cos-forbid-overwrite') result[name] = headers[name];
+  }
+  return {
+    ...(contentType ? { 'Content-Type': contentType } : {}),
+    ...result,
+    'x-cos-forbid-overwrite': 'true',
+  };
+};
+
+// Keep raw SDK errors (which can contain request headers/URLs) out of UI/logs.
+const uploadFailure = (error: unknown): Error => {
+  const status =
+    typeof error === 'object' && error !== null && 'statusCode' in error
+      ? error.statusCode
+      : undefined;
+  return new Error(
+    status === 409 || status === 412
+      ? '文件已存在，无法确认本次上传结果，请重新上传后再保存'
+      : '文件上传未完成，请重试上传后再保存',
+  );
+};
 
 const getFileNameFromPath = (filePath: string): string => {
   const normalized = filePath.replace(/\\/g, '/');
@@ -225,7 +239,7 @@ export const buildCosObjectUrl = (
 };
 
 /** 创建 COS SDK 客户端（STS 模式） */
-export const createCosClient = (credential: CosStsCredential): CosClient =>
+export const createCosClient = (credential: CosStsCredential, timeout?: number): CosClient =>
   new COS_MODULE({
     getAuthorization: (_options, callback) => {
       callback({
@@ -236,6 +250,7 @@ export const createCosClient = (credential: CosStsCredential): CosClient =>
       });
     },
     CorrectClockSkew: true,
+    Timeout: timeout ?? 0,
   });
 
 /** 生成默认的 COS 对象键，格式：prefix/filename */
@@ -251,33 +266,29 @@ export const createDefaultObjectKey = (
 
 // ── 单文件上传 ─────────────────────────────────────────────────────────────
 
-const uploadWithSts = (options: CosUploadOptions): Promise<CosUploadResult> => {
+const uploadWithSts = async (options: CosUploadOptions): Promise<CosUploadResult> => {
   const { credential, filePath, contentType, headers, onProgress } = options;
   if (!isStsCredential(credential)) {
     return Promise.reject(new Error(TAG + '上传需要有效的 STS 凭证'));
   }
-  const client = createCosClient(credential);
+  const client = createCosClient(credential, options.timeout);
+  const body = await readFileAsArrayBuffer(filePath);
 
   return new Promise((resolve, reject) => {
-    client.uploadFile(
+    // Do not enter the SDK's default PostObject/automatic multipart paths.
+    client.putObject(
       {
         Bucket: credential.bucket,
         Region: credential.region,
         Key: credential.objectKeys[0],
-        FilePath: filePath,
-        Headers: {
-          ...(contentType ? { 'Content-Type': contentType } : {}),
-          ...headers,
-        },
+        Body: body,
+        ContentLength: body.byteLength,
+        Headers: uploadHeaders(contentType, headers),
         onProgress: (p: CosProgressInfo) => onProgress?.(normalizeProgress(p)),
       },
       (err, data) => {
         if (err) {
-          reject(
-            new Error(
-              TAG + `上传失败: ${err instanceof Error ? err.message : JSON.stringify(err)}`,
-            ),
-          );
+          reject(uploadFailure(err));
           return;
         }
         const r = data as SdkUploadResult | undefined;
@@ -307,17 +318,10 @@ const uploadWithPreSignedUrl = async (options: CosUploadOptions): Promise<CosUpl
       method: 'PUT',
       data: body,
       timeout,
-      header: {
-        'Content-Type': contentType ?? 'application/octet-stream',
-        ...headers,
-      },
+      header: uploadHeaders(contentType ?? 'application/octet-stream', headers),
       success: (res: WechatMiniprogram.RequestSuccessCallbackResult) => {
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          const error = new Error(
-            `COS 预签名上传失败，HTTP ${res.statusCode.toString()}` +
-              (res.data ? `, ${JSON.stringify(res.data)}` : ''),
-          );
-          reject(error);
+          reject(uploadFailure(res));
           return;
         }
         resolve({
@@ -328,8 +332,8 @@ const uploadWithPreSignedUrl = async (options: CosUploadOptions): Promise<CosUpl
           raw: res.data,
         });
       },
-      fail: (err: WechatMiniprogram.GeneralCallbackResult) => {
-        reject(new Error(TAG + `预签名上传失败: ${err.errMsg}`));
+      fail: () => {
+        reject(uploadFailure(undefined));
       },
     });
   });
@@ -352,128 +356,38 @@ export const uploadCosFile = (options: CosUploadOptions): Promise<CosUploadResul
 // ── 批量上传 ───────────────────────────────────────────────────────────────
 
 /**
- * 批量上传入口（STS 模式）
- *
- * 接受一个共享 STS 凭证 + N 个文件描述，直接对应后端批量凭证接口的返回结构。
- * 内部优先使用 SDK 的 uploadFiles 队列（支持并发控制），
- * SDK 版本不支持时退化为并行的单文件上传。
+ * Batch uploads use sequential single PUTs. This avoids SDK PostObject/multipart
+ * defaults and keeps at most one file buffer in memory (ordinary files <= 20MB).
+ * Any error, including an overwrite conflict after a lost response, rejects the
+ * batch. URLs alone never prove readiness; only business save confirms retention.
  */
-export const uploadCosFilesBatch = (
+export const uploadCosFilesBatch = async (
   credential: CosUploadCredentialDTO,
   files: CosBatchFileItem[],
 ): Promise<CosUploadResult[]> => {
-  if (files.length === 0) return Promise.resolve([]);
+  if (files.length === 0) return [];
   if (!isStsCredential(credential)) {
-    return Promise.reject(new Error(TAG + '批量上传需要有效的 STS 凭证'));
+    throw new Error(TAG + '批量上传需要有效的 STS 凭证');
   }
-
-  const client = createCosClient(credential);
-
-  /** 将单个文件的上传结果标准化 */
-  const toResult = (
-    file: CosBatchFileItem,
-    data: SdkUploadResult | undefined,
-  ): CosUploadResult => ({
-    objectKey: file.objectKey,
-    fileUrl: buildCosObjectUrl(
-      credential.bucket,
-      credential.region,
-      file.objectKey,
-      credential.customDomain,
-    ),
-    etag: data?.ETag,
-    requestId: data?.RequestId,
-    raw: data,
-  });
-
-  return new Promise((resolve, reject) => {
-    // 退化路径：SDK 不支持 uploadFiles，并行单文件上传
-    if (typeof client.uploadFiles !== 'function') {
-      Promise.all(
-        files.map(
-          (f) =>
-            new Promise<CosUploadResult>((res, rej) => {
-              client.uploadFile(
-                {
-                  Bucket: credential.bucket,
-                  Region: credential.region,
-                  Key: f.objectKey,
-                  FilePath: f.filePath,
-                  Headers: {
-                    ...(f.contentType ? { 'Content-Type': f.contentType } : {}),
-                    ...f.headers,
-                  },
-                  onProgress: (p: CosProgressInfo) => f.onProgress?.(normalizeProgress(p)),
-                },
-                (err, data) => {
-                  if (err) {
-                    rej(
-                      new Error(
-                        TAG +
-                          `上传失败: ${err instanceof Error ? err.message : JSON.stringify(err)}`,
-                      ),
-                    );
-                    return;
-                  }
-                  res(toResult(f, data as SdkUploadResult | undefined));
-                },
-              );
-            }),
-        ),
-      ).then(resolve, reject);
-      return;
-    }
-
-    // 主路径：SDK uploadFiles 队列上传
-    client.uploadFiles(
-      {
-        files: files.map((f) => ({
-          Bucket: credential.bucket,
-          Region: credential.region,
-          Key: f.objectKey,
-          FilePath: f.filePath,
-          Headers: {
-            ...(f.contentType ? { 'Content-Type': f.contentType } : {}),
-            ...f.headers,
-          },
-          onProgress: (progress: CosProgressInfo) => f.onProgress?.(normalizeProgress(progress)),
-        })),
-        SliceSize: 1024 * 1024 * 10, // 设置大于10MB采用分块上传，按需调整，最小支持1MB
-      },
-      (err, data) => {
-        if (err) {
-          reject(
-            new Error(
-              TAG + `批量上传失败: ${err instanceof Error ? err.message : JSON.stringify(err)}`,
-            ),
-          );
-          return;
-        }
-        // uploadFiles 单文件失败不触发顶层 err，错误藏在 data.files[i].error 里
-        const fileResults = data?.files ?? [];
-        if (fileResults.length !== files.length) {
-          reject(new Error(TAG + '批量上传结果数量与文件数量不一致'));
-          return;
-        }
-        const failures = fileResults
-          .map((f, i) =>
-            f.error ? { index: i, objectKey: files[i]?.objectKey, error: f.error } : null,
-          )
-          .filter(Boolean);
-
-        if (failures.length > 0) {
-          log.error('uploadCosFilesBatch', '批量上传部分文件失败', failures);
-          reject(
-            new Error(
-              TAG +
-                `批量上传部分文件失败: ${failures[0]?.error instanceof Error ? failures[0].error.message : JSON.stringify(failures[0]?.error)}`,
-            ),
-          );
-          return;
-        }
-
-        resolve(fileResults.map((f, i) => toResult(files[i], f.data)));
-      },
+  if (
+    new Set(credential.objectKeys).size !== credential.objectKeys.length ||
+    new Set(files.map((file) => file.objectKey)).size !== files.length ||
+    files.some((file) => !file.objectKey || !credential.objectKeys.includes(file.objectKey))
+  ) {
+    throw new Error(TAG + '上传对象必须唯一且来自本次分配的 objectKeys');
+  }
+  const results: CosUploadResult[] = [];
+  for (const file of files) {
+    results.push(
+      await uploadCosFile({
+        credential: { ...credential, objectKeys: [file.objectKey], fileUrl: undefined },
+        filePath: file.filePath,
+        contentType: file.contentType,
+        headers: file.headers,
+        timeout: file.timeout,
+        onProgress: file.onProgress,
+      }),
     );
-  });
+  }
+  return results;
 };

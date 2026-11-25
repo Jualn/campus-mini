@@ -1,0 +1,12 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "资讯详情",
+  "usingComponents": {
+    "article-body": "../../components/article-body/index",
+    "article-comments": "../../components/article-comments/index",
+    "ui-icon": "/components/ui-icon/index",
+    "load-state": "/components/load-state/index",
+    "article-files": "../../components/article-files/index",
+    "page-navigation": "/components/page-navigation/index"
+  }
+}

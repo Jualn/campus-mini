@@ -1,5 +1,6 @@
 // error.ts
 export interface AppErrorOptions {
+  validationErrors?: { in: string; pointer: string; code: string }[];
   retryAfterMs?: number;
   problemType?: string;
   userMessage?: string;
@@ -32,12 +33,18 @@ export class NetworkError extends Error {
     super(message);
     this.name = 'NetworkError';
     this.raw = options.raw ?? raw;
-    this.userMessage = options.userMessage ?? '网络异常，请检查网络连接';
+    const errMsg = raw && typeof raw === 'object' ? (raw as { errMsg?: unknown }).errMsg : '';
+    this.userMessage =
+      options.userMessage ??
+      (typeof errMsg === 'string' && /timeout/i.test(errMsg)
+        ? '请求超时，请稍后重试'
+        : '网络异常，请检查网络连接');
     this.silent = options.silent ?? false;
   }
 }
 
 export class HttpError extends Error {
+  validationErrors?: AppErrorOptions['validationErrors'];
   retryAfterMs?: number;
   problemType?: string;
   statusCode: number;
@@ -52,6 +59,7 @@ export class HttpError extends Error {
   ) {
     super(message);
     this.name = 'HttpError';
+    this.validationErrors = options.validationErrors;
     this.retryAfterMs = options.retryAfterMs;
     this.problemType = options.problemType;
     this.statusCode = statusCode;
@@ -80,6 +88,25 @@ export function getHttpErrorMessage(
   serverMessage?: string,
   problemType?: string,
 ): string {
+  if (problemType === '/problems/mentor-question-version-stale')
+    return '问题已更新，回答草稿已保留，请重新阅读并核对问题';
+  if (problemType === '/problems/mentor-question-content-locked')
+    return '已有正式回答公开，原题内容已保护，可维护分类话题或通过讨论补充';
+  if (problemType === '/problems/account-content-restricted') return '当前账号暂不能发布或评论';
+  if (problemType === '/problems/post-moderation-conflict')
+    return '内容已被管理隐藏，可在本人记录回看';
+  if (problemType === '/problems/idempotency-key-reused') return '提交凭据冲突，请先核对原提交结果';
+  if (problemType === '/problems/report-duplicate') return '已举报此内容，请查看我的举报记录';
+  if (problemType === '/problems/post-category-invalid') return '分类无效，请重新选择可用分类';
+  if (problemType === '/problems/post-topic-invalid')
+    return '话题无效，请检查数量、重复或已禁用话题';
+  if (problemType === '/problems/mentor-qualification-unavailable')
+    return '导师资格服务暂不可用，请稍后再试';
+  if (problemType === '/problems/mentor-answer-forbidden')
+    return '暂无正式回答权限，请联系管理员核实人员关联及导师资格';
+  if (problemType === '/problems/post-content-rejected') return '内容未通过安全检查，草稿已保留';
+  if (problemType === '/problems/post-safety-check-unavailable')
+    return '内容安全检查暂不可用，草稿已保留';
   if (problemType === '/problems/profile-content-rejected')
     return '资料内容未通过安全检查，请修改后重试';
   if (problemType === '/problems/profile-safety-check-unavailable')
@@ -90,6 +117,8 @@ export function getHttpErrorMessage(
   if (statusCode === 401) return '登录状态已失效，请重试';
   if (statusCode === 403) return '暂无权限执行此操作';
   if (statusCode === 404) return '内容不存在或已被删除';
+  if (statusCode === 400 || statusCode === 422) return '请检查填写内容后重试';
+  if (statusCode === 409) return '当前状态已变化，请刷新后确认';
   if (statusCode === 412) return '内容已在其他设备更新，请重新加载后再操作';
   if (statusCode === 428) return '缺少最新版本信息，请重新加载后再操作';
   if (statusCode === 429) return '操作过于频繁，请稍后再试';

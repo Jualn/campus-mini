@@ -1,7 +1,7 @@
 // 分包本地副本；audit:packages 校验消费者一致性。
 import type { ActivitySummaryDTO } from '../../types/event-contract';
 import type { ActivityCard } from '../../types/business';
-import type { ActivityUiStatus } from '../../types/activity';
+import { activityStagePresentation } from '../../utils/activity-stage';
 import { activityScopeLabels } from '../../utils/activity-audience';
 import { exactCountdownDays, formatTimelineSchedule } from '../utils/event-timeline';
 
@@ -22,29 +22,6 @@ const TYPE_COLORS: Record<ActivitySummaryDTO['category'], string> = {
   THEMED: 'campus',
   OTHER: 'campus',
 };
-
-function uiStatus(raw: ActivitySummaryDTO): ActivityUiStatus {
-  if (raw.lifecycleStatus === 'CANCELLED') return 'cancelled';
-  if (raw.lifecycleStatus === 'ENDED') return 'ended';
-  if (raw.availability.state === 'OPEN') return 'enrolling';
-  if (raw.availability.state === 'NOT_OPEN') return 'not_started';
-  return 'ongoing';
-}
-
-function statusLabel(raw: ActivitySummaryDTO): string {
-  if (raw.lifecycleStatus === 'CANCELLED') return '已取消';
-  if (raw.lifecycleStatus === 'ENDED') return '已结束';
-  const labels: Record<ActivitySummaryDTO['availability']['state'], string> = {
-    NO_REGISTRATION: '无需报名',
-    NOT_OPEN: '报名未开始',
-    OPEN: '报名中',
-    CLOSED: '报名已截止',
-    FULL: '名额已满',
-    EXTERNAL: '外部参与',
-    UNAVAILABLE: '暂不可参与',
-  };
-  return labels[raw.availability.state];
-}
 
 function capacityText(raw: ActivitySummaryDTO): string {
   if (raw.capacity === undefined) return '';
@@ -71,8 +48,8 @@ export function toCard(raw: ActivitySummaryDTO): ActivityCard {
     cardTimelineText: projected?.text ?? '',
     cardTimelineKind: projected?.kind,
     deadlineText: raw.cardTimeline ? `${raw.cardTimeline.title} · ${projected?.text ?? ''}` : '',
-    status: uiStatus(raw),
-    statusLabel: statusLabel(raw),
+    status: activityStagePresentation(raw.stage).status,
+    statusLabel: activityStagePresentation(raw.stage).label,
     daysToDeadline: raw.cardTimeline ? exactCountdownDays(raw.cardTimeline.schedule) : null,
     enroll_deadline: '',
     published_at: '',

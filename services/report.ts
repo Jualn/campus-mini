@@ -1,3 +1,4 @@
+import { POST_CAPABILITIES } from '../config/post-capabilities';
 import type { ReportCreateRequest } from '../types/api';
 import { api } from './api';
 
@@ -9,6 +10,9 @@ import { api } from './api';
  * @returns void
  */
 export const report = async (options: ReportCreateRequest): Promise<void> => {
-  await api.report.create(options);
+  if (POST_CAPABILITIES.communityV1) {
+    const { mark, ...request } = options;
+    await api.report.create({ ...request, remark: mark });
+  } else await api.report.create(options);
   // 举报相关逻辑
 };

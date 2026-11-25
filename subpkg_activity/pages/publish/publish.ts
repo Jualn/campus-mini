@@ -5,6 +5,7 @@ import * as activityAction from '../../actions/activity';
 import * as mediaAction from '../../../actions/media';
 import { createLogger } from '../../../utils/logger';
 import { notifyToast } from '../../../utils/notify';
+import { ACTIVITY_PUBLISH_UNAVAILABLE } from '../../../utils/activity-publishing';
 import type { SelectedMediaFile } from '../../../actions/media';
 import type {
   ActivityCreateRequest,
@@ -15,7 +16,6 @@ import type {
 import {
   ACTION_OPTIONS,
   toEventTime,
-  validatePublishInformation,
   AI_FIELD_SELECTOR_MAP,
   AI_TO_FORM_FIELD_MAP,
   AUDIENCE_OPTIONS_BASE,
@@ -75,6 +75,7 @@ Page({
    * 页面的初始数据
    */
   data: {
+    publishUnavailableMessage: ACTIVITY_PUBLISH_UNAVAILABLE,
     actionOptions: ACTION_OPTIONS,
     extraSections: [] as { title: string; content: string }[],
     participationActions: [] as {
@@ -1813,76 +1814,7 @@ Page({
     };
   },
 
-  async submitActivity() {
-    if (this.data.submitting || this.data.createdId) return;
-    if (this.isAiRunning()) {
-      notifyToast({ title: '请等待 AI 填写完成后检查内容', icon: 'none' });
-      return;
-    }
-    if (!this.validateAttachmentBeforeSubmit()) return;
-
-    let payload = this.buildSubmitPayload();
-
-    const error = validatePublishInformation(payload);
-    if (error) {
-      notifyToast({ title: error, icon: 'none' });
-      return;
-    }
-
-    this.setData({ submitting: true });
-    try {
-      const qr = this.data.qrcodeImage;
-      if (qr && qr.status !== 'uploaded') {
-        const [uploadedQr] = await mediaAction.uploadFilesToCos(TARGET_TYPES.ACTIVITY.value, [
-          { originalName: '报名二维码.png', filePath: qr.path },
-        ]);
-        if (!uploadedQr.objectKey || !uploadedQr.url) throw new Error('二维码上传结果缺失');
-        this.setData({
-          qrcodeImage: {
-            ...qr,
-            status: 'uploaded',
-            url: uploadedQr.url,
-            objectKey: uploadedQr.objectKey,
-          },
-        });
-      }
-      const localIndexes = this.data.attachmentFiles
-        .map((item, index) => (item.status === 'local' ? index : -1))
-        .filter((index) => index >= 0);
-
-      if (localIndexes.length > 0) {
-        const localFiles = localIndexes.map((index) => {
-          const item = this.data.attachmentFiles[index];
-          return {
-            originalName: item.name,
-            filePath: item.path,
-            fileSize: item.size,
-          };
-        });
-        const files = [...this.data.attachmentFiles];
-        localIndexes.forEach((index) => {
-          files[index] = { ...files[index], status: 'uploading', uploadError: '' };
-        });
-        this.setData({ attachmentFiles: files });
-
-        const uploaded = await this.uploadAttachmentFiles(localFiles, localIndexes);
-        if (!uploaded) return;
-      }
-
-      payload = this.buildSubmitPayload();
-      const finalError = validatePublishInformation(payload);
-      if (finalError) {
-        notifyToast({ title: finalError, icon: 'none' });
-        return;
-      }
-      const createdId = await activityAction.createActivity(payload);
-      this.setData({ createdId });
-      notifyToast({ title: '草稿已创建', icon: 'success' });
-    } catch (e) {
-      log.error('submitActivity', '发布活动失败', e);
-      notifyToast({ title: '发布失败', icon: 'none' });
-    } finally {
-      this.setData({ submitting: false });
-    }
+  submitActivity() {
+    notifyToast({ title: ACTIVITY_PUBLISH_UNAVAILABLE, icon: 'none' });
   },
 });

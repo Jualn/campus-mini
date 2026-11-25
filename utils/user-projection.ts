@@ -57,7 +57,7 @@ export function projectCommentAuthor(
 ): CommentItem | ReplyItem {
   if (!profile?.userId) return item;
   let next = item;
-  if (item.userId === profile.userId) {
+  if (item.kind !== 'MENTOR_ANSWER' && item.userId === profile.userId) {
     const avatar = getAvatarInfo(profile.nickname);
     const avatarUrl = profile.avatarUrl ?? '';
     if (

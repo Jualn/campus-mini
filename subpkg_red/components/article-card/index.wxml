@@ -1,0 +1,13 @@
+<view wx:if="{{article}}" class="card card--{{layout}} {{layout === 'lead' && (!article.cover || coverFailed) ? 'card--lead-text' : ''}}" bindtap="open" hover-class="card--pressed" aria-role="button" aria-label="阅读{{article.title}}">
+  <image wx:if="{{layout !== 'resource' && article.cover && !coverFailed}}" class="cover" src="{{article.cover.url}}" mode="aspectFill" lazy-load binderror="coverError" aria-hidden="true" />
+  <view class="copy">
+    <text wx:if="{{showCategory}}" class="category">{{article.category.name}}</text>
+    <view class="title">{{article.title}}</view>
+    <view wx:if="{{article.summary}}" class="summary">{{article.summary}}</view>
+    <view class="meta">
+      <text class="publisher">{{article.publisherDisplayName}}</text>
+      <text wx:if="{{article.publishedDate}}" class="date">{{article.publishedDate}}</text>
+    </view>
+  </view>
+  <view wx:if="{{layout === 'resource'}}" class="resource-arrow"><ui-icon name="chevron-right" size="sm" /></view>
+</view>

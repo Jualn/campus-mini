@@ -56,6 +56,7 @@ export const EVENTS = {
 
   /** 通知列表刷新 */
   NOTIFY_LIST_REFRESH: 'notify:list:refresh',
+  NOTIFY_VISIBILITY_CHANGE: 'notify:visibility:change',
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
@@ -79,6 +80,7 @@ export interface EventMap {
   [EVENTS.NOTIFY_UNREAD_CHANGE]: [unreadCount: number];
 
   [EVENTS.NOTIFY_LIST_REFRESH]: [readIds?: string[]];
+  [EVENTS.NOTIFY_VISIBILITY_CHANGE]: [];
 }
 
 // map 的类型：key 是 string，value 是函数数组

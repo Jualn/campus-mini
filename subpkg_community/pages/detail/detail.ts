@@ -1,6 +1,10 @@
+import { HttpError } from '../../../utils/error';
+import { community } from '../../../services/post-community';
+import { getErrorMessage } from '../../../utils/notify';
 import { useSharePoster } from '../../../behaviors/useSharePoster';
 // subpkg_community/pages/detail/detail.ts
 
+import { POST_CAPABILITIES } from '../../../config/post-capabilities';
 import { TARGET_TYPES } from '../../../utils/constants';
 import {
   wxGetWindowInfo,
@@ -18,6 +22,7 @@ import * as postAction from '../../../actions/post';
 import { useAsyncLoad } from '../../behaviors/useAsyncLoad';
 import definePage from '../../../utils/definePage';
 import { watchCurrentIdentity, getCurrentIdentity } from '../../../actions/current-user';
+import { openUserProfile } from '../../../utils/user-profile-navigation';
 
 const log = createLogger('PostDetailPage');
 
@@ -29,9 +34,14 @@ const HOME_PAGE_URL = '/pages/index/index';
 definePage({
   behaviors: [useAsyncLoad(), useSharePoster()],
 
+  _owner: '',
   _currentScrollTop: 0,
   _enteredFromShare: false,
   _likePending: false,
+  _postGeneration: 0,
+  _discussionRead: 0,
+  _lastDiscussion: null as { id: string; count: number; answers?: number } | null,
+  _reloadOnShow: false,
   _offIdentity: null as (() => void) | null,
   /** 浏览数上报定时器 */
   _viewTimer: 0,
@@ -39,6 +49,12 @@ definePage({
   _viewScheduled: false,
 
   data: {
+    communityEnabled: POST_CAPABILITIES.communityV1,
+    favorited: false,
+    favoriteReady: false,
+    favoritePending: false,
+    favoriteError: '',
+    focusCommentId: '',
     targetId: '',
     targetType: TARGET_TYPES.POST.value,
     statusBarHeight: 20,
@@ -57,8 +73,23 @@ definePage({
     reportTargetId: '',
   },
 
-  onLoad(query: { postId: string; from?: string }) {
+  onLoad(query: { postId: string; from?: string; commentId?: string }) {
+    this._owner = getCurrentIdentity().id;
     this._offIdentity = watchCurrentIdentity(() => {
+      if (this._owner !== getCurrentIdentity().id) {
+        this._owner = getCurrentIdentity().id;
+        ++this._postGeneration;
+        this._clearViewTimer();
+        this._viewScheduled = false;
+        this.setData({
+          post: {} as PostDetail,
+          favorited: false,
+          favoriteReady: false,
+          favoritePending: false,
+        });
+        if (this.data.targetId) this._loadPost(this.data.targetId);
+        return;
+      }
       this.setData({
         post: postAction.syncPostAuthor(this.data.post),
         myAvatar: getCurrentIdentity().avatarUrl,
@@ -75,12 +106,31 @@ definePage({
 
     this.setData({
       targetId: query.postId || '',
+      focusCommentId: query.commentId ?? '',
     });
 
     this._loadPost(query.postId);
   },
 
+  onShow() {
+    // Returning from a mentor profile must re-read current server permissions.
+    if (this._reloadOnShow && this.data.targetId) this._loadPost(this.data.targetId);
+    this._reloadOnShow = false;
+  },
+
+  onHide() {
+    this._reloadOnShow = true;
+    this._clearViewTimer();
+    this._viewScheduled = false;
+    ++this._postGeneration;
+    this.setData({ favoritePending: false, favoriteReady: false });
+    if (this.data.post.postType === 'MENTOR_QA') {
+      this.setData({ 'post.commentPermission': null });
+    }
+  },
+
   onUnload() {
+    ++this._postGeneration;
     this._offIdentity?.();
     this._clearViewTimer();
   },
@@ -121,22 +171,33 @@ definePage({
 
     this._prepareShare({
       key: JSON.stringify([post.id, postData]),
+      postId:
+        post.postType === 'NORMAL' || (post.postType === 'MENTOR_QA' && POST_CAPABILITIES.mentorQa)
+          ? post.id
+          : undefined,
       path: `/subpkg_community/pages/detail/detail?postId=${post.id}&from=share`,
       render: (scope) => drawPostPoster(scope, postData),
     });
   },
 
   _loadPost(id: string, options: { preserveError?: boolean } = {}) {
+    const generation = ++this._postGeneration;
     if (!id) {
       this._asyncLoadFail('帖子不存在');
       return;
     }
 
-    this._asyncLoadBegin(options);
+    if (!this.data.post.id) this._asyncLoadBegin(options);
+    this.setData({ favoriteReady: false, favoritePending: false });
 
     postAction
       .getPostDetail(id)
       .then((res) => {
+        if (generation !== this._postGeneration) return;
+        if (!['NORMAL', 'MENTOR_QA'].includes(res.postType ?? ''))
+          throw new HttpError(422, 'Unsupported post type', {
+            userMessage: '暂不支持此帖子类型，请返回列表',
+          });
         const merged = { ...res };
 
         const safeLikeCount = typeof merged.likeCount === 'number' ? merged.likeCount : 0;
@@ -155,11 +216,24 @@ definePage({
         });
 
         this._asyncLoadSuccess();
+        this._publishDiscussionChange(merged);
+        if (
+          (merged.postType === 'NORMAL' ||
+            (merged.postType === 'MENTOR_QA' && POST_CAPABILITIES.mentorQa)) &&
+          POST_CAPABILITIES.communityV1
+        )
+          void this.loadFavorite();
         this._scheduleViewReport(merged.id);
         this._preparePostShare();
       })
       .catch((err: unknown) => {
-        this._asyncLoadFail('网络可能暂时不可用，请稍后再试');
+        if (generation !== this._postGeneration) return;
+        if (err instanceof HttpError && err.statusCode === 404) {
+          this.setData({ post: {} as PostDetail, favoriteReady: false, favorited: false });
+          this._asyncLoadFail('帖子已不可访问，请返回列表');
+        } else if (this.data.post.id)
+          showErrorToast(err, { fallback: '最新问题读取失败，草稿已保留，请重试' });
+        else this._asyncLoadFail(getErrorMessage(err, '帖子加载失败，请重试'));
         log.error('_loadPost', '加载帖子失败', err);
       });
   },
@@ -210,7 +284,7 @@ definePage({
     const currentViewCount =
       typeof this.data.post.viewCount === 'number' ? this.data.post.viewCount : 0;
 
-    postAction.recordPostView(postId, currentViewCount);
+    postAction.recordPostView(postId, currentViewCount, this.data.post.postType);
   },
 
   // comment-panel 回调：评论数变化时同步到帖子数据
@@ -224,6 +298,7 @@ definePage({
       'post.commentCount': nextCount,
       currentCommentCount: nextCount,
     });
+    if (this._lastDiscussion?.id === this.data.post.id) this._lastDiscussion.count = nextCount;
     this._emitPostUpdate({ commentCount: nextCount });
   },
 
@@ -245,11 +320,74 @@ definePage({
     });
   },
 
+  async refreshQuestion() {
+    const generation = this._postGeneration;
+    const request = ++this._discussionRead;
+    try {
+      const post = await postAction.getPostDetail(this.data.targetId);
+      if (generation !== this._postGeneration || request !== this._discussionRead) return;
+      const { isLiked, likeCount, viewCount } = this.data.post;
+      this.setData({
+        post: { ...post, isLiked, likeCount, viewCount },
+        currentCommentCount: post.commentCount,
+      });
+      this._publishDiscussionChange(post);
+    } catch (error) {
+      if (generation !== this._postGeneration || request !== this._discussionRead) return;
+      if (error instanceof HttpError && error.statusCode === 404) {
+        this.setData({ post: {} as PostDetail, favoriteReady: false, favorited: false });
+        this._asyncLoadFail('问题已不可访问，请返回列表');
+      } else showErrorToast(error, { fallback: '问题重读失败，回答草稿已保留，请重试' });
+    }
+  },
+  _publishDiscussionChange(post: PostDetail) {
+    const previous = this._lastDiscussion;
+    const next = { id: post.id, count: post.commentCount, answers: post.qaSummary?.publicAnswerCount };
+    this._lastDiscussion = next;
+    if (
+      previous?.id === next.id &&
+      (previous.count !== next.count || previous.answers !== next.answers)
+    )
+      this._emitPostUpdate({ commentCount: next.count });
+  },
+  async loadFavorite() {
+    if (!this.data.post.id || this.data.favoritePending) return;
+    const generation = this._postGeneration,
+      owner = getCurrentIdentity().id;
+    this.setData({ favoriteReady: false, favoriteError: '' });
+    try {
+      const result = await community.favorite(this.data.targetId);
+      if (generation === this._postGeneration && owner === getCurrentIdentity().id)
+        this.setData({ favorited: result.favorited, favoriteReady: true });
+    } catch (error) {
+      if (generation === this._postGeneration)
+        this.setData({ favoriteError: getErrorMessage(error, '收藏状态查询失败') });
+    }
+  },
+  async toggleFavorite() {
+    if (!this.data.favoriteReady || this.data.favoritePending || !POST_CAPABILITIES.communityV1)
+      return;
+    const generation = this._postGeneration,
+      owner = getCurrentIdentity().id;
+    this.setData({ favoritePending: true });
+    try {
+      const result = await community.setFavorite(this.data.targetId, !this.data.favorited);
+      if (generation === this._postGeneration && owner === getCurrentIdentity().id)
+        this.setData({ favorited: result.favorited });
+    } catch (error) {
+      if (generation === this._postGeneration)
+        this.setData({ favoriteReady: false, favoriteError: '收藏结果未确认，请重新查询状态' });
+      showErrorToast(error, { fallback: '收藏失败，请重新查询状态' });
+    } finally {
+      if (generation === this._postGeneration) this.setData({ favoritePending: false });
+    }
+  },
+
   // ─── 帖子操作 ────────────────────────────────────────────
 
   async onLike() {
     const { id, isLiked, likeCount } = this.data.post;
-    if (!id) return;
+    if (!id || !['NORMAL', 'MENTOR_QA'].includes(this.data.post.postType ?? '')) return;
     if (this._likePending) return;
     this._likePending = true;
 
@@ -285,29 +423,38 @@ definePage({
     }
   },
 
-  // 点击评论按钮，聚焦输入框
   onComment() {
-    const comp = this.selectComponent('#post-detail-comment-panel');
-    comp.setData({ inputAutoFocus: true });
+    const navHeight = this.data.statusBarHeight + (wxGetWindowInfo().windowWidth * 88) / 750;
+    void wx.pageScrollTo({ selector: '#discussion-section', offsetTop: -navHeight, duration: 250 });
   },
 
   goToUser(e: WechatMiniprogram.TouchEvent) {
     const userId = e.currentTarget.dataset.id as string;
-
-    void wxNavigateTo({
-      url: `/subpkg_user/pages/user/user?userId=${encodeURIComponent(userId)}`,
-    });
+    void openUserProfile(userId);
   },
 
   // ─── 分享 & 更多 ─────────────────────────────────────────
 
+  onTopicTap(e: WechatMiniprogram.TouchEvent) {
+    if (!POST_CAPABILITIES.organization) return;
+    void wxNavigateTo({
+      url: `/subpkg_community/pages/post-list/list?topicId=${encodeURIComponent(String(e.currentTarget.dataset.id))}&postType=${this.data.post.postType === 'MENTOR_QA' ? 'MENTOR_QA' : 'NORMAL'}`,
+    });
+  },
   async onMore() {
+    if (!['NORMAL', 'MENTOR_QA'].includes(this.data.post.postType ?? '')) return;
     const { isSelf } = this.data.post;
 
     let res;
     try {
       res = await wxShowActionSheet({
-        itemList: isSelf ? ['删除帖子'] : ['举报'],
+        itemList: isSelf
+          ? POST_CAPABILITIES.organization &&
+            (this.data.post.postType === 'NORMAL' ||
+              (this.data.post.postType === 'MENTOR_QA' && POST_CAPABILITIES.mentorQa))
+            ? ['删除帖子', '编辑']
+            : ['删除帖子']
+          : ['举报'],
       });
     } catch {
       // 用户取消操作或出现错误都不做处理
@@ -316,6 +463,17 @@ definePage({
     if (!res) return;
 
     try {
+      if (isSelf && res.tapIndex === 1) {
+        void wxNavigateTo({
+          url: `/subpkg_community/pages/post-edit/post-edit?postId=${encodeURIComponent(this.data.post.id)}`,
+          events: {
+            postEdited: () => {
+              this._loadPost(this.data.post.id);
+            },
+          },
+        });
+        return;
+      }
       if (isSelf && res.tapIndex === 0) {
         const r = await wxShowModal({
           title: '删除帖子',

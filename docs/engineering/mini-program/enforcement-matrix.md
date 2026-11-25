@@ -178,7 +178,7 @@ Each stage should leave the repository green. Do not enable dozens of rules and 
 
 Record current commands and their evidence as VERIFIED, unresolved facts as UNKNOWN, and approved future decisions as TARGET in the [Project Profile](project-profile.md). Proposed gates in this matrix are recommendations, not evidence that CI already runs them.
 
-The standalone docs check is implemented: `node docs/engineering/mini-program/scripts/check-docs.mjs`. It checks document presence, routing coverage, local Markdown links/anchors, Profile schema/status and VERIFIED evidence paths. ACTIVE additionally requires resolved critical facts. It does not execute project commands, inspect source, test remote links, prove evidence content, or claim CI wiring. See [maintenance](maintenance.md).
+The standalone docs check is implemented: `node docs/engineering/mini-program/scripts/check-docs.mjs`. It checks document presence, routing coverage, Markdown links/anchors, Profile schema/status and VERIFIED evidence link paths. ACTIVE additionally requires resolved critical facts. For standalone checkouts, `--allow-external-unchecked` permits out-of-repository links to be explicitly reported as unresolved. It does not execute project commands, inspect source, test remote URLs, prove evidence content, validate Contract drift, or claim CI wiring. See [maintenance](maintenance.md).
 
 ## Core invariant
 

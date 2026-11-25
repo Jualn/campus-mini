@@ -1,0 +1,46 @@
+<view class="filter-root filter-root--{{tone}}">
+  <view wx:if="{{openKey}}" class="filter-backdrop" catchtap="close" catchtouchmove="noop" />
+  <view class="filter-controls">
+    <button
+      wx:for="{{filters}}"
+      wx:key="key"
+      class="filter-trigger {{item.selectedIndex ? 'filter-trigger--selected' : ''}} {{openKey === item.key ? 'filter-trigger--open' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onToggle"
+      aria-label="{{item.title}}：{{item.options[item.selectedIndex].label || '待加载'}}"
+      aria-expanded="{{openKey === item.key}}"
+    >
+      <text class="filter-trigger__caption">{{item.label}}</text>
+      <view class="filter-trigger__value">
+        <text>{{item.options[item.selectedIndex].label || '待加载'}}</text>
+        <view class="filter-chevron" />
+      </view>
+    </button>
+  </view>
+  <view wx:if="{{openKey}}" class="filter-panel" catchtouchmove="noop">
+    <view class="filter-panel__header">
+      <text class="filter-panel__title">{{panelTitle}}</text>
+      <button class="filter-panel__close" bindtap="close" aria-label="收起筛选">收起</button>
+    </view>
+    <view class="filter-options">
+      <button
+        wx:for="{{panelOptions}}"
+        wx:key="id"
+        class="filter-option {{selectedIndex === index ? 'filter-option--selected' : ''}}"
+        data-index="{{index}}"
+        bindtap="onSelect"
+        aria-label="{{item.label}}{{selectedIndex === index ? '，已选中' : ''}}"
+      >
+        <text class="filter-option__label">{{item.label}}</text>
+        <text wx:if="{{selectedIndex === index}}" class="filter-option__check">✓</text>
+      </button>
+    </view>
+    <view wx:if="{{!panelOptions.length && !panelLoading && !panelError}}" class="filter-feedback">暂无可选项</view>
+    <view wx:if="{{panelError}}" class="filter-feedback filter-feedback--error">
+      <text class="filter-feedback__text">{{panelError}}</text>
+      <button class="filter-more" bindtap="onMore">重试</button>
+    </view>
+    <view wx:elif="{{panelLoading}}" class="filter-feedback">正在加载…</view>
+    <button wx:elif="{{panelHasMore}}" class="filter-more filter-more--wide" bindtap="onMore">加载更多</button>
+  </view>
+</view>

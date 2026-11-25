@@ -1,0 +1,914 @@
+{
+  "verifiedOn": "2026-10-18",
+  "revision": "points-v1-r2",
+  "identityRevision": "identity-organization-v1-r1",
+  "result": "PASS",
+  "manifests": [
+    {
+      "feature": "points-v1",
+      "revision": "points-v1-r2",
+      "contractReady": "BLOCKED",
+      "handoffSha256": "61a9608662a3f8f5440b258b0e205a8817db37efb74c7a4d75507c656d2d4cf0",
+      "checkedFiles": 71,
+      "result": "PASS",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "4e27b0343bd068922063500e724edbb042bd21f5b2ae41439d53ddc849227d5a",
+          "actualSha256": "4e27b0343bd068922063500e724edbb042bd21f5b2ae41439d53ddc849227d5a",
+          "result": "PASS"
+        },
+        {
+          "path": "API_GUIDELINES.md",
+          "sha256": "be7adb74110d6e0e3038d6e76e4e234ab118c3bf0f47a435065b506d3f8ec4c2",
+          "actualSha256": "be7adb74110d6e0e3038d6e76e4e234ab118c3bf0f47a435065b506d3f8ec4c2",
+          "result": "PASS"
+        },
+        {
+          "path": "COORDINATION_GUIDE.md",
+          "sha256": "e0a04b28b0f93f7b84b2926edb0f919ae0e83c85df8e2e3b0874b8546581ac0c",
+          "actualSha256": "e0a04b28b0f93f7b84b2926edb0f919ae0e83c85df8e2e3b0874b8546581ac0c",
+          "result": "PASS"
+        },
+        {
+          "path": "PROJECT_RULES.md",
+          "sha256": "3c29980883b799e58602135cf50401ff6bf34d36b9c53a76cc0156e526448701",
+          "actualSha256": "3c29980883b799e58602135cf50401ff6bf34d36b9c53a76cc0156e526448701",
+          "result": "PASS"
+        },
+        {
+          "path": "README.md",
+          "sha256": "0a2da1ab147835671715fa1f026ea662a9809e1bbf148b6936bf5c1e74bed18c",
+          "actualSha256": "0a2da1ab147835671715fa1f026ea662a9809e1bbf148b6936bf5c1e74bed18c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/catalogs/person-foundation-v1.json",
+          "sha256": "1fa1236c8e30215545d8b7a427682053284baeba8ffb965733cb632c2c9db3dc",
+          "actualSha256": "1fa1236c8e30215545d8b7a427682053284baeba8ffb965733cb632c2c9db3dc",
+          "result": "PASS"
+        },
+        {
+          "path": "api/catalogs/rbac-v1.json",
+          "sha256": "cf6ac904e3c78a93a07f61fa7e7624ce21f1a4390d8ad2030fba76b808b8165c",
+          "actualSha256": "cf6ac904e3c78a93a07f61fa7e7624ce21f1a4390d8ad2030fba76b808b8165c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/openapi.yaml",
+          "sha256": "a29ae91991139fad32e5c7ddf4f293f5591cb65946b5e5ad3775a5974b4cfebe",
+          "actualSha256": "a29ae91991139fad32e5c7ddf4f293f5591cb65946b5e5ad3775a5974b4cfebe",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/admin-qr-login.yaml",
+          "sha256": "e037794feff416ec337a0151cab84aa1ca661f66ec8223bf9e37dafc3616e791",
+          "actualSha256": "e037794feff416ec337a0151cab84aa1ca661f66ec8223bf9e37dafc3616e791",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/admin.yaml",
+          "sha256": "2ff99ec6af9f2a25e9ef6f6f72fb0473e19f83b48d5c7e10de5454bd10b282da",
+          "actualSha256": "2ff99ec6af9f2a25e9ef6f6f72fb0473e19f83b48d5c7e10de5454bd10b282da",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/article.yaml",
+          "sha256": "29dafc08cdf3ec381c54681441e40c551f0a2a730fe68e841e7457bc9691a4c0",
+          "actualSha256": "29dafc08cdf3ec381c54681441e40c551f0a2a730fe68e841e7457bc9691a4c0",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/interaction.yaml",
+          "sha256": "3eec606e60cf6015251f3a50dbf982eccb71b83dbddc76f4a07dca46c72c09dc",
+          "actualSha256": "3eec606e60cf6015251f3a50dbf982eccb71b83dbddc76f4a07dca46c72c09dc",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/learning-task.yaml",
+          "sha256": "ca0be4321a086949ca10c6ea2c3c05fa7daa26254f2e6a91c4e4fa1fcef8083c",
+          "actualSha256": "ca0be4321a086949ca10c6ea2c3c05fa7daa26254f2e6a91c4e4fa1fcef8083c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/notification.yaml",
+          "sha256": "f9bbaafaa8abbf98ad51083abb9f5e965f8c296879a538e2982985da67c3416e",
+          "actualSha256": "f9bbaafaa8abbf98ad51083abb9f5e965f8c296879a538e2982985da67c3416e",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/official-content.yaml",
+          "sha256": "b0bd552e5dd590833fbe9cf005893ff5c6d6a2e35931547db47e3ec78287d257",
+          "actualSha256": "b0bd552e5dd590833fbe9cf005893ff5c6d6a2e35931547db47e3ec78287d257",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/person-foundation.yaml",
+          "sha256": "f092690b3b94f49433f8a9f70fc4daad22a4054e60add38cda2b4fc85cf5e548",
+          "actualSha256": "f092690b3b94f49433f8a9f70fc4daad22a4054e60add38cda2b4fc85cf5e548",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/points.yaml",
+          "sha256": "96f1c72fb9e23a617d88982784bd21c942235dd2d5028fd05e816ee814855da8",
+          "actualSha256": "96f1c72fb9e23a617d88982784bd21c942235dd2d5028fd05e816ee814855da8",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/post.yaml",
+          "sha256": "0302eb2075f890cfd44698313849986ee5d87005bdb5a2115f5816dfe5be0b70",
+          "actualSha256": "0302eb2075f890cfd44698313849986ee5d87005bdb5a2115f5816dfe5be0b70",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/profile.yaml",
+          "sha256": "d7c47bbad5a148655a72359e3f1e8853b5038a17a0e14a6e60f66a804f160708",
+          "actualSha256": "d7c47bbad5a148655a72359e3f1e8853b5038a17a0e14a6e60f66a804f160708",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/rbac.yaml",
+          "sha256": "fd6e8902c7d09957035585b50e3790060152941f3a303ab3fcd5d3a8fefaf2b2",
+          "actualSha256": "fd6e8902c7d09957035585b50e3790060152941f3a303ab3fcd5d3a8fefaf2b2",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/user.yaml",
+          "sha256": "89d405455be7548a2e3f7679574bd39deb518c402c278a7be845ae66444c2fca",
+          "actualSha256": "89d405455be7548a2e3f7679574bd39deb518c402c278a7be845ae66444c2fca",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/activity.yaml",
+          "sha256": "401c9202a76704ee8079ae75e056b742aba45ab91e07977c6667de173dd6b81d",
+          "actualSha256": "401c9202a76704ee8079ae75e056b742aba45ab91e07977c6667de173dd6b81d",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/admin-qr-login.yaml",
+          "sha256": "d98f2371551cca79050bf964e51fb3b1994f3c1632850d6fab02c40ae8f3c2fb",
+          "actualSha256": "d98f2371551cca79050bf964e51fb3b1994f3c1632850d6fab02c40ae8f3c2fb",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/article.yaml",
+          "sha256": "4d05b9e61c40571f0c381a049191e0eedcd3f17f75f96e7e0791c0913899a07f",
+          "actualSha256": "4d05b9e61c40571f0c381a049191e0eedcd3f17f75f96e7e0791c0913899a07f",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/attachment.yaml",
+          "sha256": "cba79685f7a1431ad7096d58d1a2750bcdcc313ffb919d7ae4014aee4f800218",
+          "actualSha256": "cba79685f7a1431ad7096d58d1a2750bcdcc313ffb919d7ae4014aee4f800218",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/content.yaml",
+          "sha256": "662578660e1d19574521846a6f74bcd6084fbe44f0a3f6b3cb004de7524c9732",
+          "actualSha256": "662578660e1d19574521846a6f74bcd6084fbe44f0a3f6b3cb004de7524c9732",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/document-import.yaml",
+          "sha256": "f3b9353947f7b16b0a58f9cbb97dc28b62ab9cfc8d77da7190dbc839e241dd40",
+          "actualSha256": "f3b9353947f7b16b0a58f9cbb97dc28b62ab9cfc8d77da7190dbc839e241dd40",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/interaction.yaml",
+          "sha256": "f7ae71595ec71f3a897113d56bae9225b539b36692c4622c2ab2eaf28776bb22",
+          "actualSha256": "f7ae71595ec71f3a897113d56bae9225b539b36692c4622c2ab2eaf28776bb22",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/learning-task.yaml",
+          "sha256": "041e0ff88a4ba13f753eb3c469ce8f36fc29cf33440a12646fca603f97aadb1c",
+          "actualSha256": "041e0ff88a4ba13f753eb3c469ce8f36fc29cf33440a12646fca603f97aadb1c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/notification.yaml",
+          "sha256": "295631f88e586131a1e769a50d972773cd736e6ffbd6807d1e732b10bcc63c91",
+          "actualSha256": "295631f88e586131a1e769a50d972773cd736e6ffbd6807d1e732b10bcc63c91",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/official-content.yaml",
+          "sha256": "8f8feac114707d85267349cb33e933c971e354893a4270d8a180ad3702fc0774",
+          "actualSha256": "8f8feac114707d85267349cb33e933c971e354893a4270d8a180ad3702fc0774",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/person-foundation.yaml",
+          "sha256": "341760142572aa5d9bf294f1097971d7d134268402fec142b936e8f4e6c6bb0b",
+          "actualSha256": "341760142572aa5d9bf294f1097971d7d134268402fec142b936e8f4e6c6bb0b",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/points.yaml",
+          "sha256": "6b33c73f24c8bdf318db2ba1e0ef6c0de91b5ed9ea85826a345fd4837af3ef05",
+          "actualSha256": "6b33c73f24c8bdf318db2ba1e0ef6c0de91b5ed9ea85826a345fd4837af3ef05",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/post.yaml",
+          "sha256": "20e8778db4af445e01753d7417038b8377766abacff7a6904ceff15c047d05a3",
+          "actualSha256": "20e8778db4af445e01753d7417038b8377766abacff7a6904ceff15c047d05a3",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/profile.yaml",
+          "sha256": "e71e057d92537d8cef57701320f462abbc617f60f9b72d13821df2a1fbdac30a",
+          "actualSha256": "e71e057d92537d8cef57701320f462abbc617f60f9b72d13821df2a1fbdac30a",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/public-event.yaml",
+          "sha256": "86f8a52b839fc90d7a1edb7a8ea07c62ec83394f86a017a3609453011aba1553",
+          "actualSha256": "86f8a52b839fc90d7a1edb7a8ea07c62ec83394f86a017a3609453011aba1553",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/rbac.yaml",
+          "sha256": "fdaa38ef3d02236a70858104640ce39a80c64cb68f3bdf7cb7fed805a2106274",
+          "actualSha256": "fdaa38ef3d02236a70858104640ce39a80c64cb68f3bdf7cb7fed805a2106274",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/registration.yaml",
+          "sha256": "43072c4be7fcb40f50fa0a1b9f81e9173d4c09962010fab9e9d2c546ec58d41a",
+          "actualSha256": "43072c4be7fcb40f50fa0a1b9f81e9173d4c09962010fab9e9d2c546ec58d41a",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/shared.yaml",
+          "sha256": "6ac6b57ad0c43aeced394d3842e0697ffd9951456f03f7dc0f5e5c58616f168d",
+          "actualSha256": "6ac6b57ad0c43aeced394d3842e0697ffd9951456f03f7dc0f5e5c58616f168d",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/system.yaml",
+          "sha256": "b56524dde48491a79ae9eb426ef01319c3312f60a7572c1864aeafce79c60d4d",
+          "actualSha256": "b56524dde48491a79ae9eb426ef01319c3312f60a7572c1864aeafce79c60d4d",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/README.md",
+          "sha256": "0caf5fef62843a187050f3f8807b64c54a3d8fd164e523866348f5807e150cba",
+          "actualSha256": "0caf5fef62843a187050f3f8807b64c54a3d8fd164e523866348f5807e150cba",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/data-model.md",
+          "sha256": "979ea8491bee68b1cdff45a32d64d0681f7e684e12434d865f83836cd5601049",
+          "actualSha256": "979ea8491bee68b1cdff45a32d64d0681f7e684e12434d865f83836cd5601049",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/baseline-sha256.json",
+          "sha256": "d4e0091975c9772ff827cd571d6c08b2989da81749cc647c591e8144b1f2269e",
+          "actualSha256": "d4e0091975c9772ff827cd571d6c08b2989da81749cc647c591e8144b1f2269e",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/baseline-validation.log",
+          "sha256": "d0ec167c2a5a511c82d23daccba91faf1e532be0bf02b920cd51d492b3a40f4a",
+          "actualSha256": "d0ec167c2a5a511c82d23daccba91faf1e532be0bf02b920cd51d492b3a40f4a",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/points-manifest-validation.log",
+          "sha256": "c8eaef3e7e5fe924922998c3a2aebabe84a769725eddb1c57709ae80f8e25322",
+          "actualSha256": "c8eaef3e7e5fe924922998c3a2aebabe84a769725eddb1c57709ae80f8e25322",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/points-r1-handoff.json",
+          "sha256": "72c7c057de280b93da50a014290d06ea02157804fffb9bd9db6c34185995d9c7",
+          "actualSha256": "72c7c057de280b93da50a014290d06ea02157804fffb9bd9db6c34185995d9c7",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/preservation.json",
+          "sha256": "cf85c52bd70430a8628012f23144ca3bb19aa77157120931928b554db221072a",
+          "actualSha256": "cf85c52bd70430a8628012f23144ca3bb19aa77157120931928b554db221072a",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/rbac-legacy-sha256.json",
+          "sha256": "c52c09734970734b5d12aaa6fe6dae1ccf7f4c93c0845a626fae4708680a1cf0",
+          "actualSha256": "c52c09734970734b5d12aaa6fe6dae1ccf7f4c93c0845a626fae4708680a1cf0",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/validation-attempt-1.log",
+          "sha256": "9c3b985104ba5dd806e27dcbf121c3e938621a6760329fa9d7df2e95a09fe134",
+          "actualSha256": "9c3b985104ba5dd806e27dcbf121c3e938621a6760329fa9d7df2e95a09fe134",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/validation.log",
+          "sha256": "26426f8e87837935417d2b5c095351c694e071c08e06fd92b61a635279c0d436",
+          "actualSha256": "26426f8e87837935417d2b5c095351c694e071c08e06fd92b61a635279c0d436",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/owning-policy.mjs",
+          "sha256": "7d6c64bfa38120a76f2e77ec88f772a8a0a317c7a772bd238bb89c788feaa901",
+          "actualSha256": "7d6c64bfa38120a76f2e77ec88f772a8a0a317c7a772bd238bb89c788feaa901",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/reader-fixtures.json",
+          "sha256": "e2e18825387e9e4f76a44b1bebed296cde88ccf99df1115cd8b8faf1879c537b",
+          "actualSha256": "e2e18825387e9e4f76a44b1bebed296cde88ccf99df1115cd8b8faf1879c537b",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/readers.md",
+          "sha256": "e58258c7d857de2bb2ce03e2ea14d825046753b98807d90331e8b7313fa38e27",
+          "actualSha256": "e58258c7d857de2bb2ce03e2ea14d825046753b98807d90331e8b7313fa38e27",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/readers.schema.json",
+          "sha256": "1233ae02e9a92a6037f4d43521ccf2dc592fe5a65c58f085d8ed407d6580712c",
+          "actualSha256": "1233ae02e9a92a6037f4d43521ccf2dc592fe5a65c58f085d8ed407d6580712c",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/README.md",
+          "sha256": "2664a543dc21a84c877daddd4793167b48591ca3461c843e864a703156d02ff0",
+          "actualSha256": "2664a543dc21a84c877daddd4793167b48591ca3461c843e864a703156d02ff0",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/baseline-sha256.json",
+          "sha256": "aa52bb1d0ce1b5f9707c3d2c39ca9a5bdd05210e9a19f07783461ab111f0a78e",
+          "actualSha256": "aa52bb1d0ce1b5f9707c3d2c39ca9a5bdd05210e9a19f07783461ab111f0a78e",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/baseline-validation.log",
+          "sha256": "675e76e19326955cc5f3a25b86514731c4c503f619d04107f9442b0eb80f74aa",
+          "actualSha256": "675e76e19326955cc5f3a25b86514731c4c503f619d04107f9442b0eb80f74aa",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/manifest-attempt-1.log",
+          "sha256": "7eb88ef5365fee04c871b6ab00a029c562261fcde7dcdc218636bf79798f3380",
+          "actualSha256": "7eb88ef5365fee04c871b6ab00a029c562261fcde7dcdc218636bf79798f3380",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/manifest-validation.log",
+          "sha256": "b23eb34e7d2b5f07ff234cf454df6d5e86a9bc8b784ed7e6461ded1d917867f9",
+          "actualSha256": "b23eb34e7d2b5f07ff234cf454df6d5e86a9bc8b784ed7e6461ded1d917867f9",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/preservation.json",
+          "sha256": "a69743e12b8fb2d3a1632643c7ad1ee6ca2ee73f3a98070c043bc494d9a9352d",
+          "actualSha256": "a69743e12b8fb2d3a1632643c7ad1ee6ca2ee73f3a98070c043bc494d9a9352d",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/validation-attempt-1.log",
+          "sha256": "af43af0d5dddb71d8fd913ffd9e45a030e5d0020fb3a778dc6dfe407d94532de",
+          "actualSha256": "af43af0d5dddb71d8fd913ffd9e45a030e5d0020fb3a778dc6dfe407d94532de",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/validation-attempt-2.log",
+          "sha256": "2184cef84a00244a9ba17f3f857615dbdb2b39111503f5aaa6ce99393af749b3",
+          "actualSha256": "2184cef84a00244a9ba17f3f857615dbdb2b39111503f5aaa6ce99393af749b3",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/validation.log",
+          "sha256": "98cca21ef9847fac1e0b383d286c1a386d00ab1e532f9e7462452884aa5cdeb2",
+          "actualSha256": "98cca21ef9847fac1e0b383d286c1a386d00ab1e532f9e7462452884aa5cdeb2",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/rbac-v1.md",
+          "sha256": "856555c5208cb6016884ea945df9c1923850ab29bceb675e56dacb30c57bc464",
+          "actualSha256": "856555c5208cb6016884ea945df9c1923850ab29bceb675e56dacb30c57bc464",
+          "result": "PASS"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "844eb2f46980ac68856eaa1af994595d682a446a791068aa665b3e52f6ed2908",
+          "actualSha256": "844eb2f46980ac68856eaa1af994595d682a446a791068aa665b3e52f6ed2908",
+          "result": "PASS"
+        },
+        {
+          "path": "package.json",
+          "sha256": "2472cece68911dd8c421c86d75f08c3c35915fd80291762f41218cd29b2aa998",
+          "actualSha256": "2472cece68911dd8c421c86d75f08c3c35915fd80291762f41218cd29b2aa998",
+          "result": "PASS"
+        },
+        {
+          "path": "redocly.yaml",
+          "sha256": "7de2ddb4cc7b44d8b2d7caaef9a1e9115dbdde273b514422b8cc080df1a24a7f",
+          "actualSha256": "7de2ddb4cc7b44d8b2d7caaef9a1e9115dbdde273b514422b8cc080df1a24a7f",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-contract.test.mjs",
+          "sha256": "f98475dfd61279eb82d34efdc1034c135e9e596e7f14c5ede05c6188d0a31c94",
+          "actualSha256": "f98475dfd61279eb82d34efdc1034c135e9e596e7f14c5ede05c6188d0a31c94",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-person-foundation.test.mjs",
+          "sha256": "4c3e6089152ee016b7efde9b5d41923077fa6ed7a1c2dc978adbfa064ae93aec",
+          "actualSha256": "4c3e6089152ee016b7efde9b5d41923077fa6ed7a1c2dc978adbfa064ae93aec",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-points-handoff.mjs",
+          "sha256": "ae823c0b834dffa05b4120b758b9a4b5ecf3c1c74bb525ddec015e5daf869f68",
+          "actualSha256": "ae823c0b834dffa05b4120b758b9a4b5ecf3c1c74bb525ddec015e5daf869f68",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-points.test.mjs",
+          "sha256": "37363dadda7881f66f632a0041d6fb6e1f7918bb815cead6d1ea2fefd6adf903",
+          "actualSha256": "37363dadda7881f66f632a0041d6fb6e1f7918bb815cead6d1ea2fefd6adf903",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "feature": "identity-organization-v1",
+      "revision": "identity-organization-v1-r1",
+      "contractReady": "BLOCKED",
+      "handoffSha256": "a650104ae6cb1292b8203a5c6ba3dd21bf0df518651cca7c00f5171a25b586fd",
+      "checkedFiles": 71,
+      "result": "PASS",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "4e27b0343bd068922063500e724edbb042bd21f5b2ae41439d53ddc849227d5a",
+          "actualSha256": "4e27b0343bd068922063500e724edbb042bd21f5b2ae41439d53ddc849227d5a",
+          "result": "PASS"
+        },
+        {
+          "path": "API_GUIDELINES.md",
+          "sha256": "be7adb74110d6e0e3038d6e76e4e234ab118c3bf0f47a435065b506d3f8ec4c2",
+          "actualSha256": "be7adb74110d6e0e3038d6e76e4e234ab118c3bf0f47a435065b506d3f8ec4c2",
+          "result": "PASS"
+        },
+        {
+          "path": "COORDINATION_GUIDE.md",
+          "sha256": "e0a04b28b0f93f7b84b2926edb0f919ae0e83c85df8e2e3b0874b8546581ac0c",
+          "actualSha256": "e0a04b28b0f93f7b84b2926edb0f919ae0e83c85df8e2e3b0874b8546581ac0c",
+          "result": "PASS"
+        },
+        {
+          "path": "PROJECT_RULES.md",
+          "sha256": "3c29980883b799e58602135cf50401ff6bf34d36b9c53a76cc0156e526448701",
+          "actualSha256": "3c29980883b799e58602135cf50401ff6bf34d36b9c53a76cc0156e526448701",
+          "result": "PASS"
+        },
+        {
+          "path": "README.md",
+          "sha256": "0a2da1ab147835671715fa1f026ea662a9809e1bbf148b6936bf5c1e74bed18c",
+          "actualSha256": "0a2da1ab147835671715fa1f026ea662a9809e1bbf148b6936bf5c1e74bed18c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/catalogs/person-foundation-v1.json",
+          "sha256": "1fa1236c8e30215545d8b7a427682053284baeba8ffb965733cb632c2c9db3dc",
+          "actualSha256": "1fa1236c8e30215545d8b7a427682053284baeba8ffb965733cb632c2c9db3dc",
+          "result": "PASS"
+        },
+        {
+          "path": "api/catalogs/rbac-v1.json",
+          "sha256": "cf6ac904e3c78a93a07f61fa7e7624ce21f1a4390d8ad2030fba76b808b8165c",
+          "actualSha256": "cf6ac904e3c78a93a07f61fa7e7624ce21f1a4390d8ad2030fba76b808b8165c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/openapi.yaml",
+          "sha256": "a29ae91991139fad32e5c7ddf4f293f5591cb65946b5e5ad3775a5974b4cfebe",
+          "actualSha256": "a29ae91991139fad32e5c7ddf4f293f5591cb65946b5e5ad3775a5974b4cfebe",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/admin-qr-login.yaml",
+          "sha256": "e037794feff416ec337a0151cab84aa1ca661f66ec8223bf9e37dafc3616e791",
+          "actualSha256": "e037794feff416ec337a0151cab84aa1ca661f66ec8223bf9e37dafc3616e791",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/admin.yaml",
+          "sha256": "2ff99ec6af9f2a25e9ef6f6f72fb0473e19f83b48d5c7e10de5454bd10b282da",
+          "actualSha256": "2ff99ec6af9f2a25e9ef6f6f72fb0473e19f83b48d5c7e10de5454bd10b282da",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/article.yaml",
+          "sha256": "29dafc08cdf3ec381c54681441e40c551f0a2a730fe68e841e7457bc9691a4c0",
+          "actualSha256": "29dafc08cdf3ec381c54681441e40c551f0a2a730fe68e841e7457bc9691a4c0",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/interaction.yaml",
+          "sha256": "3eec606e60cf6015251f3a50dbf982eccb71b83dbddc76f4a07dca46c72c09dc",
+          "actualSha256": "3eec606e60cf6015251f3a50dbf982eccb71b83dbddc76f4a07dca46c72c09dc",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/learning-task.yaml",
+          "sha256": "ca0be4321a086949ca10c6ea2c3c05fa7daa26254f2e6a91c4e4fa1fcef8083c",
+          "actualSha256": "ca0be4321a086949ca10c6ea2c3c05fa7daa26254f2e6a91c4e4fa1fcef8083c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/notification.yaml",
+          "sha256": "f9bbaafaa8abbf98ad51083abb9f5e965f8c296879a538e2982985da67c3416e",
+          "actualSha256": "f9bbaafaa8abbf98ad51083abb9f5e965f8c296879a538e2982985da67c3416e",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/official-content.yaml",
+          "sha256": "b0bd552e5dd590833fbe9cf005893ff5c6d6a2e35931547db47e3ec78287d257",
+          "actualSha256": "b0bd552e5dd590833fbe9cf005893ff5c6d6a2e35931547db47e3ec78287d257",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/person-foundation.yaml",
+          "sha256": "f092690b3b94f49433f8a9f70fc4daad22a4054e60add38cda2b4fc85cf5e548",
+          "actualSha256": "f092690b3b94f49433f8a9f70fc4daad22a4054e60add38cda2b4fc85cf5e548",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/points.yaml",
+          "sha256": "96f1c72fb9e23a617d88982784bd21c942235dd2d5028fd05e816ee814855da8",
+          "actualSha256": "96f1c72fb9e23a617d88982784bd21c942235dd2d5028fd05e816ee814855da8",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/post.yaml",
+          "sha256": "0302eb2075f890cfd44698313849986ee5d87005bdb5a2115f5816dfe5be0b70",
+          "actualSha256": "0302eb2075f890cfd44698313849986ee5d87005bdb5a2115f5816dfe5be0b70",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/profile.yaml",
+          "sha256": "d7c47bbad5a148655a72359e3f1e8853b5038a17a0e14a6e60f66a804f160708",
+          "actualSha256": "d7c47bbad5a148655a72359e3f1e8853b5038a17a0e14a6e60f66a804f160708",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/rbac.yaml",
+          "sha256": "fd6e8902c7d09957035585b50e3790060152941f3a303ab3fcd5d3a8fefaf2b2",
+          "actualSha256": "fd6e8902c7d09957035585b50e3790060152941f3a303ab3fcd5d3a8fefaf2b2",
+          "result": "PASS"
+        },
+        {
+          "path": "api/paths/user.yaml",
+          "sha256": "89d405455be7548a2e3f7679574bd39deb518c402c278a7be845ae66444c2fca",
+          "actualSha256": "89d405455be7548a2e3f7679574bd39deb518c402c278a7be845ae66444c2fca",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/activity.yaml",
+          "sha256": "401c9202a76704ee8079ae75e056b742aba45ab91e07977c6667de173dd6b81d",
+          "actualSha256": "401c9202a76704ee8079ae75e056b742aba45ab91e07977c6667de173dd6b81d",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/admin-qr-login.yaml",
+          "sha256": "d98f2371551cca79050bf964e51fb3b1994f3c1632850d6fab02c40ae8f3c2fb",
+          "actualSha256": "d98f2371551cca79050bf964e51fb3b1994f3c1632850d6fab02c40ae8f3c2fb",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/article.yaml",
+          "sha256": "4d05b9e61c40571f0c381a049191e0eedcd3f17f75f96e7e0791c0913899a07f",
+          "actualSha256": "4d05b9e61c40571f0c381a049191e0eedcd3f17f75f96e7e0791c0913899a07f",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/attachment.yaml",
+          "sha256": "cba79685f7a1431ad7096d58d1a2750bcdcc313ffb919d7ae4014aee4f800218",
+          "actualSha256": "cba79685f7a1431ad7096d58d1a2750bcdcc313ffb919d7ae4014aee4f800218",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/content.yaml",
+          "sha256": "662578660e1d19574521846a6f74bcd6084fbe44f0a3f6b3cb004de7524c9732",
+          "actualSha256": "662578660e1d19574521846a6f74bcd6084fbe44f0a3f6b3cb004de7524c9732",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/document-import.yaml",
+          "sha256": "f3b9353947f7b16b0a58f9cbb97dc28b62ab9cfc8d77da7190dbc839e241dd40",
+          "actualSha256": "f3b9353947f7b16b0a58f9cbb97dc28b62ab9cfc8d77da7190dbc839e241dd40",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/interaction.yaml",
+          "sha256": "f7ae71595ec71f3a897113d56bae9225b539b36692c4622c2ab2eaf28776bb22",
+          "actualSha256": "f7ae71595ec71f3a897113d56bae9225b539b36692c4622c2ab2eaf28776bb22",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/learning-task.yaml",
+          "sha256": "041e0ff88a4ba13f753eb3c469ce8f36fc29cf33440a12646fca603f97aadb1c",
+          "actualSha256": "041e0ff88a4ba13f753eb3c469ce8f36fc29cf33440a12646fca603f97aadb1c",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/notification.yaml",
+          "sha256": "295631f88e586131a1e769a50d972773cd736e6ffbd6807d1e732b10bcc63c91",
+          "actualSha256": "295631f88e586131a1e769a50d972773cd736e6ffbd6807d1e732b10bcc63c91",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/official-content.yaml",
+          "sha256": "8f8feac114707d85267349cb33e933c971e354893a4270d8a180ad3702fc0774",
+          "actualSha256": "8f8feac114707d85267349cb33e933c971e354893a4270d8a180ad3702fc0774",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/person-foundation.yaml",
+          "sha256": "341760142572aa5d9bf294f1097971d7d134268402fec142b936e8f4e6c6bb0b",
+          "actualSha256": "341760142572aa5d9bf294f1097971d7d134268402fec142b936e8f4e6c6bb0b",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/points.yaml",
+          "sha256": "6b33c73f24c8bdf318db2ba1e0ef6c0de91b5ed9ea85826a345fd4837af3ef05",
+          "actualSha256": "6b33c73f24c8bdf318db2ba1e0ef6c0de91b5ed9ea85826a345fd4837af3ef05",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/post.yaml",
+          "sha256": "20e8778db4af445e01753d7417038b8377766abacff7a6904ceff15c047d05a3",
+          "actualSha256": "20e8778db4af445e01753d7417038b8377766abacff7a6904ceff15c047d05a3",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/profile.yaml",
+          "sha256": "e71e057d92537d8cef57701320f462abbc617f60f9b72d13821df2a1fbdac30a",
+          "actualSha256": "e71e057d92537d8cef57701320f462abbc617f60f9b72d13821df2a1fbdac30a",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/public-event.yaml",
+          "sha256": "86f8a52b839fc90d7a1edb7a8ea07c62ec83394f86a017a3609453011aba1553",
+          "actualSha256": "86f8a52b839fc90d7a1edb7a8ea07c62ec83394f86a017a3609453011aba1553",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/rbac.yaml",
+          "sha256": "fdaa38ef3d02236a70858104640ce39a80c64cb68f3bdf7cb7fed805a2106274",
+          "actualSha256": "fdaa38ef3d02236a70858104640ce39a80c64cb68f3bdf7cb7fed805a2106274",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/registration.yaml",
+          "sha256": "43072c4be7fcb40f50fa0a1b9f81e9173d4c09962010fab9e9d2c546ec58d41a",
+          "actualSha256": "43072c4be7fcb40f50fa0a1b9f81e9173d4c09962010fab9e9d2c546ec58d41a",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/shared.yaml",
+          "sha256": "6ac6b57ad0c43aeced394d3842e0697ffd9951456f03f7dc0f5e5c58616f168d",
+          "actualSha256": "6ac6b57ad0c43aeced394d3842e0697ffd9951456f03f7dc0f5e5c58616f168d",
+          "result": "PASS"
+        },
+        {
+          "path": "api/schemas/system.yaml",
+          "sha256": "b56524dde48491a79ae9eb426ef01319c3312f60a7572c1864aeafce79c60d4d",
+          "actualSha256": "b56524dde48491a79ae9eb426ef01319c3312f60a7572c1864aeafce79c60d4d",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/README.md",
+          "sha256": "0caf5fef62843a187050f3f8807b64c54a3d8fd164e523866348f5807e150cba",
+          "actualSha256": "0caf5fef62843a187050f3f8807b64c54a3d8fd164e523866348f5807e150cba",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/data-model.md",
+          "sha256": "979ea8491bee68b1cdff45a32d64d0681f7e684e12434d865f83836cd5601049",
+          "actualSha256": "979ea8491bee68b1cdff45a32d64d0681f7e684e12434d865f83836cd5601049",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/baseline-sha256.json",
+          "sha256": "d4e0091975c9772ff827cd571d6c08b2989da81749cc647c591e8144b1f2269e",
+          "actualSha256": "d4e0091975c9772ff827cd571d6c08b2989da81749cc647c591e8144b1f2269e",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/baseline-validation.log",
+          "sha256": "d0ec167c2a5a511c82d23daccba91faf1e532be0bf02b920cd51d492b3a40f4a",
+          "actualSha256": "d0ec167c2a5a511c82d23daccba91faf1e532be0bf02b920cd51d492b3a40f4a",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/points-manifest-validation.log",
+          "sha256": "c8eaef3e7e5fe924922998c3a2aebabe84a769725eddb1c57709ae80f8e25322",
+          "actualSha256": "c8eaef3e7e5fe924922998c3a2aebabe84a769725eddb1c57709ae80f8e25322",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/points-r1-handoff.json",
+          "sha256": "72c7c057de280b93da50a014290d06ea02157804fffb9bd9db6c34185995d9c7",
+          "actualSha256": "72c7c057de280b93da50a014290d06ea02157804fffb9bd9db6c34185995d9c7",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/preservation.json",
+          "sha256": "cf85c52bd70430a8628012f23144ca3bb19aa77157120931928b554db221072a",
+          "actualSha256": "cf85c52bd70430a8628012f23144ca3bb19aa77157120931928b554db221072a",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/rbac-legacy-sha256.json",
+          "sha256": "c52c09734970734b5d12aaa6fe6dae1ccf7f4c93c0845a626fae4708680a1cf0",
+          "actualSha256": "c52c09734970734b5d12aaa6fe6dae1ccf7f4c93c0845a626fae4708680a1cf0",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/validation-attempt-1.log",
+          "sha256": "9c3b985104ba5dd806e27dcbf121c3e938621a6760329fa9d7df2e95a09fe134",
+          "actualSha256": "9c3b985104ba5dd806e27dcbf121c3e938621a6760329fa9d7df2e95a09fe134",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/evidence/validation.log",
+          "sha256": "26426f8e87837935417d2b5c095351c694e071c08e06fd92b61a635279c0d436",
+          "actualSha256": "26426f8e87837935417d2b5c095351c694e071c08e06fd92b61a635279c0d436",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/owning-policy.mjs",
+          "sha256": "7d6c64bfa38120a76f2e77ec88f772a8a0a317c7a772bd238bb89c788feaa901",
+          "actualSha256": "7d6c64bfa38120a76f2e77ec88f772a8a0a317c7a772bd238bb89c788feaa901",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/reader-fixtures.json",
+          "sha256": "e2e18825387e9e4f76a44b1bebed296cde88ccf99df1115cd8b8faf1879c537b",
+          "actualSha256": "e2e18825387e9e4f76a44b1bebed296cde88ccf99df1115cd8b8faf1879c537b",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/readers.md",
+          "sha256": "e58258c7d857de2bb2ce03e2ea14d825046753b98807d90331e8b7313fa38e27",
+          "actualSha256": "e58258c7d857de2bb2ce03e2ea14d825046753b98807d90331e8b7313fa38e27",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/identity-organization-v1/readers.schema.json",
+          "sha256": "1233ae02e9a92a6037f4d43521ccf2dc592fe5a65c58f085d8ed407d6580712c",
+          "actualSha256": "1233ae02e9a92a6037f4d43521ccf2dc592fe5a65c58f085d8ed407d6580712c",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/README.md",
+          "sha256": "2664a543dc21a84c877daddd4793167b48591ca3461c843e864a703156d02ff0",
+          "actualSha256": "2664a543dc21a84c877daddd4793167b48591ca3461c843e864a703156d02ff0",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/baseline-sha256.json",
+          "sha256": "aa52bb1d0ce1b5f9707c3d2c39ca9a5bdd05210e9a19f07783461ab111f0a78e",
+          "actualSha256": "aa52bb1d0ce1b5f9707c3d2c39ca9a5bdd05210e9a19f07783461ab111f0a78e",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/baseline-validation.log",
+          "sha256": "675e76e19326955cc5f3a25b86514731c4c503f619d04107f9442b0eb80f74aa",
+          "actualSha256": "675e76e19326955cc5f3a25b86514731c4c503f619d04107f9442b0eb80f74aa",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/manifest-attempt-1.log",
+          "sha256": "7eb88ef5365fee04c871b6ab00a029c562261fcde7dcdc218636bf79798f3380",
+          "actualSha256": "7eb88ef5365fee04c871b6ab00a029c562261fcde7dcdc218636bf79798f3380",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/manifest-validation.log",
+          "sha256": "b23eb34e7d2b5f07ff234cf454df6d5e86a9bc8b784ed7e6461ded1d917867f9",
+          "actualSha256": "b23eb34e7d2b5f07ff234cf454df6d5e86a9bc8b784ed7e6461ded1d917867f9",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/preservation.json",
+          "sha256": "a69743e12b8fb2d3a1632643c7ad1ee6ca2ee73f3a98070c043bc494d9a9352d",
+          "actualSha256": "a69743e12b8fb2d3a1632643c7ad1ee6ca2ee73f3a98070c043bc494d9a9352d",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/validation-attempt-1.log",
+          "sha256": "af43af0d5dddb71d8fd913ffd9e45a030e5d0020fb3a778dc6dfe407d94532de",
+          "actualSha256": "af43af0d5dddb71d8fd913ffd9e45a030e5d0020fb3a778dc6dfe407d94532de",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/validation-attempt-2.log",
+          "sha256": "2184cef84a00244a9ba17f3f857615dbdb2b39111503f5aaa6ce99393af749b3",
+          "actualSha256": "2184cef84a00244a9ba17f3f857615dbdb2b39111503f5aaa6ce99393af749b3",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/points-v1/evidence/validation.log",
+          "sha256": "98cca21ef9847fac1e0b383d286c1a386d00ab1e532f9e7462452884aa5cdeb2",
+          "actualSha256": "98cca21ef9847fac1e0b383d286c1a386d00ab1e532f9e7462452884aa5cdeb2",
+          "result": "PASS"
+        },
+        {
+          "path": "docs/coordination/rbac-v1.md",
+          "sha256": "856555c5208cb6016884ea945df9c1923850ab29bceb675e56dacb30c57bc464",
+          "actualSha256": "856555c5208cb6016884ea945df9c1923850ab29bceb675e56dacb30c57bc464",
+          "result": "PASS"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "844eb2f46980ac68856eaa1af994595d682a446a791068aa665b3e52f6ed2908",
+          "actualSha256": "844eb2f46980ac68856eaa1af994595d682a446a791068aa665b3e52f6ed2908",
+          "result": "PASS"
+        },
+        {
+          "path": "package.json",
+          "sha256": "2472cece68911dd8c421c86d75f08c3c35915fd80291762f41218cd29b2aa998",
+          "actualSha256": "2472cece68911dd8c421c86d75f08c3c35915fd80291762f41218cd29b2aa998",
+          "result": "PASS"
+        },
+        {
+          "path": "redocly.yaml",
+          "sha256": "7de2ddb4cc7b44d8b2d7caaef9a1e9115dbdde273b514422b8cc080df1a24a7f",
+          "actualSha256": "7de2ddb4cc7b44d8b2d7caaef9a1e9115dbdde273b514422b8cc080df1a24a7f",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-contract.test.mjs",
+          "sha256": "f98475dfd61279eb82d34efdc1034c135e9e596e7f14c5ede05c6188d0a31c94",
+          "actualSha256": "f98475dfd61279eb82d34efdc1034c135e9e596e7f14c5ede05c6188d0a31c94",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-person-foundation.test.mjs",
+          "sha256": "4c3e6089152ee016b7efde9b5d41923077fa6ed7a1c2dc978adbfa064ae93aec",
+          "actualSha256": "4c3e6089152ee016b7efde9b5d41923077fa6ed7a1c2dc978adbfa064ae93aec",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-points-handoff.mjs",
+          "sha256": "ae823c0b834dffa05b4120b758b9a4b5ecf3c1c74bb525ddec015e5daf869f68",
+          "actualSha256": "ae823c0b834dffa05b4120b758b9a4b5ecf3c1c74bb525ddec015e5daf869f68",
+          "result": "PASS"
+        },
+        {
+          "path": "scripts/validate-points.test.mjs",
+          "sha256": "37363dadda7881f66f632a0041d6fb6e1f7918bb815cead6d1ea2fefd6adf903",
+          "actualSha256": "37363dadda7881f66f632a0041d6fb6e1f7918bb815cead6d1ea2fefd6adf903",
+          "result": "PASS"
+        }
+      ]
+    }
+  ],
+  "adapterFiles": [
+    {
+      "path": "subpkg_user/services/points.ts",
+      "sha256": "75b4154b88406ef81160f2fca7062737ae785f7b6ed96c4a3decd2d5e1e24ce8"
+    },
+    {
+      "path": "subpkg_user/services/points-operation.ts",
+      "sha256": "6dc318ce4d89cfc002444d72fd0a4c9f6b8570aed6133323bcc0430befdcd4a6"
+    },
+    {
+      "path": "utils/cos.ts",
+      "sha256": "8df2768ebbb8d1519f8d2673823e3767d719ba8e4274e376d1dc6f68d202b579"
+    },
+    {
+      "path": "scripts/test-points.mjs",
+      "sha256": "7325db2cf8dc11339387762766499a2af28369bd4353fa343f7f825db022b083"
+    },
+    {
+      "path": "scripts/test-cos-single-put.mjs",
+      "sha256": "c9dbcd208cae269fe1629472ea6c9997bf409e73fd84a534486ec420c7253bd5"
+    },
+    {
+      "path": "scripts/test-points-backend-http.mjs",
+      "sha256": "18c4ff3a1fe1c1673a1e38d7468c926d9ed7e880ef04f89041c39d09abbd4824"
+    },
+    {
+      "path": "scripts/run-points-backend-http.ps1",
+      "sha256": "d387f406063862dcadc97381ca9a7285d45aa8e8ce1bb8bc0d5eba938b990218"
+    },
+    {
+      "path": "scripts/points/PointsMiniConsumerBackend.java",
+      "sha256": "cb39930f78f7cb3a9f79eb6417875e6f05643fd2e3303b02606945f703830adc"
+    }
+  ]
+}

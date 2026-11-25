@@ -74,6 +74,8 @@ Backend error messages are not always final user copy.
 
 ## Authentication
 
+For ordinary `utils/request.ts` calls, authentication recovery/replay defaults to GET only and is bounded to one replay. Mutations require stable credentials by default; a domain may explicitly opt in only after reviewing its accepted Contract, identity and replay semantics. Do not automatically retry transport failures. A mutation transport failure means the outcome may be unknown: keep the draft, display persistent recovery guidance and use the domain's read-back/idempotency workflow before another submission. A timeout does not prove the server rejected the operation. This policy does not replace the separate upload/download or domain operation recovery rules.
+
 Attach authentication centrally. Pages should not manually construct `Authorization` headers.
 
 Authentication failure should have one policy: lower layers identify it; session/application logic decides recovery/clear/re-auth; Page/App flow presents or navigates. If refresh exists, coordinate concurrent refresh attempts (single-flight). Do not invent refresh when the backend does not support it.

@@ -4,16 +4,7 @@ page {
 
 .page {
   min-height: 100vh;
+  padding-bottom: calc(124rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
   background: var(--color-bg-card);
-}
-
-.list-footer {
-  padding: 50rpx 0 120rpx;
-  display: flex;
-  justify-content: center;
-}
-
-.footer-text {
-  font-size: 24rpx;
-  color: var(--color-text-tertiary);
 }

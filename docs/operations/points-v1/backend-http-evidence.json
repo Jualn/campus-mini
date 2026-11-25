@@ -1,0 +1,212 @@
+{
+  "boundary": "REAL_BACKEND_HTTP",
+  "backend": "Existing PointsIntegrationHttpTest full Spring application fixture",
+  "contractRevision": "points-v1-r2",
+  "externalProviders": "WeChat/COS/STS/content safety are Backend fixture doubles; no actual COS upload/download",
+  "wechatRuntime": "NOT_RUN",
+  "operations": {
+    "getMyPointsEligibility": "PASS",
+    "getMyPointSummary": "PASS",
+    "listMyPointApplications": "PASS",
+    "listMyPointLedger": "PASS",
+    "createPointFileUploadCredentials": "PASS_HTTP_PROVIDER_DOUBLE",
+    "registerPointFile": "PASS_HTTP_PROVIDER_DOUBLE",
+    "getMyPointFile": "PASS",
+    "getMyPointFileAccess": "PASS_HTTP_PROVIDER_DOUBLE",
+    "createPointApplication": "PASS",
+    "getMyPointApplication": "PASS"
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/eligibility",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/summary",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/ledger",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/file-upload-credentials",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/file-upload-credentials",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/files",
+      "status": 201,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/files",
+      "status": 201,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/files/9c463771-2bca-48b2-8c50-7f3f84b63b38",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/files/9c463771-2bca-48b2-8c50-7f3f84b63b38/access",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/applications",
+      "status": 201,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/applications",
+      "status": 201,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications/1",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/applications",
+      "status": 409,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/file-upload-credentials",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/files",
+      "status": 201,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/applications",
+      "status": 201,
+      "cacheControl": "no-store, no-store",
+      "responseLostAfterRealCommit": true
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/me/points/applications",
+      "status": 201,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications/2",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications/1",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/summary",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/ledger",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications/1",
+      "status": 404,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/files/9c463771-2bca-48b2-8c50-7f3f84b63b38",
+      "status": 404,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/files/9c463771-2bca-48b2-8c50-7f3f84b63b38/access",
+      "status": 404,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/eligibility",
+      "status": 503,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/applications",
+      "status": 200,
+      "cacheControl": "no-store, no-store"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me/points/summary",
+      "status": 401,
+      "cacheControl": "no-store, no-store"
+    }
+  ],
+  "reviewSupport": {
+    "status": 200
+  },
+  "result": "PASS"
+}

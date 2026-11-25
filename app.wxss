@@ -84,28 +84,38 @@ scroll-view {
 /* ============================================================
    2. 设计 TOKEN — 全局视觉规范
    ============================================================ */
-page {
-  /* Brand 蓝色系 */
-  --color-primary: #2f7cf6;
-  --color-primary-hover: #256fe3;
-  --color-primary-light: #eaf3ff;
-  --color-primary-soft: rgba(47, 124, 246, 0.08);
-  --color-primary-deep: #1558c8;
+/* root-portal 的内容可能脱离 page，按需在弹层根节点复用同一套 token。 */
+page,
+.g-portal-theme {
+  /* 品牌红用于识别，校园蓝用于交互；不把整页内容染成品牌色。 */
+  --color-brand-red: #c43b4a;
+  --color-brand-red-deep: #a92a3a;
+  --color-brand-red-soft: #d85a66;
+  --color-brand-red-glow: #e88990;
+  --color-brand-red-light: #fcebed;
+  --color-brand-red-tint: #fff5f6;
+
+  --color-primary: #2469bd;
+  --color-primary-hover: #1f5ba5;
+  --color-primary-light: #eaf2fc;
+  --color-primary-tint: #f3f7fd;
+  --color-primary-soft: rgba(36, 105, 189, 0.08);
+  --color-primary-deep: #1f5ba5;
 
   --color-cyan: #55cfff;
-  --color-blue-2: #4aa8ff;
-  --color-blue-3: #7bb7ff;
+  --color-blue-2: #4b87d4;
+  --color-blue-3: #8eafd9;
 
-  /* 文字：提高对比度，避免发灰 */
-  --color-text-primary: #10233f;
-  --color-text-secondary: rgba(16, 35, 63, 0.74);
-  --color-text-tertiary: rgba(16, 35, 63, 0.52);
-  --color-text-placeholder: rgba(16, 35, 63, 0.36);
+  /* 中性文字：主文字、次文字和弱化信息保持清晰层级。 */
+  --color-text-primary: #1f2d45;
+  --color-text-secondary: #65758f;
+  --color-text-tertiary: #8794a7;
+  --color-text-placeholder: rgba(31, 45, 69, 0.36);
   --color-text-inverse: #ffffff;
 
-  /* 页面背景：保留蓝色感，但不要雾化 */
-  --color-bg-page: #f4f8ff;
-  --color-bg-page-deep: #eef5ff;
+  /* 中性页面背景，浅蓝只作为局部层次补充。 */
+  --color-bg-page: #f6f8fc;
+  --color-bg-page-deep: #f1f5fa;
   --color-bg-card: #ffffff;
   --color-bg-input: #ffffff;
 
@@ -113,14 +123,14 @@ page {
   --glass-bg: rgba(255, 255, 255, 0.94);
   --glass-bg-strong: #ffffff;
   --glass-bg-soft: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(47, 124, 246, 0.1);
+  --glass-border: rgba(36, 105, 189, 0.1);
   --glass-inner: inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
 
   /* 边框 */
-  --color-border: rgba(47, 124, 246, 0.12);
-  --color-border-light: rgba(47, 124, 246, 0.07);
-  --color-border-grey: rgba(0, 0, 0, 0.08);
-  --color-hairline: rgba(16, 35, 63, 0.07);
+  --color-border: #e7edf5;
+  --color-border-light: #eef2f8;
+  --color-border-grey: #e7edf5;
+  --color-hairline: #e7edf5;
 
   /* 状态色 */
   --color-success: #20b76b;
@@ -167,11 +177,11 @@ page {
   --tabbar-height: 112rpx;
 
   /* 阴影：减弱，不要灰雾感 */
-  --shadow-xs: 0 2rpx 8rpx rgba(47, 124, 246, 0.04);
-  --shadow-sm: 0 6rpx 18rpx rgba(47, 124, 246, 0.06);
-  --shadow-md: 0 10rpx 26rpx rgba(47, 124, 246, 0.08);
-  --shadow-lg: 0 16rpx 38rpx rgba(47, 124, 246, 0.1);
-  --shadow-card: 0 8rpx 24rpx rgba(47, 124, 246, 0.075);
+  --shadow-xs: 0 2rpx 8rpx rgba(36, 105, 189, 0.04);
+  --shadow-sm: 0 6rpx 18rpx rgba(36, 105, 189, 0.06);
+  --shadow-md: 0 10rpx 26rpx rgba(36, 105, 189, 0.08);
+  --shadow-lg: 0 16rpx 38rpx rgba(36, 105, 189, 0.1);
+  --shadow-card: 0 8rpx 24rpx rgba(36, 105, 189, 0.075);
 
   --transition-fast: 0.16s ease;
   --transition-normal: 0.22s ease;
@@ -179,7 +189,7 @@ page {
   /* 骨架 */
   --skeleton-bg: #eaf0f7;
   --skeleton-highlight: #f8fbff;
-  --skeleton-container: rgba(47, 124, 246, 0.035);
+  --skeleton-container: rgba(36, 105, 189, 0.035);
   --skeleton-card-bg: var(--color-bg-card);
   --skeleton-radius-sm: 8rpx;
   --skeleton-radius-md: 16rpx;
@@ -384,10 +394,10 @@ page {
 }
 
 .input-base.focus {
-  border-color: rgba(47, 124, 246, 0.28);
+  border-color: rgba(36, 105, 189, 0.28);
   background: rgba(255, 255, 255, 0.86);
   box-shadow:
-    0 8rpx 24rpx rgba(47, 124, 246, 0.1),
+    0 8rpx 24rpx rgba(36, 105, 189, 0.1),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.96);
 }
 
@@ -411,7 +421,7 @@ page {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-blue-2) 100%);
   color: var(--color-text-inverse);
   box-shadow:
-    0 12rpx 28rpx rgba(47, 124, 246, 0.26),
+    0 12rpx 28rpx rgba(36, 105, 189, 0.26),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.36);
 }
 
@@ -421,9 +431,9 @@ page {
 }
 
 .btn-ghost {
-  background: rgba(47, 124, 246, 0.09);
+  background: rgba(36, 105, 189, 0.09);
   color: var(--color-primary);
-  border: 1rpx solid rgba(47, 124, 246, 0.1);
+  border: 1rpx solid rgba(36, 105, 189, 0.1);
 }
 
 .btn-ghost:active {
@@ -452,19 +462,20 @@ page {
 /* ============================================================
    6. 暗色模式预留
    说明：
-   目前项目主视觉是浅蓝玻璃风，不建议直接跟随系统暗色自动反色。
+   目前项目主视觉是浅色中性底配品牌红与交互蓝，不建议直接跟随系统暗色自动反色。
    等所有页面都完成暗色适配后，再开启完整 dark token。
    ============================================================ */
 @media (prefers-color-scheme: dark) {
-  page {
+  page,
+  .g-portal-theme {
     /* 暂时保持浅色体系，避免安卓 / iOS 自动暗色下局部页面割裂 */
-    --color-bg-page: #f3f8ff;
-    --color-bg-page-deep: #eef6ff;
+    --color-bg-page: #f6f8fc;
+    --color-bg-page-deep: #f1f5fa;
     --color-bg-card: #ffffff;
 
-    --color-text-primary: #102a4c;
-    --color-text-secondary: rgba(31, 55, 87, 0.72);
-    --color-text-tertiary: rgba(68, 93, 128, 0.48);
+    --color-text-primary: #1f2d45;
+    --color-text-secondary: #65758f;
+    --color-text-tertiary: #8794a7;
   }
 }
 
@@ -489,7 +500,7 @@ page {
   background: rgba(246, 250, 255, 0.78);
   padding: 0 24rpx;
   border-bottom: 1rpx solid rgba(255, 255, 255, 0.86);
-  box-shadow: 0 10rpx 32rpx rgba(47, 124, 246, 0.08);
+  box-shadow: 0 10rpx 32rpx rgba(36, 105, 189, 0.08);
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
 }
@@ -512,7 +523,7 @@ page {
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 8rpx 22rpx rgba(47, 124, 246, 0.1),
+    0 8rpx 22rpx rgba(36, 105, 189, 0.1),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
 }
 
@@ -584,10 +595,10 @@ page {
   border-radius: 34rpx;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.28) 46%),
-    linear-gradient(135deg, rgba(47, 124, 246, 0.15), rgba(85, 207, 255, 0.12));
+    linear-gradient(135deg, rgba(36, 105, 189, 0.15), rgba(85, 207, 255, 0.12));
   border: 1rpx solid rgba(255, 255, 255, 0.9);
   box-shadow:
-    0 14rpx 32rpx rgba(47, 124, 246, 0.14),
+    0 14rpx 32rpx rgba(36, 105, 189, 0.14),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.96);
   display: flex;
   align-items: center;
@@ -670,7 +681,7 @@ page {
   background: var(--glass-bg);
   border: 1rpx solid var(--glass-border);
   box-shadow:
-    0 12rpx 32rpx rgba(47, 124, 246, 0.1),
+    0 12rpx 32rpx rgba(36, 105, 189, 0.1),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.94);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
@@ -717,7 +728,7 @@ page {
   white-space: nowrap;
   flex-shrink: 0;
   box-shadow:
-    0 8rpx 24rpx rgba(47, 124, 246, 0.08),
+    0 8rpx 24rpx rgba(36, 105, 189, 0.08),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.88);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
@@ -727,7 +738,7 @@ page {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-blue-2) 100%);
   border-color: rgba(255, 255, 255, 0.48);
   box-shadow:
-    0 12rpx 28rpx rgba(47, 124, 246, 0.25),
+    0 12rpx 28rpx rgba(36, 105, 189, 0.25),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.38);
 }
 
@@ -758,7 +769,7 @@ page {
 
 .g-status--primary {
   color: var(--color-primary);
-  background: rgba(47, 124, 246, 0.1);
+  background: rgba(36, 105, 189, 0.1);
 }
 
 .g-status--success {
@@ -788,7 +799,7 @@ page {
   width: 48rpx;
   height: 48rpx;
   border-radius: var(--radius-full);
-  background: rgba(47, 124, 246, 0.09);
+  background: rgba(36, 105, 189, 0.09);
   display: flex;
   align-items: center;
   justify-content: center;

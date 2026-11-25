@@ -3,37 +3,51 @@
 import { wxPreviewImage } from '../../utils/wx-promise';
 import defineComponent from '../../utils/defineComponent';
 
-defineComponent()({
-  /**
-   * 组件的属性列表
-   */
-  // 根据图片数量动态返回 CSS Grid 类名
+interface GridImagePrivate {
+  _imageSignature: string;
+}
+
+defineComponent<GridImagePrivate>()({
   properties: {
     images: {
       type: Array,
-      value: [],
+      value: [] as string[],
+      observer(images: string[]) {
+        const signature = images.join('\n');
+        if (signature === this._imageSignature) return;
+        this._imageSignature = signature;
+        this.setData({ failedImages: {} });
+      },
     },
   },
 
-  /**
-   * 组件的初始数据
-   */
-  data: {},
+  data: {
+    failedImages: {} as Record<string, boolean>,
+  },
 
-  /**
-   * 组件的方法列表
-   */
+  lifetimes: {
+    created() {
+      this._imageSignature = '';
+    },
+  },
+
   methods: {
+    onImageError(e: WechatMiniprogram.TouchEvent) {
+      const current = String(e.currentTarget.dataset.current ?? '');
+      if (!current || this.data.failedImages[current]) return;
+      this.setData({ failedImages: { ...this.data.failedImages, [current]: true } });
+    },
+
     onPreview(e: WechatMiniprogram.TouchEvent) {
       const current = e.currentTarget.dataset.current as string;
       this.triggerEvent('preview', { current });
       const page = getCurrentPages().pop() as WechatMiniprogram.Page.TrivialInstance & {
         notifyPreviewImage?: () => void;
       };
-      page.notifyPreviewImage?.(); // 修改信号，通知开始预览图片
+      page.notifyPreviewImage?.();
       void wxPreviewImage({
-        current, // 当前显示图片的http链接
-        urls: this.properties.images, // 需要预览的图片http链接列表
+        current,
+        urls: this.properties.images,
       });
     },
   },

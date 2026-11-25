@@ -1,0 +1,216 @@
+<page-navigation title="{{editing ? '编辑成长记录' : '记录成长'}}" fixed surface="card" />
+<view class="growth-edit-page">
+  <load-state wx:if="{{loading}}" mode="loading" title="正在准备发布内容" />
+  <load-state wx:if="{{error}}" mode="error" description="{{error}}" action-text="重新读取" bind:action="refresh" />
+
+  <block wx:if="{{!loading && !error}}">
+    <view
+      wx:if="{{feedback}}"
+      class="form-notice {{unresolved || needsVersion ? 'form-notice--warning' : (saved ? 'form-notice--success' : '')}}"
+    >
+      <text>{{feedback}}</text>
+    </view>
+
+    <view class="context-section">
+      <view class="context-section__heading">
+        <text>发布范围</text>
+        <text>组织内可见</text>
+      </view>
+      <picker
+        range="{{organizationNames}}"
+        value="{{organizationIndex}}"
+        disabled="{{editing || busy || unresolved || selecting || files.length}}"
+        bindchange="changeOrganization"
+        aria-label="选择发布组织"
+      >
+        <view class="select-field {{editing || files.length ? 'select-field--locked' : ''}}">
+          <text class="select-field__label">发布组织</text>
+          <view class="select-field__value-wrap">
+            <text class="select-field__value {{organizationIndex < 0 ? 'select-field__value--placeholder' : ''}}"
+              >{{organizationIndex >= 0 ? organizationNames[organizationIndex] : '请选择组织'}}</text
+            >
+            <text wx:if="{{editing || files.length}}" class="select-field__locked">已固定</text>
+            <ui-icon wx:else name="chevron-right" size="sm" />
+          </view>
+        </view>
+      </picker>
+
+      <picker
+        range="{{typeNames}}"
+        value="{{typeIndex}}"
+        disabled="{{editing || busy || unresolved || selecting || files.length}}"
+        bindchange="changeType"
+        aria-label="选择记录类型"
+      >
+        <view class="select-field {{editing || files.length ? 'select-field--locked' : ''}}">
+          <text class="select-field__label">记录类型</text>
+          <view class="select-field__value-wrap">
+            <text
+              class="select-field__value {{typeIndex < 0 ? 'select-field__value--placeholder' : ''}} {{typeNames[typeIndex] === '政治生日' ? 'select-field__value--birthday' : ''}}"
+              >{{typeIndex >= 0 ? typeNames[typeIndex] : '请选择类型'}}</text
+            >
+            <text wx:if="{{editing || files.length}}" class="select-field__locked">已固定</text>
+            <ui-icon wx:else name="chevron-right" size="sm" />
+          </view>
+        </view>
+      </picker>
+      <text wx:if="{{typeNames[typeIndex] === '政治生日'}}" class="context-note">主动分享感悟、寄语和成长经历，无需填写日期。</text>
+    </view>
+
+    <view class="title-area">
+      <view class="field__label-row">
+        <label class="field__label" for="growth-title">标题 <text class="field__optional">选填</text></label>
+        <text wx:if="{{title.length}}" class="field__count">{{title.length}}/128</text>
+      </view>
+      <input
+        id="growth-title"
+        class="field__input"
+        value="{{title}}"
+        placeholder="{{typeNames[typeIndex] === '政治生日' ? '为这段分享起个标题' : '为这段经历起个标题'}}"
+        placeholder-class="field__placeholder"
+        maxlength="128"
+        disabled="{{!ready || busy || unresolved}}"
+        bindinput="inputTitle"
+      />
+    </view>
+
+    <view class="content-area">
+      <view class="field__label-row">
+        <label class="field__label" for="growth-content">正文</label>
+        <text class="field__optional">与媒体至少一项</text>
+      </view>
+      <textarea
+        id="growth-content"
+        class="field__textarea"
+        value="{{content}}"
+        placeholder="{{typeNames[typeIndex] === '政治生日' ? '分享此刻的感悟、寄语或成长经历…' : '记录经历、收获或想与大家分享的话…'}}"
+        placeholder-class="field__placeholder"
+        maxlength="5000"
+        auto-height
+        show-confirm-bar="{{false}}"
+        disabled="{{!ready || busy || unresolved}}"
+        bindinput="inputContent"
+      />
+      <text wx:if="{{content.length}}" class="field__count">{{content.length}}/5000</text>
+    </view>
+
+    <view class="media-area">
+      <view class="media-area__heading">
+        <text>图片与视频</text>
+        <text wx:if="{{files.length + existingMediaIds.length}}">{{files.length + existingMediaIds.length}}/9</text>
+      </view>
+      <view class="media-actions">
+        <button
+          class="media-action"
+          bindtap="select"
+          data-kind="IMAGE"
+          disabled="{{!ready || busy || unresolved || selecting || files.length + existingMediaIds.length >= 9}}"
+          aria-label="添加图片"
+        >
+          <ui-icon name="image-add" size="lg" />
+          <text>图片</text>
+        </button>
+        <button
+          class="media-action"
+          bindtap="select"
+          data-kind="VIDEO"
+          disabled="{{!ready || busy || unresolved || selecting || files.length + existingMediaIds.length >= 9}}"
+          aria-label="添加 MP4 视频"
+        >
+          <ui-icon name="file" size="lg" />
+          <text>MP4 视频</text>
+        </button>
+      </view>
+
+      <view wx:if="{{selecting}}" class="selection-status">正在读取所选文件…</view>
+
+      <view class="media-list" wx:if="{{existingMediaIds.length || files.length}}">
+        <view wx:for="{{existingMediaIds}}" wx:key="*this" class="media-item">
+          <view class="media-item__icon"><ui-icon name="attachment" size="md" /></view>
+          <view class="media-item__copy">
+            <text class="media-item__name">{{editing ? '原记录媒体' : '已选媒体'}} {{index + 1}}</text>
+            <text class="media-item__status">{{editing ? '已关联原记录' : '已上传并登记'}}</text>
+          </view>
+          <button
+            class="media-item__remove"
+            data-id="{{item}}"
+            bindtap="removeExisting"
+            disabled="{{busy || unresolved}}"
+            aria-label="移除{{editing ? '原记录' : '已选'}}媒体 {{index + 1}}"
+          >移除</button>
+        </view>
+        <view wx:for="{{files}}" wx:key="key" class="media-item">
+          <button
+            wx:if="{{item.kind === 'IMAGE'}}"
+            class="media-item__preview"
+            data-index="{{index}}"
+            bindtap="previewLocal"
+            aria-label="预览图片 {{item.name}}"
+          >
+            <image src="{{item.path}}" mode="aspectFill" />
+          </button>
+          <view wx:else class="media-item__icon"><ui-icon name="file" size="md" /></view>
+          <view class="media-item__copy">
+            <text class="media-item__name">{{item.name}}</text>
+            <text class="media-item__status">{{item.mediaId ? '上传并登记完成' : (item.kind === 'VIDEO' ? 'MP4 视频 · 将在发布时上传' : '将在发布时上传')}}</text>
+          </view>
+          <button
+            class="media-item__remove"
+            data-index="{{index}}"
+            bindtap="removeFile"
+            disabled="{{busy || unresolved}}"
+            aria-label="移除 {{item.name}}"
+          >移除</button>
+        </view>
+      </view>
+
+      <view wx:if="{{busy}}" class="upload-status">
+        <view class="upload-status__row">
+          <text>{{files.length ? '正在上传并提交，请勿关闭页面' : '正在提交，请稍候'}}</text>
+          <text wx:if="{{files.length}}">{{progress}}%</text>
+        </view>
+        <progress
+          wx:if="{{files.length}}"
+          percent="{{progress}}"
+          stroke-width="4"
+          activeColor="#2469bd"
+          backgroundColor="#e7edf5"
+        />
+      </view>
+    </view>
+
+    <view wx:if="{{unresolved}}" class="recovery-panel">
+      <text class="recovery-panel__title">提交结果尚未确认</text>
+      <text class="recovery-panel__description"
+        >草稿已锁定。{{editing ? '请重新读取当前版本，核对后再继续。' : '请查询上次提交结果，不要重复新建。'}}</text
+      >
+    </view>
+
+    <view wx:if="{{remoteVersionLoaded}}" class="remote-version">
+      <text class="remote-version__label">当前服务端版本 · {{remoteMediaCount}} 项媒体</text>
+      <text wx:if="{{remoteTitle}}" class="remote-version__title">{{remoteTitle}}</text>
+      <text class="remote-version__content" selectable>{{remoteContent}}</text>
+    </view>
+
+    <button wx:if="{{needsVersion}}" class="version-button" bindtap="reloadVersion" disabled="{{busy}}">
+      读取当前版本并核对草稿
+    </button>
+
+    <view class="submit-area">
+      <button
+        class="submit-button"
+        bindtap="submit"
+        loading="{{busy}}"
+        disabled="{{!ready || loading || busy || selecting || needsVersion || saved}}"
+      >
+        {{unresolved ? '查询上次提交结果' : (editing ? '保存修改' : '发布记录')}}
+      </button>
+      <navigator
+        wx:if="{{savedPostId}}"
+        class="saved-link"
+        url="/subpkg_user/pages/growth-detail/detail?postId={{savedPostId}}"
+        >查看已受理记录</navigator
+      >
+    </view>
+  </block>
+</view>

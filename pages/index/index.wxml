@@ -1,45 +1,172 @@
-<view class="red-page red-home">
-  <view class="red-top" style="padding-top: {{statusBarHeight}}px;">
-    <view class="red-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
-      <text class="red-nav__brand">E 网同心</text>
-    </view>
-  </view>
-  <view class="red-intro">
-    <text class="red-eyebrow">红色阵地</text>
-    <view class="red-title">E 网同心</view>
-    <view class="red-subtitle">学习、服务、活动、实践一体化入口</view>
-  </view>
-  <view class="red-section-heading"><text>探索栏目</text><text class="red-meta">6 个方向</text></view>
-  <view class="red-grid">
-    <view class="red-category {{currentCategory.key === item.key ? 'red-category--active' : ''}}" wx:for="{{categories}}" wx:key="key" data-key="{{item.key}}" bindtap="openCategory" hover-class="red-pressed" aria-role="button" aria-label="{{item.title}}，{{item.items.length}}个栏目" aria-pressed="{{currentCategory.key === item.key}}">
-      <view class="red-category__number">0{{index + 1}}</view>
-      <view class="red-category__title">{{item.title}}</view>
-      <view class="red-meta">{{item.items.length}} 个栏目</view>
-    </view>
-  </view>
-  <view class="red-section-heading"><text>{{currentCategory.title}}</text><text class="red-meta">{{currentCategory.items.length}} 个栏目</text></view>
-  <view class="red-directory">
-    <view class="red-topic" wx:for="{{currentCategory.items}}" wx:key="id">
-      <view class="red-topic__heading" data-id="{{item.id}}" bindtap="toggleTopic" hover-class="red-pressed" aria-role="button" aria-label="{{item.title}}" aria-expanded="{{expandedItemId === item.id}}">
-        <text class="red-topic__title">{{item.title}}</text><text class="red-meta">{{expandedItemId === item.id ? '收起' : '展开'}}</text>
+<template name="featured-card">
+  <navigator class="home-feature" url="{{item.route}}" hover-class="home-feature--pressed" aria-label="{{item.kindLabel}}：{{item.title}}">
+    <view class="home-feature__visual" aria-hidden="true">
+      <view class="home-feature__placeholder">
+        <ui-icon name="{{item.kindLabel === '活动' ? 'calendar-event' : 'home-news'}}" size="xl" />
       </view>
-      <view wx:if="{{expandedItemId === item.id}}" class="red-topic__detail">
-        <view class="red-description">{{item.summary || '该栏目暂无内容说明。'}}</view>
-        <view class="red-children" wx:if="{{item.tags && item.tags.length}}"><text class="red-child" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text></view>
-        <view class="red-children" wx:if="{{item.children && item.children.length}}"><text class="red-child" wx:for="{{item.children}}" wx:for-item="child" wx:key="id">{{child.title}}</text></view>
+      <image wx:if="{{item.coverUrl && !failedCovers[item.coverKey]}}" class="home-feature__media" src="{{item.coverUrl}}" mode="aspectFill" data-key="{{item.coverKey}}" binderror="onCoverError" />
+      <text class="home-feature__label">{{item.kindLabel}}</text>
+    </view>
+    <view class="home-feature__copy">
+      <view class="home-feature__title ellipsis-2">{{item.title}}</view>
+      <view class="home-feature__arrow" aria-hidden="true"><ui-icon name="chevron-right" size="sm" /></view>
+    </view>
+  </navigator>
+</template>
+
+<view class="home-page">
+  <view class="home-masthead" style="padding-top: {{statusBarHeight}}px;">
+    <view class="home-nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
+      <view class="home-brand" aria-label="e 网同心党建门户">
+        <view class="home-brand__mark" aria-hidden="true">e</view>
+        <view>
+          <text class="home-brand__name">e 网同心</text>
+          <text class="home-brand__tagline">党建学习服务平台</text>
+        </view>
       </view>
     </view>
+
+    <view class="home-masthead__caption">
+      <text>重点内容</text>
+      <view wx:if="{{featured.length > 1}}" class="home-hero__position" aria-label="第 {{featuredIndex + 1}} 条，共 {{featured.length}} 条">
+        <view wx:for="{{featured}}" wx:key="key" class="home-hero__dot {{index === featuredIndex ? 'home-hero__dot--active' : ''}}" aria-hidden="true"></view>
+      </view>
+    </view>
+
+    <view wx:if="{{initialLoading}}" class="home-hero home-hero--skeleton" aria-label="重点内容加载中" aria-role="status">
+      <view class="skeleton-block home-feature__visual"></view>
+      <view class="home-hero__skeleton-copy">
+        <view class="skeleton-block skeleton-radius-sm home-hero__skeleton-title"></view>
+        <view class="skeleton-block skeleton-radius-sm home-hero__skeleton-title home-hero__skeleton-title--short"></view>
+      </view>
+    </view>
+
+    <view wx:elif="{{overallError || bannersStatus === 'UNAVAILABLE'}}" class="home-hero home-hero--error" aria-role="alert">
+      <view class="home-hero__state-title">{{overallError ? '首页动态暂时无法加载' : '重点内容暂时无法加载'}}</view>
+      <view wx:if="{{overallError}}" class="home-hero__state-copy">{{overallError}}</view>
+      <view class="home-hero__retry {{refreshing ? 'is-disabled' : ''}}" bindtap="retrySummary" hover-class="home-pressed" aria-role="button" aria-label="重新加载首页动态">重新加载</view>
+    </view>
+
+    <view wx:elif="{{bannersStatus === 'READY' && featured.length === 1}}" class="home-hero home-hero--featured">
+      <template is="featured-card" data="{{item: featured[0], failedCovers}}" />
+    </view>
+
+    <swiper
+      wx:elif="{{bannersStatus === 'READY' && featured.length > 1}}"
+      class="home-hero home-hero--featured"
+      current="{{featuredIndex}}"
+      bindchange="onFeaturedChange"
+      autoplay="{{true}}"
+      circular="{{true}}"
+      interval="5000"
+      duration="260"
+      aria-label="重点内容轮播"
+    >
+      <swiper-item wx:for="{{featured}}" wx:key="key">
+        <template is="featured-card" data="{{item, failedCovers}}" />
+      </swiper-item>
+    </swiper>
+
+    <view wx:elif="{{bannersStatus === 'EMPTY'}}" class="home-hero home-hero--empty" aria-role="status">
+      <view class="home-hero__state-title">暂无重点内容</view>
+    </view>
   </view>
-  <view class="red-about">
-    <view class="red-about__toggle" bindtap="toggleIntroduction" aria-role="button" aria-expanded="{{showIntroduction}}"><text>了解阵地</text><text class="red-meta">{{showIntroduction ? '收起' : '展开'}}</text></view>
-    <view wx:if="{{showIntroduction}}"><view class="red-structure" wx:for="{{structureItems}}" wx:key="id"><view class="red-structure__title">{{item.title}}</view><view class="red-description">{{item.summary}}</view></view></view>
+
+  <view class="home-body">
+    <view class="home-quick-nav" aria-label="常用功能导航">
+      <navigator wx:for="{{quickNav}}" wx:key="key" class="home-quick-nav__item" url="{{item.url}}" hover-class="home-quick-nav__item--pressed" aria-label="{{item.label}}">
+        <view class="home-quick-nav__icon home-quick-nav__icon--{{item.tone}}" aria-hidden="true"><ui-icon name="{{item.icon}}" size="lg" /></view>
+        <text class="home-quick-nav__label">{{item.label}}</text>
+      </navigator>
+    </view>
+
+    <view wx:if="{{refreshing}}" class="home-refreshing" aria-role="status">正在更新首页内容…</view>
+
+    <block wx:if="{{!overallError}}">
+      <view class="home-section">
+        <view class="home-section__heading">
+          <view>
+            <text class="home-section__title">党建资讯</text>
+            <text class="home-section__subtitle">了解最新党建动态</text>
+          </view>
+          <navigator class="home-section__more" url="/subpkg_red/pages/article-list/list?sceneCode=PARTY_NEWS" hover-class="home-pressed" aria-label="查看全部党建资讯">
+            <text>全部资讯</text><ui-icon name="chevron-right" size="sm" />
+          </navigator>
+        </view>
+
+        <view wx:if="{{initialLoading}}" class="home-news-list" aria-label="党建资讯加载中" aria-role="status">
+          <view wx:for="{{skeletonNews}}" wx:key="*this" class="home-news-skeleton">
+            <view class="home-news-skeleton__copy">
+              <view class="skeleton-block skeleton-radius-sm home-skeleton-line"></view>
+              <view class="skeleton-block skeleton-radius-sm home-skeleton-line home-skeleton-line--medium"></view>
+              <view class="skeleton-block skeleton-radius-sm home-skeleton-line home-skeleton-line--meta"></view>
+            </view>
+            <view class="skeleton-block home-news-skeleton__media"></view>
+          </view>
+        </view>
+
+        <load-state wx:elif="{{newsStatus === 'UNAVAILABLE'}}" mode="error" variant="section" title="党建资讯加载失败" action-text="重新加载" bind:action="retrySummary" />
+        <load-state wx:elif="{{newsStatus === 'EMPTY'}}" mode="empty" variant="section" title="暂无党建资讯" description="当前没有已发布的党建资讯，可进入完整列表查看其他内容" action-text="查看完整列表" bind:action="openNewsList" />
+
+        <block wx:elif="{{newsStatus === 'READY'}}">
+          <view class="home-news-list">
+            <navigator wx:for="{{news}}" wx:key="id" class="home-news-card" url="{{item.route}}" hover-class="home-card--pressed" aria-label="阅读资讯：{{item.title}}">
+              <view class="home-news-card__copy">
+                <view class="home-news-card__title ellipsis-2">{{item.title}}</view>
+                <view wx:if="{{item.summary}}" class="home-news-card__summary ellipsis-2">{{item.summary}}</view>
+                <view class="home-news-card__meta">{{item.publishedDate}}</view>
+              </view>
+              <image wx:if="{{item.coverUrl && !failedCovers[item.coverKey]}}" class="home-news-card__media" src="{{item.coverUrl}}" mode="aspectFill" lazy-load data-key="{{item.coverKey}}" binderror="onCoverError" aria-hidden="true" />
+              <view wx:elif="{{item.coverUrl}}" class="home-news-card__media home-media-fallback">封面暂不可用</view>
+            </navigator>
+          </view>
+        </block>
+      </view>
+
+      <view class="home-section">
+        <view class="home-section__heading">
+          <view>
+            <text class="home-section__title">近期活动</text>
+            <text class="home-section__subtitle">正在进行与即将开展</text>
+          </view>
+          <navigator class="home-section__more" url="/subpkg_activity/pages/list/list" hover-class="home-pressed" aria-label="查看全部校园活动">
+            <text>全部活动</text><ui-icon name="chevron-right" size="sm" />
+          </navigator>
+        </view>
+
+        <view wx:if="{{initialLoading}}" class="home-activity-list" aria-label="近期活动加载中" aria-role="status">
+          <view wx:for="{{skeletonActivities}}" wx:key="*this" class="home-activity-skeleton">
+            <view class="skeleton-block home-activity-skeleton__media"></view>
+            <view class="home-activity-skeleton__copy">
+              <view class="skeleton-block skeleton-radius-sm home-skeleton-line home-skeleton-line--meta"></view>
+              <view class="skeleton-block skeleton-radius-sm home-skeleton-line"></view>
+              <view class="skeleton-block skeleton-radius-sm home-skeleton-line home-skeleton-line--medium"></view>
+            </view>
+          </view>
+        </view>
+
+        <load-state wx:elif="{{activitiesStatus === 'UNAVAILABLE'}}" mode="error" variant="section" title="近期活动加载失败" action-text="重新加载" bind:action="retrySummary" />
+        <load-state wx:elif="{{activitiesStatus === 'EMPTY'}}" mode="empty" variant="section" title="暂无近期活动" description="当前没有已确认进行中或即将开展的活动，可查看完整活动列表" action-text="查看活动列表" bind:action="openActivityList" />
+
+        <block wx:elif="{{activitiesStatus === 'READY'}}">
+          <view class="home-activity-list">
+            <navigator wx:for="{{activities}}" wx:key="id" class="home-activity-card" url="{{item.route}}" hover-class="home-card--pressed" aria-label="查看活动：{{item.title}}，{{item.stageLabel}}">
+              <image wx:if="{{item.coverUrl && !failedCovers[item.coverKey]}}" class="home-activity-card__media" src="{{item.coverUrl}}" mode="aspectFill" lazy-load data-key="{{item.coverKey}}" binderror="onCoverError" aria-hidden="true" />
+              <view wx:else class="home-activity-card__media home-activity-card__media--fallback" aria-hidden="true"><ui-icon name="calendar-event" size="xl" /><text wx:if="{{item.coverUrl}}">封面暂不可用</text></view>
+              <view class="home-activity-card__copy">
+                <view class="home-activity-card__labels">
+                  <text class="home-activity-card__stage home-activity-card__stage--{{item.stageStatus}}">{{item.stageLabel}}</text>
+                </view>
+                <view class="home-activity-card__title ellipsis-2">{{item.title}}</view>
+                <view wx:if="{{item.timeLabel}}" class="home-activity-card__detail"><ui-icon name="calendar-event" size="sm" /><text>{{item.timeLabel}}</text></view>
+              </view>
+            </navigator>
+          </view>
+        </block>
+      </view>
+    </block>
+
+    <view class="home-footnote">内容与活动安排以详情为准</view>
   </view>
-  <view class="red-section-heading"><text>校园服务</text><text class="red-meta">辅助入口</text></view>
-  <view class="red-links">
-    <navigator class="red-link" url="/subpkg_activity/pages/list/list"><ui-icon name="calendar-event" size="lg" /><text>校园活动</text><ui-icon name="chevron-right" size="sm" /></navigator>
-    <navigator class="red-link" url="/subpkg_public_event/pages/list/list"><ui-icon name="checklist" size="lg" /><text>公共事项</text><ui-icon name="chevron-right" size="sm" /></navigator>
-    <navigator class="red-link" url="/pages/campus/campus" open-type="switchTab"><ui-icon name="home" size="lg" /><text>校园动态与提醒</text><ui-icon name="chevron-right" size="sm" /></navigator>
-  </view>
-  <view class="red-footnote">A 版 · 保留六型结构 · 具体内容与功能待确认</view>
 </view>
 <in-app-banner />

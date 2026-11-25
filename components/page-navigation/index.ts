@@ -38,11 +38,12 @@ defineComponent()({
   lifetimes: {
     attached() {
       this.updateLayout();
+      this.updateStatusBar(this.data.surface === 'brand');
     },
   },
   pageLifetimes: {
     show() {
-      if (this.data.surface === 'brand') this.updateStatusBar(true);
+      this.updateStatusBar(this.data.surface === 'brand');
     },
     resize() {
       this.updateLayout();

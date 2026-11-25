@@ -8,6 +8,7 @@
     "report-panel": "/components/report-panel/index",
     "load-state": "/components/load-state/index",
     "ui-icon": "/components/ui-icon/index",
-    "operator-badge": "/components/operator-badge/index"
+    "operator-badge": "/components/operator-badge/index",
+    "back-button": "/components/back-button/index"
   }
 }

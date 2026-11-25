@@ -137,8 +137,10 @@ const timelineJs = ts.transpileModule(fs.readFileSync('subpkg_activity/utils/eve
 vm.runInNewContext(timelineJs, { exports: timelineExports, Date });
 const audienceExports = {};
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('utils/activity-audience.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: audienceExports, Set });
+const stageExports = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('utils/activity-stage.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: stageExports });
 const mapperExports = {};
-vm.runInNewContext(ts.transpileModule(fs.readFileSync('subpkg_activity/services/activity-card-mapper.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: mapperExports, Date, require(name) { if (name.endsWith('/activity-audience')) return audienceExports; if (name.endsWith('/event-timeline')) return timelineExports; return {}; } });
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('subpkg_activity/services/activity-card-mapper.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: mapperExports, Date, require(name) { if (name.endsWith('/activity-stage')) return stageExports; if (name.endsWith('/activity-audience')) return audienceExports; if (name.endsWith('/event-timeline')) return timelineExports; return {}; } });
 const js = ts.transpileModule(fs.readFileSync('subpkg_activity/services/activity.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText;

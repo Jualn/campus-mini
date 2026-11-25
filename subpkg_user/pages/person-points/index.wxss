@@ -1,0 +1,336 @@
+@import "../points-common.wxss";
+
+.balance-sheet {
+  position: relative;
+  padding: 36rpx 32rpx 28rpx 50rpx;
+  overflow: hidden;
+  border: 1rpx solid #ecdfdf;
+  border-radius: 20rpx;
+  background: #fffcfa;
+  box-shadow: 0 12rpx 30rpx rgba(31, 45, 69, 0.055);
+}
+
+.balance-sheet__binding {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 14rpx;
+  background: var(--color-brand-red);
+}
+
+.balance-sheet__binding::after {
+  content: "";
+  position: absolute;
+  top: 28rpx;
+  bottom: 28rpx;
+  left: 25rpx;
+  border-left: 1rpx dashed rgba(169, 42, 58, 0.22);
+}
+
+.balance-sheet__label,
+.balance-sheet__caption,
+.balance-sheet__scoped-title,
+.balance-sheet__scoped-description {
+  display: block;
+}
+
+.balance-sheet__label {
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.balance-sheet__balance {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+
+.balance-sheet__number {
+  font-size: 88rpx;
+  font-weight: var(--weight-heavy);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  letter-spacing: -2rpx;
+  color: var(--color-brand-red-deep);
+}
+
+.balance-sheet__unit {
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.balance-sheet__caption {
+  margin-top: 6rpx;
+  font-size: var(--font-xs);
+  line-height: 1.55;
+  color: var(--color-text-tertiary);
+}
+
+.balance-sheet__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
+  margin-top: 28rpx;
+  padding-top: 22rpx;
+  border-top: 1rpx solid #eddfdf;
+}
+
+.balance-sheet__stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.balance-sheet__stat + .balance-sheet__stat {
+  padding-left: 24rpx;
+  border-left: 1rpx solid #eddfdf;
+}
+
+.balance-sheet__stat-label {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+}
+
+.balance-sheet__stat-value {
+  margin-top: 5rpx;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-sheet__stat-value--credit {
+  color: #176b4d;
+}
+
+.balance-sheet__updated {
+  grid-column: 1 / -1;
+  margin-top: -4rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
+}
+
+.balance-sheet--scoped {
+  padding-top: 38rpx;
+  padding-bottom: 36rpx;
+}
+
+.balance-sheet__scoped-title {
+  max-width: 540rpx;
+  margin-top: 12rpx;
+  font-size: 38rpx;
+  font-weight: var(--weight-bold);
+  line-height: 1.45;
+}
+
+.balance-sheet__scoped-description {
+  max-width: 540rpx;
+  margin-top: 12rpx;
+  font-size: var(--font-sm);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.overview-actions {
+  display: grid;
+  grid-template-columns: 1.08fr 1fr;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.overview-action {
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 112rpx;
+  padding: 20rpx 22rpx;
+  text-align: left;
+}
+
+.overview-action__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.overview-action__title {
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+  line-height: 1.45;
+}
+
+.overview-action__description {
+  margin-top: 3rpx;
+  font-size: 20rpx;
+  font-weight: var(--weight-regular);
+  line-height: 1.45;
+  opacity: 0.76;
+}
+
+.overview-action__mark {
+  flex-shrink: 0;
+  font-size: 38rpx;
+  font-weight: var(--weight-regular);
+  line-height: 1;
+}
+
+.identity-state {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 24rpx;
+  padding: 44rpx 36rpx 34rpx;
+  text-align: center;
+}
+
+.identity-state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96rpx;
+  height: 96rpx;
+  border: 1rpx solid rgba(196, 59, 74, 0.12);
+  border-radius: 50%;
+  background: var(--color-brand-red-tint);
+}
+
+.identity-state__title {
+  margin-top: 22rpx;
+  font-size: var(--font-lg);
+  font-weight: var(--weight-bold);
+}
+
+.identity-state__description {
+  max-width: 540rpx;
+  margin-top: 10rpx;
+  font-size: var(--font-sm);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.identity-state__button {
+  width: 100%;
+  margin-top: 26rpx;
+}
+
+.ledger-book {
+  padding: 0 26rpx;
+}
+
+.ledger-row {
+  padding: 26rpx 0 24rpx;
+}
+
+.ledger-row + .ledger-row {
+  border-top: 1rpx solid var(--color-border-light);
+}
+
+.ledger-row__top,
+.ledger-row__kind,
+.ledger-row__delta {
+  display: flex;
+  align-items: center;
+}
+
+.ledger-row__top {
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.ledger-row__kind {
+  min-width: 0;
+  gap: 14rpx;
+}
+
+.ledger-row__direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  border: 1rpx solid currentColor;
+  border-radius: 50%;
+  font-size: var(--font-md);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+}
+
+.ledger-row__direction--credit,
+.ledger-row__delta--credit {
+  color: #176b4d;
+}
+
+.ledger-row__direction--debit,
+.ledger-row__delta--debit {
+  color: #86560f;
+}
+
+.ledger-row__kind-label {
+  font-size: var(--font-md);
+  font-weight: var(--weight-semibold);
+}
+
+.ledger-row__delta {
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: 5rpx;
+}
+
+.ledger-row__delta-value {
+  font-size: 38rpx;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.ledger-row__delta-unit {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+}
+
+.ledger-row__detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+  margin-top: 18rpx;
+  font-size: var(--font-sm);
+  line-height: 1.7;
+}
+
+.ledger-row__label {
+  flex-shrink: 0;
+  width: 104rpx;
+  color: var(--color-text-tertiary);
+}
+
+.ledger-row__detail-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text-secondary);
+}
+
+.ledger-row__time {
+  display: block;
+  margin-top: 18rpx;
+  padding-left: 58rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 340px) {
+  .overview-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-action {
+    min-height: 96rpx;
+  }
+
+  .balance-sheet {
+    padding-right: 26rpx;
+  }
+}

@@ -116,6 +116,8 @@ export function useListLoad(options: UseListLoadOptions = {}) {
           skeletonVisible: false,
           initialError: false,
           loadMoreError: false,
+          refreshing: false,
+          loadingMore: false,
         });
 
         this._listLoadSkeletonShowTimer = setTimeout(() => {
@@ -182,8 +184,12 @@ export function useListLoad(options: UseListLoadOptions = {}) {
        * 下拉刷新开始
        */
       _listLoadBeginRefresh() {
+        this._listLoadClearTimers();
         this._listLoadSet({
           phase: 'refresh',
+          skeletonVisible: false,
+          initialError: false,
+          loadingMore: false,
           refreshing: true,
           loadMoreError: false,
         });
@@ -228,8 +234,11 @@ export function useListLoad(options: UseListLoadOptions = {}) {
        * 分页加载开始
        */
       _listLoadBeginMore() {
+        this._listLoadClearTimers();
         this._listLoadSet({
           phase: 'more',
+          skeletonVisible: false,
+          refreshing: false,
           loadingMore: true,
           loadMoreError: false,
         });

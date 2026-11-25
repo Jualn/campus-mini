@@ -73,14 +73,6 @@
         "type": "file"
       },
       {
-        "value": "actions/message.ts",
-        "type": "file"
-      },
-      {
-        "value": "services/message.ts",
-        "type": "file"
-      },
-      {
         "value": "actions/index.ts",
         "type": "file"
       },

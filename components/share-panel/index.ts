@@ -96,6 +96,7 @@ defineComponent<{ _previewTimer?: number; _attached: boolean }>()({
           }
         }
         await wxSaveImageToPhotosAlbum({ filePath });
+        if (this._attached && filePath === this.properties.shareImagePath) this.triggerEvent('saved');
         notifyToast({ title: '已保存到相册', icon: 'success' });
       } catch {
         notifyToast({ title: '保存失败，请重试', icon: 'none' });

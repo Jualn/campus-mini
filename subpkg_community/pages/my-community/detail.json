@@ -1,0 +1,11 @@
+{
+  "navigationStyle": "default",
+  "navigationBarTitleText": "本人内容结果",
+  "navigationBarBackgroundColor": "#F6F8FC",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#F6F8FC",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "load-state": "/components/load-state/index"
+  }
+}

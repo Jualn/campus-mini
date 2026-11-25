@@ -222,6 +222,11 @@ mocks.set('actions/media.ts', {});
 mocks.set('actions/comment.ts', {
   syncCommentAuthor: (item) => projection.projectCommentAuthor(item, action.peekCurrentProfile()),
 });
+mocks.set('services/api.ts', { api: {} });
+mocks.set('services/post-community.ts', { community: {} });
+mocks.set('services/comment.ts', {});
+mocks.set('actions/post-creation.ts', {});
+mocks.set('services/person-binding.ts', { watchPersonBinding: () => () => {} });
 load('components/comment-panel/index.ts');
 const setData = function (patch) {
   for (const [key, value] of Object.entries(patch)) {

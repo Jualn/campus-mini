@@ -89,7 +89,7 @@ A platform API does not automatically create a new Engineering domain. Place it 
 
 ## Project design notes
 
-Use the [project documentation index](../../project/README.md) for current-user synchronization, component integration and local capability design when relevant. These notes carry their own evidence status and do not replace Contracts or VERIFIED Profile facts.
+Start from the [docs entry](../../README.md) when the owner is unclear. Use the [project documentation index](../../project/README.md) for domain interaction, current-user synchronization and shared UI usage when relevant. Fixed inputs and retained historical evidence have a separate [operations index](../../operations/README.md); old results do not define current behavior. Project notes do not replace Contracts or VERIFIED Profile facts.
 
 ## Project-specific facts
 

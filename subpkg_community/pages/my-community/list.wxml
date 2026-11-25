@@ -1,0 +1,181 @@
+<page-navigation title="社区记录" />
+<view class="page page--{{postType}} page--{{kind}}">
+  <scroll-view class="record-tabs" scroll-x show-scrollbar="{{false}}" aria-label="社区记录类型">
+    <view class="record-tabs__track">
+      <button
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="record-tab {{kind === item.key ? 'record-tab--active' : ''}}"
+        data-kind="{{item.key}}"
+        bindtap="onRecordKind"
+        aria-role="tab"
+        aria-selected="{{kind === item.key}}"
+        aria-label="{{item.label}}{{kind === item.key ? '，已选择' : ''}}"
+      >
+        <text>{{item.label}}</text>
+        <view class="record-tab__indicator" aria-hidden="true" />
+      </button>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{qaEnabled && kind !== 'reports'}}" class="type-filter">
+    <text class="type-filter__label">内容类型</text>
+    <view class="type-filter__options">
+      <button
+        class="type-chip {{postType === 'NORMAL' ? 'type-chip--active' : ''}}"
+        data-type="NORMAL"
+        bindtap="onPostType"
+        aria-label="普通社区{{postType === 'NORMAL' ? '，已选择' : ''}}"
+      >
+        普通社区
+      </button>
+      <button
+        class="type-chip {{postType === 'MENTOR_QA' ? 'type-chip--active' : ''}}"
+        data-type="MENTOR_QA"
+        bindtap="onPostType"
+        aria-label="导师答疑{{postType === 'MENTOR_QA' ? '，已选择' : ''}}"
+      >
+        导师答疑
+      </button>
+      <button
+        class="type-chip {{postType === 'ALL' ? 'type-chip--active' : ''}}"
+        data-type="ALL"
+        bindtap="onPostType"
+        aria-label="全部类型{{postType === 'ALL' ? '，已选择' : ''}}"
+      >
+        全部
+      </button>
+    </view>
+  </view>
+
+  <view wx:if="{{kind === 'posts' && pendingPost}}" class="recovery-card">
+    <view class="recovery-card__copy">
+      <view class="recovery-card__title">上次发帖结果待核对</view>
+      <view class="recovery-card__description">先查询原提交结果，避免重复发布。</view>
+    </view>
+    <button
+      class="recovery-card__action"
+      data-kind="post"
+      bindtap="recover"
+      loading="{{recovering}}"
+      disabled="{{recovering}}"
+    >
+      核对结果
+    </button>
+  </view>
+  <view wx:if="{{kind === 'comments' && pendingComment}}" class="recovery-card">
+    <view class="recovery-card__copy">
+      <view class="recovery-card__title">{{postType === 'MENTOR_QA' ? '有一条提交待核对' : '上次评论结果待核对'}}</view>
+      <view class="recovery-card__description">核对原提交后，可查看受理和公开状态。</view>
+    </view>
+    <button
+      class="recovery-card__action"
+      data-kind="comment"
+      bindtap="recover"
+      loading="{{recovering}}"
+      disabled="{{recovering}}"
+    >
+      核对结果
+    </button>
+  </view>
+
+  <view class="list-heading">
+    <view class="list-heading__privacy">
+      <view class="privacy-dot" aria-hidden="true" />
+      <text>记录仅自己可见</text>
+    </view>
+    <view class="list-heading__actions">
+      <button
+        wx:if="{{kind === 'history'}}"
+        class="heading-action heading-action--danger"
+        bindtap="clearHistory"
+        disabled="{{loading}}"
+      >
+        清空
+      </button>
+      <button class="heading-action" bindtap="refresh" disabled="{{loading}}">
+        {{loading && rows.length ? '更新中' : '刷新'}}
+      </button>
+    </view>
+  </view>
+
+  <view class="records">
+    <load-state
+      wx:if="{{loading && !rows.length}}"
+      mode="loading"
+      variant="section"
+      title="正在加载记录"
+      description="请稍候，正在查询最新状态"
+    />
+    <load-state
+      wx:elif="{{error && !rows.length}}"
+      mode="error"
+      title="记录暂时加载失败"
+      description="{{error}}"
+      action-text="{{failedReset ? '重新加载' : '重试加载更多'}}"
+      bind:action="retry"
+    />
+    <load-state wx:elif="{{!rows.length}}" mode="empty" title="{{emptyTitle}}" description="{{emptyDescription}}" />
+
+    <view
+      wx:for="{{rows}}"
+      wx:key="id"
+      class="record-card {{item.available ? '' : 'record-card--unavailable'}}"
+      data-id="{{item.id}}"
+      bindtap="open"
+      hover-class="{{item.available ? 'record-card--hover' : ''}}"
+      aria-role="{{item.available ? 'button' : ''}}"
+      aria-label="{{item.title}}，{{item.status}}"
+    >
+      <view class="record-card__header">
+        <view class="record-card__badges">
+          <text class="type-badge">{{item.typeLabel}}</text>
+          <text wx:if="{{item.category}}" class="category-label">{{item.category}}</text>
+        </view>
+        <view wx:if="{{item.status}}" class="record-status record-status--{{item.statusTone}}">
+          <view class="record-status__dot" aria-hidden="true" />
+          <text>{{item.status}}</text>
+        </view>
+      </view>
+      <view class="record-card__body">
+        <view class="record-card__copy">
+          <view class="record-card__title">{{item.title}}</view>
+          <view class="record-card__text">{{item.text}}</view>
+        </view>
+        <image wx:if="{{item.image}}" class="record-card__image" src="{{item.image}}" mode="aspectFill" lazy-load />
+      </view>
+      <view class="record-card__footer">
+        <text class="record-card__time">{{item.timeLabel}}</text>
+        <view class="record-card__actions">
+          <button
+            wx:if="{{kind === 'favorites'}}"
+            class="remove-action"
+            data-id="{{item.id}}"
+            catchtap="removeFavorite"
+            disabled="{{loading || removingId}}"
+            loading="{{removingId === item.id}}"
+          >
+            取消收藏
+          </button>
+          <view wx:if="{{item.available}}" class="open-label" aria-hidden="true">
+            <ui-icon name="chevron-right" size="sm" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <load-state
+    wx:if="{{error && rows.length}}"
+    mode="error"
+    variant="inline"
+    description="{{error}}"
+    action-text="{{failedReset ? '重新加载' : '重试'}}"
+    bind:action="retry"
+  />
+  <view wx:if="{{loading && rows.length}}" class="list-status">正在更新记录…</view>
+  <button wx:if="{{hasMore && !loading && !error && rows.length}}" class="more-button" bindtap="more">
+    加载更多
+  </button>
+  <view wx:if="{{!hasMore && rows.length && !loading && !error}}" class="list-end"><text>已显示全部记录</text></view>
+</view>

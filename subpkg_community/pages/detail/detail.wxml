@@ -3,10 +3,8 @@
   <!-- 顶部导航 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav">
-      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" size="lg" />
-      </view>
-      <text class="top-bar__title">动态</text>
+      <back-button variant="nav" auto-back="{{false}}" bind:back="onBack" />
+      <text class="top-bar__title">{{post.postType === "MENTOR_QA" ? "校友导师答疑" : "动态"}}</text>
       <!-- 右侧只保留等宽占位，让标题居中；更多按钮已移到帖子作者行，避免被系统胶囊遮挡 -->
       <view class="top-bar__placeholder"></view>
     </view>
@@ -40,19 +38,11 @@
           <text class="post-stats__sep">·</text>
           <view class="skeleton-block skeleton-radius-sm post-detail-skeleton__stat" />
         </view>
-        <view class="post-actions post-detail-skeleton__muted">
-          <view class="action-item">
-            <view class="action-icon icon-slot"><ui-icon name="like" size="xl" /></view>
-            <text class="action-count">点赞</text>
-          </view>
-          <view class="action-item">
-            <view class="action-icon icon-slot"><ui-icon name="comment" size="xl" /></view>
-            <text class="action-count">评论</text>
-          </view>
-          <view class="action-item">
-            <view class="action-icon icon-slot"><ui-icon name="share" size="xl" /></view>
-            <text class="action-count">分享</text>
-          </view>
+        <view class="detail-actions-row post-actions post-detail-skeleton__muted">
+          <view class="detail-action-cell"><ui-icon name="like" /><text>点赞</text></view>
+          <view class="detail-action-cell"><ui-icon name="comment" /><text>评论</text></view>
+          <view wx:if="{{communityEnabled}}" class="detail-action-cell"><ui-icon name="bookmark" /><text>收藏</text></view>
+          <view class="detail-action-cell"><ui-icon name="share" /><text>分享</text></view>
         </view>
       </view>
       <view class="comment-wrap" aria-hidden="true">
@@ -114,13 +104,24 @@
       </view> -->
       </view>
 
+      <view wx:if="{{post.postType === 'MENTOR_QA'}}" class="question-context">
+        <text class="question-state question-state--{{post.qaSummary.answerState}}">{{post.qaSummary.answerState === 'ANSWERED' ? post.qaSummary.publicAnswerCount + ' 条正式回答' : post.qaStateLabel}}</text>
+        <text class="question-category">{{post.category.name || '导师答疑'}}</text>
+      </view>
+      <view wx:if="{{post.postType === 'MENTOR_QA' && post.displayTitle}}" class="question-title">{{post.displayTitle}}</view>
       <!-- 正文 -->
       <text class="post-text" user-select="true">{{post.content}}</text>
 
       <!-- 图片（复用 grid-image 组件） -->
       <grid-image images="{{post.images || []}}" />
 
-      <!-- 话题标签 -->
+      <view wx:if="{{post.postType !== 'MENTOR_QA' && post.topics.length}}" class="post-topics">
+        <view wx:for="{{post.topics}}" wx:key="id" class="topic-tag" data-id="{{item.id}}" bindtap="onTopicTap">#{{item.name}}</view>
+      </view>
+      <view wx:if="{{post.postType === 'MENTOR_QA' && post.topics.length}}" class="post-topics question-meta">
+        <view wx:for="{{post.topics}}" wx:key="id" class="topic-tag" data-id="{{item.id}}" bindtap="onTopicTap">#{{item.name}}</view>
+      </view>
+
       <!-- <view class="post-topics" wx:if="{{post.topics && post.topics.length}}">
       <text wx:for="{{post.topics}}" wx:key="*this" class="topic-tag" catchtap="onTapTopic" data-topic="{{item}}">#{{item}}</text>
     </view> -->
@@ -131,31 +132,39 @@
         <text class="post-stats__sep" wx:if="{{post.viewCount}}">·</text>
         <text class="post-stats__item">{{post.likeCount}} 点赞</text>
         <text class="post-stats__sep">·</text>
-        <text class="post-stats__item">{{post.commentCount}} 评论</text>
+        <text class="post-stats__item">{{post.commentCount}} {{post.postType === 'MENTOR_QA' ? '条讨论' : '条评论'}}</text>
       </view>
 
       <!-- 操作栏 -->
-      <view class="post-actions">
-        <view class="action-item" catchtap="onLike" aria-role="button" aria-label="{{post.isLiked ? '取消点赞' : '点赞'}}">
-          <view class="action-icon icon-slot {{ post.isLiked ? 'liked' : '' }}"><ui-icon name="like" state="{{ post.isLiked ? 'active' : 'default' }}" size="xl" /></view>
-          <text class="action-count {{post.isLiked?'action-label--liked':''}}">{{post.likeCount || '点赞'}} </text>
-        </view>
-        <view class="action-item" catchtap="onComment" aria-role="button" aria-label="评论">
-          <view class="action-icon icon-slot"><ui-icon name="comment" size="xl" /></view>
-          <text class="action-count">{{post.commentCount || '评论'}}</text>
-        </view>
-        <view class="action-item" catchtap="onShare" aria-role="button" aria-label="分享">
-          <view class="action-icon icon-slot"><ui-icon name="share" size="xl" /></view>
-          <text class="action-count">分享</text>
-        </view>
+      <view class="detail-actions-row post-actions">
+        <button class="detail-action-cell {{post.isLiked ? 'detail-action-cell--active' : ''}}" bindtap="onLike" aria-label="{{post.isLiked ? '取消点赞' : '点赞'}}，{{post.likeCount}}">
+          <ui-icon name="like" state="{{post.isLiked ? 'active' : 'default'}}" />
+          <text class="detail-action-label">{{post.likeCount || (post.isLiked ? '已点赞' : '点赞')}}</text>
+        </button>
+        <button class="detail-action-cell" bindtap="onComment" aria-label="查看{{post.postType === 'MENTOR_QA' ? '讨论' : '评论'}}，{{post.commentCount}}条">
+          <ui-icon name="comment" /><text class="detail-action-label">{{post.commentCount || (post.postType === 'MENTOR_QA' ? '讨论' : '评论')}}</text>
+        </button>
+        <button wx:if="{{communityEnabled}}" class="detail-action-cell {{favorited ? 'detail-action-cell--active' : ''}}" bindtap="toggleFavorite" disabled="{{!favoriteReady || favoritePending}}" aria-label="{{favorited ? '取消收藏' : '收藏'}}">
+          <ui-icon name="bookmark" state="{{favorited ? 'active' : 'default'}}" />
+          <text class="detail-action-label">{{favoritePending ? '处理中…' : favorited ? '已收藏' : '收藏'}}</text>
+        </button>
+        <button class="detail-action-cell" bindtap="onShare" aria-label="分享"><ui-icon name="share" /><text>分享</text></button>
       </view>
+      <button wx:if="{{favoriteError}}" class="detail-favorite-retry" bindtap="loadFavorite">重查收藏状态</button>
     </view>
 
     <!-- ===== 评论区：comment-panel inline 模式 ===== -->
-    <view class="comment-wrap">
+    <view class="comment-wrap" id="discussion-section">
       <comment-panel
-        id="post-detail-comment-panel"
+        focus-comment-id="{{focusCommentId}}"
+        question-author-id="{{post.userId}}"
+        question-version="{{post.qaSummary.questionVersion || ''}}"
+        bind:refreshquestion="refreshQuestion"
+        bind:contextlocated="onComment"
         mode="inline"
+        post-type="{{post.postType}}"
+        comment-permission="{{post.commentPermission}}"
+        inline-title="{{post.postType === 'MENTOR_QA' ? '导师回答与追问' : '评论'}}"
         target-id="{{targetId}}"
         target-type="{{targetType}}"
         total-count="{{currentCommentCount}}"
@@ -182,6 +191,7 @@
     status="{{shareStatus}}"
     bind:retry="onRetryShare"
     bind:previewerror="onSharePreviewError"
+    bind:saved="onPosterSaved"
     bind:close="onShareClose"
   />
   <!-- report弹窗 -->

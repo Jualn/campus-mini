@@ -1,14 +1,14 @@
 <view class="message-page">
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav" style="margin-top:{{navTopGap}}px;min-height:{{navHeight}}px;">
-      <view class="top-bar__tools" wx:if="{{unreadCount > 0}}">
+      <view class="top-bar__tools" wx:if="{{unreadKnown && unreadCount > 0}}">
         <view class="top-bar__read-all" hover-class="top-bar__read-all--hover" bindtap="onMarkAllRead" aria-role="button" aria-label="将当前范围内全部分类标为已读">
           <text class="top-bar__read-all-text">{{markingAll ? '同步中…' : '全部已读'}}</text>
         </view>
       </view>
       <view class="top-bar__title-group">
         <text class="top-bar__title">消息中心</text>
-        <view class="top-bar__count" wx:if="{{unreadCount > 0}}"><text class="top-bar__count-text">{{unreadCount > 99 ? '99+' : unreadCount}}</text></view>
+        <view class="top-bar__count" wx:if="{{unreadKnown && unreadCount > 0}}"><text class="top-bar__count-text">{{unreadCount > 99 ? '99+' : unreadCount}}</text></view>
       </view>
     </view>
     <text wx:if="{{listLoad.refreshing}}" class="message-sync-status" aria-role="status">正在同步最新消息…</text>
@@ -35,8 +35,16 @@
       </view>
     </view>
   </block>
-  <load-state wx:elif="{{listLoad.initialError}}" mode="error" title="暂时无法加载消息" description="消息服务暂不可用，请稍后重试" action-text="重新加载" fill-viewport viewport-offset="380" bind:action="onRetryInitialLoad" />
+  <view wx:elif="{{loginRequired}}" class="empty-wrap">
+    <text class="empty-title">登录后查看消息</text>
+    <text class="empty-desc">{{loadError || '你已退出登录，消息不会自动重新登录。'}}</text>
+    <button bindtap="onLogin" loading="{{loginPending}}" disabled="{{loginPending}}">微信登录</button>
+  </view>
+  <load-state wx:elif="{{listLoad.initialError}}" mode="error" title="暂时无法加载消息" description="{{loadError || '消息服务暂不可用，请稍后重试'}}" action-text="重新加载" fill-viewport viewport-offset="380" bind:action="onRetryInitialLoad" />
   <view class="msg-list" wx:elif="{{messages.length}}">
+    <view wx:if="{{loadError && !listLoad.loadMoreError}}" class="message-list-footer">
+      <text>{{loadError}}</text><button size="mini" bindtap="onRetryInitialLoad" disabled="{{listLoad.refreshing}}">重新同步</button>
+    </view>
     <view wx:for="{{messages}}" wx:key="id" class="msg-list__item">
       <view class="msg-card notification-card msg-card--{{item.layout}} {{item.canExpand ? 'msg-card--preview' : ''}} {{item.expanded ? 'msg-card--expanded' : ''}} {{item.isRead ? '' : 'msg-card--unread'}}" bindtap="onTapMessage" data-id="{{item.id}}" hover-class="msg-card--hover">
         <view class="msg-card__inner">
@@ -67,9 +75,10 @@
             <text wx:if="{{item.presentation.quote}}" class="notification-context">{{item.presentation.quote}}</text>
             <text wx:elif="{{item.layout !== 'change' && item.legacyContext}}" class="notification-context">{{item.legacyContext}}</text>
             <image wx:if="{{item.presentation.thumbnailUrl}}" class="notification-thumbnail" src="{{item.presentation.thumbnailUrl}}" mode="aspectFill" />
-            <view wx:if="{{item.canNavigate || item.canExpand}}" class="msg-card__footer">
+            <view class="msg-card__footer">
               <text wx:if="{{item.canExpand}}" class="msg-card__expand" catchtap="onToggleMessage" data-id="{{item.id}}" aria-role="button" aria-label="{{item.expanded ? '收起消息内容' : '展开消息内容'}}">{{item.expanded ? '收起' : '展开内容'}}</text>
               <text wx:if="{{item.canNavigate}}" class="msg-card__action-text">查看详情 →</text>
+              <text class="msg-card__expand" catchtap="onDeleteMessage" data-id="{{item.id}}" aria-role="button" aria-label="删除这条通知">{{deletingId === item.id ? '删除中…' : '删除'}}</text>
             </view>
           </view>
         </view>

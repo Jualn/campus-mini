@@ -1,5 +1,9 @@
 export type PublishStatus = 'DRAFT' | 'PUBLISHED' | 'UNPUBLISHED';
 export type LifecycleStatus = 'ACTIVE' | 'ENDED' | 'CANCELLED';
+export interface ActivityStage {
+  state: 'NOT_STARTED' | 'ONGOING' | 'ENDED' | 'CANCELLED' | 'UNKNOWN';
+  evaluatedAt: string;
+}
 
 export interface SubscriptionState {
   subscribed: boolean;
@@ -161,6 +165,8 @@ export interface ContractRegistrationForm {
 }
 
 export interface ActivitySummaryDTO {
+  stage?: ActivityStage;
+  allowRegistrationAfterStart?: boolean;
   activityId: string;
   title: string;
   summary: string;
@@ -244,6 +250,32 @@ export interface ActivityRegistrationDTO {
   submittedAt: string;
   updatedAt: string;
   cancelledAt?: string;
+  cancellationOrigin?: 'SELF' | 'ADMIN' | 'UNKNOWN';
+  cancellationReason?: string;
   canModify: boolean;
   canCancel: boolean;
+}
+
+export interface RegisteredActivitySummary {
+  activityId: string;
+  title: string;
+  category?: ActivityCategory;
+  organizer?: string;
+  publishStatus: PublishStatus;
+  lifecycleStatus: LifecycleStatus;
+  publicAccess: 'AVAILABLE' | 'UNAVAILABLE';
+  stage: ActivityStage;
+  primaryLocation?: string;
+  mainSchedule?: TimelineSchedule;
+}
+
+export interface MyActivityRegistrationItem {
+  activity: RegisteredActivitySummary;
+  registration: ActivityRegistrationDTO;
+  registrationEtag: string;
+}
+
+export interface MyActivityRegistrationPage {
+  items: MyActivityRegistrationItem[];
+  nextCursor?: string;
 }

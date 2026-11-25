@@ -15,8 +15,8 @@
       "pages": [
         "pages/detail/detail",
         "pages/list/list",
-        "pages/publish/publish",
-        "pages/registration/registration"
+        "pages/registration/registration",
+        "pages/my-registrations/list"
       ]
     },
     {
@@ -25,12 +25,28 @@
         "pages/detail/detail",
         "pages/post-edit/post-edit",
         "pages/search/search",
-        "pages/search-result/search-result"
+        "pages/search-result/search-result",
+        "pages/post-list/list",
+        "pages/my-community/list",
+        "pages/my-community/detail"
       ]
     },
     {
       "root": "subpkg_user",
-      "pages": ["pages/user/user", "pages/edit-profile/edit-profile"]
+      "pages": [
+        "pages/user/user",
+        "pages/edit-profile/edit-profile",
+        "pages/learning-task-list/list",
+        "pages/growth-list/list",
+        "pages/growth-detail/detail",
+        "pages/growth-edit/edit",
+        "pages/learning-task-detail/detail",
+        "pages/party-identity/index",
+        "pages/person-points/index",
+        "pages/points-apply/index",
+        "pages/points-applications/index",
+        "pages/points-application/index"
+      ]
     },
     {
       "root": "subpkg_setting",
@@ -45,7 +61,10 @@
       "pages": [
         "pages/index/index",
         "pages/content-list/list",
-        "pages/content-detail/detail"
+        "pages/content-detail/detail",
+        "pages/article-list/list",
+        "pages/article-detail/detail",
+        "pages/article-favorites/list"
       ]
     }
   ],
@@ -65,8 +84,8 @@
   "lazyCodeLoading": "requiredComponents",
   "tabBar": {
     "custom": true,
-    "color": "#9EAFC2",
-    "selectedColor": "#1677FF",
+    "color": "#65758F",
+    "selectedColor": "#C43B4A",
     "backgroundColor": "#ffffff",
     "list": [
       {

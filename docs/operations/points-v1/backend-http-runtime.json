@@ -1,0 +1,11 @@
+{
+  "runId": "mini202610181808502d68b1",
+  "runtime": "C:\\Users\\ACER\\AppData\\Local\\Temp\\points-consumer-mini202610181808502d68b1",
+  "containers": [
+    "codex-points-consumer-mysql-mini202610181808502d68b1",
+    "codex-points-consumer-redis-mini202610181808502d68b1"
+  ],
+  "backendWorktreeWrites": false,
+  "productionWrites": false,
+  "databaseRetained": true
+}

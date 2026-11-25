@@ -1,3 +1,5 @@
+@import "../../styles/comment-composer.wxss";
+@import "../../styles/discussion.wxss";
 /* ============================================
    comment-panel 组件样式
    设计语言：Facebook/微信融合风格，干净清晰
@@ -5,16 +7,16 @@
 
 /* ---- CSS 变量 ---- */
 .cp-root {
-  --cp-primary: #1877f2;
-  --cp-primary-light: #e7f3ff;
-  --cp-like: #e0245e;
-  --cp-bg: #f0f2f5;
-  --cp-surface: #ffffff;
-  --cp-border: #e4e6eb;
-  --cp-text: #1c1e21;
-  --cp-text-sub: #65676b;
-  --cp-text-light: #8a8d91;
-  --cp-reply-bg: #f0f2f58c;
+  --cp-primary: var(--color-primary);
+  --cp-primary-light: var(--color-primary-light);
+  --cp-like: var(--color-brand-red-deep);
+  --cp-bg: var(--color-bg-page);
+  --cp-surface: var(--color-bg-card);
+  --cp-border: var(--color-border-light);
+  --cp-text: var(--color-text-primary);
+  --cp-text-sub: var(--color-text-secondary);
+  --cp-text-light: var(--color-text-tertiary);
+  --cp-reply-bg: var(--color-bg-page);
   --cp-radius: 12rpx;
   --cp-radius-lg: 24rpx;
   --cp-sheet-radius: 40rpx;
@@ -148,11 +150,6 @@
   color: var(--cp-text);
 }
 
-.cp-inline__count {
-  font-size: 26rpx;
-  color: var(--cp-text-sub);
-}
-
 /* ============================================
    评论列表
    ============================================ */
@@ -239,7 +236,8 @@
 .cp-comment__footer {
   display: flex;
   align-items: center;
-  gap: 32rpx;
+  flex-wrap: wrap;
+  gap: 0 20rpx;
   margin-top: 12rpx;
 }
 
@@ -445,8 +443,7 @@
   width: 72rpx;
   height: 72rpx;
   flex-shrink: 0;
-  margin-bottom: 4rpx;
-  /* 与 80rpx 单行输入框居中，多行时保持与最后一行对齐。 */
+  margin: 0;
 }
 
 .cp-avatar__img {
@@ -559,122 +556,6 @@
 /* ============================================
    回复 Banner
    ============================================ */
-.cp-reply-banner {
-  background: var(--cp-primary-light);
-  padding: 14rpx 32rpx;
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  border-top: 1rpx solid var(--cp-border);
-  flex-shrink: 0;
-}
-
-.cp-reply-banner__text {
-  flex: 1;
-  font-size: 26rpx;
-  color: var(--cp-text-sub);
-}
-
-.cp-reply-banner_to_title{
-  padding-right: 8rpx;
-}
-
-.cp-reply-banner__name {
-  color: var(--cp-primary);
-  font-weight: 500;
-}
-
-.cp-reply-banner__cancel {
-  padding: 8rpx;
-}
-
-
-/* sheet 栏参与弹层布局，inline 栏固定于键盘上方。 */
-.cp-bottom-bar {
-  flex-shrink: 0;
-  position: relative;
-  left: 0;
-  right: 0;
-  z-index: 902;
-  background: var(--cp-surface);
-  /* 不叠加 bottom 动画，直接跟随原生键盘高度。安全区只由输入栏 padding 承担。 */
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* ============================================
-   输入栏
-   ============================================ */
-.cp-inputbar {
-  display: flex;
-  align-items: flex-end;
-  padding: 12rpx 20rpx calc(12rpx + env(safe-area-inset-bottom));
-  gap: 12rpx;
-  background: var(--cp-surface);
-  border-top: 1rpx solid var(--cp-border);
-  flex-shrink: 0;
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.cp-inputbar--keyboard {
-  padding-bottom: 12rpx;
-}
-
-.cp-inputbar-spacer {
-  pointer-events: none;
-}
-
-.cp-bottom-bar--inline {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-}
-
-.cp-inputbar__wrap {
-  flex: 1;
-  min-width: 0;
-  background: var(--cp-bg);
-  border-radius: 24rpx;
-  display: flex;
-  align-items: flex-end;
-  padding: 18rpx 16rpx;
-  gap: 12rpx;
-  min-height: 80rpx;
-  box-shadow: inset 0 0 0 1rpx transparent;
-  box-sizing: border-box;
-}
-
-.cp-inputbar__wrap--focus {
-  box-shadow: inset 0 0 0 1rpx var(--cp-primary);
-  background: var(--cp-surface);
-}
-
-.cp-inputbar__input {
-  flex: 1;
-  width: 0;
-  min-width: 0;
-  font-family: inherit;
-  font-size: 30rpx;
-  color: var(--cp-text);
-  background: transparent;
-  border: none;
-  outline: none;
-  line-height: 44rpx;
-  min-height: 44rpx;
-  padding: 0;
-  margin: 0;
-  display: block;
-}
-
-.cp-inputbar__placeholder {
-  color: var(--cp-text-light);
-  font-size: 30rpx;
-  line-height: 44rpx;
-}
-
 .cp-inputbar__imgbtn {
   width: 44rpx;
   height: 44rpx;
@@ -693,27 +574,7 @@
   pointer-events: none;
 }
 
-.cp-inputbar__send {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: var(--cp-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: opacity 0.15s;
-  margin-bottom: 4rpx;
-  box-sizing: border-box;
-}
 
-.cp-inputbar__send:active {
-  opacity: 0.8;
-}
-
-.cp-inputbar__send--disabled {
-  background: #c0ccda;
-}
 
 /* ============================================
    图片预览条
@@ -872,3 +733,103 @@
   align-items: center;
   justify-content: center;
 }
+
+.cp-status {
+  padding: 14rpx 20rpx;
+  margin: 12rpx 32rpx;
+  border-radius: var(--radius-sm);
+  background: var(--cp-bg);
+  color: var(--cp-text-sub);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+.cp-status--composer {
+  margin: 12rpx 24rpx 0;
+  background: var(--color-primary-tint);
+}
+.cp-status__row, .cp-status__links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 16rpx;
+}
+.cp-status__message { flex: 1; min-width: 0; }
+.cp-status__action, .cp-status__close {
+  margin: 0;
+  padding: 0;
+  min-height: 64rpx;
+  line-height: 64rpx;
+  background: transparent;
+  color: var(--cp-primary);
+  font-size: 24rpx;
+}
+.cp-status__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+}
+.cp-status__action::after, .cp-status__close::after { border: 0; }
+.cp-status__action[disabled] {
+  color: var(--cp-text-sub);
+  background: transparent;
+}
+.cp-write-feedback {
+  padding: 12rpx 28rpx 0;
+  font-size: 24rpx;
+  color: var(--cp-text-sub);
+  line-height: 1.5;
+}
+.cp-placeholder {
+  padding: 12rpx 16rpx;
+  margin-bottom: 12rpx;
+  background: var(--cp-bg);
+  border-radius: var(--radius-sm);
+  color: var(--cp-text-sub);
+  font-size: 24rpx;
+}
+.cp-mentor {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5rpx;
+  margin: 8rpx 0 12rpx;
+  color: var(--cp-text-sub);
+  font-size: 24rpx;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.cp-mentor__label {
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-xs);
+  background: var(--color-primary-light);
+  color: var(--cp-primary);
+}
+.cp-answer-preparation {
+  display: flex;
+  min-height: 72rpx;
+  align-items: center;
+  padding: 0 32rpx;
+  border-bottom: 1rpx solid var(--cp-border);
+  color: var(--cp-text-sub);
+  font-size: 24rpx;
+}
+.cp-role {
+  flex: none;
+  margin-left: 8rpx;
+  padding: 1rpx 8rpx;
+  border-radius: var(--radius-xs);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+.cp-role--asker {
+  background: var(--color-brand-red-light);
+  color: var(--color-brand-red-deep);
+}
+.cp-reply__header {
+  flex-wrap: wrap;
+  row-gap: 4rpx;
+}
+.cp-highlight { background: var(--color-primary-light); }

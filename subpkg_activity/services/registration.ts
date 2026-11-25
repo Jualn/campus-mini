@@ -1,3 +1,4 @@
+import { parseResponseInteger } from '../utils/response-integer';
 import { isHttpError } from '../../utils/error';
 import { eventApi } from './event-api';
 import type {
@@ -70,6 +71,8 @@ function toForm(detail: ActivityDetailDTO): RegistrationForm {
   }
   return {
     activityId: detail.activityId,
+    successLabel: detail.category === 'VOLUNTEERING' ? '预约成功' : '报名成功',
+    hasExternalSteps: detail.registrationMode === 'MINI_PROGRAM_AND_EXTERNAL',
     formVersion: detail.formVersion,
     fields: [...detail.registrationForm.fields]
       .sort((a, b) => a.displayOrder - b.displayOrder || a.fieldKey.localeCompare(b.fieldKey))
@@ -77,7 +80,7 @@ function toForm(detail: ActivityDetailDTO): RegistrationForm {
     allowModification: detail.registrationForm.allowModification,
     availability: detail.availability.state,
     registrationLimit: detail.capacity ?? null,
-    submittedCount: detail.platformRegistrationCount?.submittedCount ?? 0,
+    submittedCount: parseResponseInteger(detail.platformRegistrationCount?.submittedCount) ?? 0,
   };
 }
 
@@ -96,6 +99,8 @@ function toMine(raw: ActivityRegistrationDTO, etag: string): MyRegistration {
     submittedAt: raw.submittedAt,
     updatedAt: raw.updatedAt,
     cancelledAt: raw.cancelledAt,
+    cancellationOrigin: raw.cancellationOrigin,
+    cancellationReason: raw.cancellationReason,
     canModify: raw.canModify,
     canCancel: raw.canCancel,
     etag,
@@ -196,6 +201,9 @@ export async function submitRegistration(
   values: RegistrationAnswers,
   mine: MyRegistration | null,
 ): Promise<MyRegistration> {
+  if (mine?.status === 'CANCELLED' && mine.cancellationOrigin === 'ADMIN') {
+    throw invalid('报名已被管理员作废，不能重新提交');
+  }
   const payload: WriteRegistrationRequestDTO = {
     formVersion: form.formVersion,
     answers: prepareAnswers(form.fields, values),

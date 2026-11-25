@@ -38,6 +38,7 @@ for (const [semantic, descriptor] of Object.entries(ICON_REGISTRY)) {
     assert.ok(
       state === 'default' ||
         (['like', 'bookmark', 'home', 'message', 'user'].includes(semantic) && state === 'active') ||
+        (semantic.startsWith('tab-') && state === 'active') ||
         (['chevron-left', 'remove'].includes(semantic) && state === 'inverse'),
       `${semantic} 暴露了未批准的 state：${state}`,
     );
@@ -67,7 +68,9 @@ const sourceRecords = manifest
     return `${semantic}:${state}:${asset}`;
   });
 const registryRecords = Object.entries(ICON_REGISTRY).flatMap(([semantic, descriptor]) =>
-  Object.entries(descriptor).map(([state, asset]) => `${semantic}:${state}:${asset}`),
+  Object.entries(descriptor)
+    .map(([state, asset]) => `${semantic}:${state}:${asset}`)
+    .filter((record) => record.split(':').at(-1).startsWith('/assets/icons/core/')),
 );
 assert.deepEqual(sourceRecords.sort(), registryRecords.sort(), 'SOURCES 与 Registry 不一致');
 const registeredCoreFiles = new Set(
@@ -130,7 +133,8 @@ function verifyComponentRegistration(directory) {
     const file = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       verifyComponentRegistration(file);
-    } else if (file.endsWith('.wxml')) {
+    } else if (file.endsWith('.wxml') && entry.name !== 'indexs.wxml') {
+      // indexs.* is a retained legacy backup, not a configured Page/Component.
       const markup = fs.readFileSync(file, 'utf8').replace(/<!--[\s\S]*?-->/g, '');
       assert.deepEqual(
         findDirectIconAssets(markup, ICON_REGISTRY),

@@ -1,3 +1,7 @@
+import { POST_CAPABILITIES } from '../../config/post-capabilities';
+import { pendingPostCreation } from '../../actions/post-creation';
+import { canOpenPublicPostDetail } from '../../utils/post-community';
+import runtimeConfig from '../../config/index';
 import {
   wxGetWindowInfo,
   wxHideKeyboard,
@@ -17,18 +21,19 @@ import { appStore } from '../../stores/index';
 import { scrollStore } from '../../stores/scrollStore';
 import { getUserInfo, isLoggedIn } from '../../stores/helper';
 import { authReady } from '../../actions/auth';
+import { ACTIVITY_PUBLISH_UNAVAILABLE } from '../../utils/activity-publishing';
 import { usePostActions } from '../../behaviors/usePostActions';
 import { useListLoad } from '../../behaviors/useListLoad';
 import definePage from '../../utils/definePage';
 import { notifyToast, showErrorToast } from '../../utils/notify';
 import { getHomePublicMatterReminders } from '../../services/home-public-matter-reminder';
+import { createBusinessSubscription } from '../../services/business-subscriptions';
 import * as mediaAction from '../../actions/media';
 import * as postAction from '../../actions/post';
 import {
   appendUniquePosts,
   calculateHomeLayout,
   estimateReminderNow,
-  generatePostTitle,
   toHomeReminderCards,
   type HomePublicMatterReminderCard,
 } from './home-model';
@@ -44,6 +49,8 @@ interface IndexPageExtraThis {
 }
 
 definePage({
+  _postGeneration: 0,
+  _postOwner: '',
   _currentScrollTop: 0,
   _lastScrollTop: 0,
   /** 当前真实应用到 custom-tabbar 的隐藏状态 */
@@ -71,6 +78,7 @@ definePage({
   _reminderRenderKey: '',
   /** 标记是否正在提交, 防止重复提交 */
   _submitting: false,
+  _postPublishSubscription: null as ReturnType<typeof createBusinessSubscription> | null,
   _disposers: [] as (() => void)[],
 
   behaviors: [
@@ -110,18 +118,20 @@ definePage({
 
     // FAB
     fabOpen: false,
-    canPublishActivity: false, // 后端返回权限后设置
+    canPublishActivity: false, // 活动写入仅属独立管理端，小程序不消费旧角色授权。
     fabBottomDock: 0,
     fabMenuBottom: 0,
 
     /** 给FAB同步，tabbar隐藏，FAB也隐藏 */
     tabBarHidden: false,
+    postSubmitting: false,
     /** 给最新发布的tab同步，tabbar隐藏，tab也隐藏, 虽然目前只有一个，但后续可能新增*/
     homeHeaderHidden: false,
   },
 
   async onLoad() {
     // 监听帖子更新事件，更新对应帖子的点赞、评论数等信息，保持与用户操作一致
+    this._postOwner = getUserInfo('id') ?? '';
     this._loadListeners();
 
     const sys = wxGetWindowInfo();
@@ -135,7 +145,6 @@ definePage({
     this.setData({
       fabBottomDock,
       fabMenuBottom,
-      canPublishActivity: getUserInfo('role') !== 1,
       statusBarHeight: sys.statusBarHeight,
       navHeight: menuButton.top + 10,
     });
@@ -156,6 +165,9 @@ definePage({
   },
 
   onUnload() {
+    this._postPublishSubscription?.dispose();
+    this._postPublishSubscription = null;
+    ++this._postGeneration;
     this._reminderUnloaded = true;
     this._pageVisible = false;
     this._reminderVersion++;
@@ -197,6 +209,11 @@ definePage({
 
   onShow() {
     this._pageVisible = true;
+    this._isPreviewingImage = false;
+    if (this._previewRestoreTimer !== null) {
+      clearInterval(this._previewRestoreTimer);
+      this._previewRestoreTimer = null;
+    }
     this._syncHomeReminderCountdown();
     this._startReminderTimer();
     void this._loadHomeReminders();
@@ -347,13 +364,13 @@ definePage({
     if (options.from === 'button') return this._getShareContent();
     return {
       title: '发现校园里的新鲜事',
-      imageUrl: 'https://cos.jualn.cn/share/index-share.jpg',
+      imageUrl: runtimeConfig.defaultShareImageUrl,
       path: '/pages/campus/campus',
     };
   },
 
   onShareTimeline(): WechatMiniprogram.Page.ICustomTimelineContent {
-    const imageUrl = 'https://cos.jualn.cn/share/index-share.jpg';
+    const imageUrl = runtimeConfig.defaultShareImageUrl;
     return {
       imageUrl,
     };
@@ -385,6 +402,14 @@ definePage({
     this._disposers.push(
       appStore.watch('userInfo', (user) => {
         this._handleReminderIdentity(user.id);
+        if (this._postOwner !== user.id) {
+          this._postOwner = user.id;
+          ++this._postGeneration;
+          this._lastPostId = '';
+          this.setData({ posts: [] });
+          this._listLoadReset({ hasMore: false });
+          if (this._pageVisible) void this._loadData({ scene: 'refresh' });
+        }
       }),
     );
   },
@@ -419,8 +444,16 @@ definePage({
       this._listLoadBeginRefresh();
     }
 
+    const generation = ++this._postGeneration,
+      owner = getUserInfo('id');
     try {
       const post = await postAction.fetchPostList({});
+      if (
+        this._reminderUnloaded ||
+        generation !== this._postGeneration ||
+        owner !== getUserInfo('id')
+      )
+        return false;
 
       // 游标属于页面实例字段，不能通过 setData 写入，否则 _loadMorePosts 读取不到。
       this._lastPostId = post.nextCursor ?? '';
@@ -445,6 +478,12 @@ definePage({
 
       return true;
     } catch (err) {
+      if (
+        this._reminderUnloaded ||
+        generation !== this._postGeneration ||
+        owner !== getUserInfo('id')
+      )
+        return false;
       const hasVisiblePosts = this.data.posts.length > 0;
       log.error('_loadData', `${isInitial ? '首次' : '刷新'}加载数据失败`, err);
 
@@ -486,11 +525,19 @@ definePage({
 
     if (!this._listLoadCanMore(extraBlock)) return;
 
+    const generation = this._postGeneration,
+      owner = getUserInfo('id');
     const lastId = this._lastPostId || undefined;
     this._listLoadBeginMore();
 
     try {
       const res = await postAction.fetchPostList({ lastId });
+      if (
+        this._reminderUnloaded ||
+        generation !== this._postGeneration ||
+        owner !== getUserInfo('id')
+      )
+        return;
 
       // 防止后端游标边界重复返回同一条内容，避免列表出现重复卡片。
       const nextList = appendUniquePosts(this.data.posts, res.list);
@@ -505,6 +552,12 @@ definePage({
         hasMore: res.hasMore,
       });
     } catch (err) {
+      if (
+        this._reminderUnloaded ||
+        generation !== this._postGeneration ||
+        owner !== getUserInfo('id')
+      )
+        return;
       log.error('_loadMorePosts', '加载更多失败', err);
       // 使用列表内联错误态，不弹 Toast 打断阅读；并暂停自动触底重试。
       this._listLoadEndMore({
@@ -666,6 +719,9 @@ definePage({
    */
   onPublishPost() {
     void wxHideKeyboard();
+    this._postPublishSubscription?.dispose();
+    this._postPublishSubscription = createBusinessSubscription(() => this._pageVisible);
+    void this._postPublishSubscription.prepare('POST_PUBLISH');
     this._openPopup({
       fabOpen: false,
       popupType: 'post-edit',
@@ -683,67 +739,99 @@ definePage({
     e: WechatMiniprogram.CustomEvent<{
       content: string;
       selectedFiles?: SelectedMediaFile[];
+      postType?: 'NORMAL';
+      categoryId?: string | null;
+      topicIds?: string[];
     }>,
   ) {
     if (this._submitting) return;
+    if (POST_CAPABILITIES.communityV1 && pendingPostCreation('post')) {
+      notifyToast({ title: '上次提交未确认，请到我的社区帖子核对结果', icon: 'none' });
+      return;
+    }
     this._submitting = true;
+    this.setData({ postSubmitting: true });
 
     const { content, selectedFiles } = e.detail;
-
-    void wxShowLoading({
-      title: '发布中...',
-      mask: true,
-    });
+    const owner = getUserInfo('id') ?? '';
+    let loadingShown = false;
 
     try {
-      let attachmentItems: AttachmentItemRequest[] = [];
+      if (
+        POST_CAPABILITIES.communityV1 &&
+        this._postPublishSubscription &&
+        !(await this._postPublishSubscription.request('POST_PUBLISH'))
+      )
+        return;
 
-      // 只有用户最终点击发布时才上传 COS
-      // 用户选择图片、取消图片、关闭弹窗时，不上传 COS
+      void wxShowLoading({
+        title: '发布中...',
+        mask: true,
+      });
+      loadingShown = true;
+
+      let attachmentItems: AttachmentItemRequest[] = [];
       if (selectedFiles && selectedFiles.length > 0) {
         attachmentItems = await mediaAction.uploadFilesToCos(
           TARGET_TYPES.POST.value,
           selectedFiles,
         );
       }
+      if (owner !== getUserInfo('id')) return;
 
-      // TODO:
-      // 当前未做 COS 孤儿文件回收。
-      // 如果 COS 上传成功但 publishPost 失败，可能产生少量无业务引用文件。
-      // 现阶段先观察 COS 存储情况，后续如有必要再增加 objectKey 生命周期记录和定时清理。
-      await postAction.publishPostAndSync({
-        title: generatePostTitle(content),
+      const accepted = await postAction.publishPostAndSync({
+        title: null,
         content,
         attachmentItems,
+        ...(e.detail.postType ? { postType: e.detail.postType } : {}),
+        ...(e.detail.categoryId !== undefined ? { categoryId: e.detail.categoryId } : {}),
+        ...(e.detail.topicIds ? { topicIds: e.detail.topicIds } : {}),
       });
+      if (owner !== getUserInfo('id')) return;
 
+      this._postPublishSubscription?.dispose();
+      this._postPublishSubscription = null;
       this._closePopup(true);
+      if (POST_CAPABILITIES.communityV1) {
+        if (canOpenPublicPostDetail(accepted.lifecycle)) {
+          await wxNavigateTo({
+            url: `/subpkg_community/pages/detail/detail?postId=${encodeURIComponent(accepted.id)}`,
+          });
+        } else {
+          notifyToast({ title: '已受理，公开后可在信息流查看', icon: 'none' });
+        }
+        return;
+      }
 
       notifyToast({
         title: '发布成功',
         icon: 'success',
       });
     } catch (err) {
-      showErrorToast(err, {
-        fallback: '发布帖子失败，请稍后重试',
-      });
-
+      if (owner === getUserInfo('id')) {
+        showErrorToast(err, {
+          fallback: '发布帖子失败，请稍后重试',
+        });
+      }
       log.error('onPostSubmit', '发布帖子异常', err);
     } finally {
       this._submitting = false;
-      void wxHideLoading();
+      this.setData({ postSubmitting: false });
+      if (loadingShown) void wxHideLoading();
     }
   },
   /**
    * post-edit-panel -> bind:close 事件回调，关闭发布帖子弹窗
    */
   onPostEditClose() {
+    this._postPublishSubscription?.dispose();
+    this._postPublishSubscription = null;
     this._closePopup();
   },
 
   onPublishActivity() {
     this.setData({ fabOpen: false });
-    this._navigateTo('/subpkg_activity/pages/publish/publish');
+    notifyToast({ title: ACTIVITY_PUBLISH_UNAVAILABLE, icon: 'none' });
   },
 
   goToActivityList() {
@@ -752,6 +840,10 @@ definePage({
 
   toSearch() {
     this._navigateTo('/subpkg_community/pages/search/search');
+  },
+
+  goToMentorQa() {
+    void wxNavigateTo({ url: '/subpkg_community/pages/post-list/list?postType=MENTOR_QA' });
   },
 
   goToPublicEventList() {

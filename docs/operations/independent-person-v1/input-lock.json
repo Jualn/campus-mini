@@ -1,0 +1,592 @@
+{
+  "schemaVersion": 1,
+  "pinnedOn": "2026-10-27",
+  "classification": "BREAKING",
+  "acceptedCompatibilityBaseline": null,
+  "handoffs": [
+    {
+      "path": "docs/coordination/unified-v1/handoff.json",
+      "revision": "unified-v1-r4",
+      "sha256": "3cc1c5b0d2b36c0d847f769535b48837c7f545e110f63b12936a390a5b520cdf"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/handoff.json",
+      "revision": "identity-organization-v1-r5",
+      "sha256": "09359c2895204b0e7676082099d18a3f90f87f0cf5be111bd3f02a4da3de1643"
+    },
+    {
+      "path": "docs/coordination/points-v1/handoff.json",
+      "revision": "points-v1-r5",
+      "sha256": "f02ec57d711c5c28cc4892f8b1c6cc684426d04be0a2a7fa84e73b1cfe83bc21"
+    }
+  ],
+  "catalogVersions": {
+    "rbac-v1": "rbac-v1-unified-r3",
+    "duty-templates-v1": "unified-duty-v1-r4",
+    "person-foundation-v1": "identity-organization-v1-r4"
+  },
+  "roleCount": 26,
+  "permissionCount": 78,
+  "dutyCount": 32,
+  "miniProgramPackageVersion": "1.0.0",
+  "backendVersion": "NOT_VERIFIED",
+  "adminWebVersion": "NOT_VERIFIED",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "5eb5e606444722a8437f54f7e9cf92c56c26d8fe14d2e6bf84034dac9cee5032"
+    },
+    {
+      "path": "README.md",
+      "sha256": "84313083a678957948094f78c66be14ce465f12a807483ef4b128e2aaac72182"
+    },
+    {
+      "path": "api/catalogs/duty-templates-v1.json",
+      "sha256": "57774c6c059b660ec8f5e424d951162a1c4c26b5a1f94f0079deece66d4f58dd"
+    },
+    {
+      "path": "api/catalogs/person-foundation-v1.json",
+      "sha256": "f8eecb6c154ee99218320a9d3ad5437b3d804225d14016a5093bd55d6f7b7731"
+    },
+    {
+      "path": "api/catalogs/rbac-v1.json",
+      "sha256": "2a08a320843a0f536c7449df025d1751781374cacbbc84654668b80a42466aae"
+    },
+    {
+      "path": "api/examples/document-import-activity.sse",
+      "sha256": "70db081c5e984a5c939077e563cc210eb83ee16267479b08d3537d7ed59f9b83"
+    },
+    {
+      "path": "api/examples/document-import-failed.sse",
+      "sha256": "b037dd0316f02408ca067d48f75d939eefc74bbcf3754b06e34a1141c5445240"
+    },
+    {
+      "path": "api/examples/document-import-public-event.sse",
+      "sha256": "d6ff7abae82eb0ba4a3115228f0f1aa75f1521e943463cedcd9d35cfb4a86d0b"
+    },
+    {
+      "path": "api/examples/rbac-v1-http.json",
+      "sha256": "33c1f3ff2fcd07b81a03cb031c0d2cae63d19372091ecd485b7a4d10a3db47ab"
+    },
+    {
+      "path": "api/openapi.yaml",
+      "sha256": "2cc7cd9369ff9a99443ba59d0f98d4a8fd0d7b2a96723267119119e3b4d17fe5"
+    },
+    {
+      "path": "api/paths/admin-qr-login.yaml",
+      "sha256": "e037794feff416ec337a0151cab84aa1ca661f66ec8223bf9e37dafc3616e791"
+    },
+    {
+      "path": "api/paths/admin-query.yaml",
+      "sha256": "c65dbc215ff79d24297ff6b3696ad87ea85b891090af31e667ff558f637bbd07"
+    },
+    {
+      "path": "api/paths/admin-work.yaml",
+      "sha256": "717389c1d31e8341ef1c6a7b8bb3a72aeb336e78288e5ea969b4c7f9540e56dc"
+    },
+    {
+      "path": "api/paths/admin.yaml",
+      "sha256": "207eaf2b4d636df2f6956debf686d430919197323c487660d283683a9f52f288"
+    },
+    {
+      "path": "api/paths/article.yaml",
+      "sha256": "dd5693b49f7fce1bb4abf37dabe4bf7fc078720e0de8e79f134c03c35170fb26"
+    },
+    {
+      "path": "api/paths/interaction.yaml",
+      "sha256": "3eec606e60cf6015251f3a50dbf982eccb71b83dbddc76f4a07dca46c72c09dc"
+    },
+    {
+      "path": "api/paths/learning-task.yaml",
+      "sha256": "3e1f0e946045f5a10015f0f4dde047383e233abfeb52099cd738c041da169eaf"
+    },
+    {
+      "path": "api/paths/media.yaml",
+      "sha256": "b9feb5cee39204855557f602dc62026fca9dfc8e97217a2c552ef157666a446e"
+    },
+    {
+      "path": "api/paths/notification.yaml",
+      "sha256": "f9bbaafaa8abbf98ad51083abb9f5e965f8c296879a538e2982985da67c3416e"
+    },
+    {
+      "path": "api/paths/official-content.yaml",
+      "sha256": "c299b1ceaff78b7b8665a551971b316cf51afb0e19dfa44b0114104668d7f3d1"
+    },
+    {
+      "path": "api/paths/people-qualification.yaml",
+      "sha256": "7330152df2862fd786d732ac6f846907899f3901f7f71044f6cde178fdfa2a3c"
+    },
+    {
+      "path": "api/paths/person-foundation.yaml",
+      "sha256": "58c9876cf84812acd4547b3ab4ee77060963436b9ede278bfae1441fce3fb07a"
+    },
+    {
+      "path": "api/paths/points.yaml",
+      "sha256": "e41a10c24ad9a8df45b8befa73a8718c4eddc4c45d6ac7de0ce9fc85f2150ce5"
+    },
+    {
+      "path": "api/paths/post.yaml",
+      "sha256": "f31e355a4d2911827283fdca2dcfb1fc5be3834eb29614e1d67e295575dab8e0"
+    },
+    {
+      "path": "api/paths/profile.yaml",
+      "sha256": "d7c47bbad5a148655a72359e3f1e8853b5038a17a0e14a6e60f66a804f160708"
+    },
+    {
+      "path": "api/paths/rbac.yaml",
+      "sha256": "bfaa9ef160ce13731b3bc6e28f23b947c5181a606d602f6231ebe2aa24e8f647"
+    },
+    {
+      "path": "api/paths/unified-authorization.yaml",
+      "sha256": "1df674e9d641bf14bcba0c11c44ed9432f1c92e2fe5b6e2fffc2820632cf86d6"
+    },
+    {
+      "path": "api/paths/user.yaml",
+      "sha256": "89d405455be7548a2e3f7679574bd39deb518c402c278a7be845ae66444c2fca"
+    },
+    {
+      "path": "api/schemas/activity.yaml",
+      "sha256": "b66acd9bc1f89c55c885163e48ad6098c98fe9a737aacf2ba00bddcd039d6c03"
+    },
+    {
+      "path": "api/schemas/admin-qr-login.yaml",
+      "sha256": "d98f2371551cca79050bf964e51fb3b1994f3c1632850d6fab02c40ae8f3c2fb"
+    },
+    {
+      "path": "api/schemas/admin-query.yaml",
+      "sha256": "3e9b6619c7dc1bd9798f086782c762771bf43399af946114c1842744c5c0fc2d"
+    },
+    {
+      "path": "api/schemas/admin-work.yaml",
+      "sha256": "823949c80ca0a0573cd8125c7057621c2ffdb666d60a6b79271104732d0d7c21"
+    },
+    {
+      "path": "api/schemas/article.yaml",
+      "sha256": "231662ebc75a97966e953f3d194d7539a8b040f1510db8016946e686d0fdfaeb"
+    },
+    {
+      "path": "api/schemas/attachment.yaml",
+      "sha256": "feaa240610695301bd47ec954e5f6f07121e5e89ef0d5ed99b6e60193f417825"
+    },
+    {
+      "path": "api/schemas/content.yaml",
+      "sha256": "662578660e1d19574521846a6f74bcd6084fbe44f0a3f6b3cb004de7524c9732"
+    },
+    {
+      "path": "api/schemas/document-import.yaml",
+      "sha256": "f3b9353947f7b16b0a58f9cbb97dc28b62ab9cfc8d77da7190dbc839e241dd40"
+    },
+    {
+      "path": "api/schemas/interaction.yaml",
+      "sha256": "f7ae71595ec71f3a897113d56bae9225b539b36692c4622c2ab2eaf28776bb22"
+    },
+    {
+      "path": "api/schemas/learning-task.yaml",
+      "sha256": "77153beb2f9cd939ea65f2873a5558e4d71eb5d5229e7af9d293c8ff000bcfb3"
+    },
+    {
+      "path": "api/schemas/media.yaml",
+      "sha256": "4e33e16456ad66332e2f3e7b7c4dc733c415a61da95806fbeb8e19aef52a33a5"
+    },
+    {
+      "path": "api/schemas/notification.yaml",
+      "sha256": "f139a7f3eae0919ed4776dd53f3314546e5a5e1f002883e9312eabba62b8754a"
+    },
+    {
+      "path": "api/schemas/official-content.yaml",
+      "sha256": "8f8feac114707d85267349cb33e933c971e354893a4270d8a180ad3702fc0774"
+    },
+    {
+      "path": "api/schemas/people-qualification.yaml",
+      "sha256": "2402d4342cfd5f7b2a670b71a84c1b9939b434ba037a9b0e89aad9ad1600a692"
+    },
+    {
+      "path": "api/schemas/person-foundation.yaml",
+      "sha256": "a29347f519b4328fb5108c1365ec1435c52b0d6ce6e985ab11695e307a04cb10"
+    },
+    {
+      "path": "api/schemas/points.yaml",
+      "sha256": "8186bb9f93f03b54a86c9fcfb52dc2cf997d5b5021ebcaef65af23e6ad2b309f"
+    },
+    {
+      "path": "api/schemas/post.yaml",
+      "sha256": "20e8778db4af445e01753d7417038b8377766abacff7a6904ceff15c047d05a3"
+    },
+    {
+      "path": "api/schemas/profile.yaml",
+      "sha256": "e71e057d92537d8cef57701320f462abbc617f60f9b72d13821df2a1fbdac30a"
+    },
+    {
+      "path": "api/schemas/public-event.yaml",
+      "sha256": "3d0c4be9f772b5d14bfb61af7e68d544d691d485d0990e5a3a0ec7a2913209f9"
+    },
+    {
+      "path": "api/schemas/rbac.yaml",
+      "sha256": "3351dccb2e03579fdee84d99db3f27cbb1574d99292876f2848b7ccca77be149"
+    },
+    {
+      "path": "api/schemas/registration.yaml",
+      "sha256": "43072c4be7fcb40f50fa0a1b9f81e9173d4c09962010fab9e9d2c546ec58d41a"
+    },
+    {
+      "path": "api/schemas/shared.yaml",
+      "sha256": "6ac6b57ad0c43aeced394d3842e0697ffd9951456f03f7dc0f5e5c58616f168d"
+    },
+    {
+      "path": "api/schemas/system.yaml",
+      "sha256": "b56524dde48491a79ae9eb426ef01319c3312f60a7572c1864aeafce79c60d4d"
+    },
+    {
+      "path": "api/schemas/unified-authorization.yaml",
+      "sha256": "c844e4e9ca544ca175f68d7b77ab77db6704b5abff27b03e7e516bf1e248d858"
+    },
+    {
+      "path": "docs/README.md",
+      "sha256": "156a24b191eee6c9f7999eeb7c14aef5d47ba1ff0c7fda3d2ee283ccd361ee14"
+    },
+    {
+      "path": "docs/coordination/activities-public-events.md",
+      "sha256": "14a92bf44bc46e8ee2765a36546bef85c087d96bc37f10d72c9f0f68b2d94791"
+    },
+    {
+      "path": "docs/coordination/article-organization-publisher.md",
+      "sha256": "4093b2aeeee3c8d83b9c918626cc0080fc984859fb42a9fbaf4bab59262b8c29"
+    },
+    {
+      "path": "docs/coordination/article.md",
+      "sha256": "19d48b3138dc5fc93f2dc9ff86aab024e5c5f6c938cf78358cd31635aae887c1"
+    },
+    {
+      "path": "docs/coordination/content-safety-review.md",
+      "sha256": "f361eacda9a9e9bd8b3095e3516d19094f5d14168d6ca376a64da9cc0c801d5b"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/README.md",
+      "sha256": "5f62d0a540772b7020f2646a62bf6b8409f302f2181538053dbf20875aea624a"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/data-model.md",
+      "sha256": "718960f37ead74fbf6762a79524117d165bdaafb211f2f949270b1f0f407d534"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/baseline-sha256.json",
+      "sha256": "d4e0091975c9772ff827cd571d6c08b2989da81749cc647c591e8144b1f2269e"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/baseline-validation.log",
+      "sha256": "d0ec167c2a5a511c82d23daccba91faf1e532be0bf02b920cd51d492b3a40f4a"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/points-manifest-validation.log",
+      "sha256": "c8eaef3e7e5fe924922998c3a2aebabe84a769725eddb1c57709ae80f8e25322"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/points-r1-handoff.json",
+      "sha256": "72c7c057de280b93da50a014290d06ea02157804fffb9bd9db6c34185995d9c7"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/preservation.json",
+      "sha256": "cf85c52bd70430a8628012f23144ca3bb19aa77157120931928b554db221072a"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/rbac-legacy-sha256.json",
+      "sha256": "c52c09734970734b5d12aaa6fe6dae1ccf7f4c93c0845a626fae4708680a1cf0"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/validation-attempt-1.log",
+      "sha256": "9c3b985104ba5dd806e27dcbf121c3e938621a6760329fa9d7df2e95a09fe134"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/evidence/validation.log",
+      "sha256": "26426f8e87837935417d2b5c095351c694e071c08e06fd92b61a635279c0d436"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/organization-member-list.md",
+      "sha256": "0673d9fd7fab35451850deb8b139dcc3381282f5f794d4949328452f1d2f89fd"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/owning-policy.mjs",
+      "sha256": "118dc8e63ab4d5c51846609ee945a66c88274b97b4b618a27801d3a93fe0e8a1"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/reader-fixtures.json",
+      "sha256": "14ada99420a12151f5909d16997b27114f9dafc1a0b80d264d6a1f42d0a0457c"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/readers.md",
+      "sha256": "f5971b5f32b9d35f0ee9e2420c0e5edaa8895b7f68dc6f86708354acadf2818e"
+    },
+    {
+      "path": "docs/coordination/identity-organization-v1/readers.schema.json",
+      "sha256": "ab78cc0de9fbdbb5d3865a5af010d95bf0d98352df441e96d5ff2255b6f40a06"
+    },
+    {
+      "path": "docs/coordination/learning-task-v1-closeout.md",
+      "sha256": "df95fb4ef90b3c9485470d71010d6b2e781d2c612468baafc1b57a9822e6a5ce"
+    },
+    {
+      "path": "docs/coordination/learning-task.md",
+      "sha256": "56d10422bcac756d292e102367076da60bb84083a6fe5d00b9cb15efebf7932f"
+    },
+    {
+      "path": "docs/coordination/official-content.md",
+      "sha256": "bd006112ee21a8b14e8dd7c912a28f40b50ffd17a3a38637eb5e56fa1bbbb12d"
+    },
+    {
+      "path": "docs/coordination/party-roster-mentor-management.md",
+      "sha256": "c5ed6b9e5558da326e4207b012e93b4f3ffedc16bc703f5ba233034b4dce9dcc"
+    },
+    {
+      "path": "docs/coordination/person-identity-org-auth-unified-v1.md",
+      "sha256": "994beda099939d34282ed018a987349670ec1c4118ff53ed5e48d38b723b439f"
+    },
+    {
+      "path": "docs/coordination/points-v1/README.md",
+      "sha256": "87e176c5f093748395826bcd738b61ef3f0e0e9856432ea5b3a23215acf4adb9"
+    },
+    {
+      "path": "docs/coordination/points-v1/evidence/baseline-sha256.json",
+      "sha256": "aa52bb1d0ce1b5f9707c3d2c39ca9a5bdd05210e9a19f07783461ab111f0a78e"
+    },
+    {
+      "path": "docs/coordination/points-v1/evidence/baseline-validation.log",
+      "sha256": "675e76e19326955cc5f3a25b86514731c4c503f619d04107f9442b0eb80f74aa"
+    },
+    {
+      "path": "docs/coordination/points-v1/evidence/manifest-attempt-1.log",
+      "sha256": "7eb88ef5365fee04c871b6ab00a029c562261fcde7dcdc218636bf79798f3380"
+    },
+    {
+      "path": "docs/coordination/points-v1/evidence/preservation.json",
+      "sha256": "a69743e12b8fb2d3a1632643c7ad1ee6ca2ee73f3a98070c043bc494d9a9352d"
+    },
+    {
+      "path": "docs/coordination/points-v1/evidence/validation-attempt-1.log",
+      "sha256": "af43af0d5dddb71d8fd913ffd9e45a030e5d0020fb3a778dc6dfe407d94532de"
+    },
+    {
+      "path": "docs/coordination/points-v1/evidence/validation-attempt-2.log",
+      "sha256": "2184cef84a00244a9ba17f3f857615dbdb2b39111503f5aaa6ce99393af749b3"
+    },
+    {
+      "path": "docs/coordination/points-v1/evidence/validation.log",
+      "sha256": "98cca21ef9847fac1e0b383d286c1a386d00ab1e532f9e7462452884aa5cdeb2"
+    },
+    {
+      "path": "docs/coordination/post-organization-mentor-qa.md",
+      "sha256": "0d9ad3fe6af0f0f70cb3c9c983d4a1b3d1a3f8851e2205201e2d59b91f4e8060"
+    },
+    {
+      "path": "docs/coordination/rbac-v1.md",
+      "sha256": "8cef7f1a64485d8d7dd14b713bee4fed0a8f54943a2c849982d6a1924650770b"
+    },
+    {
+      "path": "docs/coordination/unified-authorization-implementation-v1.md",
+      "sha256": "f2ebe933bf24f944157b49357250deedcf07db539a1d632b8ff2bd012b4c9d46"
+    },
+    {
+      "path": "docs/coordination/unified-v1/README.md",
+      "sha256": "cbf466df5b28c1ac2a3c5307795d38320873a7b2486adccee9ecfec9d256fa24"
+    },
+    {
+      "path": "docs/coordination/unified-v1/acceptance-policy.mjs",
+      "sha256": "e7d3e98e3eea84ed14ce126e91e3e4f3c030ef4a16cf5bc0656bbe128641ae8f"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-catalogs-person-foundation-v1.json.json",
+      "sha256": "7f358945c7a7572f5d494f26874d05206888c096c7f53ae533cc98eba36ad986"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-catalogs-rbac-v1.json.json",
+      "sha256": "db7135c49a66b9da05b1fab728d266a7bf0fd64492e0bac11c21aa780cc8f981"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-openapi.yaml.json",
+      "sha256": "00ec044730fbe8e61cddd892e4ce905b19dbd590fd665a5387ad6068e4d40bb6"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-paths-learning-task.yaml.json",
+      "sha256": "ca0be4321a086949ca10c6ea2c3c05fa7daa26254f2e6a91c4e4fa1fcef8083c"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-paths-person-foundation.yaml.json",
+      "sha256": "fa713a453806562e86db3937ddb1438162485f8c1c85fad1a119b05c3d744c09"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-paths-points.yaml.json",
+      "sha256": "96f1c72fb9e23a617d88982784bd21c942235dd2d5028fd05e816ee814855da8"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-paths-rbac.yaml.json",
+      "sha256": "bfaa9ef160ce13731b3bc6e28f23b947c5181a606d602f6231ebe2aa24e8f647"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-schemas-learning-task.yaml.json",
+      "sha256": "041e0ff88a4ba13f753eb3c469ce8f36fc29cf33440a12646fca603f97aadb1c"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-schemas-person-foundation.yaml.json",
+      "sha256": "23311a2dcc4a6e38a63d8068ef132ab061e43ea8ebe78803f684910526085762"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-schemas-points.yaml.json",
+      "sha256": "6b33c73f24c8bdf318db2ba1e0ef6c0de91b5ed9ea85826a345fd4837af3ef05"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-api-schemas-rbac.yaml.json",
+      "sha256": "672dce6772bdc1d7c8f8e52bca59fd2d3c8f06848a0f734befe0d7260665a1bc"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/before-sha256.json",
+      "sha256": "14ad6983a51c30dadb418b9f0d9a033007c766a6c4df2aa906f6307e027abe2f"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/coverage-backend-audit.evidence.json",
+      "sha256": "fbef41e48b22f7434d4042c133b3093480413d6cf2cbdf6a5fe7b95029e2dfab"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/coverage-backend-audit.md",
+      "sha256": "eb703761869c6da689f0ca9b0fe08d7606c8e64e243df350a1578fec4053319b"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/coverage-before-openapi-bundle.json",
+      "sha256": "e643791aed89b8238fd90919356d2e08b8dda15a86df5f9d5208c49484eaddf2"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/coverage-before-reader-fixtures.json",
+      "sha256": "e2e18825387e9e4f76a44b1bebed296cde88ccf99df1115cd8b8faf1879c537b"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/coverage-inputs.json",
+      "sha256": "b8f8afe012fa6509346c50fd940bca189711a7e41f721394e9189342a1857150"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/coverage-r2-before-state.json",
+      "sha256": "0376af0c901cec30995f0fa370f944cdb1f353c6e98200a4bee6ae98ba81a34b"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/member-list-before-sha256.json",
+      "sha256": "8f29b46eda1756cd7af8d53468af707ef9a14a98556188d1f545dbc80573f5d7"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/member-list-prior-validation.log",
+      "sha256": "1250e423a943662e35b23fb5d60728941eedcbd4b7dbc1f96ef9c64b7c44b05f"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/member-list-validation-attempt-1.log",
+      "sha256": "4143706df19953fa2a9b9afdd171dee38a3781c991f22f13f5c4fc7fa8db78a5"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/operation-impact.json",
+      "sha256": "5384aa038b8012a52bb8f9152d3b5dfd4d56c84117a643a80a1ab20538d80fa5"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/person-r1-handoff.json",
+      "sha256": "46dee4b0223c4040d3b56625b4076e73a6fe18eea8d4c8bd712b0c18f2d9fe76"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/person-r2-before-member-list-handoff.json",
+      "sha256": "acf9e29f7ac3c38656a94a4c31fd216f40b514e8b487d75001cf9161cb26cfea"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/person-r2-before-member-list-paths.json",
+      "sha256": "7474c90dd73e9766bd627c9cfdd3c9fb5ea388e596829efc2f6b32c8a07e8b56"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/person-r2-before-member-list-schemas.json",
+      "sha256": "a263db1105915414f6bd128076664469d45f19a9eb3942907d2fffa5e136259c"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/points-r2-handoff.json",
+      "sha256": "e3270880a09e884fde2c239819138bcd91d0607a9dd6677d0260cb424de830c4"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/points-r3-before-member-list-handoff.json",
+      "sha256": "d3b153818e0686b092233477e54524205819a1b7924f4087fb10e1d857e7d390"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/role-namespace-permissions.json",
+      "sha256": "36743fedf05338ae10ba965c4a26dfed32b4a86870006dbf7d3022c609f1606c"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/unified-r1-before-member-list-handoff.json",
+      "sha256": "87cae7424123d13e3d6c20baa8d1833c64bf1773691b65bb31fd2d029355a8bb"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/validation-attempt-1.log",
+      "sha256": "00d4ff6fced3fe9a14c479203cbd3a1329455d91ea481edeb95b6c128d77c3b9"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/validation-attempt-2.log",
+      "sha256": "1dd958f819dc1d37f8b0e7a8cbc664b9c8ac6b76d194954d30066b2c025dc76b"
+    },
+    {
+      "path": "docs/coordination/unified-v1/evidence/validation.log",
+      "sha256": "4b6a13a94b550b40574a1ac741c4a16e385397d9c89a18abe82740bd460f33aa"
+    },
+    {
+      "path": "docs/governance/API_GUIDELINES.md",
+      "sha256": "af83a21a2940f1c44fe60a812d71dd74ff1c94e8f475c9b66b31d04466d187d9"
+    },
+    {
+      "path": "docs/governance/COORDINATION_GUIDE.md",
+      "sha256": "6777068a45f1c67f62315c7ef21d071f836c999fd313e34d41d756fc8e21eed0"
+    },
+    {
+      "path": "docs/governance/PROJECT_RULES.md",
+      "sha256": "e0df4b38169e0a0c9b3f723ccd3b9a63be01769598397049e9d6f396ce88d238"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "844eb2f46980ac68856eaa1af994595d682a446a791068aa665b3e52f6ed2908"
+    },
+    {
+      "path": "package.json",
+      "sha256": "b3ac54180031d08f1566a184977fab9571a2040dcef01eb0e3ce739ba0cba4cb"
+    },
+    {
+      "path": "redocly.yaml",
+      "sha256": "7de2ddb4cc7b44d8b2d7caaef9a1e9115dbdde273b514422b8cc080df1a24a7f"
+    },
+    {
+      "path": "scripts/refresh-unified-handoff.mjs",
+      "sha256": "93ca0f9fb8810e15e3755c755f586beccdc5c23041a1b2e95d12b18a9bbf92e0"
+    },
+    {
+      "path": "scripts/unified-artifacts.mjs",
+      "sha256": "bac6174db1e7c092d699fa6175e716a7b07b2f4a212e108b10997af97b7d051e"
+    },
+    {
+      "path": "scripts/validate-contract.test.mjs",
+      "sha256": "e3ce139c18d96f99c27bc52849dd1cec82d2e17a655cd8bd67cbf22c45968239"
+    },
+    {
+      "path": "scripts/validate-independent-person.test.mjs",
+      "sha256": "2d101202cc37dab15189138167925db17845b7428519003e9440571abbc40023"
+    },
+    {
+      "path": "scripts/validate-people-qualification.test.mjs",
+      "sha256": "8d7f2d69ae99ad0ff0170ea6f64195b2296cf9e40d840087f643b79df5f90719"
+    },
+    {
+      "path": "scripts/validate-person-foundation.test.mjs",
+      "sha256": "bc4269a1740f810ac02861497d8d21390fa719f6b0bab491d98beaeb7e535569"
+    },
+    {
+      "path": "scripts/validate-points-handoff.mjs",
+      "sha256": "ae823c0b834dffa05b4120b758b9a4b5ecf3c1c74bb525ddec015e5daf869f68"
+    },
+    {
+      "path": "scripts/validate-points.test.mjs",
+      "sha256": "e075c5ba6ff9bc4cbf20a1dd656b595595a5b272e8be0240107a4025683e9fb9"
+    },
+    {
+      "path": "scripts/validate-unified-handoff.mjs",
+      "sha256": "a032b543891a04ce4255ad51dce471e937b7f104b944b97018826862835d52be"
+    },
+    {
+      "path": "scripts/validate-unified.test.mjs",
+      "sha256": "6e3e0547e1c0761dfdd3998bbbf7710a83570155f2f0d31863ac2792dcc27a48"
+    }
+  ]
+}

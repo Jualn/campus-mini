@@ -1,0 +1,165 @@
+<page-navigation title="{{navigationTitle}}" fixed surface="card" />
+<view class="growth-page">
+  <view class="archive-hero archive-hero--{{scopeKind}}">
+    <view class="archive-hero__heading">
+      <text class="archive-hero__title">{{scopeTitle}}</text>
+      <button wx:if="{{mine && !needsBinding}}" class="archive-publish" bindtap="publish" aria-label="发布成长记录">
+        <text class="archive-publish__plus">+</text>
+        <text>写记录</text>
+      </button>
+    </view>
+    <text class="archive-hero__description">{{scopeDescription}}</text>
+  </view>
+
+  <view class="filter-bar" aria-label="按记录类型筛选">
+    <button
+      wx:for="{{filterLabels}}"
+      wx:key="*this"
+      class="filter-tab {{filterIndex === index ? 'filter-tab--active' : ''}}"
+      data-index="{{index}}"
+      bindtap="selectFilter"
+      aria-selected="{{filterIndex === index}}"
+    >
+      <text>{{item}}</text>
+    </button>
+  </view>
+
+  <load-state wx:if="{{loading && !items.length}}" mode="loading" title="正在整理成长时间轴" />
+  <load-state
+    wx:elif="{{error}}"
+    mode="error"
+    variant="{{items.length ? 'inline' : 'section'}}"
+    title="成长档案暂时无法加载"
+    description="{{error}}"
+    action-text="重试"
+    bind:action="retry"
+  />
+  <load-state
+    wx:elif="{{!items.length && needsBinding}}"
+    mode="empty"
+    title="先关联个人档案"
+    description="完成身份关联后，就可以查看并书写自己的成长记录。"
+    action-text="去认证"
+    bind:action="openIdentity"
+  />
+  <load-state
+    wx:elif="{{!items.length}}"
+    mode="empty"
+    title="{{filterIndex ? '当前筛选下暂无记录' : emptyTitle}}"
+    description="{{filterIndex ? '可以切换到全部记录，看看其他类型的内容。' : emptyDescription}}"
+    action-text="{{filterIndex ? '查看全部记录' : (mine && !needsBinding ? '发布第一条记录' : '')}}"
+    bind:action="emptyAction"
+  />
+
+  <view wx:if="{{items.length}}" class="archive-feed">
+    <view class="feed-heading">
+      <view>
+        <text class="feed-heading__title"
+          >{{scopeKind === 'organization' ? '成员成长分享' : (scopeKind === 'person' ? '作者时间轴' :
+          '成长时间轴')}}</text
+        >
+        <text class="feed-heading__description"
+          >{{scopeKind === 'organization' ? '成员与内容分开阅读，选择你关注的方向' : (mine ? '记录与可见状态都在这里' :
+          '按发布时间逐篇阅读')}}</text
+        >
+      </view>
+      <text class="feed-heading__count">已加载 {{items.length}} 条</text>
+    </view>
+    <view wx:if="{{loading}}" class="feed-refreshing">正在刷新，当前内容仍可阅读</view>
+
+    <view wx:for="{{items}}" wx:key="postId" class="timeline-entry">
+      <view wx:if="{{item.showMonth}}" class="timeline-month">
+        <text>{{item.monthLabel}}</text>
+      </view>
+      <view class="timeline-entry__body">
+        <view class="timeline-date">
+          <text>{{item.dayText}}</text>
+        </view>
+        <view class="timeline-rail" aria-hidden="true">
+          <view
+            class="timeline-dot {{item.link.recordType === 'POLITICAL_BIRTHDAY' ? 'timeline-dot--birthday' : ''}}"
+          />
+        </view>
+        <view class="record-row record-row--{{scopeKind}}">
+          <button
+            wx:if="{{scopeKind === 'organization'}}"
+            class="member-header"
+            data-person-id="{{item.link.personId}}"
+            bindtap="openPerson"
+            aria-label="查看{{item.author.nickname || '这位成员'}}的成长档案"
+          >
+            <view class="member-avatar">
+              <image
+                wx:if="{{item.author.avatarUrl && !failedAvatars[item.author.avatarUrl]}}"
+                class="member-avatar__image"
+                src="{{item.author.avatarUrl}}"
+                mode="aspectFill"
+                data-url="{{item.author.avatarUrl}}"
+                binderror="onAvatarError"
+              />
+              <text wx:else class="member-avatar__fallback">{{item.authorInitial}}</text>
+            </view>
+            <view class="member-header__copy">
+              <text class="member-header__name">{{item.author.nickname || '组织成员'}}</text>
+              <text class="member-header__caption">发布了{{item.typeLabel}}</text>
+            </view>
+            <view class="member-header__action">
+              <text>作者档案</text>
+              <ui-icon name="chevron-right" size="sm" />
+            </view>
+          </button>
+
+          <button
+            class="record-row__main"
+            data-id="{{item.postId}}"
+            bindtap="open"
+            aria-label="阅读{{item.displayTitle || item.typeLabel}}，{{item.dateText}}"
+          >
+            <view wx:if="{{scopeKind !== 'organization'}}" class="record-row__top">
+              <text class="record-row__type {{item.link.recordType === 'POLITICAL_BIRTHDAY' ? 'record-row__type--birthday' : ''}}">{{item.typeLabel}}</text>
+              <text wx:if="{{mine}}" class="record-row__visibility">{{item.statusLabel}}</text>
+            </view>
+            <text wx:if="{{item.displayTitle}}" class="record-row__title">{{item.displayTitle}}</text>
+            <text wx:if="{{item.content}}" class="record-row__excerpt {{!item.displayTitle ? 'record-row__excerpt--untitled' : ''}}">{{item.content}}</text>
+            <view class="record-row__footer">
+              <view class="record-row__facts">
+                <view wx:if="{{item.media.length}}" class="record-row__media">
+                  <ui-icon name="{{item.mediaIcon}}" size="sm" />
+                  <text>{{item.mediaText}}</text>
+                </view>
+                <text wx:if="{{mine && item.lifecycle.safety !== 'PASSED'}}" class="record-row__safety"
+                  >{{item.safetyLabel}}</text
+                >
+              </view>
+              <view class="record-row__read">
+                <text>阅读全文</text>
+                <ui-icon name="chevron-right" size="sm" />
+              </view>
+            </view>
+          </button>
+
+          <button
+            wx:if="{{mine}}"
+            class="organization-link"
+            data-organization-id="{{item.link.organizationId}}"
+            bindtap="openOrganization"
+            aria-label="查看这条记录同组织的成长记录"
+          >
+            <ui-icon name="checklist" size="sm" />
+            <text>查看同组织记录</text>
+            <ui-icon name="chevron-right" size="sm" />
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <button wx:if="{{hasMore && !error}}" class="load-more" loading="{{loading}}" disabled="{{loading}}" bindtap="more">
+      加载更多记录
+    </button>
+    <view wx:elif="{{!hasMore && !error}}" class="archive-end">
+      <view class="archive-end__line" />
+      <text>已显示当前范围内的全部记录</text>
+      <view class="archive-end__line" />
+    </view>
+  </view>
+</view>

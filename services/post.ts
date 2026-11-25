@@ -9,20 +9,39 @@
  * - DELETE /v1/post/{postId}
  */
 
+import { readQaSummary, qaAnswerLabel } from '../utils/mentor-qa';
+import { POST_CAPABILITIES } from '../config/post-capabilities';
+import { resolvePostType, assertStrongEtag, validateTopicIds } from '../utils/post-policy';
+import type { PostEdit } from '../types/post-contract';
+import { community } from './post-community';
 import { api } from './api';
 import type { PostCardItem, PostDetail, ServiceCursorPage } from '../types/business';
-import type { PostCreateRequest, PostDetailVO, PostListBO } from '../types/api';
+import type {
+  PostCreateRequest,
+  PostDetailVO,
+  PostListBO,
+  PostPageQuery,
+} from '../types/post-contract';
 import { formatTime, TimeStyle } from '../utils/time-util';
 import { getAvatarInfo } from '../utils/avatar';
+import { resolveContentTitle } from '../utils/content-presentation';
 
 export const mapPostListItem = (post: PostListBO): PostCardItem => ({
+  postType: resolvePostType(post.postType),
+  title: post.title,
+  displayTitle: resolveContentTitle(post.title, post.content),
+  category: post.category,
+  topics: post.topics ?? [],
+  qaSummary: readQaSummary(post.qaSummary),
+  qaStateLabel: qaAnswerLabel(post.qaSummary),
+  commentPermission: post.commentPermission,
   id: post.id,
   userId: post.author.id,
   content: post.content || '',
   images: post.attachments.map((item) => item.url).filter(Boolean),
-  createdAt: formatTime(post.publishedAt || '', TimeStyle.POST),
-  nickname: post.author.nickname || '',
-  avatarUrl: post.author.avatarUrl || '',
+  createdAt: formatTime(post.publishedAt ?? '', TimeStyle.POST),
+  nickname: post.author.nickname ?? '',
+  avatarUrl: post.author.avatarUrl ?? '',
   commentCount: post.commentCount || 0,
   likeCount: post.likeCount || 0,
   viewCount: post.viewCount || 0,
@@ -30,10 +49,18 @@ export const mapPostListItem = (post: PostListBO): PostCardItem => ({
 });
 
 const mapPostDetail = (post: PostDetailVO): PostDetail => ({
+  postType: resolvePostType(post.postType),
+  title: post.title,
+  displayTitle: resolveContentTitle(post.title, post.content),
+  category: post.category,
+  topics: post.topics ?? [],
+  qaSummary: readQaSummary(post.qaSummary),
+  qaStateLabel: qaAnswerLabel(post.qaSummary),
+  commentPermission: post.commentPermission,
   id: post.id,
   userId: post.author.id,
-  nickname: post.author.nickname || '',
-  avatar: post.author.avatarUrl || '',
+  nickname: post.author.nickname ?? '',
+  avatar: post.author.avatarUrl ?? '',
   // ipLocation: '', // API 当前未提供IP归属信息，后续根据实际数据调整
   // handle: '', // API 当前未提供用户handle信息，后续根据实际数据调整
   content: post.content || '',
@@ -46,8 +73,8 @@ const mapPostDetail = (post: PostDetailVO): PostDetail => ({
   viewCount: post.viewCount || 0,
   isSelf: false,
   // isFollowing: false,
-  _avatarBg: getAvatarInfo(post.author.nickname).bg,
-  _avatarChar: getAvatarInfo(post.author.nickname).char,
+  _avatarBg: getAvatarInfo(post.author.nickname ?? '').bg,
+  _avatarChar: getAvatarInfo(post.author.nickname ?? '').char,
 });
 
 /**
@@ -73,16 +100,24 @@ const mapPostDetail = (post: PostDetailVO): PostDetail => ({
  *   timestamp: number
  * }
  */
-export const fetchPostList = async (query: {
-  lastId?: string;
-  pageSize?: number;
-  status?: number;
-}): Promise<ServiceCursorPage<PostCardItem>> => {
-  const page = await api.post.getList(query);
+export const fetchPostList = async (
+  query: PostPageQuery,
+): Promise<ServiceCursorPage<PostCardItem>> => {
+  const type = query.postType ?? 'NORMAL';
+  if (query.answerState && (query.postType !== 'MENTOR_QA' || !POST_CAPABILITIES.mentorQa))
+    throw new Error('回答状态筛选仅适用于已开放的答疑');
+  const filtered = type !== 'NORMAL' || !!query.categoryId || !!query.topicId;
+  if (filtered && !POST_CAPABILITIES.organization) throw new Error('分类话题服务尚未开放');
+  if (query.lastId && (filtered || query.cursor)) throw new Error('新筛选必须使用 cursor');
+  const page = await api.post.getList({ ...query, postType: type });
+  if (filtered && page.hasMore && !page.cursor) throw new Error('服务未返回筛选分页 cursor');
   return {
-    list: page.list.map(mapPostListItem),
+    list: page.list
+      .filter((item) => type === 'ALL' || resolvePostType(item.postType) === type)
+      .map(mapPostListItem),
     hasMore: page.hasMore,
-    nextCursor: page.nextCursor,
+    cursor: page.cursor,
+    nextCursor: filtered ? (page.cursor ?? '') : (page.nextCursor ?? undefined),
   };
 };
 
@@ -95,20 +130,25 @@ export const fetchPostList = async (query: {
  */
 export const getUserPosts = async (
   userId: string,
-  options: { lastId?: string; pageSize?: number; status?: number } = {},
+  options: { lastId?: string; cursor?: string; pageSize?: number; status?: number } = {},
 ): Promise<ServiceCursorPage<PostCardItem>> => {
-  const { lastId, pageSize = 20, status } = options;
+  const { lastId, cursor, pageSize = 20, status } = options;
 
   const page = await api.post.getList({
     lastId,
     pageSize,
     status,
     userId,
+    cursor,
+    postType: 'NORMAL',
   });
   return {
-    list: page.list.map(mapPostListItem),
+    list: page.list
+      .filter((item) => resolvePostType(item.postType) === 'NORMAL')
+      .map(mapPostListItem),
     hasMore: page.hasMore,
-    nextCursor: page.nextCursor,
+    cursor: page.cursor,
+    nextCursor: page.cursor ?? page.nextCursor ?? undefined,
   };
 };
 
@@ -129,9 +169,11 @@ export const getUserLikedPosts = async (
 
   const page = await api.post.getUserLikePost(userId, lastId, pageSize);
   return {
-    list: page.list.map(mapPostListItem),
+    list: page.list
+      .filter((item) => resolvePostType(item.postType) === 'NORMAL')
+      .map(mapPostListItem),
     hasMore: page.hasMore,
-    nextCursor: page.nextCursor,
+    nextCursor: page.nextCursor ?? undefined,
   };
 };
 
@@ -182,7 +224,15 @@ export const getPostDetail = async (postId: string): Promise<PostDetail> => {
  * 响应体: ResultPostListBO
  */
 export const publishPost = async (data: PostCreateRequest): Promise<PostCardItem> => {
-  const { content, title, attachmentItems } = data;
+  const { content, title, attachmentItems, postType, categoryId, topicIds } = data;
+  if (
+    (postType === 'MENTOR_QA' || categoryId || topicIds?.length) &&
+    !POST_CAPABILITIES.organization
+  )
+    throw new Error('分类话题服务尚未开放');
+  if (postType === 'MENTOR_QA' && (!POST_CAPABILITIES.mentorQa || !categoryId))
+    throw new Error('答疑尚未开放或未选择分类');
+  validateTopicIds(topicIds ?? []);
 
   if (!content || content.trim().length === 0) {
     return Promise.reject(new Error('帖子内容不能为空'));
@@ -192,26 +242,30 @@ export const publishPost = async (data: PostCreateRequest): Promise<PostCardItem
     title,
     content: content.trim(),
     attachmentItems,
+    postType,
+    categoryId,
+    topicIds,
   });
 
   return mapPostListItem(card);
 };
 
-/**
- * 编辑帖子（后端文档当前未列出对应接口，作为本地扩展保留）
- * @param {number} postId - 帖子ID
- * @param {Object} data - 更新的数据
- * @returns {Promise}
- */
-export const editPost = async (
-  postId: string,
-  data: Partial<PostCreateRequest>,
-): Promise<unknown> => {
-  if (!postId) {
-    return Promise.reject(new Error('postId不能为空'));
-  }
-
-  return api.post.edit(postId, data);
+export const getEditablePost = async (postId: string) => {
+  if (!POST_CAPABILITIES.organization) throw new Error('编辑服务尚未开放');
+  const response = await api.post.getEditable(postId);
+  assertStrongEtag(response.headers.etag);
+  if (response.data.id !== postId || !['NORMAL', 'MENTOR_QA'].includes(response.data.postType))
+    throw new Error('编辑表示类型或目标不受支持');
+  return { post: response.data, etag: response.headers.etag };
+};
+export const editPost = async (postId: string, data: PostEdit, etag: string) => {
+  if (!POST_CAPABILITIES.organization) throw new Error('编辑服务尚未开放');
+  validateTopicIds(data.topicIds ?? []);
+  const response = await api.post.edit(postId, data, assertStrongEtag(etag));
+  assertStrongEtag(response.headers.etag);
+  if (response.data.id !== postId || !['NORMAL', 'MENTOR_QA'].includes(response.data.postType))
+    throw new Error('编辑响应不符合契约，请保留草稿并重新读取');
+  return response;
 };
 
 /**
@@ -231,7 +285,7 @@ export const deletePost = async (postId: string): Promise<void> => {
 };
 
 /**
- * 收藏帖子（后端文档当前未列出，作为本地扩展保留）
+ * 使用正式收藏状态。
  * @param {string} postId - 帖子ID
  * @param {boolean} collect - true收藏，false取消收藏
  * @returns {Promise}
@@ -241,5 +295,5 @@ export const togglePostCollect = (postId: string, collect: boolean): Promise<unk
     return Promise.reject(new Error('postId不能为空'));
   }
 
-  return Promise.resolve({ postId, collect });
+  return community.setFavorite(postId, collect);
 };

@@ -3,9 +3,7 @@
   <!-- 顶部导航 -->
   <view class="top-bar" style="padding-top:{{statusBarHeight}}px;">
     <view class="top-bar__nav" style="margin-top: {{navTopGap}}px; height: {{navHeight}}px;">
-      <view class="top-bar__back" bindtap="onBack" aria-role="button" aria-label="返回">
-        <ui-icon name="chevron-left" size="lg" />
-      </view>
+      <back-button variant="nav" auto-back="{{false}}" bind:back="onBack" />
       <text class="top-bar__title">校园活动</text>
     </view>
     <!-- 搜索框 -->
@@ -29,7 +27,7 @@
         </view>
       </view>
     </view>
-    <activity-filter statuses="{{statusTabs}}" categories="{{categories}}" scopes="{{scopes}}" active-status="{{activeStatus}}" category-index="{{categoryIndex}}" scope-index="{{scopeIndex}}" bind:statuschange="onSwitchStatus" bind:categorychange="onCategoryChange" bind:scopechange="onScopeChange" />
+    <filter-bar filters="{{filters}}" bind:statuschange="onSwitchStatus" bind:categorychange="onCategoryChange" bind:scopechange="onScopeChange" />
   </view>
 
   <load-state wx:if="{{initialLoading}}" mode="loading" title="正在加载活动" fill-viewport viewport-offset="300" />
@@ -39,7 +37,7 @@
     <view wx:if="{{refreshing}}" class="result-hint">正在刷新…</view>
     <view wx:if="{{loaded && keyword}}" class="result-hint">已加载 <text class="result-hint__count">{{list.length}}</text> 个活动</view>
     <view wx:if="{{list.length}}" class="list-wrap">
-      <activity-card wx:for="{{list}}" wx:key="id" activity="{{item}}" preferred-department="{{scopes[scopeIndex].id}}" bind:changed="onActivityChanged" />
+      <activity-card wx:for="{{list}}" wx:key="id" activity="{{item}}" preferred-department="{{filters[2].options[scopeIndex].id}}" bind:changed="onActivityChanged" />
     </view>
     <load-state wx:elif="{{loaded}}" mode="empty" title="暂无符合条件的活动" description="可下拉刷新或清除搜索与筛选" action-text="清除筛选" bind:action="onClearFilters" fill-viewport viewport-offset="300" />
     <view wx:if="{{loaded && (list.length || nextCursor)}}" class="list-footer">

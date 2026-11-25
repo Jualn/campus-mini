@@ -20,7 +20,7 @@ function loader(overrides = {}) {
         if (name in overrides) return overrides[name];
         return load(path.resolve(path.dirname(file), name + '.ts'));
       },
-    });
+    }, { filename: file });
     return exports;
   }
   return load;
@@ -128,8 +128,11 @@ console.log('Activity discovery regression passed: query, paging, errors, refres
 let registrationOptions;
 let emitted = 0;
 const registrationLoad = loader({
+  '../../../actions/current-user': { getCurrentIdentity: () => ({ id: 'u1' }), watchCurrentIdentity: () => () => {} },
   '../../../utils/definePage': { __esModule: true, default: (options) => { registrationOptions = options; } },
   '../../actions/registration': { submitRegistration: async () => {}, cancelRegistration: async () => {} },
+  '../../services/registration': { prepareAnswers: () => [] },
+  '../../../services/business-subscriptions': { createBusinessSubscription: () => ({ prepare: async () => {}, request: async () => true, dispose() {} }) },
   '../../../utils/wx-promise': { wxShowModal: async () => ({ confirm: true }) },
   '../../../utils/error': { isHttpError: () => false },
 });
@@ -152,11 +155,11 @@ assert.equal((cardTemplate.match(/参与范围：/g) ?? []).length, 2, 'both cov
 console.log('Activity registration success invalidation and card variants passed.');
 
 let filterOptions;
-loader({ globals: { wx: { hideKeyboard: () => Promise.resolve() }, Component: (options) => { filterOptions = options; } } })('subpkg_activity/components/activity-filter/index.ts');
+loader({ globals: { wx: { hideKeyboard: () => Promise.resolve() }, Component: (options) => { filterOptions = options; } } })('components/filter-bar/index.ts');
 const filterEvents = [];
 const filter = {
   ...filterOptions.methods,
-  properties: { statuses: p.data.statusTabs, categories: p.data.categories, scopes: p.data.scopes, activeStatus: 'ACTIVE', categoryIndex: 0, scopeIndex: 0 },
+  properties: { filters: p.data.filters, tone: 'blue' },
   data: structuredClone(filterOptions.data),
   setData(patch) { Object.assign(this.data, patch); },
   triggerEvent(name, detail) { filterEvents.push({ name, detail }); },
@@ -176,7 +179,8 @@ toggle('status');
 assert.equal(filter.data.openKey, 'status', 'opening another group replaces the panel');
 select(2);
 assert.equal(filterEvents[1].name, 'statuschange');
-assert.equal(filterEvents[1].detail.value, 'ENDED');
+assert.equal(filterEvents[1].detail.value, 2);
+assert.equal(filterEvents[1].detail.id, 'ENDED');
 toggle('category'); select(0);
 assert.equal(filterEvents.length, 2, 'choosing the existing value closes without another request');
 toggle('scope'); toggle('scope'); assert.equal(filter.data.openKey, '');
@@ -185,8 +189,8 @@ assert.equal(filter.data.openKey, '', 'hidden page dismisses its popup');
 const listTemplate = fs.readFileSync('subpkg_activity/pages/list/list.wxml', 'utf8');
 assert.doesNotMatch(listTemplate, /<picker|class="status-scroll"/);
 assert.match(listTemplate, /bind:scopechange="onScopeChange"/);
-const filterRegistration = JSON.parse(fs.readFileSync('subpkg_activity/pages/list/list.json')).usingComponents['activity-filter'];
-assert.equal(filterRegistration, '/subpkg_activity/components/activity-filter/index');
+const filterRegistration = JSON.parse(fs.readFileSync('subpkg_activity/pages/list/list.json')).usingComponents['filter-bar'];
+assert.equal(filterRegistration, '/components/filter-bar/index');
 for (const extension of ['.ts', '.json', '.wxml', '.wxss']) {
   assert.ok(fs.existsSync(path.resolve(filterRegistration.slice(1) + extension)), `registered component source exists: ${extension}`);
 }

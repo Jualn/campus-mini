@@ -2,8 +2,13 @@
 export type NotificationBoxCategory = 'INTERACTION' | 'ACTIVITY' | 'SYSTEM';
 
 export interface NotificationTarget {
+  growthRecordTarget?: true;
   type: string;
+  reportId?: string;
   postId?: string;
+  articleId?: string;
+  taskId?: string;
+  assignmentId?: string;
   commentId?: string;
   activityId?: string;
   publicEventId?: string;
@@ -39,7 +44,6 @@ export interface NotificationPreview {
 }
 
 export interface NotificationListResponse {
-  representation: 'structured';
   items: NotificationItem[];
   hasMore: boolean;
   nextCursor?: string;
